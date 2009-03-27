@@ -244,6 +244,9 @@ namespace Ionic.Zip
         }
 
 
+        /// <summary>
+        /// Size of the buffer used when extracting or saving.
+        /// </summary>
         public int BufferSize
         {
             get;
@@ -4765,6 +4768,9 @@ namespace Ionic.Zip
         private Nullable<bool> _entryRequiresZip64;
         private Nullable<bool> _OutputUsesZip64;
 
+        /// <summary>
+        /// The default size of the IO buffer for ZipEntry instances. Currently it is 8192 bytes.
+        /// </summary>
         public const int IO_BUFFER_SIZE_DEFAULT = 8192; // 0x8000; // 0x4400
 
     }

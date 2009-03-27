@@ -112,10 +112,35 @@ namespace Ionic.Zlib
 
         internal long _Adler32;
 
-
+        /// <summary>
+        /// The compression level to use in this codec.  Useful only in compression mode.
+        /// </summary>
         public CompressionLevel CompressLevel = CompressionLevel.LEVEL6_DEFAULT;
+
+        /// <summary>
+        /// The number of Window Bits to use.  
+        /// </summary>
+        /// <remarks>
+        /// This gauges the size of the sliding window, and hence the 
+        /// compression effectiveness as well as memory consumption. It's best to just leave this 
+        /// setting alone if you don't know what it is.  The maximum value is 15 bits, which implies
+        /// a 32k window.  
+        /// </remarks>
         public int WindowBits = ZlibConstants.WINDOW_BITS_DEFAULT;
 
+        /// <summary>
+        /// The compression strategy to use.
+        /// </summary>
+        /// <remarks>
+        /// This is only effective in compression.  The theory offered by ZLIB is that different
+        /// strategies could potentially produce significant differences in compression behavior
+        /// for different data sets.  Unfortunately I don't have any good recommendations for how
+        /// to set it differently.  When I tested changing the strategy I got minimally different
+        /// compression performance. It's best to leave this property alone if you don't have a
+        /// good feel for it.  Or, you may want to produce a test harness that runs through the
+        /// different strategy options and evaluates them on different file types. If you do that,
+        /// let me know your results.
+        /// </remarks>
         public CompressionStrategy Strategy = CompressionStrategy.DEFAULT;
 
 
@@ -279,13 +304,13 @@ namespace Ionic.Zlib
         ///
         /// </code>
         /// </example>
-        /// <param name="f">I think you want to set this to Z_NO_FLUSH.</param>
+        /// <param name="flush">The flush to use when inflating.</param>
         /// <returns>Z_OK if everything goes well.</returns>
-        public int Inflate(int f)
+        public int Inflate(FlushType flush)
         {
             if (istate == null)
                 throw new ZlibException("No Inflate State!");
-            return istate.Inflate(this, f);
+            return istate.Inflate(flush);
         }
 
 
@@ -302,7 +327,7 @@ namespace Ionic.Zlib
         {
             if (istate == null)
                 throw new ZlibException("No Inflate State!");
-            int ret = istate.End(this);
+            int ret = istate.End();
             istate = null;
             return ret;
         }
@@ -315,7 +340,7 @@ namespace Ionic.Zlib
         {
             if (istate == null)
                 throw new ZlibException("No Inflate State!");
-            return istate.Sync(this);
+            return istate.Sync();
         }
 
         /// <summary>
@@ -504,11 +529,11 @@ namespace Ionic.Zlib
         /// flush everything. 
         /// </param>
         /// <returns>Z_OK if all goes well.</returns>
-        public int Deflate(int flush)
+        public int Deflate(FlushType flush)
         {
             if (dstate == null)
                 throw new ZlibException("No Deflate State!");
-            return dstate.Deflate(this, flush);
+            return dstate.Deflate(flush);
         }
 
         /// <summary>
@@ -528,6 +553,23 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
+        /// Reset a codec for another deflation session.
+        /// </summary>
+        /// <remarks>
+        /// Call this to reset the deflation state.  For example if a thread is deflating
+	/// non-consecutive blocks, you can call Reset() after the Deflate(Sync) of the first
+	/// block and before the next Deflate(None) of the second block.
+        /// </remarks>
+        /// <returns>Z_OK if all goes well.</returns>
+        public void ResetDeflate()
+        {
+            if (dstate == null)
+                throw new ZlibException("No Deflate State!");
+            dstate.Reset();
+        }
+
+
+        /// <summary>
         /// Set the CompressionStrategy and CompressionLevel for a deflation session.
         /// </summary>
         /// <param name="level">the level of compression to use.</param>
@@ -537,7 +579,7 @@ namespace Ionic.Zlib
         {
             if (dstate == null)
                 throw new ZlibException("No Deflate State!");
-            return dstate.SetParams(this, level, strategy);
+            return dstate.SetParams(level, strategy);
         }
 
 
@@ -549,10 +591,10 @@ namespace Ionic.Zlib
         public int SetDictionary(byte[] dictionary)
         {
             if (istate != null)
-                return istate.SetDictionary(this, dictionary);
+                return istate.SetDictionary(dictionary);
 
             if (dstate != null)
-                return dstate.SetDictionary(this, dictionary);
+                return dstate.SetDictionary(dictionary);
 
             throw new ZlibException("No Inflate or Deflate state!");
         }
