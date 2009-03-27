@@ -157,9 +157,11 @@
     <Compile Include="VistaTools.cs" />
     <Compile Include="Zip\Crc32.cs" />
     <Compile Include="Zip\Deflate.cs" />
+    <Compile Include="Zip\DeflateStream.cs" />
     <Compile Include="Zip\Events.cs" />
     <Compile Include="Zip\Exceptions.cs" />
     <Compile Include="Zip\FileSelector.cs" />
+    <Compile Include="Zip\GZipStream.cs" />
     <Compile Include="Zip\Inflate.cs" />
     <Compile Include="Zip\InfTree.cs" />
     <Compile Include="Zip\Shared.cs" />

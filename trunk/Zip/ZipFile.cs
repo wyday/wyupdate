@@ -54,22 +54,34 @@ namespace Ionic.Zip
         #region public properties
 
 
-public int BufferSize
-{
-    get ;
-    set ;
-}
-public int CodecBufferSize
-{
-    get ;
-    set ;
-}
-private Ionic.Zlib.CompressionStrategy _Strategy= Ionic.Zlib.CompressionStrategy.DEFAULT;
-public Ionic.Zlib.CompressionStrategy Strategy
-{
-    get { return _Strategy;}
-    set { _Strategy = value;}
-}
+        /// <summary>
+        /// Size of the IO Buffer used while saving.
+        /// </summary>
+        public int BufferSize
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Size of the work buffer to use for the ZLIB codec during compression.
+        /// </summary>
+        public int CodecBufferSize
+        {
+            get;
+            set;
+        }
+
+
+        private Ionic.Zlib.CompressionStrategy _Strategy = Ionic.Zlib.CompressionStrategy.DEFAULT;
+        /// <summary>
+        /// The compression strategy to use for all entries. 
+        /// </summary>
+        public Ionic.Zlib.CompressionStrategy Strategy
+        {
+            get { return _Strategy; }
+            set { _Strategy = value; }
+        }
 
         /// <summary>
         /// This read-only property specifies the name of the zipfile to read or
@@ -589,32 +601,32 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// </para>
         /// </remarks>
         /// 
-	/// <example>
+        /// <example>
         /// This example shows how to read a zip file using the Big-5 Chinese code page (950), 
         /// and extract each entry in the zip file.
-	/// For this code to work as desired, the zipfile must have been created using the big5
-	/// code page (CP950). This is typical, for example, when using WinRar on a machine with
-	/// CP950 set as the default code page.  In that case, the names of entries within the Zip
-	/// archive will be stored in that code page, and reading the zip archive must be done
-	/// using that code page.  If the application did not use the correct code page in
-	/// ZipFile.Read(), then names of entries within the zip archive would not be correctly
-	/// retrieved.
-	/// <code>
-	/// using (var zip = ZipFile.Read(zipFileName, System.Text.Encoding.GetEncoding("big5")))
-	/// {
-	///     // retrieve an extract an entry using a name encoded with CP950
-	///     zip[MyDesiredEntry].Extract("unpack");
-	/// }
-	/// </code>
-	///
+        /// For this code to work as desired, the zipfile must have been created using the big5
+        /// code page (CP950). This is typical, for example, when using WinRar on a machine with
+        /// CP950 set as the default code page.  In that case, the names of entries within the Zip
+        /// archive will be stored in that code page, and reading the zip archive must be done
+        /// using that code page.  If the application did not use the correct code page in
+        /// ZipFile.Read(), then names of entries within the zip archive would not be correctly
+        /// retrieved.
+        /// <code>
+        /// using (var zip = ZipFile.Read(zipFileName, System.Text.Encoding.GetEncoding("big5")))
+        /// {
+        ///     // retrieve an extract an entry using a name encoded with CP950
+        ///     zip[MyDesiredEntry].Extract("unpack");
+        /// }
+        /// </code>
+        ///
         /// <code lang="VB">
         /// Using zip As ZipFile = ZipFile.Read(ZipToExtract, System.Text.Encoding.GetEncoding(950))
-	///     ' retrieve an extract an entry using a name encoded with CP950
-	///     zip(MyDesiredEntry).Extract("unpack")
+        ///     ' retrieve an extract an entry using a name encoded with CP950
+        ///     zip(MyDesiredEntry).Extract("unpack")
         /// End Using
         /// </code>
-	/// </example>
-	///
+        /// </example>
+        ///
         /// <seealso cref="Ionic.Zip.ZipFile.DefaultEncoding">DefaultEncoding</seealso>
         public System.Text.Encoding ProvisionalAlternateEncoding
         {
@@ -1364,7 +1376,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         ///
         /// <param name="zipFileName">The filename to use for the new zip archive.</param>
         ///
-	    public ZipFile(string zipFileName) 
+        public ZipFile(string zipFileName)
         {
             try
             {
@@ -1413,7 +1425,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// <param name="encoding">The Encoding is used as the default alternate 
         /// encoding for entries with filenames or comments that cannot be encoded 
         /// with the IBM437 code page. </param>
-        public ZipFile(string zipFileName, System.Text.Encoding encoding) 
+        public ZipFile(string zipFileName, System.Text.Encoding encoding)
         {
             try
             {
@@ -1697,7 +1709,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
             _StatusMessageTextWriter = statusMessageWriter;
             _contentsChanged = true;
             CompressionLevel = Ionic.Zlib.CompressionLevel.DEFAULT;
-	    BufferSize = 8192;  // Default
+            BufferSize = 8192;  // Default
             if (System.IO.File.Exists(_name))
             {
                 ReadIntoInstance(this);
@@ -2057,7 +2069,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         {
             string nameInArchive = ZipEntry.NameInArchive(fileName, directoryPathInArchive);
             ZipEntry ze = ZipEntry.Create(fileName, nameInArchive);
-	    ze.BufferSize = BufferSize;
+            ze.BufferSize = BufferSize;
             //ze.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
             ze.ForceNoCompression = ForceNoCompression;
             ze.ExtractExistingFile = ExtractExistingFile;
@@ -2651,7 +2663,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         {
             string n = ZipEntry.NameInArchive(fileName, directoryPathInArchive);
             ZipEntry ze = ZipEntry.Create(fileName, n, true, stream);
-	    ze.BufferSize = BufferSize;
+            ze.BufferSize = BufferSize;
             //ze.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
             ze.ForceNoCompression = ForceNoCompression;
             ze.ExtractExistingFile = ExtractExistingFile;
@@ -2682,7 +2694,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         [Obsolete("Please use method AddFileFromStream()")]
         public ZipEntry AddFileStream(string fileName, string directoryPathInArchive, System.IO.Stream stream)
         {
-            return AddFileStream(fileName, directoryPathInArchive, stream);
+            return AddFileFromStream(fileName, directoryPathInArchive, stream);
         }
 
 
@@ -2961,7 +2973,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         {
             // add the directory itself.
             ZipEntry baseDir = ZipEntry.Create(directoryNameInArchive, directoryNameInArchive);
-	    baseDir.BufferSize = BufferSize;
+            baseDir.BufferSize = BufferSize;
             //baseDir.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
             baseDir.MarkAsDirectory();
             baseDir._zipfile = this;
@@ -3009,7 +3021,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
             if (level > 0 || rootDirectoryPathInArchive != "")
             {
                 baseDir = ZipEntry.Create(directoryName, dirForEntries);
-		baseDir.BufferSize = BufferSize;
+                baseDir.BufferSize = BufferSize;
                 baseDir.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;  // workitem 6410
                 //baseDir.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
                 baseDir.MarkAsDirectory();
@@ -3123,7 +3135,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         {
             try
             {
-                bool _thisSaveUsedZip64 = false;
+                bool thisSaveUsedZip64 = false;
                 _saveOperationCanceled = false;
                 OnSaveStarted();
 
@@ -3139,20 +3151,27 @@ public Ionic.Zlib.CompressionStrategy Strategy
                 if (_entries.Count >= 0xFFFF && _zip64 == Zip64Option.Never)
                     throw new ZipException("The number of entries is 0xFFFF or greater. Consider setting the UseZip64WhenSaving property on the ZipFile instance.");
 
-                // write an entry in the zip for each file
-                int n = 0;
-                foreach (ZipEntry e in _entries)
-                {
-                    OnSaveEntry(n, e, true);
-                    e.Write(WriteStream);
-                    e._zipfile = this;
-                    n++;
-                    OnSaveEntry(n, e, false);
-                    if (_saveOperationCanceled)
-                        break;
 
-                    _thisSaveUsedZip64 |= e.OutputUsedZip64.Value;
+                {
+
+                    // write an entry in the zip for each file
+                    int n = 0;
+                    foreach (ZipEntry e in _entries)
+                    {
+
+                        OnSaveEntry(n, e, true);
+                        e.Write(WriteStream);
+                        e._zipfile = this;
+                        n++;
+                        OnSaveEntry(n, e, false);
+                        if (_saveOperationCanceled)
+                            break;
+
+                        thisSaveUsedZip64 |= e.OutputUsedZip64.Value;
+                    }
+
                 }
+
 
                 if (_saveOperationCanceled)
                     return;
@@ -3164,9 +3183,8 @@ public Ionic.Zlib.CompressionStrategy Strategy
                 _hasBeenSaved = true;
                 _contentsChanged = false;
 
-
-                _thisSaveUsedZip64 |= _NeedZip64CentralDirectory;
-                _OutputUsesZip64 = new Nullable<bool>(_thisSaveUsedZip64);
+                thisSaveUsedZip64 |= _NeedZip64CentralDirectory;
+                _OutputUsesZip64 = new Nullable<bool>(thisSaveUsedZip64);
 
                 // do the rename as necessary
                 if ((_temporaryFileName != null) && (_name != null))
@@ -3174,7 +3192,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
                     // _temporaryFileName may remain null if we are writing to a stream
                     // only close the stream if there is a file behind it. 
                     WriteStream.Close();
-#if !NETCF
+#if !NETCF20
                     WriteStream.Dispose();
 #endif
                     WriteStream = null;
@@ -3234,6 +3252,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         }
 
 
+
         private void RemoveTempFile()
         {
             try
@@ -3245,8 +3264,8 @@ public Ionic.Zlib.CompressionStrategy Strategy
             }
             catch (Exception ex1)
             {
-                StatusMessageTextWriter
-            .WriteLine("ZipFile::Save: could not delete temp file: {0}.", ex1.Message);
+                if (Verbose)
+                    StatusMessageTextWriter.WriteLine("ZipFile::Save: could not delete temp file: {0}.", ex1.Message);
             }
         }
 
@@ -3262,7 +3281,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
                     catch { }
                     try
                     {
-#if !NETCF
+#if !NETCF20
                         _writestream.Dispose();
 #endif
                     }
@@ -3833,13 +3852,13 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// <example>
         /// This example shows how to read a zip file using the Big-5 Chinese code page (950), 
         /// and extract each entry in the zip file.
-	/// For this code to work as desired, the zipfile must have been created using the big5
-	/// code page (CP950). This is typical, for example, when using WinRar on a machine with
-	/// CP950 set as the default code page.  In that case, the names of entries within the Zip
-	/// archive will be stored in that code page, and reading the zip archive must be done
-	/// using that code page.  If the application did not use the correct code page in
-	/// ZipFile.Read(), then names of entries within the zip archive would not be correctly
-	/// retrieved.
+        /// For this code to work as desired, the zipfile must have been created using the big5
+        /// code page (CP950). This is typical, for example, when using WinRar on a machine with
+        /// CP950 set as the default code page.  In that case, the names of entries within the Zip
+        /// archive will be stored in that code page, and reading the zip archive must be done
+        /// using that code page.  If the application did not use the correct code page in
+        /// ZipFile.Read(), then names of entries within the zip archive would not be correctly
+        /// retrieved.
         /// <code lang="C#">
         /// using (ZipFile zip = ZipFile.Read(ZipToExtract,
         ///                                   System.Text.Encoding.GetEncoding(950)))
@@ -4086,12 +4105,12 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// Reads a zip archive from a stream, with a given ReadProgress event handler.
         /// </summary>
         ///
-	/// <remarks>
-	/// When opening large zip archives, you may want to display a progress bar or other
-	/// indicator of status progress while reading.  This Read() method allows you to specify
-	/// a ReadProgress Event Handler directly,
-	/// </remarks>
-	///
+        /// <remarks>
+        /// When opening large zip archives, you may want to display a progress bar or other
+        /// indicator of status progress while reading.  This Read() method allows you to specify
+        /// a ReadProgress Event Handler directly,
+        /// </remarks>
+        ///
         /// <param name="zipStream">the stream containing the zip data.</param>
         ///
         /// <param name="readProgress">
@@ -4342,8 +4361,8 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// </param>
         /// 
         /// <returns>an instance of ZipFile. The name on the ZipFile will be null (nothing in VB)). </returns>
-	///
-	/// <seealso cref="ZipFile.Read(System.IO.Stream)" />
+        ///
+        /// <seealso cref="ZipFile.Read(System.IO.Stream)" />
         public static ZipFile Read(byte[] buffer)
         {
             return Read(buffer, null, DefaultEncoding);
@@ -5519,18 +5538,18 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// by default.  Set the <see cref="CaseSensitiveRetrieval"/> property to use case-sensitive 
         /// comparisons. 
         /// </para>
-	///
+        ///
         /// <para>
         /// This property is read-write. When setting the value, the only legal value is
         /// null. Setting the value to null is equivalent to calling <see
         /// cref="ZipFile.RemoveEntry(String)"/> with the filename.
         /// </para>
-	///
+        ///
         /// <para>
         /// If you assign a non-null value (non Nothing in VB), the setter will throw an
         /// exception.
         /// </para>
-	///
+        ///
         /// <para>
         /// It is not always the case that <c>this[value].FileName == value</c>.  In the case of
         /// directory entries in the archive, you may retrieve them with the name of the directory
@@ -5647,11 +5666,11 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// The list of filenames for the entries contained within the zip archive.  
         /// </summary>
         ///
-	/// <remarks>
-	/// According to the ZIP specification, the names of the entries use forward slashes in pathnames. 
-	/// If you are scanning through the list, you may have to swap forward slashes for backslashes.
-	/// </remarks>
-	///
+        /// <remarks>
+        /// According to the ZIP specification, the names of the entries use forward slashes in pathnames. 
+        /// If you are scanning through the list, you may have to swap forward slashes for backslashes.
+        /// </remarks>
+        ///
         /// <seealso cref="Ionic.Zip.ZipFile.this[string]"/>
         ///
         /// <example>
@@ -5751,7 +5770,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// <example>
         /// In this example, all entries in the zip archive dating from before December 31st, 2007, are
         /// removed from the archive.  This is actually much easier if you use the RemoveSelectedEntries method.
-	/// But I needed an example for RemoveEntry, so here it is. 
+        /// But I needed an example for RemoveEntry, so here it is. 
         /// <code>
         /// String ZipFileToRead = "ArchiveToModify.zip";
         /// System.DateTime Threshold = new System.DateTime(2007,12,31);
@@ -5775,8 +5794,8 @@ public Ionic.Zlib.CompressionStrategy Strategy
         ///   
         ///   zip.Comment= String.Format("This zip archive was updated at {0}.", 
         ///                              System.DateTime.Now.ToString("G"));
-	///
-	///   // save with a different name
+        ///
+        ///   // save with a different name
         ///   zip.Save("Archive-Updated.zip");
         /// }
         /// </code>
@@ -5802,7 +5821,7 @@ public Ionic.Zlib.CompressionStrategy Strategy
         ///           zip.RemoveEntry(zombie)
         ///       Next
         ///       zip.Comment = String.Format("This zip archive was updated at {0}.", DateTime.Now.ToString("G"))
-	///       'save as a different name
+        ///       'save as a different name
         ///       zip.Save("Archive-Updated.zip")
         ///   End Using
         /// </code>
@@ -5932,16 +5951,16 @@ public Ionic.Zlib.CompressionStrategy Strategy
         /// Handles closing of the read and write streams associated
         /// to the ZipFile, if necessary.  
         /// </summary>
-	///
-	/// <remarks>
-	/// The Dispose() method is generally 
+        ///
+        /// <remarks>
+        /// The Dispose() method is generally 
         /// employed implicitly, via a using() {} statement. (Using...End Using in VB)
-	/// Always use a using statement, or always insure that you are calling Dispose() 
-	/// explicitly.
-	/// </remarks>
-	///
+        /// Always use a using statement, or always insure that you are calling Dispose() 
+        /// explicitly.
+        /// </remarks>
+        ///
         /// <example>
-	/// This example extracts an entry selected by name, from the  Zip file to the Console.
+        /// This example extracts an entry selected by name, from the  Zip file to the Console.
         /// <code>
         /// using (ZipFile zip = ZipFile.Read(zipfile))
         /// {
@@ -5952,15 +5971,15 @@ public Ionic.Zlib.CompressionStrategy Strategy
         ///   }
         /// } // Dispose() is called implicitly here.
         /// </code>
-	/// 
+        /// 
         /// <code lang="VB">
         /// Using zip As ZipFile = ZipFile.Read(zipfile)
         ///     Dim e As ZipEntry
         ///     For Each e In zip
-	///       If WantThisEntry(e.FileName) Then
+        ///       If WantThisEntry(e.FileName) Then
         ///           zip.Extract(e.FileName, Console.OpenStandardOutput())
-	///       End If
-	///     Next
+        ///       End If
+        ///     Next
         /// End Using ' Dispose is implicity called here
         /// </code>
         /// </example>
