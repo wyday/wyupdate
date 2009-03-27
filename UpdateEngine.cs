@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.Text;
-using Ionic.Zip;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace wyUpdate.Common
 {
@@ -36,7 +36,7 @@ namespace wyUpdate.Common
 
         //Delta Patching Particulars:
 
-        bool m_DeleteFile;
+        bool m_DeleteFile = false;
         string m_DeltaPatchRelativePath;
 
         long m_NewFileAdler32;
@@ -116,6 +116,12 @@ namespace wyUpdate.Common
                 m_RelativePath = prefix + Path.GetExtension(filename);
         }
 
+        public UpdateFile(string filename, string relativeFilename, bool uselessMember)
+        {
+            m_Filename = filename;
+            m_RelativePath = relativeFilename;
+        }
+
         public UpdateFile(string filename, string relative, bool execute, bool executeBef, bool waitForExecution, string commArgs, bool deleteFile, string oldFile)
         {
             m_Filename = filename;
@@ -130,7 +136,7 @@ namespace wyUpdate.Common
         }
     }
 
-    public enum UpdateOn 
+    enum UpdateOn 
     { 
         DownloadingClientUpdt = 0, SelfUpdating = 1,
         DownloadingUpdate = 2, Extracting = 3, ClosingProcesses = 4, 
@@ -142,7 +148,7 @@ namespace wyUpdate.Common
     {
         public string Version;
         public string Changes;
-        public bool RTFChanges;
+        public bool RTFChanges = false;
         public List<string> FileSites = new List<string>();
         public long FileSize;
         public long Adler32;
@@ -164,27 +170,26 @@ namespace wyUpdate.Common
 
     public enum ClientFileType { PreRC2, RC2, Final }
 
-    public class UpdateEngine
+    class UpdateEngine
     {
         #region Private Variables
         //Client Side Information
         private string productName = "";
         private string companyName = "";
         private string installedVersion = "";
-        List<string> serverFileSites = new List<string>(1);
-        List<string> clientServerSites = new List<string>(1);
+        List<string> serverFileSites = new List<string>();
+        List<string> clientServerSites = new List<string>();
 
         private ImageAlign m_HeaderImageAlign = ImageAlign.Left;
         private string m_HeaderTextColorName = "";
         private int m_HeaderTextIndent = -1;
-        private bool m_HideHeaderDivider;
+        private bool m_HideHeaderDivider = false;
 
-        private Image m_TopImage;
-        private string m_TopImageFilename;
-        private Image m_SideImage;
-        private string m_SideImageFilename;
-
-        public List<LanguageCulture> Languages = new List<LanguageCulture>();
+        private Image m_TopImage = null;
+        private string m_TopImageFilename = null;
+        private Image m_SideImage = null;
+        private string m_SideImageFilename = null;
+        private string m_LanguageFilename = null;
 
         private UpdateOn m_CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
@@ -277,6 +282,12 @@ namespace wyUpdate.Common
         {
             get { return m_SideImageFilename; }
             set { m_SideImageFilename = value; }
+        }
+
+        public string LanguageFilename
+        {
+            get { return m_LanguageFilename; }
+            set { m_LanguageFilename = value; }
         }
 
         public List<string> ClientServerSites
@@ -409,8 +420,6 @@ namespace wyUpdate.Common
         {
             byte[] fileIDBytes = new byte[7];
 
-            ms.Position = 0;
-
             // Read back the file identification data, if any
             ms.Read(fileIDBytes, 0, 7);
             string fileID = Encoding.UTF8.GetString(fileIDBytes);
@@ -447,7 +456,7 @@ namespace wyUpdate.Common
                         {
                             m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadString(ms));
                         }
-                        catch { }
+                        catch (Exception) { }
                         break;
                     case 0x12://Header text indent
                         m_HeaderTextIndent = ReadFiles.ReadInt(ms);
@@ -461,16 +470,8 @@ namespace wyUpdate.Common
                     case 0x15: //side image filename
                         m_SideImageFilename = ReadFiles.ReadString(ms);
                         break;
-                    case 0x18: // language culture
-                        Languages.Add(new LanguageCulture(ReadFiles.ReadString(ms)));
-                        break;
                     case 0x16: //language filename
-
-                        if (Languages.Count > 0)
-                            Languages[Languages.Count - 1].Filename = ReadFiles.ReadString(ms);
-                        else
-                            Languages.Add(new LanguageCulture(null) { Filename = ReadFiles.ReadString(ms) });
-
+                        m_LanguageFilename = ReadFiles.ReadString(ms);
                         break;
                     case 0x17: //hide the header divider
                         m_HideHeaderDivider = ReadFiles.ReadBool(ms);
@@ -496,115 +497,140 @@ namespace wyUpdate.Common
 
                 LoadClientData(fs);
             }
-            finally
+            catch (Exception)
             {
                 if (fs != null)
                     fs.Close();
+
+                throw;
             }
+
+            if (fs != null)
+                fs.Close();
         }
 
 
         public void OpenClientFile(string m_Filename, ClientLanguage lang)
         {
-            using (ZipFile zip = ZipFile.Read(m_Filename))
+            ZipEntry theEntry;
+
+            //load the client file
+            using (ZipInputStream s = new ZipInputStream(File.OpenRead(m_Filename)))
             {
-                // load the client details (image filenames, languages, etc.)
-                using (MemoryStream ms = new MemoryStream())
+                while ((theEntry = s.GetNextEntry()) != null)
                 {
-                    zip.Extract("iuclient.iuc", ms);
-
-                    //read in the client data
-                    LoadClientData(ms);
-                }
-
-                // load the top image
-                if (!string.IsNullOrEmpty(m_TopImageFilename))
-                {
-                    using (MemoryStream ms = new MemoryStream())
+                    if (theEntry.Name.Equals("iuclient.iuc"))
                     {
-                        zip.Extract(m_TopImageFilename, ms);
-
-                        // convert the bytes to an images
-                        m_TopImage = Image.FromStream(ms, true);
-                    }
-                }
-
-                // load the side image
-                if (!string.IsNullOrEmpty(m_SideImageFilename))
-                {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        zip.Extract(m_SideImageFilename, ms);
-
-                        // convert the bytes to an images
-                        m_SideImage = Image.FromStream(ms, true);
-                    }
-                }
-
-                
-                // Backwards compatability with pre-v1.3 of wyUpdate:
-                // if the languages has a culture with a null name, load that file
-                if(Languages.Count == 1 && string.IsNullOrEmpty(Languages[0].Culture))
-                {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        zip.Extract(Languages[0].Filename, ms);
-                        lang.Open(ms);
-                    }
-                }
-                else if (Languages.Count > 0)
-                {
-                    // detect the current culture 
-                    string currentCultureName = CultureInfo.CurrentUICulture.Name;
-
-                    foreach (LanguageCulture l in Languages)
-                    {
-                        // see if the culture is included with the client file
-                        if (l.Culture == currentCultureName)
+                        using (MemoryStream streamWriter = new MemoryStream())
                         {
-                            if(!string.IsNullOrEmpty(l.Filename))
+                            int size;
+                            byte[] data = new byte[2048];
+                            do
                             {
-                                using (MemoryStream ms = new MemoryStream())
-                                {
-                                    zip.Extract(l.Filename, ms);
-                                    lang.Open(ms);
-                                }
-                            }
-                            break;
+                                //read compressed data
+                                size = s.Read(data, 0, data.Length);
+
+                                //write to uncompressed file
+                                streamWriter.Write(data, 0, size);
+                            } while (size > 0);
+
+
+                            streamWriter.Position = 0;
+
+                            //read in the client data
+                            LoadClientData(streamWriter);
+                        }
+
+                        break;
+                    }
+                }
+            }//end using(ZipInputStream ... )
+
+
+            using (ZipInputStream s = new ZipInputStream(File.OpenRead(m_Filename)))
+            {
+                while ((theEntry = s.GetNextEntry()) != null)
+                {
+                    if (!theEntry.Name.Equals("iuclient.iuc"))
+                    {
+                        using (MemoryStream streamWriter = new MemoryStream())
+                        {
+                            int size;
+                            byte[] data = new byte[2048];
+                            do
+                            {
+                                //read compressed data
+                                size = s.Read(data, 0, data.Length);
+
+                                //write to uncompressed file
+                                streamWriter.Write(data, 0, size);
+                            } while (size > 0);
+
+                            //load the decompressed files
+                            if (theEntry.Name.Equals(m_TopImageFilename))
+                                m_TopImage = Image.FromStream(streamWriter, true);
+                            else if (theEntry.Name.Equals(m_SideImageFilename))
+                                m_SideImage = Image.FromStream(streamWriter, true);
+                            else if (theEntry.Name.Equals(m_LanguageFilename) && lang != null)
+                                lang.Open(streamWriter.ToArray());
                         }
                     }
                 }
-            }
+            }//end using(ZipInputStream ... )
         }
 #endif
 
         public void SaveClientFile(List<UpdateFile> files, string outputFilename)
         {
+            byte[] buffer = new byte[4096];
+
+            const int m_CompressionLevel = 7;
+
             try
             {
-                if (File.Exists(outputFilename))
-                    File.Delete(outputFilename);
-
-                ZipEntry entry;
-                using (ZipFile zip = new ZipFile(outputFilename))
+                // 'using' statements gaurantee the stream is closed properly which is a big source
+                // of problems otherwise.  Its exception safe as well which is great.
+                using (ZipOutputStream s = new ZipOutputStream(File.Create(outputFilename)))
                 {
-                    zip.UseUnicodeAsNecessary = true;
+                    //s.UseZip64 = UseZip64.Off;
+                    s.SetLevel(m_CompressionLevel); // 0 (store only) to 9 (best compression)
+                    ZipEntry entry;
+                    int sourceBytes = 0;
 
-                    // 0 (store only) to 9 (best compression)
-                    zip.CompressionLevel = Ionic.Zlib.CompressionLevel.LEVEL7;
-
+                    //filenames.Length+1 instead of just filenames.Length
+                    //because we are adding the UpdateDetails "file"
                     for (int i = 0; i < files.Count; i++)
                     {
-                        entry = zip.AddFile(files[i].Filename, "");
-                        entry.FileName = files[i].RelativePath;
-                        entry.LastModified = File.GetLastWriteTime(files[i].Filename);
+                        entry = new ZipEntry(files[i].RelativePath)
+                                    {
+                                        DateTime = File.GetLastWriteTime(files[i].Filename)
+                                    };
+                        s.PutNextEntry(entry);
+
+                        using (FileStream fs = File.OpenRead(files[i].Filename))
+                        {
+
+                            // Using a fixed size buffer here makes no noticeable difference
+                            // for output but keeps a lid on memory usage.
+                            do
+                            {
+                                sourceBytes = fs.Read(buffer, 0, buffer.Length);
+                                s.Write(buffer, 0, sourceBytes);
+                            } while (sourceBytes > 0);
+                        }
+
+                        if (i == files.Count - 1)
+                        {
+                            //add the client file
+                            entry = new ZipEntry("iuclient.iuc")
+                                        {
+                                            DateTime = DateTime.Now
+                                        };
+                            s.PutNextEntry(entry);
+
+                            SaveClientFile(s);
+                        }
                     }
-
-                    //add the client file
-                    entry = zip.AddFileFromStream("iuclient.iuc", "", SaveClientFile());
-                    entry.LastModified = DateTime.Now;
-
-                    zip.Save();
                 }
             }
             catch (Exception ex)
@@ -614,10 +640,8 @@ namespace wyUpdate.Common
             }
         }
 
-        private Stream SaveClientFile()
+        private void SaveClientFile(Stream ms)
         {
-            MemoryStream ms = new MemoryStream();
-
             // file-identification data
             ms.Write(Encoding.UTF8.GetBytes("IUCDFV2"), 0, 7);
 
@@ -660,25 +684,15 @@ namespace wyUpdate.Common
             if (!string.IsNullOrEmpty(m_SideImageFilename))
                 WriteFiles.WriteString(ms, 0x15, m_SideImageFilename);
 
-            foreach (LanguageCulture lang in Languages)
-            {
-                //Language culture
-                WriteFiles.WriteString(ms, 0x18, lang.Culture);
-                
-                //Language filename
-                if (!string.IsNullOrEmpty(lang.Filename))
-                    WriteFiles.WriteString(ms, 0x16, lang.Filename);
-            }
-
-
+            //Language filename
+            if (!string.IsNullOrEmpty(m_LanguageFilename))
+                WriteFiles.WriteString(ms, 0x16, m_LanguageFilename);
 
             //Hide the header divider
             if (m_HideHeaderDivider)
                 WriteFiles.WriteBool(ms, 0x17, true);
 
             ms.WriteByte(0xFF);
-
-            return ms;
         }
 
         #endregion Client Data
@@ -708,7 +722,7 @@ namespace wyUpdate.Common
             
             MemoryStream ms = new MemoryStream();
 
-            // write all but the last versionChoice (usually the catch-all update)
+            //TODO: write all but the last versionChoice (usually the catch-all update)
 
             for (int i = 0; i < VersionChoices.Count - 1; i++)
             {
@@ -850,12 +864,24 @@ namespace wyUpdate.Common
                 // decompress the "actual" server file to memory
                 fs.Close();
 
-                using (ZipFile zip = ZipFile.Read(fileName))
+                using (ZipInputStream s = new ZipInputStream(File.OpenRead(fileName)))
                 {
+                    s.GetNextEntry();
+
                     fs = new MemoryStream();
 
-                    zip.Extract("0", fs);
-                }
+                    int size;
+                    byte[] data = new byte[2048];
+                    do
+                    {
+                        //read compressed data
+                        size = s.Read(data, 0, data.Length);
+
+                        //write to uncompressed file
+                        fs.Write(data, 0, size);
+                    } while (size > 0);
+
+                } //end using(ZipInputStream ... )
 
 
                 fs.Position = 0;
@@ -952,6 +978,301 @@ namespace wyUpdate.Common
 
         #endregion Server Data
 
+
+
+        private static readonly string[] greek_ltrs = { "alpha", "beta", "gamma", "delta", 
+                "epsilon", "zeta", "eta", "theta", 
+                "iota", "kappa", "lambda", "mu", 
+                "nu", "xi", "omicron", "pi", 
+                "rho", "sigma", "tau", "upsilon", 
+                "phi", "chi", "psi", "omega", 
+                "rc" }; //RC = release candidate
+
+        public static int VersionCompare(string versionA, string versionB)
+        {
+            //compare indices
+            int iVerA = 0, iVerB = 0;
+            int greekIndA, greekIndB;
+
+            int strComp = 0;
+
+            string objA, objB;
+            bool lastAWasLetter = true, lastBWasLetter = true;
+
+            do
+            {
+                //store index before GetNextObject just in case we need to rollback
+                greekIndA = iVerA;
+                greekIndB = iVerB;
+
+                objA = GetNextObject(versionA, ref iVerA, ref lastAWasLetter);
+                objB = GetNextObject(versionB, ref iVerB, ref lastBWasLetter);
+
+
+                //normalize versions so comparing integer against integer, 
+                //(i.e. "1 a" is expanded to "1.0.0 a" when compared with "1.0.0 XXX")
+                //also, rollback the index on the version modified
+                if ((!lastBWasLetter && objB != null) && (objA == null || lastAWasLetter))
+                {
+                    objA = "0";
+                    iVerA = greekIndA;
+                }
+                else if ((!lastAWasLetter && objA != null) && (objB == null || lastBWasLetter))
+                {
+                    objB = "0";
+                    iVerB = greekIndB;
+                }
+
+
+                //find greek index for A and B
+                greekIndA = GetGreekIndex(objA);
+                greekIndB = GetGreekIndex(objB);
+
+
+                if (objA == null && objB == null)
+                    break; //versions are equal
+                else if (objA == null && objB != null)
+                {
+                    //if versionB has a greek letter, then A is greater
+                    if (greekIndB != -1)
+                        return 1;
+                    else
+                        return -1;
+                }
+                else if (objA != null && objB == null)
+                {
+                    //if versionA has a greek letter, then B is greater
+                    if (greekIndA != -1)
+                        return -1;
+                    else
+                        return 1;
+                }
+                else if (char.IsDigit(objA[0]) == char.IsDigit(objB[0]))
+                {
+                    if (char.IsDigit(objA[0]))
+                    {
+                        //compare integers
+                        strComp = IntCompare(objA, objB);
+
+                        if (strComp != 0)
+                            return strComp;
+                    }
+                    else
+                    {
+                        if (greekIndA == -1 && greekIndB == -1)
+                        {
+                            //compare non-greek strings
+                            strComp = string.Compare(objA, objB, true);
+
+                            if (strComp != 0)
+                                return strComp;
+                        }
+                        else if (greekIndA == -1)
+                            return 1; //versionB has a greek letter, thus A is newer
+                        else if (greekIndB == -1)
+                            return -1; //versionA has a greek letter, thus B is newer
+                        else
+                        {
+                            //compare greek letters
+                            if (greekIndA > greekIndB)
+                                return 1;
+                            else if (greekIndB > greekIndA)
+                                return -1;
+                        }
+                    }
+                }
+                else if (char.IsDigit(objA[0]))
+                    return 1; //versionA is newer than versionB
+                else
+                    return -1; //verisonB is newer than versionA
+
+
+            } while (objA != null && objB != null);
+
+
+            return 0;
+        }
+
+
+        public static string GetNextObject(string version, ref int index, ref bool lastWasLetter)
+        {
+            //1 == string, 2 == int
+            int StringOrInt = -1;
+
+            int startIndex = index;
+
+            while (version.Length != index)
+            {
+                if (StringOrInt == -1)
+                {
+                    if (char.IsLetter(version[index]))
+                    {
+                        startIndex = index;
+                        StringOrInt = 1;
+                    }
+                    else if (char.IsDigit(version[index]))
+                    {
+                        startIndex = index;
+                        StringOrInt = 2;
+                    }
+                    else if (lastWasLetter && !char.IsWhiteSpace(version[index]))
+                    {
+                        index++;
+                        lastWasLetter = false;
+                        return "0";
+                    }
+                }
+                else if (StringOrInt == 1 && !char.IsLetter(version[index]))
+                    break;
+                else if (StringOrInt == 2 && !char.IsDigit(version[index]))
+                    break;
+
+                index++;
+            }
+
+            //set the last "type" retrieved
+            lastWasLetter = StringOrInt == 1;
+
+            //return the retitrved sub-string
+            if (StringOrInt == 1 || StringOrInt == 2)
+                return version.Substring(startIndex, index - startIndex);
+            
+            // was neither a string nor and int
+            return null;
+        }
+
+        public static int GetGreekIndex(object version)
+        {
+            if (version != null && version.GetType() == typeof(string))
+            {
+                for (int i = 0; i < greek_ltrs.Length; i++)
+                {
+                    if (string.Compare((string)version, greek_ltrs[i], true) == 0)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+
+        private static int IntCompare(string a, string b)
+        {
+            int lastZero = -1;
+
+            //if ((int)objA > (int)objB)
+            //    return 1;
+            //else if ((int)objB > (int)objA)
+            //    return -1;
+
+            //Clear any preceding zeros
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != '0')
+                    break;
+                else
+                    lastZero = i;
+            }
+
+            if (lastZero != -1)
+                a = a.Substring(lastZero + 1, a.Length - (lastZero + 1));
+
+            lastZero = -1;
+
+            for (int i = 0; i < b.Length; i++)
+            {
+                if (b[i] != '0')
+                    break;
+                else
+                    lastZero = i;
+            }
+
+            if (lastZero != -1)
+                b = b.Substring(lastZero + 1, b.Length - (lastZero + 1));
+
+
+            if (a.Length > b.Length)
+                return 1;
+            else if (a.Length < b.Length)
+                return -1;
+            else
+                return string.Compare(a, b);
+        }
+
+        //e.g. 1.0.2 to 1.0.3
+        public static string VerisonPlusPlus(string version)
+        {
+            int previ, i = 0;
+            object prevObj, obj = null;
+
+            bool junkBool = false;
+
+            do
+            {
+                previ = i;
+                prevObj = obj;
+                obj = GetNextObject(version, ref i, ref junkBool);
+
+            } while (obj != null);
+
+            if (prevObj != null)
+            {
+                if (char.IsDigit(((string)prevObj)[0]))
+                    return version.Substring(0, previ - ((string)prevObj).Length) + NumberPlusOne((string)prevObj);
+                else
+                    return version + " 2";
+            }
+
+            return version;
+        }
+
+        private static string NumberPlusOne(string number)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            int i = number.Length - 1;
+            int tempInt = 1;
+
+
+            //process the number
+            for (; i >= 0; i--)
+            {
+                tempInt += number[i] - '0';
+
+                if (tempInt == 10)
+                {
+                    sb.Insert(0, '0');
+                    tempInt = 1;
+                }
+                else
+                {
+                    sb.Insert(0, (char)(tempInt + '0'));
+                    tempInt = 0;
+                    break;
+                }
+            }
+
+            if (tempInt != 0)
+                //e.g. 99 + 1
+                sb.Insert(0, '1');
+            else if (i > 0)
+                //insert the higher digits that didn't need process
+                //e.g. 573 + 1 = 574, the leading '57' is copied over
+                sb.Insert(0, number.Substring(0, i));
+
+            return sb.ToString();
+        }
+
+        public static bool UpdateNeccessary(string oldVersion, string newVersion)
+        {
+            return VersionCompare(oldVersion, newVersion) == -1;
+        }
+
+        public static string GetFullVersion(string filename)
+        {
+            return FileVersionInfo.GetVersionInfo(filename).FileVersion;
+        }
 
         public void AddUniqueSite(string newSite, List<string> sites)
         {

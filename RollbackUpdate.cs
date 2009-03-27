@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using Ionic.Zip;
 using wyUpdate.Common;
+using System.IO;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace wyUpdate
 {
@@ -471,20 +471,41 @@ namespace wyUpdate
 
         public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
-            using (ZipFile zip = ZipFile.Read(clientFile))
-            {
-                try
-                {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        //read in the uninstall data
-                        zip.Extract("uninstall.dat", ms);
+            ZipEntry theEntry;
 
-                        LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry);
+            //open the client file, and decompress the "uninstall information" file
+            using (ZipInputStream s = new ZipInputStream(File.OpenRead(clientFile)))
+            {
+                while ((theEntry = s.GetNextEntry()) != null)
+                {
+                    if (theEntry.Name.Equals("uninstall.dat"))
+                    {
+                        using (MemoryStream streamWriter = new MemoryStream())
+                        {
+                            int size;
+                            byte[] data = new byte[2048];
+                            do
+                            {
+                                //read compressed data
+                                size = s.Read(data, 0, data.Length);
+
+                                //write to uncompressed file
+                                streamWriter.Write(data, 0, size);
+                            } while (size > 0);
+
+                            //readin the uninstall data
+                            try
+                            {
+                                LoadUninstallData(streamWriter.ToArray(), uninstallFiles, uninstallFolders, uninstallRegistry);
+                            }
+                            catch (Exception) { }
+                            
+                        }
+
+                        break;
                     }
                 }
-                catch { }
-            }
+            }//end using(ZipInputStream ... )
         }
 
         private static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
@@ -541,11 +562,11 @@ namespace wyUpdate
             fs.Close();
         }
 
-        private static void LoadUninstallData(MemoryStream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        private static void LoadUninstallData(byte[] fileData, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
-            byte[] fileIDBytes = new byte[7];
+            MemoryStream ms = new MemoryStream(fileData);
 
-            ms.Position = 0;
+            byte[] fileIDBytes = new byte[7];
 
             // Read back the file identification data, if any
             ms.Read(fileIDBytes, 0, 7);

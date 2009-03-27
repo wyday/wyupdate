@@ -1,15 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Runtime.InteropServices; //launching elevated client
 using System.Text;
-using System.Threading;
 using System.Windows.Forms;
+
+using System.Threading;
+using System.IO;
+using System.Net;
 using wyUpdate.Common;
 using wyUpdate.Downloader;
+using System.Diagnostics;
+using System.Runtime.InteropServices; //launching elevated client
 
 namespace wyUpdate
 {
@@ -17,9 +19,7 @@ namespace wyUpdate
     {
         #region Private variables
 
-        public bool IsAdmin;
-
-        public readonly UpdateEngine update = new UpdateEngine();
+        UpdateEngine update = new UpdateEngine();
         VersionChoice updateFrom;
 
         UpdateDetails updtDetails;
@@ -29,14 +29,14 @@ namespace wyUpdate
 
         readonly ClientLanguage clientLang = new ClientLanguage();
 
-        int frameOn;
-        bool isCancelled;
+        int frameOn = 0;
+        bool isCancelled = false;
 
-        string error;
+        string error = "";
 
         //The full filename of the update & servers files 
-        string updateFilename;
-        string serverFileLoc;
+        string updateFilename = "";
+        string serverFileLoc = "";
 
         //client file location
         string clientFileLoc;
@@ -48,19 +48,16 @@ namespace wyUpdate
 
         readonly PanelDisplay panelDisplaying = new PanelDisplay(500, 320);
 
-        // should the client download the server file to check for updates
-        bool checkForUpdate;
-
         //does the client need elevation?
-        bool needElevation;
-        bool willSelfUpdate;
+        bool needElevation = false;
+        bool willSelfUpdate = false;
 
         //--Uninstalling
-        bool uninstalling;
+        bool uninstalling = false;
 
         //--Silent updating/uninstalling
-        bool isSilent;
-        int returnCode;
+        bool isSilent = false;
+        int returnCode = 0;
         public int ReturnCode
         {
             get { return returnCode; }
@@ -70,23 +67,24 @@ namespace wyUpdate
         // Wait Mode (aka API mode)
         UpdateHelper updateHelper;
         System.Windows.Forms.Timer sendGotPreInstallInfo;
-        bool isWaitMode;
-        bool dontDestroyTempFolder; //custom temp directory to store downloaded updates
+        bool isWaitMode = false;
+        bool dontDestroyTempFolder = false; //custom temp directory to store downloaded updates
 
         //-- Self update
-        public bool SelfUpdating;
-        string selfUpdateFileLoc;
-        string oldClientLocation;
+        bool selfUpdating = false;
+        string selfUpdateFileLoc = null;
+        string oldClientLocation = null;
         string clientSFLoc;
 
         //used after a self update or elevation
-        bool continuingUpdate; 
+        bool continuingUpdate = false; 
 
         //Pre-RC2 compatability:
         ClientFileType clientFileType;
 
-        bool selfUpdateFromRC1;
+        bool selfUpdateFromRC1 = false;
         string newClientLocation; //self update from RC1
+
 
         #region Threads
         delegate void ShowProgressDelegate(int percentDone, bool statusDone, string extraStatus, Exception ex);
@@ -100,8 +98,6 @@ namespace wyUpdate
         {
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;
-
-            IsAdmin = Environment.OSVersion.Version.Major >= 5 ? VistaTools.IsUserAnAdmin() : true;
 
             InitializeComponent();
 
@@ -125,7 +121,7 @@ namespace wyUpdate
 
             try
             {
-                // load the self update information
+                //load the self update information
                 if (!string.IsNullOrEmpty(selfUpdateFileLoc))
                 {
                     LoadSelfUpdateData(selfUpdateFileLoc);
@@ -134,7 +130,7 @@ namespace wyUpdate
                     if (selfUpdateFromRC1)
                     {
                         //install the new client, and relaunch it to continue the update
-                        if (needElevation && NeedElevationToUpdate())
+                        if (needElevation && !IsElevated())
                         {
                             //the user "elevated" as a non-admin user
                             //warn the user of their idiocy
@@ -194,13 +190,13 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(update.HeaderTextColorName))
                     panelDisplaying.HeaderTextColor = Color.FromName(update.HeaderTextColorName);
             }
-            catch { }
+            catch (Exception) { }
 
             //load the Side/Top images
             panelDisplaying.TopImage = update.TopImage;
             panelDisplaying.SideImage = update.SideImage;
 
-            if (SelfUpdating)
+            if (selfUpdating)
             {
                 try
                 {
@@ -215,7 +211,7 @@ namespace wyUpdate
                     return;
                 }
 
-                if (needElevation && NeedElevationToUpdate())
+                if (needElevation && !IsElevated())
                 {
                     //the user "elevated" as a non-admin user
                     //warn the user of their idiocy
@@ -245,7 +241,7 @@ namespace wyUpdate
                     return;
                 }
 
-                if (needElevation && NeedElevationToUpdate())
+                if (needElevation && !IsElevated())
                 {
                     //the user "elevated" as a non-admin user
                     //warn the user of their idiocy
@@ -261,8 +257,15 @@ namespace wyUpdate
                     ShowFrame(3);
                 }
             }
-            else if (!uninstalling)
-                checkForUpdate = true;
+            else if (uninstalling)
+            {
+                //do nothing here
+            }
+            else //no self update nor elevation, just run normally
+            {
+                //begin check for updates
+                ShowFrame(1);
+            }
         }
 
         protected override void OnLoad(EventArgs e)
@@ -278,9 +281,6 @@ namespace wyUpdate
                 //Relaunch self
                 StartSelfElevated();
             }
-            else if (checkForUpdate)
-                // begin check for updates
-                ShowFrame(1);
 
             base.OnLoad(e);
         }
@@ -356,18 +356,18 @@ namespace wyUpdate
                     uninstalling = true;
 
                 /*
+                //TODO: implement silent API (NOT WORKING YET -- DON'T USE)
                 if (commands["wait"] != null)
                 {
-                    updateHelper = new UpdateHelper(Handle);
-                    updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
-                    updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+                    updateHelper = new UpdateHelper(this.Handle);
+                    updateHelper.SenderProcessClosed += new EventHandler(UpdateHelper_SenderProcessClosed);
+                    updateHelper.RequestReceived += new RequestHandler(UpdateHelper_RequestReceived);
 
-                    sendGotPreInstallInfo = new System.Windows.Forms.Timer
-                                                {
-                                                    Enabled = false, Interval = 1
-                                                };
+                    sendGotPreInstallInfo = new System.Windows.Forms.Timer();
 
-                    sendGotPreInstallInfo.Tick += sendGotPreInstallInfo_Tick;
+                    sendGotPreInstallInfo.Enabled = false;
+                    sendGotPreInstallInfo.Interval = 1;
+                    sendGotPreInstallInfo.Tick += new EventHandler(sendGotPreInstallInfo_Tick);
 
                     isWaitMode = true;
 
@@ -375,7 +375,6 @@ namespace wyUpdate
                         dontDestroyTempFolder = true;
                 }
                 */
-                
 
                 //only allow silent uninstalls 
                 //TODO: allow silent checking and updating
@@ -393,7 +392,7 @@ namespace wyUpdate
         {
             //only warn if after the welcome page
             //and not self updating/elevating
-            if (needElevation || willSelfUpdate || SelfUpdating || isSilent ||
+            if (needElevation || willSelfUpdate || selfUpdating || isSilent ||
                 isCancelled || panelDisplaying.TypeofFrame == FrameType.WelcomeFinish)
             {
                 //close the form
@@ -414,7 +413,7 @@ namespace wyUpdate
         protected override void OnClosed(EventArgs e)
         {
             //if not self updating, then delete temp files.
-            if (!(needElevation || willSelfUpdate || SelfUpdating || dontDestroyTempFolder))
+            if (!(needElevation || willSelfUpdate || selfUpdating || dontDestroyTempFolder))
             {
                 //if the temp directory exists, remove it
                 if (Directory.Exists(tempDirectory))
@@ -539,15 +538,8 @@ namespace wyUpdate
                 {
                     clientSFLoc = downloader.DownloadingTo;
 
-                    try
-                    {
-                        // client server file downloaded sucessfully
-                        DownloadClientSFSuccess();
-                    }
-                    catch (Exception e)
-                    {
-                        ex = e;
-                    }
+                    //client server file downloaded sucessfully
+                    DownloadClientSFSuccess();
                 }
                 else
                 {
@@ -571,12 +563,10 @@ namespace wyUpdate
                     }
                 }
             }
-            
-            
-            if (ex != null)
+            else if (ex != null)
             {
-                // if a new client is *required* to install the update...
-                if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), update.MinClientVersion) == -1)
+                //if a new client is *required* to install the update...
+                if (UpdateEngine.UpdateNeccessary(UpdateEngine.GetFullVersion(System.Reflection.Assembly.GetExecutingAssembly().Location), update.MinClientVersion))
                 {
                     //show an error and bail out
                     error = clientLang.SelfUpdateInstallError + "\n\n" + ex.Message;
@@ -731,7 +721,7 @@ namespace wyUpdate
             LoadClientServerFile(clientSF);
 
             //check if the client is new enough.
-            willSelfUpdate = VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1;
+            willSelfUpdate = UpdateEngine.UpdateNeccessary(UpdateEngine.GetFullVersion(System.Reflection.Assembly.GetExecutingAssembly().Location), clientSF.NewVersion);
 
             //Show update info page
             ShowFrame(2);
@@ -745,13 +735,13 @@ namespace wyUpdate
                 update.LoadServerDatav2(clientSFLoc);
 
                 //get the current version of the Client
-                string currentClientVersion = VersionTools.FromExecutingAssembly();
+                string currentClientVersion = UpdateEngine.GetFullVersion(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
                 foreach (VersionChoice vChoice in update.VersionChoices)
                 {
                     // select the correct delta-patch version choice
                     // using fuzzy equality (i.e. 1.1 == 1.1.0.0)
-                    if (VersionTools.Compare(vChoice.Version, currentClientVersion) == 0)
+                    if (UpdateEngine.VersionCompare(vChoice.Version, currentClientVersion) == 0)
                     {
                         updateFrom = vChoice;
                         break;
@@ -774,8 +764,7 @@ namespace wyUpdate
 
             clientLang.NewVersion = update.NewVersion;
 
-            // if no update is needed...
-            if (VersionTools.Compare(update.InstalledVersion, update.NewVersion) > -1)
+            if (!UpdateEngine.UpdateNeccessary(update.InstalledVersion, update.NewVersion))
             {
                 if (isWaitMode)
                 {
@@ -788,10 +777,12 @@ namespace wyUpdate
 
                     return;
                 }
-
-                // Show "All Finished" page
-                ShowFrame(5);
-                return;
+                else
+                {
+                    // Show "All Finished" page
+                    ShowFrame(5);
+                    return;
+                }
             }
 
             int i;
@@ -799,7 +790,7 @@ namespace wyUpdate
             for (i = 0; i < update.VersionChoices.Count; i++)
             {
                 // select the correct delta-patch version choice
-                if (VersionTools.Compare(update.VersionChoices[i].Version, update.InstalledVersion) == 0)
+                if (UpdateEngine.VersionCompare(update.VersionChoices[i].Version, update.InstalledVersion) == 0)
                 {
                     updateFrom = update.VersionChoices[i];
                     break;
@@ -879,7 +870,7 @@ namespace wyUpdate
                         clientLang.UpdateBottom);
 
                     //check if elevation is needed
-                    needElevation = NeedElevationToUpdate();
+                    needElevation = !IsElevated();
 
                     btnNext.Enabled = true;
                     btnNext.Text = clientLang.UpdateButton;
@@ -896,7 +887,7 @@ namespace wyUpdate
                         clientLang.DownInstall.Content,
                         "");
 
-                    if (SelfUpdating)
+                    if (selfUpdating)
                     {
                         //show status for downloading self
                         SetStepStatus(0, clientLang.DownloadingSelfUpdate);
@@ -909,7 +900,7 @@ namespace wyUpdate
 
                     btnNext.Enabled = false;
 
-                    if (SelfUpdating)
+                    if (selfUpdating)
                     {
                         //download self update
                         update.CurrentlyUpdating = UpdateOn.DownloadingClientUpdt;
@@ -1255,12 +1246,12 @@ namespace wyUpdate
                     break;
                 case UpdateStep.Install:
 
-                    TopMost = true;
+                    this.TopMost = true;
 
                     update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
                     InstallUpdates(update.CurrentlyUpdating);
 
-                    TopMost = false;
+                    this.TopMost = false;
 
                     break;
             }
@@ -1328,11 +1319,10 @@ namespace wyUpdate
 
                         //Bail out quickly. Don't hang around for servers to lazily respond.
                         isCancelled = true;
-                        Close();
+                        this.Close();
                         return;
                     }
-                    
-                    if (frameOn == 3 && !IsDownloading())
+                    else if (frameOn == 3 && !IsDownloading())
                         installUpdate.Cancel(); //cancel updates
 
                     //disable the 'X' button & cancel button
@@ -1350,8 +1340,12 @@ namespace wyUpdate
         private bool IsDownloading()
         {
             //if downloading in anything, return true
-            return frameOn == 1 || frameOn == 3 && downloader != null && 
-                (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.DownloadingClientUpdt);
+            if (frameOn == 1 || frameOn == 3 && downloader != null && 
+                (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate 
+                    || update.CurrentlyUpdating == UpdateOn.DownloadingClientUpdt))
+                return true;
+            else
+                return false;
         }
 
 
@@ -1439,12 +1433,13 @@ namespace wyUpdate
         private void LoadSelfUpdateData(string fileName)
         {
             byte[] fileIDBytes = new byte[7];
+            string fileID = "";
 
             FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
 
             // Read back the file identification data, if any
             fs.Read(fileIDBytes, 0, 7);
-            string fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
+            fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
             if (fileID != "IUSUFV2")
             {
                 //handle self update from RC1 client
@@ -1494,7 +1489,7 @@ namespace wyUpdate
                     case 0x07: //true=Self Update, false=Continue update
                        
                         if (ReadFiles.ReadBool(fs))
-                            SelfUpdating = true;
+                            selfUpdating = true;
                         else
                             continuingUpdate = true;
 
@@ -1546,7 +1541,7 @@ namespace wyUpdate
                         newClientLocation = ReadFiles.ReadString(fs);
                         break;
                     case 0x07:
-                        SelfUpdating = ReadFiles.ReadBool(fs);
+                        selfUpdating = ReadFiles.ReadBool(fs);
                         break;
                     case 0x08:
                         needElevation = ReadFiles.ReadBool(fs);
@@ -1568,11 +1563,9 @@ namespace wyUpdate
 
         private void StartSelfElevated()
         {
-            ProcessStartInfo psi = new ProcessStartInfo
-                                       {
-                                           ErrorDialog = true, 
-                                           ErrorDialogParentHandle = Handle
-                                       };
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.ErrorDialog = true;
+            psi.ErrorDialogParentHandle = this.Handle;
 
             if (willSelfUpdate)
             {
@@ -1583,7 +1576,7 @@ namespace wyUpdate
                 //copy self to the temp folder
                 File.Copy(System.Reflection.Assembly.GetExecutingAssembly().Location, psi.FileName, true);
             }
-            else if (SelfUpdating)
+            else if (selfUpdating)
             {
                 //launch the newly updated self
                 psi.FileName = oldClientLocation;
@@ -1601,8 +1594,8 @@ namespace wyUpdate
 
                 psi.Arguments = "-supdf:\"" + Path.Combine(tempDirectory, "selfUpdate.sup") + "\"";
 
-                Process.Start(psi);
-                Close();
+                Process p = Process.Start(psi);
+                this.Close();
             }
             catch (Exception ex)
             {
@@ -1615,25 +1608,49 @@ namespace wyUpdate
             }
         }
 
-        private bool NeedElevationToUpdate()
+        private bool IsElevated()
         {
             //no elevation necessary if it's not overwriting important files
-            if (IsAdmin || (updateFrom.InstallingTo == 0 && updateFrom.RegChanges.Count == 0))
-                return false;
+            if (updateFrom.InstallingTo == 0 && updateFrom.RegChanges.Count == 0)
+                return true;
 
             try
             {
-                // if only updating local user files, no elevation is needed
-                if (OnlyUpdatingLocalUser())
-                    return false;
+                //Windows Vista
+                if (VistaTools.IsVista())
+                {
 
-                // UAC Shield on next button for Windows Vista+
-                if (VistaTools.AtLeastVista())
+                    if (VistaTools.IsElevated() ||
+                        VistaTools.GetElevationType() == TOKEN_ELEVATION_TYPE.TokenElevationTypeFull)
+                        return true;
+
+                    // not already elevated,
+
+                    // if only updating local user files, no elevation is needed
+                    if (OnlyUpdatingLocalUser())
+                        return true;
+
+
+                    //set Vista UAC Shield on next button
                     VistaTools.SetButtonShield(btnNext, true);
-            }
-            catch { }
+                    return false;
+                }
 
-            return true;
+                //Win 2000, XP, 2003
+                if (Environment.OSVersion.Version.Major == 5)
+                {
+                    // see if we can write files & registry
+                    return CanManipFiles() && CanManipReg();
+                }
+
+                //windows 98, no elevation needed
+                return true;
+            }
+            catch (Exception)
+            {
+                // assume error was due to limited access
+                return false;
+            }
         }
 
         private bool OnlyUpdatingLocalUser()
@@ -1662,11 +1679,120 @@ namespace wyUpdate
                 return false;
 
             //when self-updating, if this client is'nt in the userprofile folder
-            if ((willSelfUpdate || SelfUpdating) && !IsFileInDirectory(userProfileFolder, System.Reflection.Assembly.GetExecutingAssembly().Location))
+            if ((willSelfUpdate || selfUpdating) && !IsFileInDirectory(userProfileFolder, System.Reflection.Assembly.GetExecutingAssembly().Location))
                 return false;
 
             //it's not changing anything outside the user profile folder
             return true;
+        }
+
+
+        private bool CanManipReg()
+        {
+            //test the reg operations
+            List<RegChange> rollback = new List<RegChange>();
+
+            try
+            {
+                foreach (RegChange reg in updateFrom.RegChanges)
+                {
+                    reg.ExecuteOperation(rollback);
+
+                    //rollback the operation
+                    foreach (RegChange regBack in rollback)
+                    {
+                        regBack.ExecuteOperation();
+                    }
+
+                    rollback.Clear();
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CanManipFiles()
+        {
+            //test basic file & folder creation
+            Random random = new Random();
+
+            List<string> directories = new List<string>(2);
+
+            //Check baseDirectory (where the app is installed)
+            if ((updateFrom.InstallingTo & InstallingTo.BaseDir) != 0)
+                directories.Add(baseDirectory);
+
+            //Check check dir of client config file (*.iucz)
+            if (!IsFileInDirectories(directories, clientFileLoc))
+                directories.Add(Path.GetDirectoryName(clientFileLoc));
+
+            //Check client app directory (where THIS is) only if the file needs to be updated
+            if ((willSelfUpdate || selfUpdating) && !IsFileInDirectories(directories, System.Reflection.Assembly.GetExecutingAssembly().Location))
+            {
+                directories.Add(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            }
+
+            //If installing to Win\System32 (or one of the common folder), check permissions
+            if (updateFrom.InstallingTo != 0 && (updateFrom.InstallingTo & InstallingTo.BaseDir) == 0)
+                directories.Add(Environment.GetFolderPath(Environment.SpecialFolder.System));
+
+            FileStream fs = null;
+
+            string filename = "";
+            string directory = "";
+
+            foreach (string dir in directories)
+            {
+                fs = null;
+
+                try
+                {
+                    //make sure the new dir doesn't already exists
+                    do
+                    {
+                        directory = Path.Combine(dir, random.Next().ToString());
+                    } while (Directory.Exists(directory));
+
+                    Directory.CreateDirectory(directory);
+
+                    //generate a new filename
+                    filename = Path.Combine(directory, random.Next().ToString());
+
+                    //create a small file
+                    fs = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite);
+                    fs.WriteByte(0x01);
+                    fs.Close();
+
+                    //now delete the file and directory
+                    File.Delete(filename);
+                    Directory.Delete(directory, true);
+                }
+                catch (Exception)
+                {
+                    if (fs != null)
+                        fs.Close();
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
+        private static bool IsFileInDirectories(List<string> dirs, string file)
+        {
+            foreach (string dir in dirs)
+            {
+                if (IsFileInDirectory(dir, file))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsFileInDirectory(string dir, string file)

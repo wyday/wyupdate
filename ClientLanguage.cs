@@ -36,24 +36,16 @@ namespace wyUpdate
         }
     }
 
-    public class LanguageCulture
-    {
-        public string Culture;
-        public string Filename;
-
-        public LanguageCulture (string culture)
-        {
-            Culture = culture;
-        }
-    }
-
     public class ClientLanguage
     {
         //Return parsed strings?
         private bool m_ReturnParsedStrings = true;
 
         //Language Name
-        private string m_EnglishName, m_Name = "English", m_Culture = "en-US";
+        private string m_EnglishName, m_Name = "English";
+
+        //Version of the client that the language was made for
+        private string m_ClientVersion;
 
         //Buttons
         private string m_NextButton = "Next", 
@@ -153,10 +145,11 @@ namespace wyUpdate
             set { m_Name = value; }
         }
 
-        public string Culture
+        //Version of Client that the lang was created for
+        public string ClientVersion
         {
-            get { return m_Culture; }
-            set { m_Culture = value; }
+            get { return m_ClientVersion; }
+            set { m_ClientVersion = value; }
         }
 
         //Buttons
@@ -642,7 +635,7 @@ namespace wyUpdate
         public void ResetLanguage()
         {
             m_Name = m_EnglishName = m_NextButton = m_UpdateButton = m_FinishButton = m_CancelButton 
-                = m_ClosePrc = m_CloseAllPrc = m_CancelUpdate  = m_Culture = null;
+                = m_ClosePrc = m_CloseAllPrc = m_CancelUpdate = null;
 
             m_ProcessDialog.Clear();
             m_CancelDialog.Clear();
@@ -801,14 +794,14 @@ namespace wyUpdate
             }
         }
 
-        public void Open(MemoryStream ms)
+        public void Open(byte[] fileData)
         {
             XmlTextReader reader = null;
-
-            ms.Position = 0;
-
+            MemoryStream ms = null;
             try
             {
+                ms = new MemoryStream(fileData);
+
                 reader = new XmlTextReader(ms);
 
                 ReadLanguageFile(reader);
@@ -817,6 +810,9 @@ namespace wyUpdate
             {
                 if (reader != null)
                     reader.Close();
+
+                if (ms != null)
+                    ms.Close();
             }
         }
 
@@ -824,14 +820,14 @@ namespace wyUpdate
         {
             while (reader.Read())
             {
-                if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
+                if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Lang"))
                         m_Name = reader.ReadString();
                     else if (reader.LocalName.Equals("LangEn"))
                         m_EnglishName = reader.ReadString();
-                    else if (reader.LocalName.Equals("Culture"))
-                        m_Culture = reader.ReadString();
+                    else if (reader.LocalName.Equals("ClientVersion"))
+                        m_ClientVersion = reader.ReadString();
                     else if (reader.LocalName.Equals("Buttons"))
                         ReadButtons(reader);
                     else if (reader.LocalName.Equals("Screens"))
@@ -886,7 +882,7 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.EndElement && reader.LocalName.Equals("Screens"))
                     return;
 
-                if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
+                if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Checking"))
                         ReadScreenDialog(reader, m_Checking);
@@ -1068,8 +1064,8 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(m_Name))
                     writer.WriteElementString("Lang", m_Name);
 
-                if (!string.IsNullOrEmpty(m_Culture))
-                    writer.WriteElementString("Culture", m_Culture);
+                if (!string.IsNullOrEmpty(m_ClientVersion))
+                    writer.WriteElementString("ClientVersion", m_ClientVersion);
 
                 writer.WriteStartElement("Buttons"); //<Buttons>
                 {

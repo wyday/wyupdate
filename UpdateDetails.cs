@@ -180,10 +180,8 @@ namespace wyUpdate.Common
             fs.Close();
         }
 
-        public Stream Save()
+        public void Save(Stream ms)
         {
-            MemoryStream ms = new MemoryStream();
-
             // Write any file-identification data you want to here
             ms.Write(Encoding.UTF8.GetBytes("IUUDFV2"), 0, 7);
 
@@ -265,8 +263,6 @@ namespace wyUpdate.Common
 
             //end of file
             ms.WriteByte(0xFF);
-
-            return ms;
         }
     }
 }

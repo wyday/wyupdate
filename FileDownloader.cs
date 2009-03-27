@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Collections.Generic;
+using System.Windows.Forms;
+using System.Diagnostics;
+using ICSharpCode.SharpZipLib.Checksums;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Windows.Forms;
-using Ionic.Zlib;
 using wyUpdate.Common;
 
 namespace wyUpdate.Downloader
@@ -20,7 +20,7 @@ namespace wyUpdate.Downloader
         private const int BufferSize = 4096;
 
         // Determines whether the user has canceled or not.
-        private volatile bool canceled;
+        private volatile bool canceled = false;
 
         private string downloadingTo;
 
@@ -37,26 +37,24 @@ namespace wyUpdate.Downloader
 
         //used to measure download speed
         private readonly Stopwatch sw = new Stopwatch();
-        private long sentSinceLastCalc;
+        private long sentSinceLastCalc = 0;
         private string downloadSpeed = "";
 
         // Usually a form or a winform control that implements "Invoke/BeginInvode"
-        ContainerControl m_sender;
+        ContainerControl m_sender = null;
         // The delegate method (callback) on the sender to call
-        Delegate m_senderDelegate;
+        Delegate m_senderDelegate = null;
 
         //download site and destination
         string url;
         List<string> urlList = new List<string>();
         string destFolder = "";
 
-        bool waitingForResponse;
+        bool waitingForResponse = false;
 
         public long Adler32;
 
-        private long downloadedAdler32 = 1;
-
-        public bool UseRelativeProgress;
+        public bool UseRelativeProgress = false;
 
         public FileDownloader(List<string> urls, string downloadfolder, ContainerControl sender, Delegate senderDelegate)
         {
@@ -210,10 +208,6 @@ namespace wyUpdate.Downloader
                 }
                 else
                 {
-                    // read in the existing data to calculate the adler32
-                    if (Adler32 != 0)
-                        GetAdler32(downloadingTo);
-
                     // apend to an existing file (resume)
                     fs = File.Open(downloadingTo, FileMode.Append, FileAccess.Write);
                 }
@@ -239,12 +233,8 @@ namespace wyUpdate.Downloader
                     // update total bytes read
                     data.StartPoint += readCount;
 
-                    // update the adler32 value
-                    if (Adler32 != 0)
-                        downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, readCount);
-
                     // save block to end of file
-                    fs.Write(buffer, 0, readCount);
+                    SaveToFile(fs, buffer, readCount, downloadingTo);
 
                     //calculate download speed
                     calculateBps(data.StartPoint);
@@ -254,8 +244,8 @@ namespace wyUpdate.Downloader
                     {
                         ThreadHelper.ReportProgress(m_sender, m_senderDelegate, downloadSpeed,
                             //use the realtive progress or the raw progress
-                            UseRelativeProgress ?
-                                InstallUpdate.GetRelativeProgess(0, data.PercentDone) :
+                            UseRelativeProgress ? 
+                                InstallUpdate.GetRelativeProgess(0, data.PercentDone) : 
                                 data.PercentDone);
                     }
 
@@ -273,16 +263,25 @@ namespace wyUpdate.Downloader
                 throw new Exception(
                     String.Format("Could not parse the URL \"{0}\" - it's either malformed or is an unknown protocol.", url), e);
             }
-            catch (Exception e)
-            {
-                throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", downloadingTo, e.Message), e);
-            }
             finally
             {
                 if (data != null)
                     data.Close();
                 if (fs != null)
                     fs.Close();
+            }
+        }
+
+        private static void SaveToFile(FileStream fs, byte[] buffer, int count, string fileName)
+        {
+            try
+            {
+                fs.Write(buffer, 0, count);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(
+                    String.Format("Error trying to save file \"{0}\": {1}", fileName, e.Message), e);
             }
         }
 
@@ -327,34 +326,42 @@ namespace wyUpdate.Downloader
 
         private void ValidateDownload()
         {
+            if (!canceled && Adler32 != 0)
+                ThreadHelper.ReportProgress(m_sender, m_senderDelegate, "Validating download...", -1);
+
             //if an Adler32 checksum is provided, check the file
-            if (!canceled && Adler32 != 0 && Adler32 != downloadedAdler32)
+            if (!canceled && Adler32 != 0 && Adler32 != GetAdler32(downloadingTo))
             {
-                // file failed to vaildate, throw an error
+                //file failed to vaildate, throw an error
                 throw new Exception("The downloaded file failed the Adler32 validation.");
             }
         }
 
-        private void GetAdler32(string fileName)
+        private long GetAdler32(string fileName)
         {
+            Adler32 adler = new Adler32();
+
+            int sourceBytes;
+            adler.Reset();
+
+            FileStream fs = new FileStream(fileName, FileMode.Open);
             byte[] buffer = new byte[BufferSize];
 
-            using (FileStream fs = new FileStream(fileName, FileMode.Open))
+            do
             {
-                int sourceBytes;
+                sourceBytes = fs.Read(buffer, 0, buffer.Length);
 
-                do
-                {
-                    sourceBytes = fs.Read(buffer, 0, buffer.Length);
+                adler.Update(buffer, 0, sourceBytes);
 
-                    downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, sourceBytes);
+                // break on cancel
+                if (canceled)
+                    break;
 
-                    // break on cancel
-                    if (canceled)
-                        break;
+            } while (sourceBytes > 0);
 
-                } while (sourceBytes > 0);
-            }
+            fs.Close();
+
+            return adler.Value;
         }
     }
 
