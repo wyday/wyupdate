@@ -1,0 +1,224 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{112E58AE-A26F-4787-9A8D-9CA461C7749E}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>wyUpdate</RootNamespace>
+    <AssemblyName>wyUpdate</AssemblyName>
+    <StartupObject>wyUpdate.Program</StartupObject>
+    <ApplicationIcon>client.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <NoStdLib>False</NoStdLib>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <BaseAddress>4194304</BaseAddress>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <FileAlignment>4096</FileAlignment>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CLIENT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;CLIENT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Checksums\Adler32.cs" />
+    <Compile Include="Checksums\CRC32.cs" />
+    <Compile Include="Checksums\IChecksum.cs" />
+    <Compile Include="ClientLanguage.cs" />
+    <Compile Include="Controls\AnimationControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\LinkLabel2.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RichTextBoxEx.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="FileDownloader.cs" />
+    <Compile Include="frmProcesses.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmProcesses.Designer.cs">
+      <DependentUpon>frmProcesses.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain.Designer.cs">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PanelDisplay.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="frmMain.resx">
+      <DependentUpon>frmMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmProcesses.resx">
+      <DependentUpon>frmProcesses.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="ReadWriteFiles.Client.cs" />
+    <Compile Include="ReadWriteFiles.cs" />
+    <Compile Include="RegChange.cs" />
+    <Compile Include="RollbackUpdate.cs" />
+    <Compile Include="Shortcuts\ShellLinkNative.cs" />
+    <Compile Include="Shortcuts\ShellShortcut.cs" />
+    <Compile Include="Shortcuts\ShortcutInfo.cs" />
+    <Compile Include="SystemFolders.cs" />
+    <Compile Include="SystemMenu.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UpdateHelper\UpdateHelper.cs" />
+    <Compile Include="Util\ThreadHelper.cs" />
+    <Compile Include="UpdateDetails.cs" />
+    <Compile Include="UpdateEngine.cs" />
+    <Compile Include="InstallUpdate.cs" />
+    <Compile Include="Util\Arguments.cs" />
+    <Compile Include="UpdateHelper\CopyData.cs" />
+    <Compile Include="VCDiff\AddressCache.cs" />
+    <Compile Include="VCDiff\CodeTable.cs" />
+    <Compile Include="VCDiff\Instruction.cs" />
+    <Compile Include="VCDiff\InstructionType.cs" />
+    <Compile Include="VCDiff\IOHelper.cs" />
+    <Compile Include="VCDiff\VcdiffDecoder.cs" />
+    <Compile Include="VCDiff\VcdiffFormatException.cs" />
+    <Compile Include="VistaTools.cs" />
+    <Compile Include="ZipFunctions\Compression\Deflater.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterConstants.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterEngine.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterHuffman.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterPending.cs" />
+    <Compile Include="ZipFunctions\Compression\Inflater.cs" />
+    <Compile Include="ZipFunctions\Compression\InflaterDynHeader.cs" />
+    <Compile Include="ZipFunctions\Compression\InflaterHuffmanTree.cs" />
+    <Compile Include="ZipFunctions\Compression\PendingBuffer.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\DeflaterOutputStream.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\InflaterInputStream.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\OutputWindow.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\StreamManipulator.cs" />
+    <Compile Include="ZipFunctions\Core\INameTransform.cs" />
+    <Compile Include="ZipFunctions\Core\IScanFilter.cs" />
+    <Compile Include="ZipFunctions\Core\NameFilter.cs" />
+    <Compile Include="ZipFunctions\Core\PathFilter.cs" />
+    <Compile Include="ZipFunctions\Core\StreamUtils.cs" />
+    <Compile Include="ZipFunctions\Core\WindowsPathUtils.cs" />
+    <Compile Include="ZipFunctions\Encrypt\PkzipClassic.cs" />
+    <Compile Include="ZipFunctions\IEntryFactory.cs" />
+    <Compile Include="ZipFunctions\SharpZipBaseException.cs" />
+    <Compile Include="ZipFunctions\WindowsNameTransform.cs" />
+    <Compile Include="ZipFunctions\ZipConstants.cs" />
+    <Compile Include="ZipFunctions\ZipEntry.cs" />
+    <Compile Include="ZipFunctions\ZipEntryFactory.cs" />
+    <Compile Include="ZipFunctions\ZipException.cs" />
+    <Compile Include="ZipFunctions\ZipExtraData.cs" />
+    <Compile Include="ZipFunctions\ZipFile.cs" />
+    <Compile Include="ZipFunctions\ZipHelperStream.cs" />
+    <Compile Include="ZipFunctions\ZipInputStream.cs" />
+    <Compile Include="ZipFunctions\ZipNameTransform.cs" />
+    <Compile Include="ZipFunctions\ZipOutputStream.cs" />
+    <EmbeddedResource Include="cross.png" />
+    <EmbeddedResource Include="tick.png" />
+    <EmbeddedResource Include="process-working.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="client.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
+  <PropertyGroup>
+    <PostBuildEvent>IF NOT EXIST "$(SolutionDir)..\Signing\SignMe.exe" GOTO skipall
+IF NOT $(ConfigurationName) == Release GOTO done
+	"$(SolutionDir)..\Signing\SignMe.exe" "$(TargetPath)"
+:done
+COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Debug\InstantUpdate.exe"
+COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Release\InstantUpdate.exe"
+:skipall</PostBuildEvent>
+  </PropertyGroup>
+</Project>
