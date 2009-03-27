@@ -42,22 +42,22 @@
     <DebugType>Full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;CLIENT</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;CLIENT; AESCRYPTO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;CLIENT</DefineConstants>
+    <DefineConstants>TRACE;CLIENT; AESCRYPTO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <FileAlignment>512</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -157,11 +157,9 @@
     <Compile Include="VistaTools.cs" />
     <Compile Include="Zip\Crc32.cs" />
     <Compile Include="Zip\Deflate.cs" />
-    <Compile Include="Zip\DeflateStream.cs" />
     <Compile Include="Zip\Events.cs" />
     <Compile Include="Zip\Exceptions.cs" />
     <Compile Include="Zip\FileSelector.cs" />
-    <Compile Include="Zip\GZipStream.cs" />
     <Compile Include="Zip\Inflate.cs" />
     <Compile Include="Zip\InfTree.cs" />
     <Compile Include="Zip\Shared.cs" />
@@ -172,7 +170,6 @@
     <Compile Include="Zip\ZipDirEntry.cs" />
     <Compile Include="Zip\ZipEntry.cs" />
     <Compile Include="Zip\ZipFile.cs" />
-    <Compile Include="Zip\ZipFile.Events.cs" />
     <Compile Include="Zip\ZipFile.Selector.cs" />
     <Compile Include="Zip\Zlib.cs" />
     <Compile Include="Zip\ZlibCodec.cs" />

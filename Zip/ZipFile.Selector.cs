@@ -123,24 +123,15 @@ namespace Ionic.Zip
         /// </remarks>
         /// 
         /// <example>
-	/// This example zips up all *.csv files in the current working directory. 
         /// <code>
         /// using (ZipFile zip = new ZipFile())
         /// {
-	///     // To just match on filename wildcards,
-        ///     // use the shorthand form of the selectionCriteria string.
-        ///     zip.AddSelectedFiles("*.csv");
+        ///     // use the special case form of the selectionCriteria string
+        ///     zip.AddSelectedFiles("*.txt");
         ///     zip.Save(PathToZipArchive);
         /// }
         /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = New ZipFile()
-        ///     zip.AddSelectedFiles("*.csv")
-        ///     zip.Save(PathToZipArchive)
-        /// End Using
-        /// </code>
         /// </example>
-	///
         /// <param name="selectionCriteria">The criteria for file selection</param>
         public void AddSelectedFiles(String selectionCriteria)
         {
@@ -162,28 +153,7 @@ namespace Ionic.Zip
         /// For details on the syntax for the selectionCriteria parameter, see <see
         /// cref="AddSelectedFiles(String)"/>.
         /// </para>
-        /// </remarks>
-	///
-        /// <example>
-	/// This example zips up all *.xml files in the current working directory, or any subdirectory, that
-	/// are larger than 1mb.
-        /// <code>
-        /// using (ZipFile zip = new ZipFile())
-        /// {
-	///     // Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.xml  and  size > 1024kb", true);
-        ///     zip.Save(PathToZipArchive);
-        /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = New ZipFile()
-	///     ' Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.xml  and  size > 1024kb", true)
-        ///     zip.Save(PathToZipArchive)
-        /// End Using
-        /// </code>
-        /// </example>
-	/// 
+        /// </remarks>        
         /// <param name="selectionCriteria">The criteria for file selection</param>
         /// <param name="recurseDirectories">If true, the file selection will recurse into subdirectories.</param>
         public void AddSelectedFiles(String selectionCriteria, bool recurseDirectories)
@@ -202,25 +172,6 @@ namespace Ionic.Zip
         /// cref="AddSelectedFiles(String)"/>.
         /// </remarks>
         /// 
-        /// <example>
-	/// This example zips up all *.xml files larger than 1mb in the directory given by "d:\rawdata".
-        /// <code>
-        /// using (ZipFile zip = new ZipFile())
-        /// {
-	///     // Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.xml  and  size > 1024kb", "d:\\rawdata");
-        ///     zip.Save(PathToZipArchive);
-        /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = New ZipFile()
-	///     ' Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.xml  and  size > 1024kb", "d:\rawdata)
-        ///     zip.Save(PathToZipArchive)
-        /// End Using
-        /// </code>
-        /// </example>
-	/// 
         /// <param name="selectionCriteria">The criteria for file selection</param>
         /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk)
@@ -240,26 +191,6 @@ namespace Ionic.Zip
         /// parameter, see <see cref="AddSelectedFiles(String)"/>.
         /// </remarks>
         /// 
-        /// <example>
-	/// This example zips up all *.csv files in the "files" directory, or any subdirectory, that
-	/// have been saved since 2009 February 14th.
-        /// <code>
-        /// using (ZipFile zip = new ZipFile())
-        /// {
-	///     // Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.csv  and  mtime > 2009-02-14", "files", true);
-        ///     zip.Save(PathToZipArchive);
-        /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = New ZipFile()
-	///     ' Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.csv  and  mtime > 2009-02-14", "files", true)
-        ///     zip.Save(PathToZipArchive)
-        /// End Using
-        /// </code>
-        /// </example>
-	/// 
         /// <param name="selectionCriteria">The criteria for file selection</param>
         /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
         /// <param name="recurseDirectories">If true, the file selection will recurse into subdirectories.</param>
@@ -281,31 +212,9 @@ namespace Ionic.Zip
         /// cref="AddSelectedFiles(String)" />.
         /// </remarks>
         /// 
-        /// <example>
-	/// This example zips up all *.psd files in the "photos" directory that
-	/// have been saved since 2009 February 14th, and puts them all in a zip file, using the directory 
-	/// name of "content" in the zip archive itself. When the zip archive is unzipped, the folder containing 
-	/// the .psd files will be named "content".
-        /// <code>
-        /// using (ZipFile zip = new ZipFile())
-        /// {
-	///     // Use a compound expression in the selectionCriteria string.
-        ///     zip.AddSelectedFiles("name = *.psd  and  mtime > 2009-02-14", "photos", "content");
-        ///     zip.Save(PathToZipArchive);
-        /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = New ZipFile
-        ///     zip.AddSelectedFiles("name = *.psd  and  mtime > 2009-02-14", "photos", "content")
-        ///     zip.Save(PathToZipArchive)
-        /// End Using
-        /// </code>
-        /// </example>
-	/// 
         /// <param name="selectionCriteria">The criteria for selection of files to Add</param>
         ///
         /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
-	///
         /// <param name="directoryPathInArchive">
         /// Specifies a directory path to use to override any path in the FileName.  This path may,
         /// or may not, correspond to a real directory in the current filesystem.  If the files
@@ -330,24 +239,6 @@ namespace Ionic.Zip
         /// <see cref="AddSelectedFiles(String)" />.
         /// </remarks>
         /// 
-        /// <example>
-	/// This example zips up all files that are NOT *.pst files, in the current working directory 
-	/// and any subdirectories.
-        /// <code>
-        /// using (ZipFile zip = new ZipFile())
-        /// {
-        ///     zip.AddSelectedFiles("name != *.pst", SourceDirectory, "backup", true);
-        ///     zip.Save(PathToZipArchive);
-        /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = New ZipFile
-        ///     zip.AddSelectedFiles("name != *.pst", SourceDirectory, "backup", true)
-        ///     zip.Save(PathToZipArchive)
-        /// End Using
-        /// </code>
-        /// </example>
-	///
         /// <param name="selectionCriteria">The criteria for selection of files to Add</param>
         ///
         /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
@@ -366,7 +257,7 @@ namespace Ionic.Zip
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk, String directoryPathInArchive, bool recurseDirectories)
         {
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
-            var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
+            String[] filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
             this.AddFiles(filesToAdd, directoryPathInArchive);
         }
 
@@ -404,32 +295,20 @@ namespace Ionic.Zip
         /// </exception>
         /// 
         /// <example>
-	/// This example selects all the PhotoShop files from within an archive, and extracts them
-	/// to the current working directory.
         /// <code>
         /// using (ZipFile zip1 = ZipFile.Read(ZipFileName))
         /// {
         ///     var PhotoShopFiles = zip1.SelectEntries("*.psd");
-        ///     foreach (ZipEntry psd in PhotoShopFiles)
+        ///     foreach (ZipEntry e in PhotoShopFiles)v
         ///     {
-        ///         psd.Extract();
+        ///         e.Extract();
         ///     }
         /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip1 As ZipFile = ZipFile.Read(ZipFileName)
-        ///     Dim PhotoShopFiles as ICollection(Of ZipEntry)
-        ///     PhotoShopFiles = zip1.SelectEntries("*.psd")
-        ///     Dim psd As ZipEntry
-        ///     For Each psd In PhotoShopFiles
-        ///         psd.Extract
-        ///     Next
-        /// End Using
         /// </code>
         /// </example>
         /// <param name="selectionCriteria">the string that specifies which entries to select</param>
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
-        public System.Collections.Generic.ICollection<ZipEntry> SelectEntries(String selectionCriteria)
+        public System.Collections.ObjectModel.ReadOnlyCollection<ZipEntry> SelectEntries(String selectionCriteria)
         {
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             return ff.SelectEntries(this);
@@ -474,23 +353,9 @@ namespace Ionic.Zip
         ///     var UpdatedPhotoShopFiles = zip1.SelectEntries("*.psd", "UpdatedFiles");
         ///     foreach (ZipEntry e in UpdatedPhotoShopFiles)
         ///     {
-	///         // prompt for extract here
-	///         if (WantExtract(e.FileName))
-        ///             e.Extract();
+        ///         e.Extract();
         ///     }
         /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip1 As ZipFile = ZipFile.Read(ZipFileName)
-        ///     Dim UpdatedPhotoShopFiles As ICollection(Of ZipEntry) = zip1.SelectEntries("*.psd", "UpdatedFiles")
-        ///     Dim e As ZipEntry
-        ///     For Each e In UpdatedPhotoShopFiles
-	///         ' prompt for extract here
-        ///         If Me.WantExtract(e.FileName) Then
-        ///             e.Extract
-        ///         End If
-        ///     Next
-        /// End Using
         /// </code>
         /// </example>
         /// <param name="selectionCriteria">the string that specifies which entries to select</param>
@@ -501,7 +366,7 @@ namespace Ionic.Zip
         /// </param>
         /// 
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
-        public System.Collections.Generic.ICollection<ZipEntry> SelectEntries(String selectionCriteria, string directoryPathInArchive)
+        public System.Collections.ObjectModel.ReadOnlyCollection<ZipEntry> SelectEntries(String selectionCriteria, string directoryPathInArchive)
         {
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             return ff.SelectEntries(this, directoryPathInArchive);
@@ -541,38 +406,27 @@ namespace Ionic.Zip
         /// </exception>
         /// 
         /// <example>
-	/// This example removes all entries in a zip file that were modified prior to January 1st, 2008.
         /// <code>
         /// using (ZipFile zip1 = ZipFile.Read(ZipFileName))
         /// {
-        ///     // remove all entries from prior to Jan 1, 2008
+	///     // remove all entries from prior to Jan 1, 2008
         ///     zip1.RemoveEntries("mtime &lt; 2008-01-01");
-	///     // don't forget to save the archive!
-	///     zip1.Save();
         /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = ZipFile.Read(ZipFileName)
-        ///     ' remove all entries from prior to Jan 1, 2008
-        ///     zip1.RemoveEntries("mtime &lt; 2008-01-01")
-	///     ' do not forget to save the archive!
-	///     zip1.Save
-        /// End Using 
         /// </code>
         /// </example>
         /// <param name="selectionCriteria">the string that specifies which entries to select</param>
-        /// <returns>the number of entries removed</returns>
+	/// <returns>the number of entries removed</returns>
         public int RemoveSelectedEntries(String selectionCriteria)
         {
             var selection = this.SelectEntries(selectionCriteria);
-            this.RemoveEntries(selection);
-            return selection.Count;
+	    this.RemoveEntries(selection);
+	    return selection.Count;
         }
 
 
         /// <summary>
         /// Remove entries from the zipfile by specified criteria, and within the specified 
-        /// path in the archive.
+	/// path in the archive.
         /// </summary>
         /// 
         /// <remarks>
@@ -606,34 +460,23 @@ namespace Ionic.Zip
         /// <code>
         /// using (ZipFile zip1 = ZipFile.Read(ZipFileName))
         /// {
-        ///     // remove all entries from prior to Jan 1, 2008
+	///     // remove all entries from prior to Jan 1, 2008
         ///     zip1.RemoveEntries("mtime &lt; 2008-01-01", "documents");
-	///     // a call to ZipFile.Save will make the modifications permanent
-	///     zip1.Save();
         /// }
         /// </code>
-        /// <code lang="VB">
-        /// Using zip As ZipFile = ZipFile.Read(ZipFileName)
-        ///     ' remove all entries from prior to Jan 1, 2008
-        ///     zip1.RemoveEntries("mtime &lt; 2008-01-01", "documents")
-	///     ' a call to ZipFile.Save will make the modifications permanent
-	///     zip1.Save
-        /// End Using 
-        /// </code>
         /// </example>
-	/// 
         /// <param name="selectionCriteria">the string that specifies which entries to select</param>
         /// <param name="directoryPathInArchive">
         /// the directory in the archive from which to select entries. If null, then 
         /// all directories in the archive are used. 
         /// </param>
-        /// <returns>the number of entries removed</returns>
+	/// <returns>the number of entries removed</returns>
         public int RemoveSelectedEntries(String selectionCriteria, string directoryPathInArchive)
         {
             var selection = this.SelectEntries(selectionCriteria, directoryPathInArchive);
-            this.RemoveEntries(selection);
-            return selection.Count;
-        }
+	    this.RemoveEntries(selection);
+	    return selection.Count;
+	}
 
 
         /// <summary>
@@ -642,34 +485,16 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// The entries are extracted into the current working directory. 
+        /// The entries are extracted into the current working directory. If 
+        /// any of the files to be extracted already exist, an exception will be thrown.
         /// </para>
-        /// 
-        /// <para>
-        /// If any of the files to be extracted already exist, then the action taken is as
-        /// specified in the <see cref="ZipEntry.ExtractExistingFile"/> property on the
-        /// corresponding ZipEntry instance.  By default, the action taken in this case is to
-        /// throw an exception.
-        /// </para>
-        /// 
         /// <para>
         /// For information on the syntax of the selectionCriteria string,
         /// see <see cref="AddSelectedFiles(String)" />.
         /// </para>
         /// </remarks>
         ///
-        /// <example>
-        /// This example shows how extract all XML files modified after 15 January 2009. 
-        /// <code>
-        /// using (ZipFile zip = ZipFile.Read(zipArchiveName))
-        /// {
-        ///   zip.ExtractSelectedEntries("name = *.xml  and  mtime &gt; 2009-01-15");
-        /// }
-        /// </code>
-        /// </example>
         /// <param name="selectionCriteria">the selection criteria for entries to extract.</param>
-        ///
-        /// <seealso cref="ExtractSelectedEntries(String,ExtractExistingFileAction)"/>
         public void ExtractSelectedEntries(String selectionCriteria)
         {
             foreach (ZipEntry e in SelectEntries(selectionCriteria))
@@ -686,40 +511,25 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// The entries are extracted into the current working directory. When extraction would would
-        /// overwrite an existing filesystem file, the action taken is as specified in the
-        /// extractExistingFile parameter.
+        /// The entries are extracted into the current working directory. If any of the files to be
+        /// extracted already exist, and wantOverwrite is false, an exception will be thrown.
         /// </para>
-        /// 
         /// <para>
         /// For information on the syntax of the string describing the entry selection criteria, 
         /// see <see cref="AddSelectedFiles(String)" />.
         /// </para> 
         /// </remarks>
         ///
-        /// <example>
-        /// This example shows how extract all XML files modified after 15 January 2009, 
-        /// overwriting any existing files. 
-        /// <code>
-        /// using (ZipFile zip = ZipFile.Read(zipArchiveName))
-        /// {
-        ///   zip.ExtractSelectedEntries("name = *.xml  and  mtime &gt; 2009-01-15",
-        ///                              ExtractExistingFileAction.OverwriteSilently);
-        /// }
-        /// </code>
-        /// </example>
-        /// 
         /// <param name="selectionCriteria">the selection criteria for entries to extract.</param>
         ///
-        /// <param name="extractExistingFile">
-        /// The action to take if extraction would overwrite an existing file.
-        /// </param>
-        public void ExtractSelectedEntries(String selectionCriteria, ExtractExistingFileAction extractExistingFile)
+        /// <param name="wantOverwrite">True if the caller wants to overwrite any existing files 
+        /// by the given name. </param>
+        public void ExtractSelectedEntries(String selectionCriteria, bool wantOverwrite)
         {
             foreach (ZipEntry e in SelectEntries(selectionCriteria))
             {
                 e.Password = _Password; // possibly null
-                e.Extract(extractExistingFile);
+                e.Extract(wantOverwrite);
             }
         }
 
@@ -731,42 +541,22 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// The entries are selected from the specified directory within the archive, and then 
-        /// extracted into the current working directory. 
+        /// extracted into the current working directory. If any of the files to be
+        /// extracted already exist, an exception will be thrown.
         /// </para>
-        /// 
-        /// <para>
-        /// If any of the files to be extracted already exist, then the action taken is as
-        /// specified in the <see cref="ZipEntry.ExtractExistingFile"/> property on the
-        /// corresponding ZipEntry instance.  By default, the action taken in this case is to
-        /// throw an exception.
-        /// </para>
-        /// 
         /// <para>
         /// For information on the syntax of the string describing the entry selection criteria, 
         /// see <see cref="AddSelectedFiles(String)" />.
         /// </para> 
         /// </remarks>
         /// 
-        /// <example>
-        /// This example shows how extract all XML files modified after 15 January 2009, 
-        /// and writes them to the "unpack" directory.
-        /// <code>
-        /// using (ZipFile zip = ZipFile.Read(zipArchiveName))
-        /// {
-        ///   zip.ExtractSelectedEntries("name = *.xml  and  mtime &gt; 2009-01-15","unpack");
-        /// }
-        /// </code>
-        /// </example>
-        ///
         /// <param name="selectionCriteria">the selection criteria for entries to extract.</param>
         ///
         /// <param name="directoryPathInArchive">
         /// the directory in the archive from which to select entries. If null, then 
         /// all directories in the archive are used. 
         /// </param>
-        ///
-        /// <seealso cref="ExtractSelectedEntries(String,String,String,ExtractExistingFileAction)"/>
-        public void ExtractSelectedEntries(String selectionCriteria, String directoryPathInArchive)
+        public void ExtractSelectedEntries(String selectionCriteria, string directoryPathInArchive)
         {
             foreach (ZipEntry e in SelectEntries(selectionCriteria, directoryPathInArchive))
             {
@@ -818,55 +608,38 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// The entries are extracted into the specified directory. When extraction would would
-        /// overwrite an existing filesystem file, the action taken is as specified in the
-        /// extractExistingFile parameter.
+        /// The entries are extracted into the specified directory. If 
+        /// any of the files already exist, and wantOverwrite is false, an exception will be thrown.
         /// </para>
-        /// 
         /// <para>
         /// For information on the syntax of the string describing the entry selection criteria, 
         /// see <see cref="AddSelectedFiles(String)" />.
         /// </para> 
         /// </remarks>
         ///
-        /// <example>
-        /// This example shows how extract all files  with an XML extension or with  a size larger than 100,000 bytes, 
-        /// and puts them in the unpack directory.  For any files that already exist in 
-        /// that destination directory, they will not be overwritten.
-        /// <code>
-        /// using (ZipFile zip = ZipFile.Read(zipArchiveName))
-        /// {
-        ///   zip.ExtractSelectedEntries("name = *.xml  or  size  &gt; 100000",
-        ///                              null, 
-        ///                              "unpack", 
-        ///                              ExtractExistingFileAction.DontOverwrite);
-        /// }
-        /// </code>
-        /// </example>
-        ///
         /// <param name="selectionCriteria">the selection criteria for entries to extract.</param>
         ///
         /// <param name="extractDirectory">
-        /// The directory on the disk into which to extract. It will be created if it does not exist.
+        /// the directory on the disk into which to extract. It will be created if it does not exist.
         /// </param>
         /// 
         /// <param name="directoryPathInArchive">
-        /// The directory in the archive from which to select entries. If null, then 
+        /// the directory in the archive from which to select entries. If null, then 
         /// all directories in the archive are used. 
         /// </param>
         /// 
-        /// <param name="extractExistingFile">
-        /// The action to take if extraction would overwrite an existing file.
-        /// </param>
+        /// <param name="wantOverwrite">True if the caller wants to overwrite any existing files 
+        /// by the given name. </param>
         /// 
-        public void ExtractSelectedEntries(String selectionCriteria, string directoryPathInArchive, string extractDirectory, ExtractExistingFileAction extractExistingFile)
+        public void ExtractSelectedEntries(String selectionCriteria, string directoryPathInArchive, string extractDirectory, bool wantOverwrite)
         {
             foreach (ZipEntry e in SelectEntries(selectionCriteria, directoryPathInArchive))
             {
                 e.Password = _Password; // possibly null
-                e.Extract(extractDirectory, extractExistingFile);
+                e.Extract(extractDirectory, wantOverwrite);
             }
         }
+
 
     }
 
@@ -919,7 +692,7 @@ namespace Ionic
                     x = entry.Ctime;
                     break;
                 default:
-                    throw new ArgumentException("?time");
+                    throw new ArgumentException("Constraint");
             }
             return _Evaluate(x);
         }
@@ -950,9 +723,6 @@ namespace Ionic
                 case LogicalConjunction.OR:
                     if (!result)
                         result = Right.Evaluate(entry);
-                    break;
-                case LogicalConjunction.XOR:
-                    result ^= Right.Evaluate(entry);
                     break;
                 default:
                     throw new ArgumentException("Conjunction");
@@ -998,8 +768,8 @@ namespace Ionic
         ///
         /// <param name="zip">The ZipFile from which to retrieve entries.</param>
         ///
-        /// <returns>a collection of ZipEntry objects that conform to the criteria.</returns>
-        public System.Collections.Generic.ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip)
+        /// <returns>a ReadOnly collection of ZipEntry objects that conform to the criteria.</returns>
+        public System.Collections.ObjectModel.ReadOnlyCollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip)
         {
             var list = new System.Collections.Generic.List<Ionic.Zip.ZipEntry>();
 
@@ -1009,8 +779,7 @@ namespace Ionic
                     list.Add(e);
             }
 
-            //return list.AsReadOnly();
-            return list;
+            return list.AsReadOnly();
         }
 
 
@@ -1051,8 +820,8 @@ namespace Ionic
         /// all directories in the archive are used. 
         /// </param>
         /// 
-        /// <returns>a collection of ZipEntry objects that conform to the criteria.</returns>
-        public System.Collections.Generic.ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip, string directoryPathInArchive)
+        /// <returns>a ReadOnly collection of ZipEntry objects that conform to the criteria.</returns>
+        public System.Collections.ObjectModel.ReadOnlyCollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip, string directoryPathInArchive)
         {
             var list = new System.Collections.Generic.List<Ionic.Zip.ZipEntry>();
 
@@ -1063,7 +832,6 @@ namespace Ionic
                         list.Add(e);
             }
 
-            //return list.AsReadOnly();
             return list.AsReadOnly();
         }
 

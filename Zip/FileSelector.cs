@@ -8,29 +8,9 @@
 //
 // ------------------------------------------------------------------
 //
-// This module implements a "file selector" that finds files based on a set of inclusion criteria,
+// This module implements a "file filter" that finds files based on a set of inclusion criteria,
 // including filename, size, file time, and potentially file attributes.
-// The criteria are given in a string with a simple expression language. Examples: 
-// 
-// find all .txt files: 
-//     name = *.txt 
 //
-// shorthand for the above
-//     *.txt
-//
-// all files modified after January 1st, 2009
-//     mtime > 2009-01-01
-//
-// All .txt files modified after the first of the year
-//     name = *.txt  AND  mtime > 2009-01-01
-//
-// All .txt files modified after the first of the year, or any file with the archive bit set
-//     (name = *.txt  AND  mtime > 2009-01-01) or (attribtues = A)
-//
-// All .txt files or any file greater than 1mb in size
-//     (name = *.txt  or  size > 1mb)
-//
-// and so on.
 // ------------------------------------------------------------------
 
 
@@ -53,7 +33,6 @@ namespace Ionic
         NONE,
         AND,
         OR,
-        XOR,
     }
 
     internal enum WhichTime
@@ -64,7 +43,7 @@ namespace Ionic
     }
 
 
-    internal enum ComparisonOperator
+    internal enum ComparisonConstraint
     {
         [Description(">")]
         GreaterThan,
@@ -89,13 +68,13 @@ namespace Ionic
 
     internal partial class SizeCriterion : SelectionCriterion
     {
-        internal ComparisonOperator Operator;
+        internal ComparisonConstraint Constraint;
         internal Int64 Size;
 
         public override String ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("size ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(Size.ToString());
+            sb.Append("size ").Append(EnumUtil.GetDescription(Constraint)).Append(" ").Append(Size.ToString());
             return sb.ToString();
         }
 
@@ -108,28 +87,28 @@ namespace Ionic
         private bool _Evaluate(Int64 Length)
         {
             bool result = false;
-            switch (Operator)
+            switch (Constraint)
             {
-                case ComparisonOperator.GreaterThanOrEqualTo:
+                case ComparisonConstraint.GreaterThanOrEqualTo:
                     result = Length >= Size;
                     break;
-                case ComparisonOperator.GreaterThan:
+                case ComparisonConstraint.GreaterThan:
                     result = Length > Size;
                     break;
-                case ComparisonOperator.LesserThanOrEqualTo:
+                case ComparisonConstraint.LesserThanOrEqualTo:
                     result = Length <= Size;
                     break;
-                case ComparisonOperator.LesserThan:
+                case ComparisonConstraint.LesserThan:
                     result = Length < Size;
                     break;
-                case ComparisonOperator.EqualTo:
+                case ComparisonConstraint.EqualTo:
                     result = Length == Size;
                     break;
-                case ComparisonOperator.NotEqualTo:
+                case ComparisonConstraint.NotEqualTo:
                     result = Length != Size;
                     break;
                 default:
-                    throw new ArgumentException("Operator");
+                    throw new ArgumentException("Constraint");
             }
             return result;
         }
@@ -140,14 +119,14 @@ namespace Ionic
 
     internal partial class TimeCriterion : SelectionCriterion
     {
-        internal ComparisonOperator Operator;
+        internal ComparisonConstraint Constraint;
         internal WhichTime Which;
         internal DateTime Time;
 
         public override String ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(Which.ToString()).Append(" ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(Time.ToString("yyyy-MM-dd-HH:mm:ss"));
+            sb.Append(Which.ToString()).Append(" ").Append(EnumUtil.GetDescription(Constraint)).Append(" ").Append(Time.ToString("yyyy-MM-dd-HH:mm:ss"));
             return sb.ToString();
         }
 
@@ -167,7 +146,7 @@ namespace Ionic
                     x = System.IO.File.GetCreationTime(filename);
                     break;
                 default:
-                    throw new ArgumentException("Operator");
+                    throw new ArgumentException("Constraint");
             }
             return _Evaluate(x);
         }
@@ -177,28 +156,28 @@ namespace Ionic
         {
 
             bool result = false;
-            switch (Operator)
+            switch (Constraint)
             {
-                case ComparisonOperator.GreaterThanOrEqualTo:
+                case ComparisonConstraint.GreaterThanOrEqualTo:
                     result = (x >= Time);
                     break;
-                case ComparisonOperator.GreaterThan:
+                case ComparisonConstraint.GreaterThan:
                     result = (x > Time);
                     break;
-                case ComparisonOperator.LesserThanOrEqualTo:
+                case ComparisonConstraint.LesserThanOrEqualTo:
                     result = (x <= Time);
                     break;
-                case ComparisonOperator.LesserThan:
+                case ComparisonConstraint.LesserThan:
                     result = (x < Time);
                     break;
-                case ComparisonOperator.EqualTo:
+                case ComparisonConstraint.EqualTo:
                     result = (x == Time);
                     break;
-                case ComparisonOperator.NotEqualTo:
+                case ComparisonConstraint.NotEqualTo:
                     result = (x != Time);
                     break;
                 default:
-                    throw new ArgumentException("Operator");
+                    throw new ArgumentException("Constraint");
             }
 
             //Console.WriteLine("TimeCriterion[{2}]({0})= {1}", filename, result, Which.ToString());
@@ -212,7 +191,7 @@ namespace Ionic
     {
         private Regex _re;
         private String _regexString;
-        internal ComparisonOperator Operator;
+        internal ComparisonConstraint Constraint;
         private string _MatchingFileSpec;
         internal virtual string MatchingFileSpec
         {
@@ -220,13 +199,10 @@ namespace Ionic
             {
                 _MatchingFileSpec = value;
                 _regexString = "^" +
-                Regex.Escape(value)
-                .Replace(@"\*\.\*", @"([^\.]+|.*\.[^\\\.]*)")
-                .Replace(@"\.\*", @"\.[^\\\.]*")
-                .Replace(@"\*", @".*")
-                .Replace(@"\?", @"[^\\\.]")
-                + "$";
-
+                    Regex.Escape(value)
+                    .Replace(@"\*", @"[^\\\.]*")
+                    .Replace(@"\?", @"[^\\\.]")
+                    + "$";
                 // neither of these is correct
                 //if (!_regexString.StartsWith(@"\\")) _regexString = @"\\" + _regexString;
                 //if (_regexString.IndexOf("\\") == -1)  _regexString = @"\\" + _regexString;
@@ -250,15 +226,17 @@ namespace Ionic
 
         private bool _Evaluate(string fullpath)
         {
-            // No slash in the pattern implicitly means recurse, which means compare to 
-            // filename only, not full path.
+            //String f = System.IO.Path.GetFileName(filename);
+
+            // no slash in the pattern implicitly means recurse, which means compare to filename only, not full path.
             String f = (_MatchingFileSpec.IndexOf('\\') == -1)
                 ? System.IO.Path.GetFileName(fullpath)
                 : fullpath; // compare to fullpath
 
             bool result = _re.IsMatch(f);
-            if (Operator != ComparisonOperator.EqualTo)
+            if (Constraint != ComparisonConstraint.EqualTo)
                 result = !result;
+            //Console.WriteLine("NameCriterion[{2}]({0})= {1}", filename, result, _regexString);
             return result;
         }
     }
@@ -268,7 +246,7 @@ namespace Ionic
     internal partial class AttributesCriterion : SelectionCriterion
     {
         private FileAttributes _Attributes;
-        internal ComparisonOperator Operator;
+        internal ComparisonConstraint Constraint;
         internal string AttributeString
         {
             get
@@ -334,7 +312,7 @@ namespace Ionic
         public override String ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("attributes ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(AttributeString);
+            sb.Append("attributes ").Append(EnumUtil.GetDescription(Constraint)).Append(" ").Append(AttributeString);
             return sb.ToString();
         }
 
@@ -373,7 +351,7 @@ namespace Ionic
             if (result)
                 result = _EvaluateOne(fileAttrs, FileAttributes.Archive);
 
-            if (Operator != ComparisonOperator.EqualTo)
+            if (Constraint != ComparisonConstraint.EqualTo)
                 result = !result;
 
             //Console.WriteLine("AttributesCriterion[{2}]({0})= {1}", filename, result, AttributeString);
@@ -416,9 +394,6 @@ namespace Ionic
                 case LogicalConjunction.OR:
                     if (!result)
                         result = Right.Evaluate(filename);
-                    break;
-                case LogicalConjunction.XOR:
-                    result ^= Right.Evaluate(filename);
                     break;
                 default:
                     throw new ArgumentException("Conjunction");
@@ -472,12 +447,13 @@ namespace Ionic
         /// The default constructor.  
         /// </summary>
         /// <remarks>
-        /// Typically, applications won't use this constructor.  Instead they'll call the
-        /// constructor that accepts a selectionCriteria string.  If you use this constructor,
-        /// you'll want to set the SelectionCriteria property on the instance before calling
+        /// If you use this constructor, you'll want to set the
+        /// SelectionCriteria property on the instance before calling
         /// SelectFiles().
         /// </remarks>
-        protected FileSelector() { }
+        public FileSelector()
+        {
+        }
 
 
         /// <summary>
@@ -527,8 +503,7 @@ namespace Ionic
         ///
         /// <para>
         /// Specify values for the file attributes as a string with one or more of the
-        /// characters H,R,S,A,I in any order, implying Hidden, ReadOnly, System, Archive,
-        /// and NotContextIndexed, 
+        /// characters H,R,S,A in any order, implying Hidden, ReadOnly, System, and Archive,
         /// respectively.  To specify a time, use YYYY-MM-DD-HH:mm:ss as the format.  If you
         /// omit the HH:mm:ss portion, it is assumed to be 00:00:00 (midnight). The value for a
         /// size criterion is expressed in integer quantities of bytes, kilobytes (use k or kb
@@ -557,10 +532,10 @@ namespace Ionic
         /// </para> 
         ///
         /// <para>
-        /// You can combine criteria with the conjunctions AND, OR, and XOR. Using a string like
-        /// "name = *.txt AND size &gt;= 100k" for the selectionCriteria retrieves entries whose
-        /// names end in .txt, and whose uncompressed size is greater than or equal to 100
-        /// kilobytes.
+        /// You can combine criteria with the conjunctions AND or OR. Using a string like "name
+        /// = *.txt AND size &gt;= 100k" for the selectionCriteria retrieves entries whose names
+        /// end in  .txt, and whose uncompressed size is greater than or equal to
+        /// 100 kilobytes.
         /// </para>
         ///
         /// <para>
@@ -637,18 +612,17 @@ namespace Ionic
             if (s.IndexOf(" ") == -1)
                 s = "name = " + s;
 
-            // inject spaces after open paren and before close paren
-            string[] prPairs = { @"\((\S)", "( $1", @"(\S)\)", "$1 )", };
+            string[] prPairs = { @"\((\S)", "( $1",  @"(\S)\)", "$1 )",  };
+
             for (int i = 0; i + 1 < prPairs.Length; i += 2)
             {
                 Regex rgx = new Regex(prPairs[i]);
                 s = rgx.Replace(s, prPairs[i + 1]);
             }
 
-            // split the expression into tokens 
-            string[] tokens = s.Trim().Split(' ', '\t');
+            string[] elements = s.Trim().Split(' ', '\t');
 
-            if (tokens.Length < 3) throw new ArgumentException(s);
+            if (elements.Length < 3) throw new ArgumentException(s);
 
             SelectionCriterion current = null;
 
@@ -659,82 +633,86 @@ namespace Ionic
             var critStack = new System.Collections.Generic.Stack<SelectionCriterion>();
             stateStack.Push(ParseState.Start);
 
-            for (int i = 0; i < tokens.Length; i++)
+            for (int i = 0; i < elements.Length; i++)
             {
-                switch (tokens[i].ToLower())
+                switch (elements[i].ToLower())
                 {
                     case "and":
-                    case "xor":
                     case "or":
                         state = stateStack.Peek();
                         if (state != ParseState.CriterionDone)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                        if (tokens.Length <= i + 3)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                        if (elements.Length <= i + 3) 
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                        pendingConjunction = (LogicalConjunction)Enum.Parse(typeof(LogicalConjunction), tokens[i].ToUpper());
+                        pendingConjunction = (LogicalConjunction)Enum.Parse(typeof(LogicalConjunction), elements[i].ToUpper());
                         current = new CompoundCriterion { Left = current, Right = null, Conjunction = pendingConjunction };
+                        //Console.WriteLine("Conjunction: ({0})  push state({1})", elements[i].ToUpper(), state.ToString());
                         stateStack.Push(state);
                         stateStack.Push(ParseState.ConjunctionPending);
+                        //Console.WriteLine("Conjunction: ({1})   [{0}]", current.ToString(), pendingConjunction.ToString());
+                        //Console.WriteLine("Push Criterion");
                         critStack.Push(current);
                         break;
 
                     case "(":
                         state = stateStack.Peek();
                         if (state != ParseState.Start && state != ParseState.ConjunctionPending && state != ParseState.OpenParen)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                        if (tokens.Length <= i + 4)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                        if (elements.Length <= i + 4)
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
                         stateStack.Push(ParseState.OpenParen);
                         break;
 
                     case ")":
                         state = stateStack.Pop();
+                        //Console.WriteLine("openParen  popped state({0})", state.ToString());
                         if (stateStack.Peek() != ParseState.OpenParen)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                        stateStack.Pop();
+                        stateStack.Pop(); //?
                         stateStack.Push(ParseState.CriterionDone);
                         break;
 
                     case "atime":
                     case "ctime":
                     case "mtime":
-                        if (tokens.Length <= i + 2)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                        if (elements.Length <= i + 2) 
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
                         DateTime t;
                         try
                         {
-                            t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd-HH:mm:ss", null);
+                            t = DateTime.ParseExact(elements[i + 2], "yyyy-MM-dd-HH:mm:ss", null);
                         }
                         catch
                         {
-                            t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd", null);
+                            t = DateTime.ParseExact(elements[i + 2], "yyyy-MM-dd", null);
                         }
                         current = new TimeCriterion
                         {
-                            Which = (WhichTime)Enum.Parse(typeof(WhichTime), tokens[i]),
-                            Operator = (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1]),
+                            Which = (WhichTime)Enum.Parse(typeof(WhichTime), elements[i]),
+                            Constraint = (ComparisonConstraint)EnumUtil.Parse(typeof(ComparisonConstraint), elements[i + 1]),
                             Time = t
                         };
                         i += 2;
+                        //Console.WriteLine("slurped time atom: [{0}]", current.ToString());
                         stateStack.Push(ParseState.CriterionDone);
                         break;
 
 
-                    case "length":
                     case "size":
-                        if (tokens.Length <= i + 2)
-                            throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                        if (elements.Length <= i + 2)
+                            throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
                         Int64 sz = 0;
-                        string v = tokens[i + 2];
+                        string v = elements[i + 2];
                         if (v.ToUpper().EndsWith("K"))
                             sz = Int64.Parse(v.Substring(0, v.Length - 1)) * 1024;
+
                         else if (v.ToUpper().EndsWith("KB"))
                             sz = Int64.Parse(v.Substring(0, v.Length - 2)) * 1024;
                         else if (v.ToUpper().EndsWith("M"))
@@ -745,43 +723,43 @@ namespace Ionic
                             sz = Int64.Parse(v.Substring(0, v.Length - 1)) * 1024 * 1024 * 1024;
                         else if (v.ToUpper().EndsWith("GB"))
                             sz = Int64.Parse(v.Substring(0, v.Length - 2)) * 1024 * 1024 * 1024;
-                        else sz = Int64.Parse(tokens[i + 2]);
+                        else sz = Int64.Parse(elements[i + 2]);
 
                         current = new SizeCriterion
                         {
                             Size = sz,
-                            Operator = (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1])
+                            Constraint = (ComparisonConstraint)EnumUtil.Parse(typeof(ComparisonConstraint), elements[i + 1])
                         };
                         i += 2;
+                        //Console.WriteLine("slurped size atom: [{0}]", current.ToString());
                         stateStack.Push(ParseState.CriterionDone);
                         break;
 
-                    case "filename":
                     case "name":
                         {
-                            if (tokens.Length <= i + 2)
-                                throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            if (elements.Length <= i + 2)
+				throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                            ComparisonOperator c =
-                                (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1]);
+                            ComparisonConstraint c =
+                                (ComparisonConstraint)EnumUtil.Parse(typeof(ComparisonConstraint), elements[i + 1]);
 
-                            if (c != ComparisonOperator.NotEqualTo && c != ComparisonOperator.EqualTo)
-                                throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            if (c != ComparisonConstraint.NotEqualTo && c != ComparisonConstraint.EqualTo)
+				throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                            string m = tokens[i + 2];
+                            string m = elements[i + 2];
                             // handle single-quoted filespecs (used to include spaces in filename patterns)
                             if (m.StartsWith("'"))
                             {
-                                int ix = i;
+				int ix= i;
                                 if (!m.EndsWith("'"))
                                 {
                                     do
                                     {
                                         i++;
-                                        if (tokens.Length <= i + 2)
-                                            throw new ArgumentException(String.Join(" ", tokens, ix, tokens.Length - ix));
-                                        m += " " + tokens[i + 2];
-                                    } while (!tokens[i + 2].EndsWith("'"));
+                                        if (elements.Length <= i + 2) 
+					    throw new ArgumentException(String.Join(" ", elements, ix, elements.Length - ix));
+                                        m += " " + elements[i + 2];
+                                    } while (!elements[i + 2].EndsWith("'"));
                                 }
                                 // trim off leading and trailing single quotes
                                 m = m.Substring(1, m.Length - 2);
@@ -790,41 +768,44 @@ namespace Ionic
                             current = new NameCriterion
                             {
                                 MatchingFileSpec = m,
-                                Operator = c
+                                Constraint = c
                             };
                             i += 2;
+                            //Console.WriteLine("slurped name atom: [{0}]", current.ToString());
                             stateStack.Push(ParseState.CriterionDone);
                         }
                         break;
-
                     case "attributes":
                         {
-                            if (tokens.Length <= i + 2)
-                                throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            if (elements.Length <= i + 2)
+				throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
-                            ComparisonOperator c =
-                                (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1]);
+                            //Console.WriteLine("looking at constraint [{0}]", elements[i+1]);
+                            ComparisonConstraint c =
+                                (ComparisonConstraint)EnumUtil.Parse(typeof(ComparisonConstraint), elements[i + 1]);
 
-                            if (c != ComparisonOperator.NotEqualTo && c != ComparisonOperator.EqualTo)
-                                throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
+                            if (c != ComparisonConstraint.NotEqualTo && c != ComparisonConstraint.EqualTo)
+				throw new ArgumentException(String.Join(" ", elements, i, elements.Length - i));
 
                             current = new AttributesCriterion
                             {
-                                AttributeString = tokens[i + 2],
-                                Operator = c
+                                AttributeString = elements[i + 2],
+                                Constraint = c
                             };
                             i += 2;
+                            //Console.WriteLine("slurped attributes atom: [{0}]", current.ToString());
                             stateStack.Push(ParseState.CriterionDone);
                         }
                         break;
 
                     case "":
-                        // NOP
                         stateStack.Push(ParseState.Whitespace);
                         break;
 
                     default:
-                        throw new ArgumentException("'" + tokens[i] + "'");
+                        //state = stateStack.Peek();
+                        //if (state != ParseState.Start && state != ParseState.OpenParen)
+                        throw new ArgumentException("'" + elements[i] + "'");
                 }
 
                 state = stateStack.Peek();
@@ -863,6 +844,9 @@ namespace Ionic
         /// selection criteria for this instance. </returns>
         public override String ToString()
         {
+            //             StringBuilder sb = new StringBuilder();
+            //             sb.Append("_Criterion: ").Append(
+            //             return sb.ToString();
             return _Criterion.ToString();
         }
 
@@ -889,10 +873,10 @@ namespace Ionic
         /// </param>
         ///
         /// <returns>
-        /// A collection of strings containing fully-qualified pathnames of files
+        /// An array of strings containing fully-qualified pathnames of files
         /// that match the criteria specified in the FileSelector instance.
         /// </returns>
-        public System.Collections.Generic.ICollection<String> SelectFiles(String directory)
+        public String[] SelectFiles(String directory)
         {
             return SelectFiles(directory, false);
         }
@@ -918,40 +902,34 @@ namespace Ionic
         /// </param>
         ///
         /// <returns>
-        /// An collection of strings containing fully-qualified pathnames of files
+        /// An array of strings containing fully-qualified pathnames of files
         /// that match the criteria specified in the FileSelector instance.
         /// </returns>
-        public System.Collections.Generic.ICollection<String> SelectFiles(String directory, bool recurseDirectories)
+        public String[] SelectFiles(String directory, bool recurseDirectories)
         {
             if (_Criterion == null)
                 throw new ArgumentException("SelectionCriteria has not been set");
 
+            String[] filenames = System.IO.Directory.GetFiles(directory);
             var list = new System.Collections.Generic.List<String>();
-            try
+
+            // add the files: 
+            foreach (String filename in filenames)
             {
-                String[] filenames = System.IO.Directory.GetFiles(directory);
+                if (Evaluate(filename))
+                    list.Add(filename);
+            }
 
-                // add the files: 
-                foreach (String filename in filenames)
+            if (recurseDirectories)
+            {
+                // add the subdirectories:
+                String[] dirnames = System.IO.Directory.GetDirectories(directory);
+                foreach (String dir in dirnames)
                 {
-                    if (Evaluate(filename))
-                        list.Add(filename);
-                }
-
-                if (recurseDirectories)
-                {
-                    // add the subdirectories:
-                    String[] dirnames = System.IO.Directory.GetDirectories(directory);
-                    foreach (String dir in dirnames)
-                    {
-                        list.AddRange(this.SelectFiles(dir, recurseDirectories));
-                    }
+                    Array.ForEach(SelectFiles(dir), list.Add);
                 }
             }
-            // can get System.UnauthorizedAccessException here 
-            catch { }
-
-            return list;
+            return list.ToArray();
         }
     }
 
@@ -980,153 +958,43 @@ namespace Ionic
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more 
-        /// enumerated constants to an equivalent enumerated object.
-        /// Note: use the DescriptionAttribute on enum values to enable this.
+        /// Converts the string representation of the name or numeric value of one or more enumerated constants to an equivilant enumerated object.
+        /// Note: Utilised the DescriptionAttribute for values that use it.
         /// </summary>
         /// <param name="enumType">The System.Type of the enumeration.</param>
-        /// <param name="stringRepresentation">A string containing the name or value to convert.</param>
+        /// <param name="value">A string containing the name or value to convert.</param>
         /// <returns></returns>
-        internal static object Parse(Type enumType, string stringRepresentation)
+        internal static object Parse(Type enumType, string value)
         {
-            return Parse(enumType, stringRepresentation, false);
+            return Parse(enumType, value, false);
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more 
-        /// enumerated constants to an equivalent enumerated object.
+        /// Converts the string representation of the name or numeric value of one or more enumerated constants to an equivilant enumerated object.
         /// A parameter specified whether the operation is case-sensitive.
-        /// Note: use the DescriptionAttribute on enum values to enable this.
+        /// Note: Utilised the DescriptionAttribute for values that use it.
         /// </summary>
         /// <param name="enumType">The System.Type of the enumeration.</param>
-        /// <param name="stringRepresentation">A string containing the name or value to convert.</param>
+        /// <param name="value">A string containing the name or value to convert.</param>
         /// <param name="ignoreCase">Whether the operation is case-sensitive or not.</param>
         /// <returns></returns>
-        internal static object Parse(Type enumType, string stringRepresentation, bool ignoreCase)
+        internal static object Parse(Type enumType, string value, bool ignoreCase)
         {
             if (ignoreCase)
-                stringRepresentation = stringRepresentation.ToLower();
+                value = value.ToLower();
 
-            foreach (System.Enum enumVal in System.Enum.GetValues(enumType))
+            foreach (System.Enum val in System.Enum.GetValues(enumType))
             {
-                string description = GetDescription(enumVal);
+                string comparisson = GetDescription(val);
                 if (ignoreCase)
-                    description = description.ToLower();
-                if (description == stringRepresentation)
-                    return enumVal;
+                    comparisson = comparisson.ToLower();
+                if (GetDescription(val) == value)
+                    return val;
             }
 
-            return System.Enum.Parse(enumType, stringRepresentation, ignoreCase);
+            return System.Enum.Parse(enumType, value, ignoreCase);
         }
     }
-
-
-#if DEMO
-    public class DemonstrateFileSelector
-    {
-	// Fields
-	private string _directory;
-	private bool _recurse;
-	private string _selectionCriteria;
-	private FileSelector f;
-
-	// Methods
-	public DemonstrateFileSelector()
-	{
-	    this._directory = ".";
-	    this._recurse = true;
-	}
-
-	public DemonstrateFileSelector(string[] args)
-	{
-	    this._directory = ".";
-	    this._recurse = true;
-	    for (int i = 0; i < args.Length; i++)
-	    {
-		switch(args[i])
-		{
-		case"-?":
-		    Usage();
-		    Environment.Exit(0);
-		    break;
-		case "-directory":
-		    i++;
-		    if (args.Length <= i)
-		    {
-			throw new ArgumentException("-directory");
-		    }
-		    this._directory = args[i];
-		    break;
-		case "-norecurse":
-		    this._recurse = false;
-		    break;
-
-		default:
-		    if (this._selectionCriteria != null)
-		    {
-			throw new ArgumentException(args[i]);
-		    }
-		    this._selectionCriteria = args[i];
-		    break;
-		}
-
-
-		if (this._selectionCriteria != null)
-		{
-		    this.f = new FileSelector(this._selectionCriteria);
-		}
-	    }
-	}
-
-	public static void Main(string[] args)
-	{
-	    try
-	    {
-		new DemonstrateFileSelector(args).Run();
-	    }
-	    catch (Exception exc1)
-	    {
-		Console.WriteLine("Exception: {0}", exc1.ToString());
-		Usage();
-	    }
-	}
-
-
-	public void Run()
-	{
-	    if (this.f == null)
-	    {
-		this.f = new FileSelector("name = *.jpg AND (size > 1000 OR atime < 2009-02-14-00:00:00)");
-	    }
-	    Console.WriteLine("\nSelecting files:\n" + this.f.ToString());
-	    var files = this.f.SelectFiles(this._directory, this._recurse);
-	    if (files.Count == 0)
-	    {
-		Console.WriteLine("no files.");
-	    }
-	    else
-	    {
-		Console.WriteLine("files: {0}", files.Count);
-		foreach (string file in files)
-		{
-		    Console.WriteLine("  " + file);
-		}
-	    }
-	}
-
-	public static void Usage()
-	{
-	    Console.WriteLine("FileSelector: select files based on selection criteria.\n");
-	    Console.WriteLine("Usage:\n  FileSelector <selectionCriteria>  [-directory <dir>] [-norecurse]");
-	}
-    }
-
-#endif
- 
-
-
-
-
 
 }
 

@@ -167,7 +167,6 @@ namespace Ionic.Zip
 
             int i = 0;
             ZipEntry zde = new ZipEntry();
-	    zde._Source = ZipEntrySource.Zipfile;
             zde._archiveStream = s;
             zde._cdrPosition = cdrPosition;
 
@@ -183,6 +182,9 @@ namespace Ionic.Zip
                 zde._CompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
                 zde._UncompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
             }
+            //DateTime lastModified = Ionic.Utils.Zip.SharedUtilities.PackedToDateTime(lastModDateTime);
+            //i += 24;
+
 
 
             zde._filenameLength = (short)(block[i++] + block[i++] * 256);
@@ -257,7 +259,7 @@ namespace Ionic.Zip
                 // the "encryption header" of 12 bytes precedes the file data
                 zde._CompressedFileDataSize -= 12;
             }
-#if AESCRYPTO
+#if !NETCF20
             else if (zde.Encryption == EncryptionAlgorithm.WinZipAes128 ||
                         zde.Encryption == EncryptionAlgorithm.WinZipAes256)
             {
