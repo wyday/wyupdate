@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace wyUpdate.Common
@@ -107,7 +108,9 @@ namespace wyUpdate.Common
         {
             ShortcutInfo tempInfo = new ShortcutInfo();
 
-            byte bType = (byte)fs.ReadByte();
+            byte bType;
+
+            bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0x9A))//if this byte is detected then bail
             {
                 switch (bType)
@@ -151,17 +154,19 @@ namespace wyUpdate.Common
 
         public object Clone()
         {
-            return new ShortcutInfo
-                                  {
-                                      m_Path = m_Path,
-                                      m_WorkingDirectory = m_WorkingDirectory,
-                                      m_Arguments = m_Arguments,
-                                      m_Description = m_Description,
-                                      m_IconPath = m_IconPath,
-                                      m_IconIndex = m_IconIndex,
-                                      m_WindowStyle = m_WindowStyle,
-                                      m_RelativeOuputPath = m_RelativeOuputPath
-                                  };
+            ShortcutInfo si = new ShortcutInfo();
+
+            si.m_Path = m_Path;
+            si.m_WorkingDirectory = m_WorkingDirectory;
+            si.m_Arguments = m_Arguments;
+            si.m_Description = m_Description;
+            si.m_IconPath = m_IconPath;
+            si.m_IconIndex = m_IconIndex;
+            si.m_WindowStyle = m_WindowStyle;
+
+            si.m_RelativeOuputPath = m_RelativeOuputPath;
+
+            return si;
         }
 
         #endregion

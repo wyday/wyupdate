@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Text;
 
 namespace wyUpdate.Common
 {
@@ -9,6 +10,7 @@ namespace wyUpdate.Common
         //Image (for pre- 1.0 RC2 wyUpdate Client files)
         public static Image ReadImage(Stream fs)
         {
+            byte[] tempBytes;
             byte[] tempLength = new byte[4];
 
             Image tempImg = null;
@@ -17,7 +19,7 @@ namespace wyUpdate.Common
             fs.Position += 4;
 
             fs.Read(tempLength, 0, 4);
-            byte[] tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
+            tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
 
             ReadWholeArray(fs, tempBytes);
 

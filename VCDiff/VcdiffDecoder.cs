@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Ionic.Zlib;
 
 namespace wyUpdate.Compression.Vcdiff
 {
@@ -26,8 +25,6 @@ namespace wyUpdate.Compression.Vcdiff
 		/// writable and seekable.
 		/// </summary>
 		Stream output;
-
-	    long Adler32 = 1;
 
 		/// <summary>
 		/// Code table to use for decoding.
@@ -70,8 +67,7 @@ namespace wyUpdate.Compression.Vcdiff
 		/// <param name="original">Stream containing delta. May be null.</param>
 		/// <param name="delta">Stream containing delta data.</param>
 		/// <param name="output">Stream to write resulting data to.</param>
-		/// <param name="adler">The adler32 value of the output stream</param>
-		public static void Decode (Stream original, Stream delta, Stream output, long adler)
+		public static void Decode (Stream original, Stream delta, Stream output)
 		{
 			#region Simple argument checking
 			if (original != null && (!original.CanRead || !original.CanSeek))
@@ -100,9 +96,6 @@ namespace wyUpdate.Compression.Vcdiff
 			// class and ask it to do the decoding.
 			VcdiffDecoder instance = new VcdiffDecoder(original, delta, output);
 			instance.Decode();
-
-            if (adler != 0 && adler != instance.Adler32)
-                throw new Exception();
 		}
 		#endregion
 
@@ -181,7 +174,7 @@ namespace wyUpdate.Compression.Vcdiff
 			MemoryStream tableDelta = new MemoryStream(compressedTableData, false);
 			byte[] decompressedTableData = new byte[1536];
 			MemoryStream tableOutput = new MemoryStream(decompressedTableData, true);
-			VcdiffDecoder.Decode(tableOriginal, tableDelta, tableOutput, 0);
+			VcdiffDecoder.Decode(tableOriginal, tableDelta, tableOutput);
 
 			if (tableOutput.Position != 1536)
 			{
@@ -284,11 +277,19 @@ namespace wyUpdate.Compression.Vcdiff
 			int instructionsLength = IOHelper.ReadBigEndian7BitEncodedInt(delta);
 			int addressesLength = IOHelper.ReadBigEndian7BitEncodedInt(delta);
 
-			// If we've been given a checksum, we have to read it (whether we use it or not)
-		    if (hasAdler32Checksum)
-		        IOHelper.CheckedReadBytes(delta, 4);
+			// If we've been given a checksum, we have to read it and we might as well
+			// use it to check the data.
+			int checksumInFile=0;
+			if (hasAdler32Checksum)
+			{
+				byte[] checksumBytes = IOHelper.CheckedReadBytes(delta, 4);
+				checksumInFile = (checksumBytes[0]<<24) |
+					             (checksumBytes[1]<<16) |
+					             (checksumBytes[2]<<8) |
+					             checksumBytes[3];
+			}
 
-		    // Read all the data for this window
+			// Read all the data for this window
 			byte[] addRunData = IOHelper.CheckedReadBytes(delta, addRunDataLength);
 			byte[] instructions = IOHelper.CheckedReadBytes(delta, instructionsLength);
 			byte[] addresses = IOHelper.CheckedReadBytes(delta, addressesLength);
@@ -361,9 +362,17 @@ namespace wyUpdate.Compression.Vcdiff
 			}
 			output.Write(targetData, 0, targetLength);
 			
-            // update the adler for the current window
-		    Adler32 = Adler.Adler32(Adler32, targetData, 0, targetLength);
-            
+            //Don't bother with checksums
+            /*
+			if (hasAdler32Checksum)
+			{
+				int actualChecksum = Adler32.ComputeChecksum(1, targetData);
+				if (actualChecksum != checksumInFile)
+				{
+					throw new VcdiffFormatException("Invalid checksum after decoding window");
+				}
+			}
+            */
 			return true;
 		}
 		#endregion

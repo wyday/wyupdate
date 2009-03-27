@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
+using System.Collections.Generic;
+using System.Text;
 
 namespace wyDay.Controls
 {
@@ -337,10 +337,10 @@ namespace wyDay.Controls
         private void CreateLink(RichTextBoxLink link, string text, int linkOn)
         {
             string hyperlink = linkOn.ToString();
-            SelectedRtf = @"{\rtf1\ansi " + FormatStringForRTF(text) + @"\v #" + hyperlink + @"\v0}";
-            Select(link.StartIndex, link.Length + hyperlink.Length + 1);
-			SetSelectionLink(true);
-            Select(link.StartIndex + link.Length + hyperlink.Length + 1, 0);
+            this.SelectedRtf = @"{\rtf1\ansi " + FormatStringForRTF(text) + @"\v #" + hyperlink + @"\v0}";
+            this.Select(link.StartIndex, link.Length + hyperlink.Length + 1);
+			this.SetSelectionLink(true);
+            this.Select(link.StartIndex + link.Length + hyperlink.Length + 1, 0);
         }
 
         public void CreateExistingLinks(List<RichTextBoxLink> links)

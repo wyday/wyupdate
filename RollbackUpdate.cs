@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
-using Ionic.Zip;
 using wyUpdate.Common;
+using System.IO;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace wyUpdate
 {
@@ -26,9 +26,10 @@ namespace wyUpdate
             
             //read in the fileinfo
 
+            byte bType;
             int bytesToSkip = 0;
 
-            byte bType = (byte)fs.ReadByte();
+            bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0x9A)) //if end byte is detected, bail out
             {
                 switch (bType)
@@ -198,7 +199,7 @@ namespace wyUpdate
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
 
             // file-identification data
-            fs.Write(Encoding.UTF8.GetBytes("IURURV1"), 0, 7);
+            fs.Write(System.Text.Encoding.UTF8.GetBytes("IURURV1"), 0, 7);
 
             WriteFiles.WriteInt(fs, 0x01, rollbackRegistry.Count);
 
@@ -214,6 +215,9 @@ namespace wyUpdate
         public static void ReadRollbackRegistry(string fileName, ref List<RegChange> rollbackRegistry)
         {
             byte[] fileIDBytes = new byte[7];
+            string fileID = "";
+
+            byte bType;
 
             FileStream fs = null;
 
@@ -221,17 +225,17 @@ namespace wyUpdate
             {
                 fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 if (fs != null)
                     fs.Close();
 
-                throw;
+                throw ex;
             }
 
             // Read back the file identification data, if any
             fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
+            fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
             if (fileID != "IURURV1")
             {
                 //free up the file so it can be deleted
@@ -239,7 +243,7 @@ namespace wyUpdate
                 throw new Exception("Identifier incorrect");
             }
 
-            byte bType = (byte)fs.ReadByte();
+            bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
             {
                 switch (bType)
@@ -274,7 +278,7 @@ namespace wyUpdate
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
 
             // file-identification data
-            fs.Write(Encoding.UTF8.GetBytes("IURUFV1"), 0, 7);
+            fs.Write(System.Text.Encoding.UTF8.GetBytes("IURUFV1"), 0, 7);
 
 
             foreach (FileFolder fileFolder in rollbackList)
@@ -301,6 +305,9 @@ namespace wyUpdate
         public static void ReadRollbackFiles(string fileName, List<string> rollbackFiles, List<string> rollbackFolders, List<string> createFolders)
         {
             byte[] fileIDBytes = new byte[7];
+            string fileID = "";
+
+            byte bType;
 
             FileStream fs = null;
 
@@ -308,17 +315,17 @@ namespace wyUpdate
             {
                 fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 if (fs != null)
                     fs.Close();
 
-                throw;
+                throw ex;
             }
 
             // Read back the file identification data, if any
             fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
+            fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
             if (fileID != "IURUFV1")
             {
                 //free up the file so it can be deleted
@@ -326,7 +333,7 @@ namespace wyUpdate
                 throw new Exception("Identifier incorrect");
             }
 
-            byte bType = (byte)fs.ReadByte();
+            bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
             {
                 switch (bType)
@@ -367,7 +374,7 @@ namespace wyUpdate
             try
             {
                 if (File.Exists(uninstallDataFile))
-                    ReadUninstallFile(uninstallDataFile, filesToUninstall, foldersToDelete, registryToDelete);
+                    ReadUninstallFile(uninstallDataFile, ref filesToUninstall, ref foldersToDelete, ref registryToDelete);
             }
             catch (Exception) { }
 
@@ -446,7 +453,7 @@ namespace wyUpdate
                 FileStream fs = new FileStream(uninstallDataFile, FileMode.Create, FileAccess.Write);
 
                 // Write any file-identification data you want to here
-                fs.Write(Encoding.UTF8.GetBytes("IUUFRV1"), 0, 7);
+                fs.Write(System.Text.Encoding.UTF8.GetBytes("IUUFRV1"), 0, 7);
 
                 //write files to delete
                 foreach (UninstallFileInfo file in filesToUninstall)
@@ -469,25 +476,46 @@ namespace wyUpdate
 
 
 
-        public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        public static void ReadUninstallData(string clientFile, ref List<UninstallFileInfo> uninstallFiles, ref List<string> uninstallFolders, ref List<RegChange> uninstallRegistry)
         {
-            using (ZipFile zip = ZipFile.Read(clientFile))
-            {
-                try
-                {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        //read in the uninstall data
-                        zip.Extract("uninstall.dat", ms);
+            ZipEntry theEntry = null;
 
-                        LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry);
+            //open the client file, and decompress the "uninstall information" file
+            using (ZipInputStream s = new ZipInputStream(File.OpenRead(clientFile)))
+            {
+                while ((theEntry = s.GetNextEntry()) != null)
+                {
+                    if (theEntry.Name.Equals("uninstall.dat"))
+                    {
+                        using (MemoryStream streamWriter = new MemoryStream())
+                        {
+                            int size = 2048;
+                            byte[] data = new byte[2048];
+                            do
+                            {
+                                //read compressed data
+                                size = s.Read(data, 0, data.Length);
+
+                                //write to uncompressed file
+                                streamWriter.Write(data, 0, size);
+                            } while (size > 0);
+
+                            //readin the uninstall data
+                            try
+                            {
+                                LoadUninstallData(streamWriter.ToArray(), ref uninstallFiles, ref uninstallFolders, ref uninstallRegistry);
+                            }
+                            catch (Exception) { }
+                            
+                        }
+
+                        break;
                     }
                 }
-                catch { }
-            }
+            }//end using(ZipInputStream ... )
         }
 
-        private static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        private static void ReadUninstallFile(string uninstallFile, ref List<UninstallFileInfo> uninstallFiles, ref List<string> uninstallFolders, ref List<RegChange> uninstallRegistry)
         {
             FileStream fs = null;
 
@@ -504,10 +532,13 @@ namespace wyUpdate
             }
 
             byte[] fileIDBytes = new byte[7];
+            string fileID = "";
+
+            byte bType;
 
             // Read back the file identification data, if any
             fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
+            fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
             if (fileID != "IUUFRV1")
             {
                 //free up the file so it can be deleted
@@ -516,7 +547,7 @@ namespace wyUpdate
                 throw new Exception("The uninstall file does not have the correct identifier - this is usually caused by file corruption.");
             }
 
-            byte bType = (byte)fs.ReadByte();
+            bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
             {
                 switch (bType)
@@ -541,15 +572,18 @@ namespace wyUpdate
             fs.Close();
         }
 
-        private static void LoadUninstallData(MemoryStream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        private static void LoadUninstallData(byte[] fileData, ref List<UninstallFileInfo> uninstallFiles, ref List<string> uninstallFolders, ref List<RegChange> uninstallRegistry)
         {
-            byte[] fileIDBytes = new byte[7];
+            MemoryStream ms = new MemoryStream(fileData);
 
-            ms.Position = 0;
+            byte[] fileIDBytes = new byte[7];
+            string fileID = "";
+
+            byte bType;
 
             // Read back the file identification data, if any
             ms.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
+            fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
             if (fileID != "IUUFRV1")
             {
                 //free up the file so it can be deleted
@@ -558,7 +592,7 @@ namespace wyUpdate
                 throw new Exception("The uninstall file does not have the correct identifier - this is usually caused by file corruption.");
             }
 
-            byte bType = (byte)ms.ReadByte();
+            bType = (byte)ms.ReadByte();
             while (!ReadFiles.ReachedEndByte(ms, bType, 0xFF))
             {
                 switch (bType)

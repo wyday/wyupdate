@@ -163,12 +163,12 @@ namespace wyUpdate.Common
             regValue.Close();
         }
 
-        private static object StringToMultiString(object str)
+        private object StringToMultiString(object str)
         {
             if (typeof(string[]) == str.GetType())
                 return str;
-            
-            return ((string)str).Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            else
+                return ((string)str).Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         private void DeleteRegistryValue(List<RegChange> rollbackRegistry)
@@ -264,7 +264,7 @@ namespace wyUpdate.Common
                 case RegBasekeys.HKEY_USERS:
                     Registry.Users.CreateSubKey(m_SubKey);
                     break;
-
+                case RegBasekeys.HKEY_CURRENT_USER:
                 default:
                     Registry.CurrentUser.CreateSubKey(m_SubKey);
                     break;
@@ -405,7 +405,7 @@ namespace wyUpdate.Common
 
         public object Clone()
         {
-            return new RegChange(m_RegOperation, m_RegBasekey, m_SubKey, m_ValueName, m_ValueData, m_RegValueKind);
+            return new RegChange(this.m_RegOperation, this.m_RegBasekey, this.m_SubKey, this.m_ValueName, this.m_ValueData, this.m_RegValueKind);
         }
 
         
@@ -432,7 +432,7 @@ namespace wyUpdate.Common
 
 
             bool isBinaryString = !embedBinaryData
-                && RegValueKind == RegistryValueKind.Binary
+                && RegValueKind == Microsoft.Win32.RegistryValueKind.Binary
                 && ValueData.GetType() == typeof(string);
 
             if (isBinaryString)
@@ -442,13 +442,13 @@ namespace wyUpdate.Common
             //Value Data
             switch (RegValueKind)
             {
-                case RegistryValueKind.Binary:
+                case Microsoft.Win32.RegistryValueKind.Binary:
 
                     if (isBinaryString)
                         //just saving the string pointing to a file on the disk
                         WriteFiles.WriteString(fs, 0x07, (string)ValueData);
                     else if (embedBinaryData
-                            && RegValueKind == RegistryValueKind.Binary
+                            && RegValueKind == Microsoft.Win32.RegistryValueKind.Binary
                             && ValueData.GetType() == typeof(string))
                     {
                         //load the file and immediately write it out to fs
@@ -459,17 +459,17 @@ namespace wyUpdate.Common
                         WriteFiles.WriteByteArray(fs, 0x07, (byte[])ValueData);
 
                     break;
-                case RegistryValueKind.DWord:
+                case Microsoft.Win32.RegistryValueKind.DWord:
                     WriteFiles.WriteInt(fs, 0x07, (int)ValueData);
                     break;
-                case RegistryValueKind.QWord:
+                case Microsoft.Win32.RegistryValueKind.QWord:
                     WriteFiles.WriteLong(fs, 0x07, (long)ValueData);
                     break;
-                case RegistryValueKind.MultiString:
+                case Microsoft.Win32.RegistryValueKind.MultiString:
                     WriteFiles.WriteString(fs, 0x07, MultiStringToString(ValueData));
                     break;
-                case RegistryValueKind.ExpandString:
-                case RegistryValueKind.String:
+                case Microsoft.Win32.RegistryValueKind.ExpandString:
+                case Microsoft.Win32.RegistryValueKind.String:
                     WriteFiles.WriteString(fs, 0x07, (string)ValueData);
                     break;
             }
@@ -547,7 +547,9 @@ namespace wyUpdate.Common
 
             bool isBinaryString = false;
 
-            byte bType = (byte)fs.ReadByte();
+            byte bType;
+
+            bType = (byte)fs.ReadByte();
 
             //read until the end byte is detected
             while (!ReadFiles.ReachedEndByte(fs, bType, 0x9E))
@@ -561,7 +563,7 @@ namespace wyUpdate.Common
                         tempReg.RegBasekey = (RegBasekeys)ReadFiles.ReadInt(fs);
                         break;
                     case 0x03://load valuekind
-                        tempReg.RegValueKind = (RegistryValueKind)ReadFiles.ReadInt(fs);
+                        tempReg.RegValueKind = (Microsoft.Win32.RegistryValueKind)ReadFiles.ReadInt(fs);
                         break;
                     case 0x04://subkey
                         tempReg.SubKey = ReadFiles.ReadString(fs);
@@ -570,11 +572,11 @@ namespace wyUpdate.Common
                         tempReg.ValueName = ReadFiles.ReadString(fs);
                         break;
                     case 0x06: //Depreciated: Use 0x07. All 0x06 will be converted to a string "ValueKind"
-                        if (tempReg.RegValueKind != RegistryValueKind.ExpandString
-                            && tempReg.RegValueKind != RegistryValueKind.String)
+                        if (tempReg.RegValueKind != Microsoft.Win32.RegistryValueKind.ExpandString
+                            && tempReg.RegValueKind != Microsoft.Win32.RegistryValueKind.String)
                         {
                             //Read in the entry,if it's
-                            tempReg.RegValueKind = RegistryValueKind.String;
+                            tempReg.RegValueKind = Microsoft.Win32.RegistryValueKind.String;
                         }
 
                         tempReg.ValueData = ReadFiles.ReadString(fs);
@@ -585,7 +587,7 @@ namespace wyUpdate.Common
                     case 0x07: //Value data
                         switch (tempReg.RegValueKind)
                         {
-                            case RegistryValueKind.Binary:
+                            case Microsoft.Win32.RegistryValueKind.Binary:
 
                                 if (isBinaryString)
                                     tempReg.ValueData = ReadFiles.ReadString(fs);
@@ -593,15 +595,15 @@ namespace wyUpdate.Common
                                     tempReg.ValueData = ReadFiles.ReadByteArray(fs);
 
                                 break;
-                            case RegistryValueKind.DWord:
+                            case Microsoft.Win32.RegistryValueKind.DWord:
                                 tempReg.ValueData = ReadFiles.ReadInt(fs);
                                 break;
-                            case RegistryValueKind.QWord:
+                            case Microsoft.Win32.RegistryValueKind.QWord:
                                 tempReg.ValueData = ReadFiles.ReadLong(fs);
                                 break;
-                            case RegistryValueKind.ExpandString:
-                            case RegistryValueKind.MultiString:
-                            case RegistryValueKind.String:
+                            case Microsoft.Win32.RegistryValueKind.ExpandString:
+                            case Microsoft.Win32.RegistryValueKind.MultiString:
+                            case Microsoft.Win32.RegistryValueKind.String:
                                 tempReg.ValueData = ReadFiles.ReadString(fs);
                                 break;
                         }

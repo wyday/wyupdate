@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Collections.Generic;
+using System.Windows.Forms;
+using System.Diagnostics;
+using ICSharpCode.SharpZipLib.Checksums;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Windows.Forms;
-using Ionic.Zlib;
 using wyUpdate.Common;
 
 namespace wyUpdate.Downloader
@@ -20,7 +20,7 @@ namespace wyUpdate.Downloader
         private const int BufferSize = 4096;
 
         // Determines whether the user has canceled or not.
-        private volatile bool canceled;
+        private volatile bool canceled = false;
 
         private string downloadingTo;
 
@@ -36,27 +36,25 @@ namespace wyUpdate.Downloader
         }
 
         //used to measure download speed
-        private readonly Stopwatch sw = new Stopwatch();
-        private long sentSinceLastCalc;
+        private Stopwatch sw = new Stopwatch();
+        private long sentSinceLastCalc = 0;
         private string downloadSpeed = "";
 
         // Usually a form or a winform control that implements "Invoke/BeginInvode"
-        ContainerControl m_sender;
+        ContainerControl m_sender = null;
         // The delegate method (callback) on the sender to call
-        Delegate m_senderDelegate;
+        Delegate m_senderDelegate = null;
 
         //download site and destination
         string url;
         List<string> urlList = new List<string>();
         string destFolder = "";
 
-        bool waitingForResponse;
+        bool waitingForResponse = false;
 
         public long Adler32;
 
-        private long downloadedAdler32 = 1;
-
-        public bool UseRelativeProgress;
+        public bool UseRelativeProgress = false;
 
         public FileDownloader(List<string> urls, string downloadfolder, ContainerControl sender, Delegate senderDelegate)
         {
@@ -69,7 +67,7 @@ namespace wyUpdate.Downloader
         public static void EnableLazySSL()
         {
             //Add a delegate that accepts all SSL's. Corrupt or not.
-            ServicePointManager.ServerCertificateValidationCallback += OnCheckSSLCert;
+            ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(OnCheckSSLCert);
         }
 
         private static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -82,7 +80,7 @@ namespace wyUpdate.Downloader
 
         public void Cancel()
         {
-            canceled = true;
+            this.canceled = true;
         }
 
         /// <summary>
@@ -102,9 +100,12 @@ namespace wyUpdate.Downloader
 
                     return;
                 }
-
-                //single site specified, add it to the list
-                urlList = new List<string> {url};
+                else
+                {
+                    //single site specified, add it to the list
+                    urlList = new List<string>();
+                    urlList.Add(url);
+                }
             }
 
             // try each url in the list until one suceeds
@@ -182,7 +183,7 @@ namespace wyUpdate.Downloader
         {
             DownloadData data = null;
             FileStream fs = null;
-            canceled = false;
+            this.canceled = false;
 
             try
             {
@@ -201,7 +202,7 @@ namespace wyUpdate.Downloader
                 // The place we're downloading to (not from) must not be a URI,
                 // because Path and File don't handle them...
                 destFolder = destFolder.Replace("file:///", "").Replace("file://", "");
-                downloadingTo = Path.Combine(destFolder, destFileName);
+                this.downloadingTo = Path.Combine(destFolder, destFileName);
 
                 if (!File.Exists(downloadingTo))
                 {
@@ -210,10 +211,6 @@ namespace wyUpdate.Downloader
                 }
                 else
                 {
-                    // read in the existing data to calculate the adler32
-                    if (Adler32 != 0)
-                        GetAdler32(downloadingTo);
-
                     // apend to an existing file (resume)
                     fs = File.Open(downloadingTo, FileMode.Append, FileAccess.Write);
                 }
@@ -239,12 +236,8 @@ namespace wyUpdate.Downloader
                     // update total bytes read
                     data.StartPoint += readCount;
 
-                    // update the adler32 value
-                    if (Adler32 != 0)
-                        downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, readCount);
-
                     // save block to end of file
-                    fs.Write(buffer, 0, readCount);
+                    SaveToFile(ref fs, ref buffer, readCount, this.downloadingTo);
 
                     //calculate download speed
                     calculateBps(data.StartPoint);
@@ -254,8 +247,8 @@ namespace wyUpdate.Downloader
                     {
                         ThreadHelper.ReportProgress(m_sender, m_senderDelegate, downloadSpeed,
                             //use the realtive progress or the raw progress
-                            UseRelativeProgress ?
-                                InstallUpdate.GetRelativeProgess(0, data.PercentDone) :
+                            UseRelativeProgress ? 
+                                InstallUpdate.GetRelativeProgess(0, data.PercentDone) : 
                                 data.PercentDone);
                     }
 
@@ -273,16 +266,25 @@ namespace wyUpdate.Downloader
                 throw new Exception(
                     String.Format("Could not parse the URL \"{0}\" - it's either malformed or is an unknown protocol.", url), e);
             }
-            catch (Exception e)
-            {
-                throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", downloadingTo, e.Message), e);
-            }
             finally
             {
                 if (data != null)
                     data.Close();
                 if (fs != null)
                     fs.Close();
+            }
+        }
+
+        private void SaveToFile(ref FileStream fs, ref byte[] buffer, int count, string fileName)
+        {
+            try
+            {
+                fs.Write(buffer, 0, count);
+            }
+            catch (Exception e)
+            {
+                throw new Exception(
+                    String.Format("Error trying to save file \"{0}\": {1}", fileName, e.Message), e);
             }
         }
 
@@ -327,34 +329,44 @@ namespace wyUpdate.Downloader
 
         private void ValidateDownload()
         {
+            if (!canceled && Adler32 != 0)
+                ThreadHelper.ReportProgress(m_sender, m_senderDelegate, "Validating download...", -1);
+
             //if an Adler32 checksum is provided, check the file
-            if (!canceled && Adler32 != 0 && Adler32 != downloadedAdler32)
+            if (!canceled && Adler32 != 0 && Adler32 != GetAdler32(downloadingTo))
             {
-                // file failed to vaildate, throw an error
+                //file failed to vaildate, throw an error
                 throw new Exception("The downloaded file failed the Adler32 validation.");
             }
         }
 
-        private void GetAdler32(string fileName)
+        private long GetAdler32(string fileName)
         {
+            Adler32 adler = new Adler32();
+            int totalComplete = 0;
+            long fileSize = new FileInfo(fileName).Length;
+            int sourceBytes;
+            adler.Reset();
+
+            FileStream fs = new FileStream(fileName, FileMode.Open);
             byte[] buffer = new byte[BufferSize];
 
-            using (FileStream fs = new FileStream(fileName, FileMode.Open))
+            do
             {
-                int sourceBytes;
+                sourceBytes = fs.Read(buffer, 0, buffer.Length);
+                totalComplete += sourceBytes;
 
-                do
-                {
-                    sourceBytes = fs.Read(buffer, 0, buffer.Length);
+                adler.Update(buffer, 0, sourceBytes);
 
-                    downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, sourceBytes);
+                // break on cancel
+                if (canceled)
+                    break;
 
-                    // break on cancel
-                    if (canceled)
-                        break;
+            } while (sourceBytes > 0);
 
-                } while (sourceBytes > 0);
-            }
+            fs.Close();
+
+            return adler.Value;
         }
     }
 
@@ -373,10 +385,10 @@ namespace wyUpdate.Downloader
             DownloadData downloadData = new DownloadData();
 
             
-            WebRequest req = GetRequest(url);
+            WebRequest req = downloadData.GetRequest(url);
             try
             {
-                downloadData.response = req.GetResponse();
+                downloadData.response = (WebResponse)req.GetResponse();
                 downloadData.GetFileSize();
             }
             catch (Exception e)
@@ -390,7 +402,7 @@ namespace wyUpdate.Downloader
             ValidateResponse(downloadData.response, url);
 
             // Take the name of the file given to use from the web server.
-            String fileName = Path.GetFileName(downloadData.response.ResponseUri.ToString());
+            String fileName = System.IO.Path.GetFileName(downloadData.response.ResponseUri.ToString());
 
             String downloadTo = Path.Combine(destFolder, fileName);
 
@@ -419,7 +431,7 @@ namespace wyUpdate.Downloader
                     {
                         // Try and resume by creating a new request with a new start position
                         downloadData.response.Close();
-                        req = GetRequest(url);
+                        req = downloadData.GetRequest(url);
                         ((HttpWebRequest)req).AddRange((int)downloadData.start);
                         downloadData.response = req.GetResponse();
 
@@ -435,7 +447,23 @@ namespace wyUpdate.Downloader
             return downloadData;
         }
 
-        // Checks whether a WebResponse is an error.
+        // Used by the factory method
+        private DownloadData()
+        {
+        }
+
+        private DownloadData(WebResponse response, long size, long start)
+        {
+            this.response = response;
+            this.size = size;
+            this.start = start;
+            this.stream = null;
+        }
+
+        /// <summary>
+        /// Checks whether a WebResponse is an error.
+        /// </summary>
+        /// <param name="response"></param>
         private static void ValidateResponse(WebResponse response, string url)
         {
             if (response is HttpWebResponse)
@@ -466,49 +494,48 @@ namespace wyUpdate.Downloader
             {
                 try
                 {
-                    size = response.ContentLength;
+                    this.size = response.ContentLength;
                 }
                 catch (Exception) 
                 {
                     //file size couldn't be determined
-                    size = -1;
+                    this.size = -1;
                 }
             }
         }
 
-        private static WebRequest GetRequest(string url)
+        private WebRequest GetRequest(string url)
         {
+            //WebProxy proxy = WebProxy.GetDefaultProxy();
             WebRequest request = WebRequest.Create(url);
-
             if (request is HttpWebRequest)
+            {
                 request.Credentials = CredentialCache.DefaultCredentials;
+            }
 
             return request;
         }
 
         public void Close()
         {
-            response.Close();
+            this.response.Close();
         }
 
         #region Properties
-
         public WebResponse Response
         {
             get { return response; }
             set { response = value; }
         }
-
         public Stream DownloadStream
         {
             get
             {
-                if (start == size)
+                if (this.start == this.size)
                     return Stream.Null;
-                if (stream == null)
-                    stream = response.GetResponseStream();
-
-                return stream;
+                if (this.stream == null)
+                    this.stream = this.response.GetResponseStream();
+                return this.stream;
             }
         }
 
@@ -517,16 +544,18 @@ namespace wyUpdate.Downloader
             get
             {
                 if (size > 0)
-                    return (int) ((start*100)/size);
-
-                return 0;
+                {
+                    return (int)((start * 100) / size);
+                }
+                else
+                    return 0;
             }
         }
 
         public long StartPoint
         {
-            get { return start; }
-            set { start = value; }
+            get { return this.start; }
+            set { this.start = value; }
         }
 
         public bool IsProgressKnown
@@ -536,7 +565,7 @@ namespace wyUpdate.Downloader
                 // If the size of the remote url is -1, that means we
                 // couldn't determine it, and so we don't know
                 // progress information.
-                return size > -1;
+                return this.size > -1;
             }
         }
         #endregion

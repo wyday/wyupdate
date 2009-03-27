@@ -6,7 +6,7 @@ using System.Xml;
 
 namespace wyUpdate
 {
-    public class ScreenDialog
+    public struct ScreenDialog
     {
         public string Title;
         public string SubTitle;
@@ -36,24 +36,16 @@ namespace wyUpdate
         }
     }
 
-    public class LanguageCulture
-    {
-        public string Culture;
-        public string Filename;
-
-        public LanguageCulture (string culture)
-        {
-            Culture = culture;
-        }
-    }
-
     public class ClientLanguage
     {
         //Return parsed strings?
         private bool m_ReturnParsedStrings = true;
 
         //Language Name
-        private string m_EnglishName, m_Name = "English", m_Culture = "en-US";
+        private string m_EnglishName, m_Name = "English";
+
+        //Version of the client that the language was made for
+        private string m_ClientVersion;
 
         //Buttons
         private string m_NextButton = "Next", 
@@ -81,8 +73,7 @@ namespace wyUpdate
                 "2. In Windows Explorer right click wyUpdate.exe and click \"Run as Administrator\"",
             m_DownloadError = "The update failed to download:",
             m_GeneralUpdateError = "The update failed to install:",
-            m_SelfUpdateInstallError = "The updated version of wyUpdate required to update %product% failed to install:",
-            m_LogOffError = "Updating %product%. You must cancel wyUpdate before you can log off.";
+            m_SelfUpdateInstallError = "The updated version of this client required to update %product% failed to install:";
 
         //Update Screens
         private ScreenDialog
@@ -117,8 +108,8 @@ namespace wyUpdate
 
         //Status
         private string m_Download = "Downloading update",
-            m_DownloadingSelfUpdate = "Downloading new wyUpdate",
-            m_SelfUpdate = "Updating wyUpdate",
+            m_DownloadingSelfUpdate = "Downloading new wyUpdate client",
+            m_SelfUpdate = "Updating wyUpdate client",
             m_Extract = "Extracting files",
             m_Processes = "Closing processes",
             m_PreExec = "Executing files",
@@ -153,10 +144,11 @@ namespace wyUpdate
             set { m_Name = value; }
         }
 
-        public string Culture
+        //Version of Client that the lang was created for
+        public string ClientVersion
         {
-            get { return m_Culture; }
-            set { m_Culture = value; }
+            get { return m_ClientVersion; }
+            set { m_ClientVersion = value; }
         }
 
         //Buttons
@@ -166,8 +158,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_NextButton);
-                
-                return m_NextButton;
+                else
+                    return m_NextButton;
             }
             set { m_NextButton = value; }
         }
@@ -178,8 +170,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_UpdateButton);
-                
-                return m_UpdateButton;
+                else
+                    return m_UpdateButton;
             }
             set { m_UpdateButton = value; }
         }
@@ -190,8 +182,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_FinishButton);
-                
-                return m_FinishButton;
+                else
+                    return m_FinishButton;
             }
             set { m_FinishButton = value; }
         }
@@ -202,8 +194,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_CancelButton);
-                
-                return m_CancelButton;
+                else
+                    return m_CancelButton;
             }
             set { m_CancelButton = value; }
         }
@@ -215,8 +207,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_ProcessDialog);
-                
-                return m_ProcessDialog;
+                else
+                    return m_ProcessDialog;
             }
             set { m_ProcessDialog = value; }
         }
@@ -227,8 +219,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_CancelDialog);
-                
-                return m_CancelDialog;
+                else
+                    return m_CancelDialog;
             }
             set { m_CancelDialog = value; }
         }
@@ -239,8 +231,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_ClosePrc);
-                
-                return m_ClosePrc;
+                else
+                    return m_ClosePrc;
             }
             set { m_ClosePrc = value; }
         }
@@ -251,8 +243,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_CloseAllPrc);
-                
-                return m_CloseAllPrc;
+                else
+                    return m_CloseAllPrc;
             }
             set { m_CloseAllPrc = value; }
         }
@@ -263,8 +255,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_CancelUpdate);
-                
-                return m_CancelUpdate;
+                else
+                    return m_CancelUpdate;
             }
             set { m_CancelUpdate = value; }
         }
@@ -276,8 +268,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_ServerError);
-                
-                return m_ServerError;
+                else
+                    return m_ServerError;
             }
             set { m_ServerError = value; }
         }
@@ -288,8 +280,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_AdminError);
-                
-                return m_AdminError;
+                else
+                    return m_AdminError;
             }
             set { m_AdminError = value; }
         }
@@ -300,8 +292,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_DownloadError);
-                
-                return m_DownloadError;
+                else
+                    return m_DownloadError;
             }
             set { m_DownloadError = value; }
         }
@@ -312,8 +304,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_GeneralUpdateError);
-                
-                return m_GeneralUpdateError;
+                else
+                    return m_GeneralUpdateError;
             }
             set { m_GeneralUpdateError = value; }
         }
@@ -324,22 +316,10 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_SelfUpdateInstallError);
-                
-                return m_SelfUpdateInstallError; 
+                else
+                    return m_SelfUpdateInstallError; 
             }
             set { m_SelfUpdateInstallError = value; }
-        }
-
-        public string LogOffError
-        {
-            get
-            {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_LogOffError);
-
-                return m_LogOffError;
-            }
-            set { m_LogOffError = value; }
         }
 
         //Update Screens
@@ -349,8 +329,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_Checking);
-                
-                return m_Checking;
+                else
+                    return m_Checking;
             }
             set { m_Checking = value; }
         }
@@ -361,8 +341,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_UpdateInfo);
-                
-                return m_UpdateInfo;
+                else
+                    return m_UpdateInfo;
             }
             set { m_UpdateInfo = value; }
         }
@@ -373,8 +353,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_DownInstall);
-                
-                return m_DownInstall;
+                else
+                    return m_DownInstall;
             }
             set { m_DownInstall = value; }
         }
@@ -385,8 +365,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_Uninstall);
-                
-                return m_Uninstall;
+                else
+                    return m_Uninstall;
             }
             set { m_Uninstall = value; }
         }
@@ -397,8 +377,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_SuccessUpdate);
-                
-                return m_SuccessUpdate;
+                else
+                    return m_SuccessUpdate;
             }
             set { m_SuccessUpdate = value; }
         }
@@ -409,8 +389,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_AlreadyLatest);
-                
-                return m_AlreadyLatest;
+                else
+                    return m_AlreadyLatest;
             }
             set { m_AlreadyLatest = value; }
         }
@@ -421,8 +401,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_NoUpdateToLatest);
-                
-                return m_NoUpdateToLatest;
+                else
+                    return m_NoUpdateToLatest;
             }
             set { m_NoUpdateToLatest = value; }
         }
@@ -433,8 +413,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseScreenDialog(m_UpdateError);
-                
-                return m_UpdateError;
+                else
+                    return m_UpdateError;
             }
             set { m_UpdateError = value; }
         }
@@ -446,8 +426,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_UpdateBottom);
-                
-                return m_UpdateBottom;
+                else
+                    return m_UpdateBottom;
             }
             set { m_UpdateBottom = value; }
         }
@@ -458,8 +438,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_FinishBottom);
-                
-                return m_FinishBottom;
+                else
+                    return m_FinishBottom;
             }
             set { m_FinishBottom = value; }
         }
@@ -471,8 +451,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_Download);
-                
-                return m_Download;
+                else
+                    return m_Download;
             }
             set { m_Download = value; }
         }
@@ -483,8 +463,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_DownloadingSelfUpdate);
-                
-                return m_DownloadingSelfUpdate; 
+                else
+                    return m_DownloadingSelfUpdate; 
             }
             set { m_DownloadingSelfUpdate = value; }
         }
@@ -495,8 +475,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_SelfUpdate);
-                
-                return m_SelfUpdate;
+                else
+                    return m_SelfUpdate;
             }
             set { m_SelfUpdate = value; }
         }
@@ -507,8 +487,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_Extract);
-                
-                return m_Extract;
+                else
+                    return m_Extract;
             }
             set { m_Extract = value; }
         }
@@ -519,8 +499,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_Processes);
-                
-                return m_Processes;
+                else
+                    return m_Processes;
             }
             set { m_Processes = value; }
         }
@@ -531,8 +511,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_PreExec);
-                
-                return m_PreExec;
+                else
+                    return m_PreExec;
             }
             set { m_PreExec = value; }
         }
@@ -543,8 +523,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_Files);
-                
-                return m_Files;
+                else
+                    return m_Files;
             }
             set { m_Files = value; }
         }
@@ -555,8 +535,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_Registry);
-                
-                return m_Registry;
+                else
+                    return m_Registry;
             }
             set { m_Registry = value; }
         }
@@ -567,8 +547,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_Optimize);
-                
-                return m_Optimize;
+                else
+                    return m_Optimize;
             }
             set { m_Optimize = value; }
         }
@@ -579,8 +559,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_TempFiles);
-                
-                return m_TempFiles;
+                else
+                    return m_TempFiles;
             }
             set { m_TempFiles = value; }
         }
@@ -591,8 +571,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_UninstallRegistry);
-                
-                return m_UninstallRegistry;
+                else
+                    return m_UninstallRegistry;
             }
             set { m_UninstallRegistry = value; }
         }
@@ -603,8 +583,8 @@ namespace wyUpdate
             {
                 if (m_ReturnParsedStrings)
                     return ParseText(m_UninstallFiles);
-                
-                return m_UninstallFiles;
+                else
+                    return m_UninstallFiles;
             }
             set { m_UninstallFiles = value; }
         }
@@ -642,13 +622,13 @@ namespace wyUpdate
         public void ResetLanguage()
         {
             m_Name = m_EnglishName = m_NextButton = m_UpdateButton = m_FinishButton = m_CancelButton 
-                = m_ClosePrc = m_CloseAllPrc = m_CancelUpdate  = m_Culture = null;
+                = m_ClosePrc = m_CloseAllPrc = m_CancelUpdate = null;
 
             m_ProcessDialog.Clear();
             m_CancelDialog.Clear();
 
             //Errors
-            m_ServerError = m_AdminError = m_GeneralUpdateError = m_DownloadError = m_SelfUpdateInstallError = m_LogOffError = null;
+            m_ServerError = m_AdminError = m_GeneralUpdateError = m_DownloadError = m_SelfUpdateInstallError = null;
 
             //Update Screens
             m_Checking.Clear();
@@ -686,9 +666,10 @@ namespace wyUpdate
             StringBuilder returnString = new StringBuilder();
             string tempString;
 
+            int firstIndex;
             int currentIndex;
 
-            int firstIndex = text.IndexOf('%', 0);
+            firstIndex = text.IndexOf('%', 0);
 
             if (firstIndex == -1)
             {
@@ -710,29 +691,31 @@ namespace wyUpdate
                     returnString.Append(text.Substring(firstIndex, text.Length - firstIndex));
                     return returnString.ToString();
                 }
-
-
-                //return the content of the variable
-                tempString = VariableToPretty(text.Substring(firstIndex + 1, currentIndex - firstIndex - 1), ref excludeVariables);
-
-                //if the variable isn't defined
-                if (tempString == null)
-                {
-                    //return the string with the percent signs
-                    returnString.Append(text.Substring(firstIndex, currentIndex - firstIndex));
-                }
                 else
                 {
-                    //variable exists, add the parsed content
-                    returnString.Append(tempString);
-                    currentIndex++;
-                    if (currentIndex == text.Length)
+                    //return the content of the variable
+                    tempString = VariableToPretty(text.Substring(firstIndex + 1, currentIndex - firstIndex - 1), ref excludeVariables);
+
+                    //if the variable isn't defined
+                    if (tempString == null)
                     {
-                        return returnString.ToString();
+                        //return the string with the percent signs
+                        returnString.Append(text.Substring(firstIndex, currentIndex - firstIndex));
+                    }
+                    else
+                    {
+                        //variable exists, add the parsed content
+                        returnString.Append(tempString);
+                        currentIndex++;
+                        if (currentIndex == text.Length)
+                        {
+                            return returnString.ToString();
+                        }
                     }
                 }
 
                 firstIndex = currentIndex;
+                tempString = null;
             }
 
             return returnString.ToString();
@@ -745,7 +728,7 @@ namespace wyUpdate
             if (excludeVariables.Contains(variable))
                 return null;
 
-            string returnValue;
+            string returnValue = null;
 
 
             excludeVariables.Add(variable);
@@ -784,6 +767,7 @@ namespace wyUpdate
         #region Reading XML language file
 
 
+
         public void Open(string filename)
         {
             XmlTextReader reader = null;
@@ -792,7 +776,7 @@ namespace wyUpdate
             {
                 reader = new XmlTextReader(filename);
 
-                ReadLanguageFile(reader);
+                ReadLanguageFile(ref reader);
             }
             catch (Exception)
             {
@@ -801,56 +785,67 @@ namespace wyUpdate
             }
         }
 
-        public void Open(MemoryStream ms)
+        public void Open(byte[] fileData)
         {
             XmlTextReader reader = null;
-
-            ms.Position = 0;
-
+            MemoryStream ms = null;
             try
             {
+                ms = new MemoryStream(fileData);
+
                 reader = new XmlTextReader(ms);
 
-                ReadLanguageFile(reader);
+                ReadLanguageFile(ref reader);
             }
             catch (Exception)
             {
                 if (reader != null)
                     reader.Close();
+
+                if (ms != null)
+                    ms.Close();
             }
         }
 
-        private void ReadLanguageFile(XmlTextReader reader)
+        private void ReadLanguageFile(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
-                if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
+                if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Lang"))
                         m_Name = reader.ReadString();
-                    else if (reader.LocalName.Equals("LangEn"))
+
+                    if (reader.LocalName.Equals("LangEn"))
                         m_EnglishName = reader.ReadString();
-                    else if (reader.LocalName.Equals("Culture"))
-                        m_Culture = reader.ReadString();
-                    else if (reader.LocalName.Equals("Buttons"))
-                        ReadButtons(reader);
-                    else if (reader.LocalName.Equals("Screens"))
-                        ReadScreens(reader);
-                    else if (reader.LocalName.Equals("Dialogs"))
-                        ReadDialogs(reader);
-                    else if (reader.LocalName.Equals("Status"))
-                        ReadStatus(reader);
-                    else if (reader.LocalName.Equals("Errors"))
-                        ReadErrors(reader);
-                    else if (reader.LocalName.Equals("Bottoms"))
-                        ReadBottoms(reader);
+
+                    if (reader.LocalName.Equals("ClientVersion"))
+                        m_ClientVersion = reader.ReadString();
+
+                    if (reader.LocalName.Equals("Buttons"))
+                        ReadButtons(ref reader);
+
+                    if (reader.LocalName.Equals("Screens"))
+                        ReadScreens(ref reader);
+
+                    if (reader.LocalName.Equals("Dialogs"))
+                        ReadDialogs(ref reader);
+
+                    if (reader.LocalName.Equals("Status"))
+                        ReadStatus(ref reader);
+
+                    if (reader.LocalName.Equals("Errors"))
+                        ReadErrors(ref reader);
+
+                    if (reader.LocalName.Equals("Bottoms"))
+                        ReadBottoms(ref reader);
                 }
             }
 
             reader.Close();
         }
 
-        private void ReadButtons(XmlTextReader reader)
+        private void ReadButtons(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
@@ -862,23 +857,29 @@ namespace wyUpdate
                 {
                     if (reader.LocalName.Equals("Next"))
                         m_NextButton = reader.ReadString();
-                    else if (reader.LocalName.Equals("Update"))
+
+                    if (reader.LocalName.Equals("Update"))
                         m_UpdateButton = reader.ReadString();
-                    else if (reader.LocalName.Equals("Finish"))
+
+                    if (reader.LocalName.Equals("Finish"))
                         m_FinishButton = reader.ReadString();
-                    else if (reader.LocalName.Equals("Cancel"))
+
+                    if (reader.LocalName.Equals("Cancel"))
                         m_CancelButton = reader.ReadString();
-                    else if (reader.LocalName.Equals("Close"))
+
+                    if (reader.LocalName.Equals("Close"))
                         m_ClosePrc = reader.ReadString();
-                    else if (reader.LocalName.Equals("CloseAll"))
+
+                    if (reader.LocalName.Equals("CloseAll"))
                         m_CloseAllPrc = reader.ReadString();
-                    else if (reader.LocalName.Equals("CancelUpdate"))
+
+                    if (reader.LocalName.Equals("CancelUpdate"))
                         m_CancelUpdate = reader.ReadString();
                 }
             }
         }
 
-        private void ReadScreens(XmlTextReader reader)
+        private void ReadScreens(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
@@ -886,29 +887,36 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.EndElement && reader.LocalName.Equals("Screens"))
                     return;
 
-                if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
+                if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Checking"))
-                        ReadScreenDialog(reader, m_Checking);
-                    else if (reader.LocalName.Equals("UpdateInfo"))
-                        ReadScreenDialog(reader, m_UpdateInfo);
-                    else if (reader.LocalName.Equals("DownInstall"))
-                        ReadScreenDialog(reader, m_DownInstall);
-                    else if (reader.LocalName.Equals("Uninstall"))
-                        ReadScreenDialog(reader, m_Uninstall);
-                    else if (reader.LocalName.Equals("SuccessUpdate"))
-                        ReadScreenDialog(reader, m_SuccessUpdate);
-                    else if (reader.LocalName.Equals("AlreadyLatest"))
-                        ReadScreenDialog(reader, m_AlreadyLatest);
-                    else if (reader.LocalName.Equals("NoUpdateToLatest"))
-                        ReadScreenDialog(reader, m_NoUpdateToLatest);
-                    else if (reader.LocalName.Equals("UpdateError"))
-                        ReadScreenDialog(reader, m_UpdateError);
+                        ReadScreenDialog(ref reader, ref m_Checking);
+
+                    if (reader.LocalName.Equals("UpdateInfo"))
+                        ReadScreenDialog(ref reader, ref m_UpdateInfo);
+
+                    if (reader.LocalName.Equals("DownInstall"))
+                        ReadScreenDialog(ref reader, ref m_DownInstall);
+
+                    if (reader.LocalName.Equals("Uninstall"))
+                        ReadScreenDialog(ref reader, ref m_Uninstall);
+
+                    if (reader.LocalName.Equals("SuccessUpdate"))
+                        ReadScreenDialog(ref reader, ref m_SuccessUpdate);
+
+                    if (reader.LocalName.Equals("AlreadyLatest"))
+                        ReadScreenDialog(ref reader, ref m_AlreadyLatest);
+
+                    if (reader.LocalName.Equals("NoUpdateToLatest"))
+                        ReadScreenDialog(ref reader, ref m_NoUpdateToLatest);
+
+                    if (reader.LocalName.Equals("UpdateError"))
+                        ReadScreenDialog(ref reader, ref m_UpdateError);
                 }
             }
         }
 
-        private void ReadDialogs(XmlTextReader reader)
+        private void ReadDialogs(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
@@ -919,14 +927,15 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Cancel"))
-                        ReadScreenDialog(reader, m_CancelDialog);
-                    else if (reader.LocalName.Equals("Processes"))
-                        ReadScreenDialog(reader, m_ProcessDialog);
+                        ReadScreenDialog(ref reader, ref m_CancelDialog);
+
+                    if (reader.LocalName.Equals("Processes"))
+                        ReadScreenDialog(ref reader, ref m_ProcessDialog);
                 }
             }
         }
 
-        private static void ReadScreenDialog(XmlTextReader reader, ScreenDialog sd)
+        private void ReadScreenDialog(ref XmlTextReader reader, ref ScreenDialog sd)
         {
             string screenEndName = reader.LocalName;
 
@@ -940,15 +949,17 @@ namespace wyUpdate
                 {
                     if (reader.LocalName.Equals("Title"))
                         sd.Title = reader.ReadString();
-                    else if (reader.LocalName.Equals("SubTitle"))
+
+                    if (reader.LocalName.Equals("SubTitle"))
                         sd.SubTitle = reader.ReadString();
-                    else if (reader.LocalName.Equals("Content"))
+
+                    if (reader.LocalName.Equals("Content"))
                         sd.Content = reader.ReadString();
                 }
             }
         }
 
-        private void ReadStatus(XmlTextReader reader)
+        private void ReadStatus(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
@@ -960,33 +971,44 @@ namespace wyUpdate
                 {
                     if (reader.LocalName.Equals("Download"))
                         m_Download = reader.ReadString();
-                    else if (reader.LocalName.Equals("DownloadSelfUpdate"))
+
+                    if (reader.LocalName.Equals("DownloadSelfUpdate"))
                         m_DownloadingSelfUpdate = reader.ReadString();
-                    else if (reader.LocalName.Equals("SelfUpdate"))
+
+                    if (reader.LocalName.Equals("SelfUpdate"))
                         m_SelfUpdate = reader.ReadString();
-                    else if (reader.LocalName.Equals("Extract"))
+
+                    if (reader.LocalName.Equals("Extract"))
                         m_Extract = reader.ReadString();
-                    else if (reader.LocalName.Equals("Processes"))
+
+                    if (reader.LocalName.Equals("Processes"))
                         m_Processes = reader.ReadString();
-                    else if (reader.LocalName.Equals("PreExec"))
+
+                    if (reader.LocalName.Equals("PreExec"))
                         m_PreExec = reader.ReadString();
-                    else if (reader.LocalName.Equals("Files"))
+
+                    if (reader.LocalName.Equals("Files"))
                         m_Files = reader.ReadString();
-                    else if (reader.LocalName.Equals("Registry"))
+
+                    if (reader.LocalName.Equals("Registry"))
                         m_Registry = reader.ReadString();
-                    else if (reader.LocalName.Equals("Optimize"))
+
+                    if (reader.LocalName.Equals("Optimize"))
                         m_Optimize = reader.ReadString();
-                    else if (reader.LocalName.Equals("TempFiles"))
+
+                    if (reader.LocalName.Equals("TempFiles"))
                         m_TempFiles = reader.ReadString();
-                    else if (reader.LocalName.Equals("UninstallFiles"))
+
+                    if (reader.LocalName.Equals("UninstallFiles"))
                         m_UninstallFiles = reader.ReadString();
-                    else if (reader.LocalName.Equals("UninstallReg"))
+
+                    if (reader.LocalName.Equals("UninstallReg"))
                         m_UninstallRegistry = reader.ReadString();
                 }
             }
         }
 
-        private void ReadErrors(XmlTextReader reader)
+        private void ReadErrors(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
@@ -998,21 +1020,23 @@ namespace wyUpdate
                 {
                     if (reader.LocalName.Equals("ServFile"))
                         m_ServerError = reader.ReadString();
-                    else if (reader.LocalName.Equals("Admin"))
+
+                    if (reader.LocalName.Equals("Admin"))
                         m_AdminError = reader.ReadString();
-                    else if (reader.LocalName.Equals("Update"))
+
+                    if (reader.LocalName.Equals("Update"))
                         m_GeneralUpdateError = reader.ReadString();
-                    else if (reader.LocalName.Equals("Download"))
+
+                    if (reader.LocalName.Equals("Download"))
                         m_DownloadError = reader.ReadString();
-                    else if (reader.LocalName.Equals("SelfUpdate"))
+
+                    if (reader.LocalName.Equals("SelfUpdate"))
                         m_SelfUpdateInstallError = reader.ReadString();
-                    else if (reader.LocalName.Equals("LogOff"))
-                        m_LogOffError = reader.ReadString();
                 }
             }
         }
 
-        private void ReadBottoms(XmlTextReader reader)
+        private void ReadBottoms(ref XmlTextReader reader)
         {
             while (reader.Read())
             {
@@ -1024,7 +1048,8 @@ namespace wyUpdate
                 {
                     if (reader.LocalName.Equals("Update"))
                         m_UpdateBottom = reader.ReadString();
-                    else if (reader.LocalName.Equals("Finish"))
+
+                    if (reader.LocalName.Equals("Finish"))
                         m_FinishBottom = reader.ReadString();
                 }
             }
@@ -1042,7 +1067,7 @@ namespace wyUpdate
             {
                 writer = new XmlTextWriter(filename, Encoding.UTF8);
 
-                WriteLanguageFile(writer);
+                WriteLanguageFile(ref writer);
             }
             catch (Exception)
             {
@@ -1051,7 +1076,7 @@ namespace wyUpdate
             }
         }
 
-        private void WriteLanguageFile(XmlTextWriter writer)
+        private void WriteLanguageFile(ref XmlTextWriter writer)
         {
             writer.Formatting = Formatting.Indented;
             writer.IndentChar = '\t';
@@ -1068,73 +1093,72 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(m_Name))
                     writer.WriteElementString("Lang", m_Name);
 
-                if (!string.IsNullOrEmpty(m_Culture))
-                    writer.WriteElementString("Culture", m_Culture);
+                if (!string.IsNullOrEmpty(m_ClientVersion))
+                    writer.WriteElementString("ClientVersion", m_ClientVersion);
 
                 writer.WriteStartElement("Buttons"); //<Buttons>
                 {
-                    WriteString(writer, "Next", m_NextButton);
-                    WriteString(writer, "Update", m_UpdateButton);
-                    WriteString(writer, "Finish", m_FinishButton);
-                    WriteString(writer, "Cancel", m_CancelButton);
-                    WriteString(writer, "Close", m_ClosePrc);
-                    WriteString(writer, "CloseAll", m_CloseAllPrc);
-                    WriteString(writer, "CancelUpdate", m_CancelUpdate);
+                    WriteString(ref writer, "Next", ref m_NextButton);
+                    WriteString(ref writer, "Update", ref m_UpdateButton);
+                    WriteString(ref writer, "Finish", ref m_FinishButton);
+                    WriteString(ref writer, "Cancel", ref m_CancelButton);
+                    WriteString(ref writer, "Close", ref m_ClosePrc);
+                    WriteString(ref writer, "CloseAll", ref m_CloseAllPrc);
+                    WriteString(ref writer, "CancelUpdate", ref m_CancelUpdate);
                 }
                 writer.WriteEndElement(); //</Buttons>
 
                 writer.WriteStartElement("Dialogs"); //<Dialogs>
                 {
-                    WriteScreenDialog(writer, "Cancel", m_CancelDialog);
-                    WriteScreenDialog(writer, "Processes", m_ProcessDialog);
+                    WriteScreenDialog(ref writer, "Cancel", ref m_CancelDialog);
+                    WriteScreenDialog(ref writer, "Processes", ref m_ProcessDialog);
                 }
                 writer.WriteEndElement(); //</Dialogs>
 
                 writer.WriteStartElement("Errors"); //<Errors>
                 {
-                    WriteString(writer, "Admin", m_AdminError);
-                    WriteString(writer, "Download", m_DownloadError);
-                    WriteString(writer, "LogOff", m_LogOffError);
-                    WriteString(writer, "SelfUpdate", m_SelfUpdateInstallError);
-                    WriteString(writer, "ServFile", m_ServerError);
-                    WriteString(writer, "Update", m_GeneralUpdateError);
+                    WriteString(ref writer, "Admin", ref m_AdminError);
+                    WriteString(ref writer, "Download", ref m_DownloadError);
+                    WriteString(ref writer, "SelfUpdate", ref m_SelfUpdateInstallError);
+                    WriteString(ref writer, "ServFile", ref m_ServerError);
+                    WriteString(ref writer, "Update", ref m_GeneralUpdateError);
                 }
                 writer.WriteEndElement(); //</Errors>
 
                 writer.WriteStartElement("Screens"); //<Screens>
                 {
-                    WriteScreenDialog(writer, "Checking", m_Checking);
-                    WriteScreenDialog(writer, "UpdateInfo", m_UpdateInfo);
-                    WriteScreenDialog(writer, "DownInstall", m_DownInstall);
-                    WriteScreenDialog(writer, "Uninstall", m_Uninstall);
-                    WriteScreenDialog(writer, "SuccessUpdate", m_SuccessUpdate);
-                    WriteScreenDialog(writer, "AlreadyLatest", m_AlreadyLatest);
-                    WriteScreenDialog(writer, "NoUpdateToLatest", m_NoUpdateToLatest);
-                    WriteScreenDialog(writer, "UpdateError", m_UpdateError);
+                    WriteScreenDialog(ref writer, "Checking", ref m_Checking);
+                    WriteScreenDialog(ref writer, "UpdateInfo", ref m_UpdateInfo);
+                    WriteScreenDialog(ref writer, "DownInstall", ref m_DownInstall);
+                    WriteScreenDialog(ref writer, "Uninstall", ref m_Uninstall);
+                    WriteScreenDialog(ref writer, "SuccessUpdate", ref m_SuccessUpdate);
+                    WriteScreenDialog(ref writer, "AlreadyLatest", ref m_AlreadyLatest);
+                    WriteScreenDialog(ref writer, "NoUpdateToLatest", ref m_NoUpdateToLatest);
+                    WriteScreenDialog(ref writer, "UpdateError", ref m_UpdateError);
                 }
                 writer.WriteEndElement(); //</Screens>
 
                 writer.WriteStartElement("Status"); //<Status>
                 {
-                    WriteString(writer, "Download", m_Download);
-                    WriteString(writer, "DownloadSelfUpdate", m_DownloadingSelfUpdate);
-                    WriteString(writer, "SelfUpdate", m_SelfUpdate);
-                    WriteString(writer, "Extract", m_Extract);
-                    WriteString(writer, "Processes", m_Processes);
-                    WriteString(writer, "PreExec", m_PreExec);
-                    WriteString(writer, "Files", m_Files);
-                    WriteString(writer, "Registry", m_Registry);
-                    WriteString(writer, "Optimize", m_Optimize);
-                    WriteString(writer, "TempFiles", m_TempFiles);
-                    WriteString(writer, "UninstallFiles", m_UninstallFiles);
-                    WriteString(writer, "UninstallReg", m_UninstallRegistry);
+                    WriteString(ref writer, "Download", ref m_Download);
+                    WriteString(ref writer, "DownloadSelfUpdate", ref m_DownloadingSelfUpdate);
+                    WriteString(ref writer, "SelfUpdate", ref m_SelfUpdate);
+                    WriteString(ref writer, "Extract", ref m_Extract);
+                    WriteString(ref writer, "Processes", ref m_Processes);
+                    WriteString(ref writer, "PreExec", ref m_PreExec);
+                    WriteString(ref writer, "Files", ref m_Files);
+                    WriteString(ref writer, "Registry", ref m_Registry);
+                    WriteString(ref writer, "Optimize", ref m_Optimize);
+                    WriteString(ref writer, "TempFiles", ref m_TempFiles);
+                    WriteString(ref writer, "UninstallFiles", ref m_UninstallFiles);
+                    WriteString(ref writer, "UninstallReg", ref m_UninstallRegistry);
                 }
                 writer.WriteEndElement(); //</Status>
 
                 writer.WriteStartElement("Bottoms"); //<Bottoms>
                 {
-                    WriteString(writer, "Update", m_UpdateBottom);
-                    WriteString(writer, "Finish", m_FinishBottom);
+                    WriteString(ref writer, "Update", ref m_UpdateBottom);
+                    WriteString(ref writer, "Finish", ref m_FinishBottom);
                 }
                 writer.WriteEndElement(); //</Bottoms>
             }
@@ -1144,21 +1168,21 @@ namespace wyUpdate
             writer.Close();
         }
 
-        private static void WriteString(XmlTextWriter writer, string name, string value)
+        private void WriteString(ref XmlTextWriter writer, string name, ref string value)
         {
             if (!string.IsNullOrEmpty(value))
                 writer.WriteElementString(name, value);
         }
 
-        private static void WriteScreenDialog(XmlTextWriter writer, string name, ScreenDialog sd)
+        private void WriteScreenDialog(ref XmlTextWriter writer, string name, ref ScreenDialog sd)
         {
             if (!sd.IsEmpty)
             {
                 writer.WriteStartElement(name); //<name>
 
-                WriteString(writer, "Title", sd.Title);
-                WriteString(writer, "SubTitle", sd.SubTitle);
-                WriteString(writer, "Content", sd.Content);
+                WriteString(ref writer, "Title", ref sd.Title);
+                WriteString(ref writer, "SubTitle", ref sd.SubTitle);
+                WriteString(ref writer, "Content", ref sd.Content);
 
                 writer.WriteEndElement(); // </name>
             }

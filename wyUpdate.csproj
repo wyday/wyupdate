@@ -46,7 +46,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -57,7 +56,6 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <FileAlignment>512</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -73,6 +71,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Checksums\Adler32.cs" />
+    <Compile Include="Checksums\CRC32.cs" />
+    <Compile Include="Checksums\IChecksum.cs" />
     <Compile Include="ClientLanguage.cs" />
     <Compile Include="Controls\AnimationControl.cs">
       <SubType>Component</SubType>
@@ -153,31 +154,40 @@
     <Compile Include="VCDiff\IOHelper.cs" />
     <Compile Include="VCDiff\VcdiffDecoder.cs" />
     <Compile Include="VCDiff\VcdiffFormatException.cs" />
-    <Compile Include="VersionTools.cs" />
     <Compile Include="VistaTools.cs" />
-    <Compile Include="Zip\Crc32.cs" />
-    <Compile Include="Zip\Deflate.cs" />
-    <Compile Include="Zip\DeflateStream.cs" />
-    <Compile Include="Zip\Events.cs" />
-    <Compile Include="Zip\Exceptions.cs" />
-    <Compile Include="Zip\FileSelector.cs" />
-    <Compile Include="Zip\GZipStream.cs" />
-    <Compile Include="Zip\Inflate.cs" />
-    <Compile Include="Zip\InfTree.cs" />
-    <Compile Include="Zip\Shared.cs" />
-    <Compile Include="Zip\Tree.cs" />
-    <Compile Include="Zip\WinZipAes.cs" />
-    <Compile Include="Zip\ZipConstants.cs" />
-    <Compile Include="Zip\ZipCrypto.cs" />
-    <Compile Include="Zip\ZipDirEntry.cs" />
-    <Compile Include="Zip\ZipEntry.cs" />
-    <Compile Include="Zip\ZipFile.cs" />
-    <Compile Include="Zip\ZipFile.Events.cs" />
-    <Compile Include="Zip\ZipFile.Selector.cs" />
-    <Compile Include="Zip\Zlib.cs" />
-    <Compile Include="Zip\ZlibCodec.cs" />
-    <Compile Include="Zip\ZlibConstants.cs" />
-    <Compile Include="Zip\ZlibStream.cs" />
+    <Compile Include="ZipFunctions\Compression\Deflater.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterConstants.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterEngine.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterHuffman.cs" />
+    <Compile Include="ZipFunctions\Compression\DeflaterPending.cs" />
+    <Compile Include="ZipFunctions\Compression\Inflater.cs" />
+    <Compile Include="ZipFunctions\Compression\InflaterDynHeader.cs" />
+    <Compile Include="ZipFunctions\Compression\InflaterHuffmanTree.cs" />
+    <Compile Include="ZipFunctions\Compression\PendingBuffer.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\DeflaterOutputStream.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\InflaterInputStream.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\OutputWindow.cs" />
+    <Compile Include="ZipFunctions\Compression\Streams\StreamManipulator.cs" />
+    <Compile Include="ZipFunctions\Core\INameTransform.cs" />
+    <Compile Include="ZipFunctions\Core\IScanFilter.cs" />
+    <Compile Include="ZipFunctions\Core\NameFilter.cs" />
+    <Compile Include="ZipFunctions\Core\PathFilter.cs" />
+    <Compile Include="ZipFunctions\Core\StreamUtils.cs" />
+    <Compile Include="ZipFunctions\Core\WindowsPathUtils.cs" />
+    <Compile Include="ZipFunctions\Encrypt\PkzipClassic.cs" />
+    <Compile Include="ZipFunctions\IEntryFactory.cs" />
+    <Compile Include="ZipFunctions\SharpZipBaseException.cs" />
+    <Compile Include="ZipFunctions\WindowsNameTransform.cs" />
+    <Compile Include="ZipFunctions\ZipConstants.cs" />
+    <Compile Include="ZipFunctions\ZipEntry.cs" />
+    <Compile Include="ZipFunctions\ZipEntryFactory.cs" />
+    <Compile Include="ZipFunctions\ZipException.cs" />
+    <Compile Include="ZipFunctions\ZipExtraData.cs" />
+    <Compile Include="ZipFunctions\ZipFile.cs" />
+    <Compile Include="ZipFunctions\ZipHelperStream.cs" />
+    <Compile Include="ZipFunctions\ZipInputStream.cs" />
+    <Compile Include="ZipFunctions\ZipNameTransform.cs" />
+    <Compile Include="ZipFunctions\ZipOutputStream.cs" />
     <EmbeddedResource Include="cross.png" />
     <EmbeddedResource Include="tick.png" />
     <EmbeddedResource Include="process-working.png" />

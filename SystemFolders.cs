@@ -13,15 +13,15 @@ namespace wyUpdate.Common
         {
             get
             {
-                if (m_CommonAppData == null)
+                if (SystemFolders.m_CommonAppData == null)
                 {
                     //read the value from registry
-                    m_CommonAppData = (string)Registry.GetValue(
+                    SystemFolders.m_CommonAppData = (string)Registry.GetValue(
                         @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
                         "Common AppData", null);
                 }
 
-                return m_CommonAppData;
+                return SystemFolders.m_CommonAppData;
             }
         }
 
@@ -29,15 +29,15 @@ namespace wyUpdate.Common
         {
             get
             {
-                if (m_CommonDesktop == null)
+                if (SystemFolders.m_CommonDesktop == null)
                 {
                     //read the value from registry
-                    m_CommonDesktop = (string)Registry.GetValue(
+                    SystemFolders.m_CommonDesktop = (string)Registry.GetValue(
                         @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
                         "Common Desktop", null);
                 }
 
-                return m_CommonDesktop;
+                return SystemFolders.m_CommonDesktop;
             }
         }
 
@@ -45,15 +45,15 @@ namespace wyUpdate.Common
         {
             get
             {
-                if (m_CommonProgramsStartMenu == null)
+                if (SystemFolders.m_CommonProgramsStartMenu == null)
                 {
                     //read the value from registry
-                    m_CommonProgramsStartMenu = (string)Registry.GetValue(
+                    SystemFolders.m_CommonProgramsStartMenu = (string)Registry.GetValue(
                         @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
                         "Common Programs", null);
                 }
 
-                return m_CommonProgramsStartMenu;
+                return SystemFolders.m_CommonProgramsStartMenu;
             }
         }
 
@@ -61,15 +61,15 @@ namespace wyUpdate.Common
         {
             get
             {
-                if (m_CommonStartup == null)
+                if (SystemFolders.m_CommonStartup == null)
                 {
                     //read the value from registry
-                    m_CommonStartup = (string)Registry.GetValue(
+                    SystemFolders.m_CommonStartup = (string)Registry.GetValue(
                         @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
                         "Common Startup", null);
                 }
 
-                return m_CommonStartup;
+                return SystemFolders.m_CommonStartup;
             }
         }
     }

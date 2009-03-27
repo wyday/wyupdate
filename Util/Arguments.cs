@@ -10,6 +10,7 @@
 * Version: 1.1
 */
 
+using System;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 
@@ -25,9 +26,10 @@ namespace wyUpdate.Common
         {
             Regex Extractor = new Regex(@"(['""][^""]+['""])\s*|([^\s]+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
             MatchCollection Matches;
+            string[] Parts;
             // Get matches (first string ignored because Environment.CommandLine starts with program filename)
             Matches = Extractor.Matches(Args);
-            string[] Parts = new string[Matches.Count - 1];
+            Parts = new string[Matches.Count - 1];
             for (int i = 1; i < Matches.Count; i++) Parts[i - 1] = Matches[i].Value.Trim();
             Extract(Parts);
         }

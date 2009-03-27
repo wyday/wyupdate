@@ -32,11 +32,11 @@ namespace wyUpdate
         private AnimationControl m_Animation = new AnimationControl(null, 1);
 
         //Position
-        private int m_Left;
-        private int m_Top;
+        private int m_Left = 0;
+        private int m_Top = 0;
 
         //Animation width
-        private int m_AnimationWidth;
+        private int m_AnimationWidth = 0;
 
         public int AnimationWidth
         {
@@ -99,12 +99,12 @@ namespace wyUpdate
 
         public void Show()
         {
-            Visible = true;
+            this.Visible = true;
         }
 
         public void Hide()
         {
-            Visible = false;
+            this.Visible = false;
         }
 
         public void Clear()
@@ -178,14 +178,14 @@ namespace wyUpdate
         #region Private Variables
 
         //Images
-        private Image m_SideImage;
-        private Image m_TopImage;
+        private Image m_SideImage = null;
+        private Image m_TopImage = null;
 
         private ImageAlign m_HeaderImageAlign = ImageAlign.Left;
         private int m_HeaderIndent = 14;
         private Color m_HeaderTextColor = Color.Black;
 
-        private bool m_HideHeaderDivider;
+        private bool m_HideHeaderDivider = false;
 
         //Text
         private string m_Title;
@@ -206,7 +206,7 @@ namespace wyUpdate
 
         //downloading and installing
         private ProgressBar progressBar = new ProgressBar();
-        private int m_Progress;
+        private int m_Progress = 0;
 
         private string m_ProgressStatus;
         private Rectangle m_ProgressStatusRect;
@@ -220,20 +220,20 @@ namespace wyUpdate
         private int m_DescriptionOffset = 10;
 
         //the total HeaderHeight (including 3d line)
-        private const int m_HeaderHeight = 59;
+        private int m_HeaderHeight = 59;
 
         private FrameType m_TypeofFrame;
 
         //"working" animation
-        private AnimationControl aniWorking;
+        private AnimationControl aniWorking = null;
 
-        private LinkLabel2 noUpdateAvailableLink;
-        private string noUpdateAvailableURL;
+        private LinkLabel2 noUpdateAvailableLink = null;
+        private string noUpdateAvailableURL = null;
 
         #endregion Private Variables
 
         //Update Items
-        private bool m_ShowChecklist;
+        private bool m_ShowChecklist = false;
         public UpdateItem[] UpdateItems = new UpdateItem[4];
 
         #region Properties
@@ -308,7 +308,7 @@ namespace wyUpdate
                         TextFormatFlags.SingleLine | TextFormatFlags.WordEllipsis, Font);
 
                     //Invalidate the appropriate region
-                    Invalidate(new Rectangle(m_LeftPad, progressBar.Bottom, Width - m_LeftPad - m_RightPad, Height - progressBar.Bottom));
+                    Invalidate(new Rectangle(m_LeftPad, progressBar.Bottom, this.Width - m_LeftPad - m_RightPad, this.Height - progressBar.Bottom));
                 }
             }
         }
@@ -446,51 +446,47 @@ namespace wyUpdate
 
         public PanelDisplay(int width, int height)
         {
-            Width = width;
-            Height = height;
+            this.Width = width;
+            this.Height = height;
 
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.Opaque, true);
 
             //setup the progressbar
-            progressBar.Location = new Point(m_LeftPad, Height - 60);
-            progressBar.Size = new Size(Width - m_LeftPad - m_RightPad, 20);
+            progressBar.Location = new Point(m_LeftPad, this.Height - 60);
+            progressBar.Size = new Size(this.Width - m_LeftPad - m_RightPad, 20);
             progressBar.Maximum = 100;
             progressBar.Value = 0;
             progressBar.Visible = false;
-            Controls.Add(progressBar);
+            this.Controls.Add(progressBar);
 
             //setup the messageBox
             messageBox.Location = new Point(m_LeftPad, m_HeaderHeight + m_TopPad + 20);
             messageBox.Multiline = true;
-            messageBox.Size = new Size(Width - m_LeftPad - m_RightPad, 0);
+            messageBox.Size = new Size(this.Width - m_LeftPad - m_RightPad, 0);
             messageBox.ReadOnly = true;
             messageBox.ScrollBars = RichTextBoxScrollBars.Vertical;
             messageBox.BackColor = SystemColors.Window; //white
             messageBox.Visible = false;
-            messageBox.LinkClicked += messageBox_LinkClicked;
-            Controls.Add(messageBox);
+            messageBox.LinkClicked += new LinkHandler(messageBox_LinkClicked);
+            this.Controls.Add(messageBox);
 
             //setup the animation list
             for (int i = 0; i < UpdateItems.Length; i++)
             {
-                UpdateItems[i] = new UpdateItem
-                                     {
-                                         AnimationWidth = 16, 
-                                         Visible = false, 
-                                         Left = 45
-                                     };
-                Controls.Add(UpdateItems[i].Animation);
-                Controls.Add(UpdateItems[i].Label);
+                UpdateItems[i] = new UpdateItem();
+                UpdateItems[i].AnimationWidth = 16;
+                UpdateItems[i].Visible = false;
+                UpdateItems[i].Left = 45;
+                this.Controls.Add(UpdateItems[i].Animation);
+                this.Controls.Add(UpdateItems[i].Label);
             }
 
             //the single centered animation
-            aniWorking = new AnimationControl(new Bitmap(typeof(PanelDisplay), "process-working.png"), 10, 5, 25)
-                             {
-                                 Visible = false,
-                                 Location = new Point((Width/2) - 25, (Height/2))
-                             };
+            aniWorking = new AnimationControl(new Bitmap(typeof(PanelDisplay), "process-working.png"), 10, 5, 25);
+            aniWorking.Visible = false;
+            aniWorking.Location = new Point((this.Width / 2) - 25, (this.Height / 2));
 
-            Controls.Add(aniWorking);
+            this.Controls.Add(aniWorking);
         }
 
         #endregion Constructors
@@ -501,7 +497,7 @@ namespace wyUpdate
         public void ChangePanel(FrameType panType, string title, string description, string body, string bottom)
         {
             //WM_SETREDRAW = 0xB;
-            SendMessage(Handle, 0xB, 0, 0); //disable drawing
+            SendMessage(this.Handle, 0xB, 0, 0); //disable drawing
 
             m_TypeofFrame = panType;
 
@@ -516,11 +512,11 @@ namespace wyUpdate
                 progressBar.Hide();
                 HideAnimations();
 
-                m_TitleFont = new Font(Font.FontFamily, 12, FontStyle.Bold);
+                m_TitleFont = new Font(this.Font.FontFamily, 12, FontStyle.Bold);
             }
             else
             {
-                m_TitleFont = new Font(Font.FontFamily, Font.Size + 1, FontStyle.Bold);
+                m_TitleFont = new Font(this.Font.FontFamily, this.Font.Size + 1, FontStyle.Bold);
             }
 
             //calculate the text sizes and positions
@@ -562,21 +558,20 @@ namespace wyUpdate
             }
 
             //re-enable drawing and Refresh
-            SendMessage(Handle, 0xB, 1, 0);
+            SendMessage(this.Handle, 0xB, 1, 0);
             Refresh();
         }
 
         public void SetNoUpdateAvailableLink(string text, string link)
         {
-            noUpdateAvailableLink = new LinkLabel2
-                                        {
-                                            Text = text, Visible = false,
-                                            BackColor = Color.White
-                                        };
-            noUpdateAvailableLink.Click += NoUpdateAvailableLink_Click;
+            noUpdateAvailableLink = new LinkLabel2();
+            noUpdateAvailableLink.Text = text;
+            noUpdateAvailableLink.Visible = false;
             noUpdateAvailableURL = link;
+            noUpdateAvailableLink.BackColor = Color.White;
+            noUpdateAvailableLink.Click += new EventHandler(NoUpdateAvailableLink_Click);
 
-            Controls.Add(noUpdateAvailableLink);
+            this.Controls.Add(noUpdateAvailableLink);
         }
 
         void NoUpdateAvailableLink_Click(object sender, EventArgs e)
@@ -585,7 +580,8 @@ namespace wyUpdate
         }
 
 
-        static void messageBox_LinkClicked(object sender, string link)
+
+        void messageBox_LinkClicked(object sender, string link)
         {
             System.Diagnostics.Process.Start(link);
         }
@@ -663,7 +659,7 @@ namespace wyUpdate
                 if (m_TypeofFrame == FrameType.TextInfo)
                 {
                     messageBox.Top = m_BodyRect.Bottom + 5;
-                    messageBox.Height = Height - messageBox.Top - 5 - (Bottom - m_BottomRect.Top);
+                    messageBox.Height = this.Height - messageBox.Top - 5 - (Bottom - m_BottomRect.Top);
                 }
 
                 //Reposition the m_UpdateItems
@@ -691,17 +687,17 @@ namespace wyUpdate
         private Rectangle UpdateTextSize(string text, Padding padding, TextFormatFlags flags, Font font, ContentAlignment alignment)
         {
             if (font == null)
-                font = Font;
+                font = this.Font;
 
             Size tabTextSize = TextRenderer.MeasureText(text,
                 font,
-                new Size(Width - padding.Left - padding.Right, 1),
+                new Size(this.Width - padding.Left - padding.Right, 1),
                 flags | TextFormatFlags.NoPrefix);
 
             if (alignment == ContentAlignment.BottomRight)
-                return new Rectangle(new Point(Width - tabTextSize.Width - padding.Right, Height - tabTextSize.Height - padding.Bottom), tabTextSize);
-            
-            return new Rectangle(new Point(padding.Left, padding.Top), tabTextSize);
+                return new Rectangle(new Point(this.Width - tabTextSize.Width - padding.Right, this.Height - tabTextSize.Height - padding.Bottom), tabTextSize);
+            else
+                return new Rectangle(new Point(padding.Left, padding.Top), tabTextSize);
         }
 
         private void HideAnimations()
@@ -723,14 +719,14 @@ namespace wyUpdate
             if (m_TypeofFrame == FrameType.WelcomeFinish)
             {
                 //background 
-                e.Graphics.FillRectangle(SystemBrushes.Control, 0, 316, Width, Height - 316);
+                e.Graphics.FillRectangle(SystemBrushes.Control, 0, 316, this.Width, this.Height - 316);
                 //Side Image, and white background
                 DrawSide(e.Graphics);
             }
             else
             {
                 //background 
-                e.Graphics.FillRectangle(SystemBrushes.Control, 0, m_HideHeaderDivider ? 57 : 59, Width, Height - (m_HideHeaderDivider ? 57 : 59));
+                e.Graphics.FillRectangle(SystemBrushes.Control, 0, m_HideHeaderDivider ? 57 : 59, this.Width, this.Height - (m_HideHeaderDivider ? 57 : 59));
                 //Top image, and white background
                 DrawTop(e.Graphics);
             }
@@ -740,34 +736,43 @@ namespace wyUpdate
 
         private void DrawSide(Graphics gr)
         {
+            Rectangle imageLocation;
+
             try
             {
-                Rectangle imageLocation = new Rectangle(0, 0, m_SideImage.Width, m_SideImage.Height);
+                imageLocation = new Rectangle(0, 0, m_SideImage.Width, m_SideImage.Height);
                 gr.DrawImage(m_SideImage, imageLocation);
                 gr.ExcludeClip(imageLocation);
             }
-            catch { }
+            catch (Exception) { }
 
             //Draw the white background
-            gr.FillRectangle(Brushes.White, 0, 0, Width, 314);
+            gr.FillRectangle(Brushes.White, 0, 0, this.Width, 314);
         }
 
         private void DrawTop(Graphics gr)
         {
+            Rectangle imageLocation;
+
             //draw the topImage
             try
             {
-                Rectangle imageLocation = m_HeaderImageAlign == ImageAlign.Right 
-                            ? new Rectangle(Width - m_TopImage.Width, 0, m_TopImage.Width, m_TopImage.Height) 
-                            : new Rectangle(0, 0, m_TopImage.Width, m_TopImage.Height);
+                if (m_HeaderImageAlign != ImageAlign.Right)
+                {
+                    imageLocation = new Rectangle(0, 0, m_TopImage.Width, m_TopImage.Height);
+                }
+                else //alignRight
+                {
+                    imageLocation = new Rectangle(this.Width - m_TopImage.Width, 0, m_TopImage.Width, m_TopImage.Height);
+                }
 
                 gr.DrawImage(m_TopImage, imageLocation);
                 gr.ExcludeClip(imageLocation);
             }
-            catch { }
+            catch (Exception) { }
 
             //Draw white background
-            gr.FillRectangle(Brushes.White, 0, 0, Width, m_HeaderHeight - 2);
+            gr.FillRectangle(Brushes.White, 0, 0, this.Width, m_HeaderHeight - 2);
 
             gr.ResetClip();
 
@@ -779,7 +784,7 @@ namespace wyUpdate
 
             //draw divider line
             if (!m_HideHeaderDivider)
-                Draw3DLine(gr, 0, Width, m_HeaderHeight - 2);
+                Draw3DLine(gr, 0, this.Width, m_HeaderHeight - 2);
         }
 
         private void DrawMain(Graphics gr)
@@ -815,10 +820,10 @@ namespace wyUpdate
             if (m_TypeofFrame != FrameType.WelcomeFinish)
                 brandingWidth = DrawBranding(gr, 3, 314);
 
-            Draw3DLine(gr, brandingWidth, Width, 314);
+            Draw3DLine(gr, brandingWidth, this.Width, 314);
         }
 
-        protected static void Draw3DLine(Graphics gr, int x1, int x2, int y1)
+        protected void Draw3DLine(Graphics gr, int x1, int x2, int y1)
         {
             gr.DrawLine(SystemPens.ControlDark, x1, y1, x2, y1);
             gr.DrawLine(SystemPens.ControlLightLight, x1, y1 + 1, x2, y1 + 1);
@@ -826,12 +831,12 @@ namespace wyUpdate
 
         private int DrawBranding(Graphics gr, int x, int midPointY)
         {
-            SizeF textSize = gr.MeasureString("wyUpdate", Font);
+            SizeF textSize = gr.MeasureString("wyUpdate", this.Font);
             midPointY -= (int)(textSize.Height / 2.0);
 
             //draw the text
-            gr.DrawString("wyUpdate", Font, SystemBrushes.ControlLightLight, new PointF(x, midPointY));
-            gr.DrawString("wyUpdate", Font, SystemBrushes.ControlDark, new PointF(x - 1, midPointY - 1));
+            gr.DrawString("wyUpdate", this.Font, SystemBrushes.ControlLightLight, new PointF(x, midPointY));
+            gr.DrawString("wyUpdate", this.Font, SystemBrushes.ControlDark, new PointF(x - 1, midPointY - 1));
 
             return (int)textSize.Width + x;
         }

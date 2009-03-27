@@ -9,11 +9,11 @@ namespace wyDay.Controls
     public class AnimationControl : Control
     {
         private Image m_BaseImage;
-        private int m_Rows = 1;
-        private int m_Columns = 1;
-        private bool m_SkipFirstFrame;
+        private int m_Rows = 0;
+        private int m_Columns = 0;
+        private bool m_SkipFirstFrame = false;
 
-        private readonly Timer aniTimer = new Timer();
+        private System.Windows.Forms.Timer aniTimer = new System.Windows.Forms.Timer();
         private int m_AnimationInterval = 1000;
 
         //used in animation
@@ -24,16 +24,16 @@ namespace wyDay.Controls
         private int frameHeight;
 
         //for static images
-        private bool staticImage;
+        private bool staticImage = false;
 
-        readonly float[][] ptsArray ={ 
+        float[][] ptsArray ={ 
             new float[] {1, 0, 0, 0, 0},
             new float[] {0, 1, 0, 0, 0},
             new float[] {0, 0, 1, 0, 0},
             new float[] {0, 0, 0, 0, 0}, 
             new float[] {0, 0, 0, 0, 1}};
 
-        readonly ImageAttributes imgAttributes = new ImageAttributes();
+        ImageAttributes imgAttributes = new ImageAttributes();
 
         #region Properties
         public int AnimationInterval
@@ -56,19 +56,19 @@ namespace wyDay.Controls
                 {
                     if (staticImage)
                     {
-                        Width = frameWidth = m_BaseImage.Width;
-                        Height = frameHeight = m_BaseImage.Height;
+                        this.Width = frameWidth = m_BaseImage.Width;
+                        this.Height = frameHeight = m_BaseImage.Height;
                     }
                     else
                     {
-                        Width = frameWidth = m_BaseImage.Width / m_Columns;
-                        Height = frameHeight = m_BaseImage.Height / m_Rows;
+                        this.Width = frameWidth = m_BaseImage.Width / m_Columns;
+                        this.Height = frameHeight = m_BaseImage.Height / m_Rows;
                     }
                 }
                 else
                 {
-                    Width = frameWidth = 0;
-                    Height = frameHeight = 0;
+                    this.Width = frameWidth = 0;
+                    this.Height = frameHeight = 0;
                 }
             }
         }
@@ -139,10 +139,10 @@ namespace wyDay.Controls
         {
             //Set Defaults
             aniTimer.Enabled = false;
-            aniTimer.Tick += aniTimer_Tick;
+            aniTimer.Tick += new EventHandler(aniTimer_Tick);
 
             //This turns off internal double buffering of all custom GDI+ drawing
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.FixedHeight | ControlStyles.FixedWidth, true);
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
             SetStyle(ControlStyles.Selectable, false);
         }
 
@@ -168,7 +168,10 @@ namespace wyDay.Controls
                 {
                     if (rowOn == m_Rows)
                     {
-                        columnOn = m_SkipFirstFrame ? 2 : 1;
+                        if (m_SkipFirstFrame)
+                            columnOn = 2;
+                        else
+                            columnOn = 1;
 
                         rowOn = 1;
                     }

@@ -1,6 +1,7 @@
 // Original Author: Mattias Sjögren ( http://www.msjogren.net/dotnet/ )
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -228,6 +229,7 @@ namespace wyUpdate
             get
             {
                 short wHotkey;
+                int dwHotkey;
 
                 m_Link.GetHotkey(out wHotkey);
 
@@ -238,11 +240,13 @@ namespace wyUpdate
                 //   MM = Modifier (Alt, Control, Shift)
                 //   VK = Virtual key code
                 //       
-                int dwHotkey = ((wHotkey & 0xFF00) << 8) | (wHotkey & 0xFF);
+                dwHotkey = ((wHotkey & 0xFF00) << 8) | (wHotkey & 0xFF);
                 return (Keys)dwHotkey;
             }
             set
             {
+                short wHotkey;
+
                 if ((value & Keys.Modifiers) == 0)
                     throw new ArgumentException("Hotkey must include a modifier key.");
 
@@ -253,7 +257,7 @@ namespace wyUpdate
                 //   MM = Modifier (Alt, Control, Shift)
                 //   VK = Virtual key code
                 //       
-                short wHotkey = unchecked((short)(((int)(value & Keys.Modifiers) >> 8) | (int)(value & Keys.KeyCode)));
+                wHotkey = unchecked((short)(((int)(value & Keys.Modifiers) >> 8) | (int)(value & Keys.KeyCode)));
                 m_Link.SetHotkey(wHotkey);
 
             }

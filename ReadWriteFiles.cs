@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.IO;
 using System.Text;
 
@@ -72,7 +73,7 @@ namespace wyUpdate.Common
                 text = String.Empty;//fill with an empty string
 
             //the string data to be written
-            byte[] tempBytes = Encoding.UTF8.GetBytes(text);
+            byte[] tempBytes = System.Text.Encoding.UTF8.GetBytes(text);
             
             //the byte-length of the string. 
             //(Previously I used the string-length, this caused problems for non-bytelong characters)
@@ -108,6 +109,8 @@ namespace wyUpdate.Common
     {
         public static DateTime ReadDateTime(Stream fs)
         {
+            int year, month, day, hour, minute, second;
+
             //skip the "length of data" int value
             fs.Position += 4;
 
@@ -115,51 +118,53 @@ namespace wyUpdate.Common
 
             //Year
             ReadWholeArray(fs, tempBytes);
-            int year = BitConverter.ToInt32(tempBytes, 0);
+            year = BitConverter.ToInt32(tempBytes, 0);
 
             //Month
             ReadWholeArray(fs, tempBytes);
-            int month = BitConverter.ToInt32(tempBytes, 0);
+            month = BitConverter.ToInt32(tempBytes, 0);
 
             //Day
             ReadWholeArray(fs, tempBytes);
-            int day = BitConverter.ToInt32(tempBytes, 0);
+            day = BitConverter.ToInt32(tempBytes, 0);
 
             //Hour
             ReadWholeArray(fs, tempBytes);
-            int hour = BitConverter.ToInt32(tempBytes, 0);
+            hour = BitConverter.ToInt32(tempBytes, 0);
 
             //Minute
             ReadWholeArray(fs, tempBytes);
-            int minute = BitConverter.ToInt32(tempBytes, 0);
+            minute = BitConverter.ToInt32(tempBytes, 0);
 
             //Second
             ReadWholeArray(fs, tempBytes);
-            int second = BitConverter.ToInt32(tempBytes, 0);
+            second = BitConverter.ToInt32(tempBytes, 0);
 
             return new DateTime(year, month, day, hour, minute, second);
         }
 
         public static string ReadString(Stream fs)
         {
+            byte[] tempBytes;
             byte[] tempLength = new byte[4];
 
             //skip the "length of data" int value
             fs.Position += 4;
 
             ReadWholeArray(fs, tempLength);
-            byte[] tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
+            tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
             ReadWholeArray(fs, tempBytes);
             
-            return Encoding.UTF8.GetString(tempBytes);
+            return System.Text.Encoding.UTF8.GetString(tempBytes);
         }
 
         public static byte[] ReadByteArray(Stream fs)
         {
+            byte[] tempBytes;
             byte[] tempLength = new byte[4];
 
             ReadWholeArray(fs, tempLength);
-            byte[] tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
+            tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
             ReadWholeArray(fs, tempBytes);
 
             return tempBytes;
@@ -178,7 +183,14 @@ namespace wyUpdate.Common
 
         public static bool ReadBool(Stream fs)
         {
-            return ReadInt(fs) == 1;
+            if (ReadInt(fs) == 1)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         //Long (i.e. int64)
@@ -198,13 +210,12 @@ namespace wyUpdate.Common
         {
             if (endByte == readValue)
                 return true;
-            
-            if (fs.Length == fs.Position)
+            else if (fs.Length == fs.Position)
                 //prevent infinite loops because the end of the file has been reached
                 //but the 'end byte' hasn't been detected.
-                throw new Exception("Premature end of file.");
-            
-            return false;
+                throw new Exception("Premature end to file.");
+            else
+                return false;
         }
 
         //Unknown data, skip it

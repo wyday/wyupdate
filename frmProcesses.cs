@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.ComponentModel;
+using System.Data;
 using System.Drawing;
-using System.IO;
+using System.Text;
 using System.Windows.Forms;
+using System.Diagnostics;
+using System.IO;
+using wyUpdate.Common;
 
 namespace wyUpdate
 {
@@ -11,14 +15,14 @@ namespace wyUpdate
     {
         ClientLanguage clientLang;
         List<Process> runningProcesses = new List<Process>();
-        FileInfo[] filenames;
+        FileInfo[] filenames = new FileInfo[0];
 
         private const int SidePadding = 12;
 
         public frmProcesses(FileInfo[] files, ClientLanguage cLang)
         {
             //sets to SegoeUI on Vista
-            Font = SystemFonts.MessageBoxFont;
+            this.Font = SystemFonts.MessageBoxFont;
 
             InitializeComponent();
 
@@ -26,7 +30,7 @@ namespace wyUpdate
             clientLang = cLang;
 
             //translate the buttons & text
-            Text = clientLang.ProcessDialog.Title;
+            this.Text = clientLang.ProcessDialog.Title;
 
             btnCloseProc.Text = clientLang.ClosePrc;
             btnCloseAll.Text = clientLang.CloseAllPrc;
@@ -65,14 +69,14 @@ namespace wyUpdate
             {
                 runningProcesses[listProc.SelectedIndex].CloseMainWindow();
             }
-            catch { }
+            catch (Exception) { }
 
 
 
             if (CheckProcesses() == 0)
             {
                 //exit, return OK
-                DialogResult = DialogResult.OK;
+                this.DialogResult = DialogResult.OK;
             }
         }
 
@@ -86,7 +90,7 @@ namespace wyUpdate
             if (CheckProcesses() == 0)
             {
                 //exit, return OK
-                DialogResult = DialogResult.OK;
+                this.DialogResult = DialogResult.OK;
             }
         }
 
@@ -97,7 +101,7 @@ namespace wyUpdate
             DialogResult dResult = MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button2);
 
             if (dResult == DialogResult.Yes)
-                DialogResult = DialogResult.Cancel;
+                this.DialogResult = DialogResult.Cancel;
             else
             {
                 DialogResult = DialogResult.None;
@@ -122,26 +126,26 @@ namespace wyUpdate
                 {
                     try
                     {
-                        if (proc.MainModule != null
-                            && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower()
-
-                            //if the running process is not this wyUpdate client
-                            && !InstallUpdate.ProcessIsSelf(proc.MainModule.FileName))
+                        if (proc.MainModule.FileName.ToLower() == filename.FullName.ToLower())
                         {
-                            //add the running process to the list
-                            rProcs.Add(proc);
-                            //there are processes still open
-                            procLeft = true;
+                            //if the running process is not this wyUpdate client
+                            if (!InstallUpdate.ProcessIsSelf(proc.MainModule.FileName))
+                            {
+                                //add the running process to the list
+                                rProcs.Add(proc);
+                                //there are processes still open
+                                procLeft = true;
+                            }
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
 
             //check if list of process is sames as the semi-global one (runningProcesses)
             //if diff, update listbox.
 
-            if (!SameProcs(rProcs, runningProcesses))
+            if (!SameProcs(ref rProcs, ref runningProcesses))
             {
                 //update the running processes array
                 runningProcesses = rProcs;
@@ -156,10 +160,18 @@ namespace wyUpdate
 
 
             //return 0 if there are no processes that need to be closed
-            return procLeft ? 1 : 0;
+            if (procLeft == true)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+            
         }
 
-        private static bool SameProcs(List<Process> procs1, List<Process> procs2)
+        private bool SameProcs(ref List<Process> procs1, ref List<Process> procs2)
         {
             if (procs1.Count != procs2.Count)
                 return false;
@@ -167,7 +179,9 @@ namespace wyUpdate
             for (int i = 0; i < procs1.Count; i++)
             {
                 if (procs1[i].Id != procs2[i].Id || procs1[i].MainWindowTitle != procs2[i].MainWindowTitle)
+                {
                     return false;
+                }
             }
 
             return true;
@@ -177,7 +191,7 @@ namespace wyUpdate
         {
             if (CheckProcesses() == 0)
             {
-                DialogResult = DialogResult.OK;
+                this.DialogResult = DialogResult.OK;
                 chkProc.Enabled = false;
             }
         }

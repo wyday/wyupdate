@@ -7,7 +7,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using Ionic.Zip;
+using ICSharpCode.SharpZipLib.Checksums;
+using ICSharpCode.SharpZipLib.Zip;
 using wyUpdate.Common;
 using wyUpdate.Compression.Vcdiff;
 
@@ -17,9 +18,9 @@ namespace wyUpdate
     {
         #region Private Variable
 
-        public ContainerControl Sender;
+        public ContainerControl Sender = null;
 
-        public Delegate SenderDelegate;
+        public Delegate SenderDelegate = null;
 
         //Used for unzipping
         public string Filename;
@@ -30,7 +31,7 @@ namespace wyUpdate
         public string ProgramDirectory;
 
         //Modify registry, executing/optimizing files
-        public UpdateDetails UpdtDetails;
+        public UpdateDetails UpdtDetails = null;
 
         //for self update
         private string m_NewIUPClientLoc = "";
@@ -40,13 +41,13 @@ namespace wyUpdate
 
         public ClientFileType ClientFileType;
 
-        public UpdateEngine ClientFile;
+        public UpdateEngine ClientFile = null;
 
-        public bool SkipProgressReporting;
+        public bool SkipProgressReporting = false;
 
 
         //cancellation & pausing
-        private volatile bool canceled;
+        private volatile bool canceled = false;
         //private volatile bool paused = false;
         #endregion Private Variables
 
@@ -91,20 +92,29 @@ namespace wyUpdate
         //Methods
         private void ExtractUpdateFile()
         {
-            using (ZipFile zip = ZipFile.Read(Filename))
+            int totalFiles = 0;
+            int filesDone = 0;
+
+            ZipInputStream tempS = new ZipInputStream(File.OpenRead(Filename));
+            ZipEntry tempEntry;
+
+            while ((tempEntry = tempS.GetNextEntry()) != null)
             {
-                int totalFiles = zip.Entries.Count;
-                int filesDone = 0;
+                totalFiles++;
+            }
 
-                foreach (ZipEntry e in zip)
+            tempS.Close();
+
+            using (ZipInputStream s = new ZipInputStream(File.OpenRead(Filename)))
+            {
+                ZipEntry theEntry;
+
+                while ((theEntry = s.GetNextEntry()) != null)
                 {
-                    if (canceled)
-                        break; //stop outputting new files
-
                     if (!SkipProgressReporting)
                     {
                         ThreadHelper.ReportProgress(Sender, SenderDelegate,
-                            "Extracting " + Path.GetFileName(e.FileName),
+                            "Extracting " + Path.GetFileName(theEntry.Name),
                             totalFiles > 0 ?
                                GetRelativeProgess(1, (int)((filesDone * 100) / totalFiles)) :
                                GetRelativeProgess(1, 0));
@@ -112,12 +122,47 @@ namespace wyUpdate
                         filesDone++;
                     }
 
-                    e.Extract(OutputDirectory, true);  // overwrite == true
+
+                    string directoryName = Path.Combine(OutputDirectory, Path.GetDirectoryName(theEntry.Name));
+                    string fileName = Path.GetFileName(theEntry.Name);
+
+                    // create directory
+                    if (directoryName.Length > 0)
+                    {
+                        Directory.CreateDirectory(directoryName);
+                    }
+
+                    if (fileName != String.Empty)
+                    {
+                        using (FileStream streamWriter = File.Create(Path.Combine(directoryName, fileName)))
+                        {
+
+                            int size = 2048;
+                            byte[] data = new byte[2048];
+                            do
+                            {
+                                if (canceled)
+                                    break; //stop decompressing file
+
+                                //read compressed data
+                                size = s.Read(data, 0, data.Length);
+
+                                //write to uncompressed file
+                                streamWriter.Write(data, 0, size);
+
+                            } while (size > 0);
+                        }
+
+                        if (canceled)
+                            break; //stop outputting new files
+
+                        File.SetLastWriteTime(Path.Combine(directoryName, fileName), theEntry.DateTime);
+                    }
                 }
-            }
+            }//end using(ZipInputStream ... )
         }
 
-        private void UpdateRegistry(List<RegChange> rollbackRegistry)
+        private void UpdateRegistry(ref List<RegChange> rollbackRegistry)
         {
             int i = 0;
 
@@ -213,7 +258,12 @@ namespace wyUpdate
             }
         }
 
-        private static bool ProcessesNeedClosing(FileInfo[] baseFiles)
+        /// <summary>
+        /// Checks a list of files to see if they are running, and returns 1 if they are.
+        /// </summary>
+        /// <param name="procs">list of filenames (full paths)</param>
+        /// <returns>1 if processes need to be close, 0 if none exist</returns>
+        private bool ProcessesNeedClosing(FileInfo[] baseFiles)
         {
             System.Diagnostics.Process[] aProcess = System.Diagnostics.Process.GetProcesses();
 
@@ -226,19 +276,19 @@ namespace wyUpdate
                     try
                     {
                         //are one of the exe's in baseDir running?
-                        if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower())
+                        if (proc.MainModule.FileName.ToLower() == filename.FullName.ToLower())
                         {
                             ProcNeedClosing = true;
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
 
             return ProcNeedClosing;
         }
 
-        private static void KillProcess(string filename)
+        private void KillProcess(string filename)
         {
             Process[] aProcess = Process.GetProcesses();
 
@@ -246,12 +296,12 @@ namespace wyUpdate
             {
                 try
                 {
-                    if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.ToLower())
+                    if (proc.MainModule.FileName.ToLower() == filename.ToLower())
                     {
                         proc.Kill();
                     }
                 }
-                catch { }
+                catch (Exception) { }
             }
         }
 
@@ -286,34 +336,32 @@ namespace wyUpdate
 
                 if (Directory.Exists(Path.Combine(TempDirectory, "patches")))
                 {
+                    string tempFilename;
+
                     // patch the files
                     foreach (UpdateFile file in UpdtDetails.UpdateFiles)
                     {
                         if (file.DeltaPatchRelativePath != null)
                         {
-                            string tempFilename = Path.Combine(TempDirectory, file.RelativePath);
+                            tempFilename = Path.Combine(TempDirectory, file.RelativePath);
 
                             // create the directory to store the patched file
                             if (!Directory.Exists(Path.GetDirectoryName(tempFilename)))
                                 Directory.CreateDirectory(Path.GetDirectoryName(tempFilename));
 
-                            try
+                            using (FileStream original = File.OpenRead(FixUpdateDetailsPaths(file.RelativePath)))
+                            using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)))
+                            using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                             {
-                                using (FileStream original = File.OpenRead(FixUpdateDetailsPaths(file.RelativePath)))
-                                using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)))
-                                using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                                {
-                                    VcdiffDecoder.Decode(original, patch, target, file.NewFileAdler32);
-                                }
+                                VcdiffDecoder.Decode(original, patch, target);
                             }
-                            catch
-                            {
-                                throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath));
-                            }
-
 
                             // the 'last write time' of the patch file is really the 'lwt' of the dest. file
                             File.SetLastWriteTime(tempFilename, File.GetLastWriteTime(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)));
+
+                            // verify the file has bee patched correctly, if not throw an exception
+                            if (GetAdler32(tempFilename) != file.NewFileAdler32)
+                                throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath));
                         }
                     }
 
@@ -323,7 +371,7 @@ namespace wyUpdate
                         // remove the patches directory (frees up a bit of space)
                         Directory.Delete(Path.Combine(TempDirectory, "patches"), true);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
             catch (Exception ex)
@@ -339,14 +387,14 @@ namespace wyUpdate
 
                 //Delete temporary files
 
-                if (except != null && except.GetType() != typeof(PatchApplicationException))
+                if (except.GetType() != typeof(PatchApplicationException))
                 {
                     // remove the entire temp directory
                     try
                     {
                         Directory.Delete(OutputDirectory, true);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
                 else
                 {
@@ -360,7 +408,7 @@ namespace wyUpdate
                         {
                             Directory.Delete(dir, true);
                         }
-                        catch { }
+                        catch (Exception) { }
                     }
 
                     // remove the update details
@@ -528,7 +576,7 @@ namespace wyUpdate
 
                     rollbackList.Add(new FileFolder(tempPath, false));
                 }
-                catch { }
+                catch (Exception) { }
             }
 
             // create the shortcuts
@@ -577,20 +625,45 @@ namespace wyUpdate
                     rollbackList.Add(new FileFolder(tempPath, true));
                 }
 
-                ShellShortcut shellShortcut = new ShellShortcut(tempFile)
-                                                  {
-                                                      Path = ParseText(UpdtDetails.ShortcutInfos[i].Path),
-                                                      WorkingDirectory =
-                                                          ParseText(UpdtDetails.ShortcutInfos[i].WorkingDirectory),
-                                                      WindowStyle = UpdtDetails.ShortcutInfos[i].WindowStyle,
-                                                      Description = UpdtDetails.ShortcutInfos[i].Description
-                                                  };
+                ShellShortcut shellShortcut = new ShellShortcut(tempFile);
+                shellShortcut.Path = ParseText(UpdtDetails.ShortcutInfos[i].Path);
+                shellShortcut.WorkingDirectory = ParseText(UpdtDetails.ShortcutInfos[i].WorkingDirectory);
+                shellShortcut.WindowStyle = UpdtDetails.ShortcutInfos[i].WindowStyle;
+                shellShortcut.Description = UpdtDetails.ShortcutInfos[i].Description;
                 //shellShortcut.IconPath
                 //shellShortcut.IconIndex = 0;
                 shellShortcut.Save();
             }
         }
 
+        private long GetAdler32(string fileName)
+        {
+            Adler32 adler = new Adler32();
+            int totalComplete = 0;
+            long fileSize = new FileInfo(fileName).Length;
+            int sourceBytes;
+            adler.Reset();
+
+            FileStream fs = new FileStream(fileName, FileMode.Open);
+            byte[] buffer = new byte[4096];
+
+            do
+            {
+                sourceBytes = fs.Read(buffer, 0, buffer.Length);
+                totalComplete += sourceBytes;
+
+                adler.Update(buffer, 0, sourceBytes);
+
+                // break on cancel
+                if (canceled)
+                    break;
+
+            } while (sourceBytes > 0);
+
+            fs.Close();
+
+            return adler.Value;
+        }
 
         //count files in the directory and subdirectories
         private static int CountFiles(string directory)
@@ -615,7 +688,7 @@ namespace wyUpdate
                     // remove update file (it's no longer needed)
                     File.Delete(Filename);
                 }
-                catch { }
+                catch (Exception) { }
 
 
                 //find and forcibly close oldClientLocation
@@ -642,32 +715,31 @@ namespace wyUpdate
                     ProgramDirectory = Path.GetDirectoryName(OldIUPClientLoc);
                     TempDirectory = OutputDirectory;
 
+                    string tempFilename;
+
                     // patch the file (assume only one - wyUpdate.exe)
 
                     if (UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath != null)
                     {
-                        string tempFilename = Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].RelativePath);
+                        tempFilename = Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].RelativePath);
 
                         // create the directory to store the patched file
                         if (!Directory.Exists(Path.GetDirectoryName(tempFilename)))
                             Directory.CreateDirectory(Path.GetDirectoryName(tempFilename));
 
-                        try
+                        using (FileStream original = File.OpenRead(OldIUPClientLoc))
+                        using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)))
+                        using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                         {
-                            using (FileStream original = File.OpenRead(OldIUPClientLoc))
-                            using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)))
-                            using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                            {
-                                VcdiffDecoder.Decode(original, patch, target, UpdtDetails.UpdateFiles[0].NewFileAdler32);
-                            }
-                        }
-                        catch
-                        {
-                            throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[0].RelativePath));
+                            VcdiffDecoder.Decode(original, patch, target);
                         }
 
                         // the 'last write time' of the patch file is really the 'lwt' of the dest. file
                         File.SetLastWriteTime(tempFilename, File.GetLastWriteTime(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)));
+
+                        // verify the file has bee patched correctly, if not throw an exception
+                        if (GetAdler32(tempFilename) != UpdtDetails.UpdateFiles[0].NewFileAdler32)
+                            throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[0].RelativePath));
                     }
 
 
@@ -676,7 +748,7 @@ namespace wyUpdate
                         // remove the patches directory (frees up a bit of space)
                         Directory.Delete(Path.Combine(TempDirectory, "patches"), true);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
 
 
@@ -708,14 +780,14 @@ namespace wyUpdate
                 ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1);
 
                 //Delete temporary files
-                if (except != null && except.GetType() != typeof(PatchApplicationException))
+                if (except.GetType() != typeof(PatchApplicationException))
                 {
                     // remove the entire temp directory
                     try
                     {
                         Directory.Delete(OutputDirectory, true);
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
                 else
                 {
@@ -729,7 +801,7 @@ namespace wyUpdate
                         {
                             Directory.Delete(dir, true);
                         }
-                        catch { }
+                        catch (Exception) { }
                     }
                 }
 
@@ -787,7 +859,7 @@ namespace wyUpdate
             Exception except = null;
             try
             {
-                UpdateRegistry(rollbackRegistry);
+                UpdateRegistry(ref rollbackRegistry);
             }
             catch (Exception ex)
             {
@@ -884,7 +956,7 @@ namespace wyUpdate
                 List<UpdateFile> files = new List<UpdateFile>();
                 
                 //add all the files in the outputDirectory
-                AddFiles(OutputDirectory.Length + 1, OutputDirectory, files);
+                AddFiles(OutputDirectory.Length + 1, OutputDirectory, ref files);
 
                 //recompress all the client data files
                 string tempClient = Path.Combine(OutputDirectory, "client.file");
@@ -900,25 +972,25 @@ namespace wyUpdate
                     File.Delete(oldClientFile);
                 }
             }
-            catch { }
+            catch (Exception) { }
 
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
 
         //creates list of files to add to client data file
-        private static void AddFiles(int charsToTrim, string dir, List<UpdateFile> files)
+        private void AddFiles(int charsToTrim, string dir, ref List<UpdateFile> files)
         {
             string[] filenames = Directory.GetFiles(dir);
             string[] dirs = Directory.GetDirectories(dir);
 
             foreach (string file in filenames)
             {
-                files.Add(new UpdateFile { Filename = file, RelativePath = file.Substring(charsToTrim) });
+                files.Add(new UpdateFile(file, file.Substring(charsToTrim), false));
             }
 
             foreach (string directory in dirs)
             {
-                AddFiles(charsToTrim, directory, files);
+                AddFiles(charsToTrim, directory, ref files);
             }
         }
 
@@ -948,7 +1020,7 @@ namespace wyUpdate
             List<RegChange> registryToDelete = new List<RegChange>();
 
             //Load the list of files, folders etc. from the client file (Filename)
-            RollbackUpdate.ReadUninstallData(Filename, filesToUninstall, foldersToDelete, registryToDelete);
+            RollbackUpdate.ReadUninstallData(Filename, ref filesToUninstall, ref foldersToDelete, ref registryToDelete);
 
             //uninstall files
             foreach (UninstallFileInfo file in filesToUninstall)
@@ -961,7 +1033,7 @@ namespace wyUpdate
                     if (file.DeleteFile)
                         File.Delete(file.Path);
                 }
-                catch { }
+                catch (Exception) { }
             }
 
             //uninstall folders
@@ -973,7 +1045,7 @@ namespace wyUpdate
                     //directory must be empty in order to delete it
                     Directory.Delete(foldersToDelete[i]);
                 }
-                catch { }
+                catch (Exception) { }
             }
 
 
@@ -1013,17 +1085,20 @@ namespace wyUpdate
             Sender.BeginInvoke(SenderDelegate, new object[] { files, true });
         }
 
-        private static void RemoveSelfFromProcesses(ref FileInfo[] files)
+        private void RemoveSelfFromProcesses(ref FileInfo[] files)
         {
             int offset = 0;
 
             for (int i = 0; i < files.Length; i++)
             {
                 if (ProcessIsSelf(files[i].FullName))
+                {
                     offset++;
-
+                }
                 else if (offset > 0)
+                {
                     files[i - offset] = files[i];
+                }
             }
 
             if (offset > 0)
@@ -1037,14 +1112,16 @@ namespace wyUpdate
 
             if (processPath.ToLower() == self.ToLower() || processPath.ToLower() == vhostFile.ToLower())
                 return true;
-            
-            return false;
+            else
+                return false;
         }
 
 
         public void RunPreExecute()
         {
             Thread.CurrentThread.IsBackground = true; //make them a daemon
+
+            ProcessStartInfo psi = null;
 
             // simply update the progress bar to show the 3rd step is entirely complete
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(3, 0));
@@ -1054,7 +1131,7 @@ namespace wyUpdate
                 if (UpdtDetails.UpdateFiles[i].Execute && 
                     UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi = new ProcessStartInfo();
 
                     //use the absolute path
                     psi.FileName = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
@@ -1084,6 +1161,8 @@ namespace wyUpdate
             // simply update the progress bar to show the 6th step is entirely complete
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0));
 
+            string filename = null;
+
             //optimize everything but "temp" files
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
@@ -1094,7 +1173,7 @@ namespace wyUpdate
                         UpdtDetails.UpdateFiles[i].RelativePath.Substring(0, 4) != "temp")
                     {
                         //optimize (ngen) the file
-                        string filename = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
+                        filename = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
 
                         if (!string.IsNullOrEmpty(filename))
                             NGenInstall(filename); //optimize the file
@@ -1104,13 +1183,15 @@ namespace wyUpdate
 
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50));
 
+            ProcessStartInfo psi = null;
+
             //execute files
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
                 if (UpdtDetails.UpdateFiles[i].Execute &&
                 !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi = new ProcessStartInfo();
 
                     //use the absolute path
                     psi.FileName = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
@@ -1318,15 +1399,19 @@ namespace wyUpdate
 
             List<string> excludeVariables = new List<string>();
 
-            return ParseVariableText(text, excludeVariables);
+            return ParseVariableText(text, ref excludeVariables);
         }
 
-        private string ParseVariableText(string text, List<string> excludeVariables)
+        private string ParseVariableText(string text, ref List<string> excludeVariables)
         {
             //parse a string, and return a pretty string (sans %%)
             StringBuilder returnString = new StringBuilder();
+            string tempString;
 
-            int firstIndex = text.IndexOf('%', 0);
+            int firstIndex;
+            int currentIndex;
+
+            firstIndex = text.IndexOf('%', 0);
 
             if (firstIndex == -1)
             {
@@ -1339,7 +1424,7 @@ namespace wyUpdate
             while (firstIndex != -1)
             {
                 //find the next percent sign
-                int currentIndex = text.IndexOf('%', firstIndex + 1);
+                currentIndex = text.IndexOf('%', firstIndex + 1);
 
                 //if no closing percent sign...
                 if (currentIndex == -1)
@@ -1348,53 +1433,51 @@ namespace wyUpdate
                     returnString.Append(text.Substring(firstIndex, text.Length - firstIndex));
                     return returnString.ToString();
                 }
-
-
-                //return the content of the variable
-                string tempString = VariableToPretty(text.Substring(firstIndex + 1, currentIndex - firstIndex - 1), excludeVariables);
-
-                //if the variable isn't defined
-                if (tempString == null)
-                {
-                    //return the string with the percent signs
-                    returnString.Append(text.Substring(firstIndex, currentIndex - firstIndex));
-                }
                 else
                 {
-                    //variable exists, add the parsed content
-                    returnString.Append(tempString);
-                    currentIndex++;
+                    //return the content of the variable
+                    tempString = VariableToPretty(text.Substring(firstIndex + 1, currentIndex - firstIndex - 1), ref excludeVariables);
 
-                    if (currentIndex == text.Length)
-                        return returnString.ToString();
+                    //if the variable isn't defined
+                    if (tempString == null)
+                    {
+                        //return the string with the percent signs
+                        returnString.Append(text.Substring(firstIndex, currentIndex - firstIndex));
+                    }
+                    else
+                    {
+                        //variable exists, add the parsed content
+                        returnString.Append(tempString);
+                        currentIndex++;
+                        if (currentIndex == text.Length)
+                        {
+                            return returnString.ToString();
+                        }
+                    }
                 }
 
                 firstIndex = currentIndex;
+                tempString = null;
             }
 
             return returnString.ToString();
         }
 
-        private string VariableToPretty(string variable, List<string> excludeVariables)
+        private string VariableToPretty(string variable, ref List<string> excludeVariables)
         {
             variable = variable.ToLower();
 
             if (excludeVariables.Contains(variable))
                 return null;
 
-            string returnValue;
+            string returnValue = null;
 
             excludeVariables.Add(variable);
 
             switch (variable)
             {
                 case "basedir":
-                    returnValue = ProgramDirectory;
-
-                    // add a trailing slash if it doesn't exist
-                    if (returnValue[returnValue.Length - 1] != '\\')
-                        returnValue += '\\';
-
+                    returnValue = ParseVariableText(ProgramDirectory, ref excludeVariables);
                     break;
                 default:
                     excludeVariables.RemoveAt(excludeVariables.Count - 1);
@@ -1414,9 +1497,9 @@ namespace wyUpdate
         private static void ParseCommandText(string text)
         {
             int lastDollarIndex = text.LastIndexOf('$');
-            int beginParen, endParen;
+            int beginParen = -1, endParen = -1;
 
-            CommandName currCommand;
+            CommandName currCommand = CommandName.NULL;
 
             //if no $'s found
             if (lastDollarIndex == -1)
@@ -1433,7 +1516,7 @@ namespace wyUpdate
 
                     if (currCommand != CommandName.NULL)
                     {
-                        endParen = IndexOfNonEnclosed(')', text, beginParen);
+                        endParen = IndexOfNonEnclosed(')', ref text, beginParen);
 
                         if (endParen != -1)
                         {
@@ -1445,12 +1528,12 @@ namespace wyUpdate
                     }
                 }
 
-                lastDollarIndex = LastIndexOfReal('$', text, 0, lastDollarIndex - 1);
+                lastDollarIndex = LastIndexOfReal('$', ref text, 0, lastDollarIndex - 1);
 
             } while (lastDollarIndex != -1);
         }
 
-        private static int IndexOfNonEnclosed(char ch, string str, int startIndex)
+        private static int IndexOfNonEnclosed(char ch, ref string str, int startIndex)
         {
             for (int i = startIndex; i < str.Length; i++)
             {
@@ -1471,7 +1554,7 @@ namespace wyUpdate
             return -1;
         }
 
-        private static int LastIndexOfReal(char ch, string str, int startIndex, int endIndex)
+        private static int LastIndexOfReal(char ch, ref string str, int startIndex, int endIndex)
         {
             for (int i = startIndex; i <= endIndex; i++)
             {
@@ -1492,7 +1575,7 @@ namespace wyUpdate
             {
                 name = (CommandName)Enum.Parse(typeof(CommandName), command, true);
             }
-            catch { }
+            catch (Exception) { }
 
             return name;
         }

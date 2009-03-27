@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
+using System.IO;
 
 namespace wyUpdate.Common
 {
@@ -80,6 +80,11 @@ namespace wyUpdate.Common
 
         public void Load(string fileName)
         {
+            byte[] fileIDBytes = new byte[7];
+            string fileID = "";
+
+            byte bType;
+
             FileStream fs = null;
 
             try
@@ -95,10 +100,8 @@ namespace wyUpdate.Common
             }
 
             // Read back the file identification data, if any
-            byte[] fileIDBytes = new byte[7];
             fs.Read(fileIDBytes, 0, 7);
-
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
+            fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
             if (fileID != "IUUDFV2")
             {
                 //free up the file so it can be deleted
@@ -109,7 +112,7 @@ namespace wyUpdate.Common
 
             UpdateFile tempUpdateFile = new UpdateFile();
 
-            byte bType = (byte)fs.ReadByte();
+            bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
             {
                 switch (bType)
@@ -180,12 +183,10 @@ namespace wyUpdate.Common
             fs.Close();
         }
 
-        public Stream Save()
+        public void Save(Stream ms)
         {
-            MemoryStream ms = new MemoryStream();
-
             // Write any file-identification data you want to here
-            ms.Write(Encoding.UTF8.GetBytes("IUUDFV2"), 0, 7);
+            ms.Write(System.Text.Encoding.UTF8.GetBytes("IUUDFV2"), 0, 7);
 
             //Write post-update commands
             if (!string.IsNullOrEmpty(m_PostUpdateCommands))
@@ -265,8 +266,6 @@ namespace wyUpdate.Common
 
             //end of file
             ms.WriteByte(0xFF);
-
-            return ms;
         }
     }
 }

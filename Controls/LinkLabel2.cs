@@ -5,20 +5,17 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.ComponentModel;
 
-// For the latest version visit: http://wyday.com/linklabel2/
-
-// Bugs or suggestions: http://wyday.com/forum/
-
 namespace wyDay.Controls
 {
     public class LinkLabel2 : Control
     {
         private Font hoverFont;
+        Color hoverColor = Color.FromArgb(51, 153, 255), regularColor = Color.FromArgb(0, 102, 204);
 
         Rectangle textRect;
         
-        bool isHovered;
-        bool keyAlreadyProcessed;
+        bool isHovered = false;
+        bool keyAlreadyProcessed = false;
 
         Image image;
         int imageRightPad = 8;
@@ -51,15 +48,7 @@ namespace wyDay.Controls
             }
         }
 
-        [DefaultValue(true)]
-        public bool HoverUnderline { get; set; }
 
-        [DefaultValue(true)]
-        public bool UseSystemColor { get; set; }
-
-
-        public Color RegularColor { get; set; }
-        public Color HoverColor { get; set; }
 
 
         [DllImport("user32.dll")]
@@ -84,17 +73,14 @@ namespace wyDay.Controls
             }
         }
 
+
         public LinkLabel2()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.FixedHeight | ControlStyles.FixedWidth, true);
             SetStyle(ControlStyles.StandardClick | ControlStyles.StandardDoubleClick, false);
 
             hoverFont = new Font(Font, FontStyle.Underline);
-
-            ForeColor = SystemColors.HotTrack;
-
-            UseSystemColor = true;
-            HoverUnderline = true;
+            ForeColor = regularColor;
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -195,10 +181,10 @@ namespace wyDay.Controls
                 e.Graphics.DrawImage(image, new Rectangle(0, 0, image.Width, image.Height), new Rectangle(0, 0, image.Width, image.Height), GraphicsUnit.Pixel);
 
             //text
-            TextRenderer.DrawText(e.Graphics, Text,
-                isHovered && HoverUnderline ? hoverFont : Font,
+            TextRenderer.DrawText(e.Graphics, Text, 
+                isHovered ? hoverFont: Font,
                 textRect,
-                UseSystemColor ? ForeColor : (isHovered ? HoverColor : RegularColor),
+                isHovered ? hoverColor : regularColor,
                 TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix);
 
             // draw the focus rectangle.
@@ -236,7 +222,7 @@ namespace wyDay.Controls
                 }
             }
 
-            Size = new Size(width, height);
+            this.Size = new Size(width, height);
         }
 
         protected override void WndProc(ref Message m)

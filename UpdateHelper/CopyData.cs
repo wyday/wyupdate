@@ -37,8 +37,8 @@ namespace wyUpdate.Common
 		private const int WM_DESTROY = 0x2;
 
 		#region Member Variables
-		private CopyDataChannels channels;
-		private bool disposed;
+		private CopyDataChannels channels = null;
+		private bool disposed = false;
 		#endregion
 
 		/// <summary>
@@ -46,12 +46,13 @@ namespace wyUpdate.Common
 		/// messages sent by other instances of this class.
 		/// </summary>
 		/// <param name="m">The Windows Message information.</param>
-		protected override void WndProc (ref Message m )
+		protected override void WndProc (ref System.Windows.Forms.Message m )
 		{
 			if (m.Msg == WM_COPYDATA)
 			{
-			    COPYDATASTRUCT cds = (COPYDATASTRUCT) Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT));
-			    if (cds.cbData > 0)
+				COPYDATASTRUCT cds = new COPYDATASTRUCT();
+				cds = (COPYDATASTRUCT) Marshal.PtrToStructure(m.LParam, typeof(COPYDATASTRUCT));
+				if (cds.cbData > 0)
 				{
 					byte[] data = new byte[cds.cbData];				
 					Marshal.Copy(cds.lpData, data, 0, cds.cbData);
@@ -101,7 +102,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return channels;
+				return this.channels;
 			}
 		}
 
@@ -145,7 +146,7 @@ namespace wyUpdate.Common
 	public class DataReceivedEventArgs
 	{
 		private string channelName = "";
-		private byte[] data;
+		private byte[] data = null;
 		private DateTime sent;
 		private DateTime received;
 
@@ -156,7 +157,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return channelName;
+				return this.channelName;
 			}
 		}
 		/// <summary>
@@ -166,7 +167,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return data;
+				return this.data;
 			}
 		}
 		/// <summary>
@@ -177,7 +178,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return sent;
+				return this.sent;
 			}
 		}
 		/// <summary>
@@ -188,7 +189,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return received;
+				return this.received;
 			}
 		}
 		/// <summary>
@@ -202,7 +203,7 @@ namespace wyUpdate.Common
 			this.channelName = channelName;
 			this.data = data;
 			this.sent = sent;
-			received = DateTime.Now;
+			this.received = DateTime.Now;
 		}
 	}
 
@@ -212,7 +213,7 @@ namespace wyUpdate.Common
 	/// </summary>
 	public class CopyDataChannels : DictionaryBase
 	{
-		private NativeWindow owner;
+		private NativeWindow owner = null;
 
 		/// <summary>
 		/// Returns an enumerator for each of the CopyDataChannel objects
@@ -220,9 +221,9 @@ namespace wyUpdate.Common
 		/// </summary>
 		/// <returns>An enumerator for each of the CopyDataChannel objects
 		/// within this collection.</returns>
-		public new IEnumerator GetEnumerator (  )
+		public new System.Collections.IEnumerator GetEnumerator (  )
 		{
-			return Dictionary.Values.GetEnumerator();
+			return this.Dictionary.Values.GetEnumerator();
 		}
 
 		/// <summary>
@@ -234,7 +235,7 @@ namespace wyUpdate.Common
 			{
 				CopyDataChannel ret = null;
 				int i = 0;
-				foreach (CopyDataChannel cdc in Dictionary.Values)
+				foreach (CopyDataChannel cdc in this.Dictionary.Values)
 				{
 					i++;
 					if (i == index)
@@ -253,7 +254,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return (CopyDataChannel) Dictionary[channelName];
+				return (CopyDataChannel) this.Dictionary[channelName];
 			}
 		}
 		/// <summary>
@@ -263,7 +264,7 @@ namespace wyUpdate.Common
 		public void Add(string channelName)
 		{
 			CopyDataChannel cdc = new CopyDataChannel(owner, channelName);
-			Dictionary.Add(channelName , cdc);
+			this.Dictionary.Add(channelName , cdc);
 		}
 		/// <summary>
 		/// Removes an existing channel.
@@ -271,7 +272,7 @@ namespace wyUpdate.Common
 		/// <param name="channelName">The channel to remove</param>
 		public void Remove(string channelName)
 		{
-			Dictionary.Remove(channelName);
+			this.Dictionary.Remove(channelName);
 		}
 		/// <summary>
 		/// Gets/sets whether this channel contains a CopyDataChannel
@@ -279,7 +280,7 @@ namespace wyUpdate.Common
 		/// </summary>
 		public bool Contains(string channelName)
 		{
-			return Dictionary.Contains(channelName);
+			return this.Dictionary.Contains(channelName);
 		}
 
 		/// <summary>
@@ -288,7 +289,7 @@ namespace wyUpdate.Common
 		/// </summary>
 		protected override void OnClear()
 		{
-			foreach (CopyDataChannel cdc in Dictionary.Values)
+			foreach (CopyDataChannel cdc in this.Dictionary.Values)
 			{
 				cdc.Dispose();
 			}
@@ -302,7 +303,7 @@ namespace wyUpdate.Common
 		/// <param name="key">The channelName</param>
 		/// <param name="data">The CopyDataChannel object which has
 		/// just been removed</param>
-		protected override void OnRemoveComplete ( Object key , Object data )
+		protected override void OnRemoveComplete ( Object key , System.Object data )
 		{
 			( (CopyDataChannel) data).Dispose();
 			base.OnRemove(key, data);
@@ -317,7 +318,7 @@ namespace wyUpdate.Common
 		/// </summary>
 		public void OnHandleChange()
 		{
-			foreach (CopyDataChannel cdc in Dictionary.Values)
+			foreach (CopyDataChannel cdc in this.Dictionary.Values)
 			{
 				cdc.OnHandleChange();
 			}
@@ -376,9 +377,9 @@ namespace wyUpdate.Common
 
 		#region Member Variables
 		private string channelName = "";
-		private bool disposed;
-		private NativeWindow owner;
-		private bool recreateChannel;
+		private bool disposed = false;
+		private NativeWindow owner = null;
+		private bool recreateChannel = false;
 		#endregion
 
 		/// <summary>
@@ -388,7 +389,7 @@ namespace wyUpdate.Common
 		{
 			get
 			{
-				return channelName;
+				return this.channelName;
 			}
 		}
 
@@ -444,7 +445,7 @@ namespace wyUpdate.Common
 				cds.cbData = dataSize;
 				cds.dwData = IntPtr.Zero;
 				cds.lpData = ptrData;
-                SendMessage(targetHandle, WM_COPYDATA, (int)owner.Handle, ref cds);
+                int res = SendMessage(targetHandle, WM_COPYDATA, (int)owner.Handle, ref cds);
 				recipients += (Marshal.GetLastWin32Error() == 0 ? 1 : 0);
 
 
@@ -459,13 +460,13 @@ namespace wyUpdate.Common
 		private void addChannel()
 		{
 			// Tag this window with property "channelName"
-			SetProp(owner.Handle, channelName, (int)owner.Handle);
+			SetProp(owner.Handle, this.channelName, (int)owner.Handle);
 
 		}
 		private void removeChannel()
 		{
 			// Remove the "channelName" property from this window
-			RemoveProp(owner.Handle, channelName);
+			RemoveProp(owner.Handle, this.channelName);
 		}
 
 		/// <summary>
