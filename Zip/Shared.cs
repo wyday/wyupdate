@@ -120,7 +120,7 @@ namespace Ionic.Zip
             byte[] block = new byte[4];
             n = s.Read(block, 0, block.Length);
             if (n != block.Length) throw new BadReadException(String.Format(message, s.Position));
-            int data = unchecked((((block[3] * 256 + block[2]) * 256) + block[1]) * 256 + block[0]);
+            int data = (((block[3] * 256 + block[2]) * 256) + block[1]) * 256 + block[0];
             return data;
         }
 
@@ -185,32 +185,15 @@ namespace Ionic.Zip
         }
 
 
-	// If I have a time in the .NET environment, and I want to use it for 
-	// SetWastWriteTime() etc, then I need to adjust it for Win32. 
-	internal static DateTime AdjustTime_DotNetToWin32(DateTime time)
+	internal static DateTime AdjustForDst(DateTime time)
 	{
-	    DateTime adjusted = time;
-	    if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
-		adjusted = time - new System.TimeSpan(1, 0, 0);
+	    if (!time.IsDaylightSavingTime() && DateTime.Now.IsDaylightSavingTime())
+		time = time + new System.TimeSpan(1, 0, 0);
 
-	    else if (!DateTime.Now.IsDaylightSavingTime() && time.IsDaylightSavingTime())
-		adjusted = time + new System.TimeSpan(1, 0, 0);
+	    if (time.IsDaylightSavingTime() && !DateTime.Now.IsDaylightSavingTime())
+		time = time - new System.TimeSpan(1, 0, 0);
 
-	    return adjusted;
-	}
-
-	// If I read a time from a file with GetLastWriteTime() (etc), I need
-	// to adjust it for display in the .NET environment.  
-	internal static DateTime AdjustTime_Win32ToDotNet(DateTime time)
-	{
-	    DateTime adjusted = time;
-	    if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
-		adjusted = time + new System.TimeSpan(1, 0, 0);
-
-	    else if (!DateTime.Now.IsDaylightSavingTime() && time.IsDaylightSavingTime())
-		adjusted = time - new System.TimeSpan(1, 0, 0);
-
-	    return adjusted;
+	    return time;
 	}
 
 
@@ -221,8 +204,8 @@ namespace Ionic.Zip
             if (packedDateTime == 0xFFFF || packedDateTime == 0)
                 return new System.DateTime(1995, 1, 1, 0, 0, 0, 0);  // return a fixed date when none is supplied.
  
-            Int16 packedTime = unchecked((Int16)(packedDateTime & 0x0000ffff));
-            Int16 packedDate = unchecked((Int16)((packedDateTime & 0xffff0000) >> 16));
+            Int16 packedTime = (Int16)(packedDateTime & 0x0000ffff);
+            Int16 packedDate = (Int16)((packedDateTime & 0xffff0000) >> 16);
 
             int year = 1980 + ((packedDate & 0xFE00) >> 9);
             int month = (packedDate & 0x01E0) >> 5;
@@ -256,6 +239,16 @@ namespace Ionic.Zip
         {
             UInt16 packedDate = (UInt16)((time.Day & 0x0000001F) | ((time.Month << 5) & 0x000001E0) | (((time.Year - 1980) << 9) & 0x0000FE00));
             UInt16 packedTime = (UInt16)((time.Second / 2 & 0x0000001F) | ((time.Minute << 5) & 0x000007E0) | ((time.Hour << 11) & 0x0000F800));
+
+            // for debugging only
+            //             int hour = (packedTime & 0xF800) >> 11;
+            //             int minute = (packedTime & 0x07E0) >> 5;
+            //             int second = (packedTime & 0x001F)*2;
+
+            // 	    Console.WriteLine("regly      = {0:D2}:{1:d2}:{2:D2}", time.Hour, time.Minute, time.Second);
+            // 	    Console.WriteLine("msdos-ized = {0:D2}:{1:d2}:{2:D2}", hour, minute, second);
+            // 	    // end debugging stuff
+
 
             Int32 result = (Int32)(((UInt32)(packedDate << 16)) | packedTime);
             return result;

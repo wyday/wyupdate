@@ -70,8 +70,8 @@ namespace wyUpdate
         // Wait Mode (aka API mode)
         UpdateHelper updateHelper;
         System.Windows.Forms.Timer sendGotPreInstallInfo;
-        bool isWaitMode;
-        bool dontDestroyTempFolder; //custom temp directory to store downloaded updates
+        bool isWaitMode = false;
+        bool dontDestroyTempFolder = false; //custom temp directory to store downloaded updates
 
         //-- Self update
         public bool SelfUpdating;
@@ -356,18 +356,18 @@ namespace wyUpdate
                     uninstalling = true;
 
                 /*
+                //TODO: implement silent API (NOT WORKING YET -- DON'T USE)
                 if (commands["wait"] != null)
                 {
-                    updateHelper = new UpdateHelper(Handle);
-                    updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
-                    updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+                    updateHelper = new UpdateHelper(this.Handle);
+                    updateHelper.SenderProcessClosed += new EventHandler(UpdateHelper_SenderProcessClosed);
+                    updateHelper.RequestReceived += new RequestHandler(UpdateHelper_RequestReceived);
 
-                    sendGotPreInstallInfo = new System.Windows.Forms.Timer
-                                                {
-                                                    Enabled = false, Interval = 1
-                                                };
+                    sendGotPreInstallInfo = new System.Windows.Forms.Timer();
 
-                    sendGotPreInstallInfo.Tick += sendGotPreInstallInfo_Tick;
+                    sendGotPreInstallInfo.Enabled = false;
+                    sendGotPreInstallInfo.Interval = 1;
+                    sendGotPreInstallInfo.Tick += new EventHandler(sendGotPreInstallInfo_Tick);
 
                     isWaitMode = true;
 
@@ -375,7 +375,6 @@ namespace wyUpdate
                         dontDestroyTempFolder = true;
                 }
                 */
-                
 
                 //only allow silent uninstalls 
                 //TODO: allow silent checking and updating

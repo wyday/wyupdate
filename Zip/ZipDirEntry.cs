@@ -141,7 +141,6 @@ namespace Ionic.Zip
         /// <returns>the entry read from the archive.</returns>
         public static ZipEntry ReadDirEntry(System.IO.Stream s, System.Text.Encoding expectedEncoding)
         {
-            long cdrPosition = s.Position;
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(s);
             // return null if this is not a local file header signature
             if (IsNotValidZipDirEntrySig(signature))
@@ -167,22 +166,23 @@ namespace Ionic.Zip
 
             int i = 0;
             ZipEntry zde = new ZipEntry();
-	    zde._Source = ZipEntrySource.Zipfile;
             zde._archiveStream = s;
-            zde._cdrPosition = cdrPosition;
 
-            unchecked
-            {
-                zde._VersionMadeBy = (short)(block[i++] + block[i++] * 256);
-                zde._VersionNeeded = (short)(block[i++] + block[i++] * 256);
-                zde._BitField = (short)(block[i++] + block[i++] * 256);
-                zde._CompressionMethod = (short)(block[i++] + block[i++] * 256);
-                zde._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
-                zde._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(zde._TimeBlob);
-                zde._Crc32 = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
-                zde._CompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
-                zde._UncompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
-            }
+            zde._VersionMadeBy = (short)(block[i++] + block[i++] * 256);
+            zde._VersionNeeded = (short)(block[i++] + block[i++] * 256);
+            zde._BitField = (short)(block[i++] + block[i++] * 256);
+            zde._CompressionMethod = (short)(block[i++] + block[i++] * 256);
+            zde._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
+            zde._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(zde._TimeBlob);
+            zde._Crc32 = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
+
+
+            zde._CompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
+            zde._UncompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
+
+            //DateTime lastModified = Ionic.Utils.Zip.SharedUtilities.PackedToDateTime(lastModDateTime);
+            //i += 24;
+
 
 
             zde._filenameLength = (short)(block[i++] + block[i++] * 256);
@@ -210,13 +210,16 @@ namespace Ionic.Zip
             }
 
 
-            // Console.WriteLine("\nEntry : {0}", zde._LocalFileName);
-            // Console.WriteLine("  V Madeby/Needed:      0x{0:X4} / 0x{1:X4}", zde._VersionMadeBy, zde._VersionNeeded);
-            // Console.WriteLine("  BitField/Compression: 0x{0:X4} / 0x{1:X4}", zde._BitField, zde._CompressionMethod);
-            // Console.WriteLine("  Lastmod:              {0}", zde._LastModified.ToString("u"));
-            // Console.WriteLine("  CRC:                  0x{0:X8}", zde._Crc32);
-            // Console.WriteLine("  Comp / Uncomp:        0x{0:X8} ({0})   0x{1:X8} ({1})", zde._CompressedSize, zde._UncompressedSize);
-	    
+//             Console.WriteLine("\nEntry : {0}", zde._LocalFileName);
+//             Console.WriteLine("  V Madeby:    0x{0:X4}", zde._VersionMadeBy);
+//             Console.WriteLine("  V Needed:    0x{0:X4}", zde._VersionNeeded);
+//             Console.WriteLine("  BitField:    0x{0:X4}", zde._BitField);
+//             Console.WriteLine("  Compression: 0x{0:X4}", zde._CompressionMethod);
+//             Console.WriteLine("  Lastmod:     {0}", zde._LastModified.ToString("u"));
+//             Console.WriteLine("  CRC:         0x{0:X8}", zde._Crc32);
+//             Console.WriteLine("  Comp:        0x{0:X8} ({0})", zde._CompressedSize);
+//             Console.WriteLine("  Uncomp:      0x{0:X8} ({0})", zde._UncompressedSize);
+
             zde._FileNameInArchive = zde._LocalFileName;
 
             if (zde.AttributesIndicateDirectory) zde.MarkAsDirectory();  // may append a slash to filename if nec.
@@ -229,26 +232,18 @@ namespace Ionic.Zip
             if ((zde._BitField & 0x01) == 0x01)
             {
                 zde._Encryption = EncryptionAlgorithm.PkzipWeak; // this may change after processing the Extra field
-                zde._sourceIsEncrypted = true;
             }
 
             if (zde._extraFieldLength > 0)
             {
-                // Console.WriteLine("  ZDE Extra Field:      {0} bytes", zde._extraFieldLength);
-                zde._InputUsesZip64 = (zde._CompressedSize == 0xFFFFFFFF ||
-                      zde._UncompressedSize == 0xFFFFFFFF ||
-                      zde._RelativeOffsetOfLocalHeader == 0xFFFFFFFF);
-
-                // Console.WriteLine("  Input uses Z64?:      {0}", zde._InputUsesZip64);
+                //Console.WriteLine("ZDE Extra Field length: {0}", zde._extraFieldLength);
+                zde._InputUsesZip64 = ((uint)zde._CompressedSize == 0xFFFFFFFF ||
+                      (uint)zde._UncompressedSize == 0xFFFFFFFF ||
+                      (uint)zde._RelativeOffsetOfLocalHeader == 0xFFFFFFFF);
 
                 bytesRead += zde.ProcessExtraField(zde._extraFieldLength);
                 zde._CompressedFileDataSize = zde._CompressedSize;
-
-                // if (zde._InputUsesZip64)
-		// {
-		// Console.WriteLine("  Z64 updated values");
-		// Console.WriteLine("    Comp / Uncomp:      0x{0:X16} ({0})   0x{1:X16} ({1})", zde._CompressedSize, zde._UncompressedSize);
-		// }
+                //Console.WriteLine("  Compressed:  0x{0:X8} ({0})", zde._CompressedSize);
             }
 
             // we've processed the extra field, so we know the encryption method is set now.
@@ -257,7 +252,7 @@ namespace Ionic.Zip
                 // the "encryption header" of 12 bytes precedes the file data
                 zde._CompressedFileDataSize -= 12;
             }
-#if AESCRYPTO
+#if !NETCF20
             else if (zde.Encryption == EncryptionAlgorithm.WinZipAes128 ||
                         zde.Encryption == EncryptionAlgorithm.WinZipAes256)
             {

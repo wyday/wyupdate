@@ -601,7 +601,7 @@ namespace wyUpdate.Common
                     }
 
                     //add the client file
-                    entry = zip.AddFileFromStream("iuclient.iuc", "", SaveClientFile());
+                    entry = zip.AddFileStream("iuclient.iuc", "", SaveClientFile());
                     entry.LastModified = DateTime.Now;
 
                     zip.Save();

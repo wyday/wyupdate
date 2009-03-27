@@ -72,9 +72,8 @@ namespace wyUpdate.Common
 
 
                 if (objA == null && objB == null)
-                    return 0; //versions are equal
-
-                if (objA == null) // objB != null
+                    break; //versions are equal
+                else if (objA == null && objB != null)
                 {
                     //if versionB has a greek word, then A is greater
                     if (greekIndB != -1)
@@ -82,8 +81,7 @@ namespace wyUpdate.Common
 
                     return -1;
                 }
-
-                if (objB == null) // objA != null
+                else if (objA != null && objB == null)
                 {
                     //if versionA has a greek word, then B is greater
                     if (greekIndA != -1)
@@ -91,8 +89,7 @@ namespace wyUpdate.Common
 
                     return 1;
                 }
-
-                if (char.IsDigit(objA[0]) == char.IsDigit(objB[0]))
+                else if (char.IsDigit(objA[0]) == char.IsDigit(objB[0]))
                 {
                     if (char.IsDigit(objA[0]))
                     {
@@ -131,6 +128,7 @@ namespace wyUpdate.Common
                     return 1; //versionA is newer than versionB
                 else
                     return -1; //verisonB is newer than versionA
+
 
             } while (objA != null && objB != null);
 
@@ -201,14 +199,19 @@ namespace wyUpdate.Common
         {
             int lastZero = -1;
 
+            //if ((int)objA > (int)objB)
+            //    return 1;
+            //else if ((int)objB > (int)objA)
+            //    return -1;
+
             //Clear any preceding zeros
 
             for (int i = 0; i < a.Length; i++)
             {
                 if (a[i] != '0')
                     break;
-
-                lastZero = i;
+                else
+                    lastZero = i;
             }
 
             if (lastZero != -1)
@@ -220,8 +223,8 @@ namespace wyUpdate.Common
             {
                 if (b[i] != '0')
                     break;
-
-                lastZero = i;
+                else
+                    lastZero = i;
             }
 
             if (lastZero != -1)
@@ -230,11 +233,10 @@ namespace wyUpdate.Common
 
             if (a.Length > b.Length)
                 return 1;
-
-            if (a.Length < b.Length)
+            else if (a.Length < b.Length)
                 return -1;
-
-            return string.Compare(a, b);
+            else
+                return string.Compare(a, b);
         }
 
         /// <summary>
