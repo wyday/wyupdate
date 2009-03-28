@@ -430,7 +430,7 @@ namespace wyUpdate
             base.OnClosed(e);
         }
 
-        #region Async: Downloading, updating, and checking processes
+        #region Downloading, updating, and checking processes (async)
 
         // update the label & progress bar when downloading/updating
         private void ShowProgress(int percentDone, bool done, string extraStatus, Exception ex)
@@ -682,9 +682,9 @@ namespace wyUpdate
             }
         }
 
-        #endregion Async: Downloading, updating, and checking processes
+        #endregion Downloading, updating, and checking processes (async)
 
-        #region Downloading methods (not async)
+        #region Downloading methods (synchronous)
 
         //downlaod regular update files
         private void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
@@ -843,9 +843,9 @@ namespace wyUpdate
             }
         }
 
-        #endregion End of Downloading methods (not async)
+        #endregion End of Downloading methods (synchronous)
 
-        #region Updating methods (not async)
+        #region Updating methods (synchronous)
 
         private void ShowFrame(int frameNum)
         {
@@ -1218,7 +1218,7 @@ namespace wyUpdate
             }
         }
 
-        #endregion Updating methods (not async)
+        #endregion Updating methods (synchronous)
 
         #region UpdateHelper functions (API)
 
