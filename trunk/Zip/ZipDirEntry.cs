@@ -14,79 +14,9 @@ using System;
 
 namespace Ionic.Zip
 {
-    /// <summary>
-    /// This class models an entry in the directory contained within the zip file.
-    /// The class is generally not used from within application code, though it is
-    /// used by the ZipFile class.
-    /// </summary>
+
     partial class ZipEntry
     {
-        ///// <summary>
-        ///// The time at which the file represented by the given entry was last modified.
-        ///// </summary>
-        //public DateTime LastModified
-        //{
-        //    get { return _LastModified; }
-        //}
-
-        ///// <summary>
-        ///// The filename of the file represented by the given entry.
-        ///// </summary>
-        //public string FileName
-        //{
-        //    get { return _FileName; }
-        //}
-
-        ///// <summary>
-        ///// Any comment associated to the given entry. Comments are generally optional.
-        ///// </summary>
-        //public string Comment
-        //{
-        //    get { return _Comment; }
-        //}
-
-        ///// <summary>
-        ///// The version of the zip engine this archive was made by.  
-        ///// </summary>
-        //public Int16 VersionMadeBy
-        //{
-        //    get { return _VersionMadeBy; }
-        //}
-
-        ///// <summary>
-        ///// The version of the zip engine this archive can be read by.  
-        ///// </summary>
-        //public Int16 VersionNeeded
-        //{
-        //    get { return _VersionNeeded; }
-        //}
-
-        ///// <summary>
-        ///// The compression method used to generate the archive.  Deflate is our favorite!
-        ///// </summary>
-        //public Int16 CompressionMethod
-        //{
-        //    get { return _CompressionMethod; }
-        //}
-
-        ///// <summary>
-        ///// The size of the file, after compression. This size can actually be 
-        ///// larger than the uncompressed file size, for previously compressed 
-        ///// files, such as JPG files. 
-        ///// </summary>
-        //public Int32 CompressedSize
-        //{
-        //    get { return _CompressedSize; }
-        //}
-
-        ///// <summary>
-        ///// The size of the file before compression.  
-        ///// </summary>
-        //public Int32 UncompressedSize
-        //{
-        //    get { return _UncompressedSize; }
-        //}
-
         /// <summary>
         /// True if the referenced entry is a directory.  
         /// </summary>
@@ -95,20 +25,6 @@ namespace Ionic.Zip
             get { return ((_InternalFileAttrs == 0) && ((_ExternalFileAttrs & 0x0010) == 0x0010)); }
         }
 
-
-        ///// <summary>
-        ///// The calculated compression ratio for the given file. 
-        ///// </summary>
-        //public Double CompressionRatio
-        //{
-        //    get
-        //    {
-        //        return 100 * (1.0 - (1.0 * CompressedSize) / (1.0 * UncompressedSize));
-        //    }
-        //}
-
-
-        //internal ZipDirEntry(ZipEntry ze) { }
 
 #if OPTIMIZE_WI6612
         internal void ResetDirEntry()
@@ -139,7 +55,7 @@ namespace Ionic.Zip
         /// The text encoding to use if the entry is not marked UTF-8.
         /// </param>
         /// <returns>the entry read from the archive.</returns>
-        public static ZipEntry ReadDirEntry(System.IO.Stream s, System.Text.Encoding expectedEncoding)
+        internal static ZipEntry ReadDirEntry(System.IO.Stream s, System.Text.Encoding expectedEncoding)
         {
             long cdrPosition = s.Position;
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(s);
