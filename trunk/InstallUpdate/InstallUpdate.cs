@@ -18,6 +18,7 @@ namespace wyUpdate
         public ContainerControl Sender;
 
         public Delegate SenderDelegate;
+        public Delegate RollbackDelegate;
 
         //Used for unzipping
         public string Filename;
@@ -235,6 +236,8 @@ namespace wyUpdate
 
             if (canceled || except != null)
             {
+                //rollback files
+                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
                 RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
 
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
@@ -603,7 +606,7 @@ namespace wyUpdate
                         //start the process
                         Process p = Process.Start(psi);
 
-                        if (UpdtDetails.UpdateFiles[i].WaitForExecution)
+                        if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
                             p.WaitForExit();
                     }
                 }

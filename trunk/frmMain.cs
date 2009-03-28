@@ -89,9 +89,13 @@ namespace wyUpdate
         string newClientLocation; //self update from RC1
 
         #region Threads
+
         delegate void ShowProgressDelegate(int percentDone, bool statusDone, string extraStatus, Exception ex);
         delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
         delegate void CheckProcessesDel(FileInfo[] files, bool statusDone);
+
+        delegate void ChangeRollbackDelegate(bool rbRegistry);
+
         #endregion
 
         #endregion Private variables
@@ -682,6 +686,31 @@ namespace wyUpdate
             }
         }
 
+        private void ChangeRollback(bool rbRegistry)
+        {
+            DisableCancel();
+
+            // set the error icon to current progress item
+            if(rbRegistry)
+            {
+                // error updating the registry
+                panelDisplaying.UpdateItems[2].Status = UpdateItemStatus.Error;
+
+                SetStepStatus(3, clientLang.RollingBackRegistry);
+            }
+            else if (panelDisplaying.UpdateItems[2].Status != UpdateItemStatus.Error)
+            {
+                // error updating the files
+                panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Error;
+
+                SetStepStatus(2, clientLang.RollingBackFiles);
+            }
+            else
+            {
+                SetStepStatus(3, clientLang.RollingBackFiles);
+            }
+        }
+
         #endregion Downloading, updating, and checking processes (async)
 
         #region Downloading methods (synchronous)
@@ -1089,7 +1118,8 @@ namespace wyUpdate
 
                     installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
                                         {
-                                            UpdtDetails = updtDetails
+                                            UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback
                                         };
 
                     asyncThread = new Thread(installUpdate.RunUpdateFiles);
@@ -1099,7 +1129,8 @@ namespace wyUpdate
 
                     installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
                                         {
-                                            UpdtDetails = updtDetails
+                                            UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback
                                         };
 
                     asyncThread = new Thread(installUpdate.RunUpdateRegistry);

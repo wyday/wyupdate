@@ -37,21 +37,19 @@ namespace wyUpdate.Common
 
             //compare indices
             int iVerA = 0, iVerB = 0;
-            int greekIndA, greekIndB;
 
             int strComp;
 
-            string objA, objB;
             bool lastAWasLetter = true, lastBWasLetter = true;
 
             do
             {
                 //store index before GetNextObject just in case we need to rollback
-                greekIndA = iVerA;
-                greekIndB = iVerB;
+                int greekIndA = iVerA;
+                int greekIndB = iVerB;
 
-                objA = GetNextObject(versionA, ref iVerA, ref lastAWasLetter);
-                objB = GetNextObject(versionB, ref iVerB, ref lastBWasLetter);
+                string objA = GetNextObject(versionA, ref iVerA, ref lastAWasLetter);
+                string objB = GetNextObject(versionB, ref iVerB, ref lastBWasLetter);
 
 
                 //normalize versions so comparing integer against integer, 
@@ -135,10 +133,7 @@ namespace wyUpdate.Common
                 else
                     return -1; //verisonB is newer than versionA
 
-            } while (objA != null && objB != null);
-
-
-            return 0;
+            } while (true);
         }
 
 

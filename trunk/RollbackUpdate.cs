@@ -176,15 +176,11 @@ namespace wyUpdate
             {
                 ReadRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), rollbackRegistry);
             }
-            catch (Exception) { }
+            catch { }
 
+            // roll the registry back
             foreach (RegChange regCh in rollbackRegistry)
-            {
                 regCh.ExecuteOperation();
-            }
-
-            //rollback files
-            RollbackFiles(m_TempDirectory, m_ProgramDirectory);
         }
 
         #region Write/Read RollbackRegistry

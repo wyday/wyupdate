@@ -127,7 +127,9 @@ namespace wyUpdate
             m_Optimize = "Optimizing and executing files",
             m_TempFiles = "Removing temporary files",
             m_UninstallFiles = "Uninstalling files & folders",
-            m_UninstallRegistry = "Uninstalling registry";
+            m_UninstallRegistry = "Uninstalling registry",
+            m_RollingBackFiles = "Rolling back files",
+            m_RollingBackRegistry = "Rolling back registry";
 
         //Variables
         private string m_ProductName, m_OldVersion, m_NewVersion;
@@ -609,6 +611,30 @@ namespace wyUpdate
             set { m_UninstallFiles = value; }
         }
 
+        public string RollingBackFiles
+        {
+            get
+            {
+                if (m_ReturnParsedStrings)
+                    return ParseText(m_RollingBackFiles);
+
+                return m_RollingBackFiles;
+            }
+            set { m_RollingBackFiles = value; }
+        }
+
+        public string RollingBackRegistry
+        {
+            get
+            {
+                if (m_ReturnParsedStrings)
+                    return ParseText(m_RollingBackRegistry);
+
+                return m_RollingBackRegistry;
+            }
+            set { m_RollingBackRegistry = value; }
+        }
+
         #endregion Properties
 
         #region Variable Properties (Product, Version, etc.)
@@ -641,14 +667,27 @@ namespace wyUpdate
 
         public void ResetLanguage()
         {
-            m_Name = m_EnglishName = m_NextButton = m_UpdateButton = m_FinishButton = m_CancelButton 
-                = m_ClosePrc = m_CloseAllPrc = m_CancelUpdate  = m_Culture = null;
+            m_Name = null;
+            m_EnglishName = null;
+            m_NextButton = null;
+            m_UpdateButton = null;
+            m_FinishButton = null;
+            m_CancelButton = null;
+            m_ClosePrc = null;
+            m_CloseAllPrc = null;
+            m_CancelUpdate = null;
+            m_Culture = null;
 
             m_ProcessDialog.Clear();
             m_CancelDialog.Clear();
 
             //Errors
-            m_ServerError = m_AdminError = m_GeneralUpdateError = m_DownloadError = m_SelfUpdateInstallError = m_LogOffError = null;
+            m_ServerError = null;
+            m_AdminError = null;
+            m_GeneralUpdateError = null;
+            m_DownloadError = null;
+            m_SelfUpdateInstallError = null;
+            m_LogOffError = null;
 
             //Update Screens
             m_Checking.Clear();
@@ -661,11 +700,24 @@ namespace wyUpdate
             m_UpdateError.Clear();
 
             //bottoms
-            m_FinishBottom = m_UpdateBottom = null;
+            m_FinishBottom = null;
+            m_UpdateBottom = null;
 
             //Status
-            m_Download = m_DownloadingSelfUpdate = m_SelfUpdate = m_Extract = m_Processes = m_PreExec
-                = m_Files = m_Registry = m_Optimize = m_TempFiles = m_UninstallFiles = m_UninstallRegistry = null;
+            m_Download = null;
+            m_DownloadingSelfUpdate = null;
+            m_SelfUpdate = null;
+            m_Extract = null;
+            m_Processes = null;
+            m_PreExec = null;
+            m_Files = null;
+            m_Registry = null;
+            m_Optimize = null;
+            m_TempFiles = null;
+            m_UninstallFiles = null;
+            m_UninstallRegistry = null;
+            m_RollingBackFiles = null;
+            m_RollingBackRegistry = null;
         }
 
         #region Parsing language strings
@@ -820,7 +872,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadLanguageFile(XmlTextReader reader)
+        private void ReadLanguageFile(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -850,7 +902,7 @@ namespace wyUpdate
             reader.Close();
         }
 
-        private void ReadButtons(XmlTextReader reader)
+        private void ReadButtons(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -878,7 +930,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadScreens(XmlTextReader reader)
+        private void ReadScreens(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -908,7 +960,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadDialogs(XmlTextReader reader)
+        private void ReadDialogs(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -926,7 +978,7 @@ namespace wyUpdate
             }
         }
 
-        private static void ReadScreenDialog(XmlTextReader reader, ScreenDialog sd)
+        private static void ReadScreenDialog(XmlReader reader, ScreenDialog sd)
         {
             string screenEndName = reader.LocalName;
 
@@ -948,7 +1000,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadStatus(XmlTextReader reader)
+        private void ReadStatus(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -982,11 +1034,15 @@ namespace wyUpdate
                         m_UninstallFiles = reader.ReadString();
                     else if (reader.LocalName.Equals("UninstallReg"))
                         m_UninstallRegistry = reader.ReadString();
+                    else if (reader.LocalName.Equals("RollingBackFiles"))
+                        m_RollingBackFiles = reader.ReadString();
+                    else if (reader.LocalName.Equals("RollingBackRegistry"))
+                        m_RollingBackRegistry = reader.ReadString();
                 }
             }
         }
 
-        private void ReadErrors(XmlTextReader reader)
+        private void ReadErrors(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -1012,7 +1068,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadBottoms(XmlTextReader reader)
+        private void ReadBottoms(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -1128,6 +1184,8 @@ namespace wyUpdate
                     WriteString(writer, "TempFiles", m_TempFiles);
                     WriteString(writer, "UninstallFiles", m_UninstallFiles);
                     WriteString(writer, "UninstallReg", m_UninstallRegistry);
+                    WriteString(writer, "RollingBackFiles", m_RollingBackFiles);
+                    WriteString(writer, "RollingBackRegistry", m_RollingBackRegistry);
                 }
                 writer.WriteEndElement(); //</Status>
 
@@ -1144,13 +1202,13 @@ namespace wyUpdate
             writer.Close();
         }
 
-        private static void WriteString(XmlTextWriter writer, string name, string value)
+        private static void WriteString(XmlWriter writer, string name, string value)
         {
             if (!string.IsNullOrEmpty(value))
                 writer.WriteElementString(name, value);
         }
 
-        private static void WriteScreenDialog(XmlTextWriter writer, string name, ScreenDialog sd)
+        private static void WriteScreenDialog(XmlWriter writer, string name, ScreenDialog sd)
         {
             if (!sd.IsEmpty)
             {

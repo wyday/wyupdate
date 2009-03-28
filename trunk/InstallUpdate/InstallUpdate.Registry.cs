@@ -55,7 +55,15 @@ namespace wyUpdate
 
             if (canceled || except != null)
             {
+                // rollback the registry
+                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, true);
                 RollbackUpdate.RollbackRegistry(TempDirectory, ProgramDirectory);
+
+                //rollback files
+                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
+                RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
+
+
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
             }
             else
