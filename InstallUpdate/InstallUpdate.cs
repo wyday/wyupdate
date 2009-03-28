@@ -7,13 +7,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using Ionic.Zip;
 using wyUpdate.Common;
-using wyUpdate.Compression.Vcdiff;
 
 namespace wyUpdate
 {
-    class InstallUpdate
+    partial class InstallUpdate
     {
         #region Private Variable
 
@@ -89,55 +87,9 @@ namespace wyUpdate
         }
 
         //Methods
-        private void ExtractUpdateFile()
-        {
-            using (ZipFile zip = ZipFile.Read(Filename))
-            {
-                int totalFiles = zip.Entries.Count;
-                int filesDone = 0;
 
-                foreach (ZipEntry e in zip)
-                {
-                    if (canceled)
-                        break; //stop outputting new files
 
-                    if (!SkipProgressReporting)
-                    {
-                        ThreadHelper.ReportProgress(Sender, SenderDelegate,
-                            "Extracting " + Path.GetFileName(e.FileName),
-                            totalFiles > 0 ?
-                               GetRelativeProgess(1, (int)((filesDone * 100) / totalFiles)) :
-                               GetRelativeProgess(1, 0));
 
-                        filesDone++;
-                    }
-
-                    e.Extract(OutputDirectory, true);  // overwrite == true
-                }
-            }
-        }
-
-        private void UpdateRegistry(List<RegChange> rollbackRegistry)
-        {
-            int i = 0;
-
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(5, 0));
-
-            foreach (RegChange change in UpdtDetails.RegistryModifications)
-            {
-                if (canceled)
-                    break;
-
-                i++;
-
-                ThreadHelper.ReportProgress(Sender, SenderDelegate,
-                    change.ToString(),
-                    GetRelativeProgess(5, (int)((i * 100) / UpdtDetails.RegistryModifications.Count)));
-                
-                //execute the regChange, while storing the opposite operation
-                change.ExecuteOperation(rollbackRegistry);
-            }
-        }
 
         private void UpdateFiles(string tempDir, string progDir, string backupFolder, List<FileFolder> rollbackList, ref int totalDone, ref int totalFiles)
         {
@@ -155,7 +107,7 @@ namespace wyUpdate
 
                 ThreadHelper.ReportProgress(Sender, SenderDelegate, 
                     "Updating " + tempFiles[i].Name,
-                    GetRelativeProgess(4, (int)((totalDone * 100) / totalFiles)));
+                    GetRelativeProgess(4, (totalDone * 100) / totalFiles));
 
                 if (File.Exists(Path.Combine(progDir, tempFiles[i].Name)))
                 {
@@ -213,170 +165,7 @@ namespace wyUpdate
             }
         }
 
-        private static bool ProcessesNeedClosing(FileInfo[] baseFiles)
-        {
-            System.Diagnostics.Process[] aProcess = System.Diagnostics.Process.GetProcesses();
 
-            bool ProcNeedClosing = false;
-
-            foreach (System.Diagnostics.Process proc in aProcess)
-            {
-                foreach (FileInfo filename in baseFiles)
-                {
-                    try
-                    {
-                        //are one of the exe's in baseDir running?
-                        if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower())
-                        {
-                            ProcNeedClosing = true;
-                        }
-                    }
-                    catch { }
-                }
-            }
-
-            return ProcNeedClosing;
-        }
-
-        private static void KillProcess(string filename)
-        {
-            Process[] aProcess = Process.GetProcesses();
-
-            foreach (Process proc in aProcess)
-            {
-                try
-                {
-                    if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.ToLower())
-                    {
-                        proc.Kill();
-                    }
-                }
-                catch { }
-            }
-        }
-
-        // unzip the update to the temp folder
-        public void RunUnzipProcess()
-        {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
-            Exception except = null;
-
-            string updtDetailsFilename = Path.Combine(TempDirectory, "updtdetails.udt");
-
-            try
-            {
-                ExtractUpdateFile();
-
-                try
-                {
-                    // remove update file (it's no longer needed)
-                    File.Delete(Filename);
-                }
-                catch (Exception) { }
-
-
-                // Try to load the update details file
-
-                if (File.Exists(updtDetailsFilename))
-                {
-                    UpdtDetails = new UpdateDetails();
-                    UpdtDetails.Load(updtDetailsFilename);
-                }
-
-                if (Directory.Exists(Path.Combine(TempDirectory, "patches")))
-                {
-                    // patch the files
-                    foreach (UpdateFile file in UpdtDetails.UpdateFiles)
-                    {
-                        if (file.DeltaPatchRelativePath != null)
-                        {
-                            string tempFilename = Path.Combine(TempDirectory, file.RelativePath);
-
-                            // create the directory to store the patched file
-                            if (!Directory.Exists(Path.GetDirectoryName(tempFilename)))
-                                Directory.CreateDirectory(Path.GetDirectoryName(tempFilename));
-
-                            try
-                            {
-                                using (FileStream original = File.OpenRead(FixUpdateDetailsPaths(file.RelativePath)))
-                                using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)))
-                                using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                                {
-                                    VcdiffDecoder.Decode(original, patch, target, file.NewFileAdler32);
-                                }
-                            }
-                            catch
-                            {
-                                throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath));
-                            }
-
-
-                            // the 'last write time' of the patch file is really the 'lwt' of the dest. file
-                            File.SetLastWriteTime(tempFilename, File.GetLastWriteTime(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)));
-                        }
-                    }
-
-
-                    try
-                    {
-                        // remove the patches directory (frees up a bit of space)
-                        Directory.Delete(Path.Combine(TempDirectory, "patches"), true);
-                    }
-                    catch { }
-                }
-            }
-            catch (Exception ex)
-            {
-                except = ex;
-            }
-
-
-            if (canceled || except != null)
-            {
-                //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1);
-
-                //Delete temporary files
-
-                if (except != null && except.GetType() != typeof(PatchApplicationException))
-                {
-                    // remove the entire temp directory
-                    try
-                    {
-                        Directory.Delete(OutputDirectory, true);
-                    }
-                    catch { }
-                }
-                else
-                {
-                    //only 'gut' the folder leaving the server file
-
-                    string[] dirs = Directory.GetDirectories(TempDirectory);
-
-                    foreach (string dir in dirs)
-                    {
-                        try
-                        {
-                            Directory.Delete(dir, true);
-                        }
-                        catch { }
-                    }
-
-                    // remove the update details
-                    if (File.Exists(updtDetailsFilename))
-                    {
-                        File.Delete(updtDetailsFilename);
-                    }
-                }
-
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
-            }
-            else
-            {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, "Extraction complete");
-            }
-        }
 
         public void RunUpdateFiles()
         {
@@ -469,8 +258,8 @@ namespace wyUpdate
                     installDesktopShortcut = true;
                     break;
                 }
-                else
-                    installDesktopShortcut = false;
+
+                installDesktopShortcut = false;
             }
 
             //see if at least one previous shortcut in the start menu folder exists
@@ -481,8 +270,8 @@ namespace wyUpdate
                     installStartMenuShortcut = true;
                     break;
                 }
-                else
-                    installStartMenuShortcut = false;
+
+                installStartMenuShortcut = false;
             }
 
             string tempPath, tempFile;
@@ -599,214 +388,8 @@ namespace wyUpdate
         }
 
 
-        public void RunSelfUpdate()
-        {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
-            Exception except = null;
-
-            try
-            {
-                //extract downloaded self update
-                ExtractUpdateFile();
-
-                try
-                {
-                    // remove update file (it's no longer needed)
-                    File.Delete(Filename);
-                }
-                catch { }
 
 
-                //find and forcibly close oldClientLocation
-                KillProcess(OldIUPClientLoc);
-
-                string updtDetailsFilename = Path.Combine(OutputDirectory, "updtdetails.udt");
-
-                if (File.Exists(updtDetailsFilename))
-                {
-                    UpdtDetails = new UpdateDetails();
-                    UpdtDetails.Load(updtDetailsFilename);
-
-                    //remove the file to prevent conflicts with the regular product update
-                    File.Delete(updtDetailsFilename);
-                }
-
-
-
-                // generate files from patches
-
-                if (Directory.Exists(Path.Combine(OutputDirectory, "patches")))
-                {
-                    // set the base directory to the home of the client file
-                    ProgramDirectory = Path.GetDirectoryName(OldIUPClientLoc);
-                    TempDirectory = OutputDirectory;
-
-                    // patch the file (assume only one - wyUpdate.exe)
-
-                    if (UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath != null)
-                    {
-                        string tempFilename = Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].RelativePath);
-
-                        // create the directory to store the patched file
-                        if (!Directory.Exists(Path.GetDirectoryName(tempFilename)))
-                            Directory.CreateDirectory(Path.GetDirectoryName(tempFilename));
-
-                        try
-                        {
-                            using (FileStream original = File.OpenRead(OldIUPClientLoc))
-                            using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)))
-                            using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                            {
-                                VcdiffDecoder.Decode(original, patch, target, UpdtDetails.UpdateFiles[0].NewFileAdler32);
-                            }
-                        }
-                        catch
-                        {
-                            throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[0].RelativePath));
-                        }
-
-                        // the 'last write time' of the patch file is really the 'lwt' of the dest. file
-                        File.SetLastWriteTime(tempFilename, File.GetLastWriteTime(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)));
-                    }
-
-
-                    try
-                    {
-                        // remove the patches directory (frees up a bit of space)
-                        Directory.Delete(Path.Combine(TempDirectory, "patches"), true);
-                    }
-                    catch { }
-                }
-
-
-
-
-                //find self in Path.Combine(OutputDirectory, "base")
-                bool optimize = FindNewClient();
-
-
-                //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
-                File.Copy(m_NewIUPClientLoc, OldIUPClientLoc, true);
-
-                //Optimize client if necessary
-                if (optimize)
-                    NGenInstall(OldIUPClientLoc);
-
-                //cleanup the client update files to prevent conflicts with the product update
-                File.Delete(m_NewIUPClientLoc);
-                Directory.Delete(Path.Combine(OutputDirectory, "base"));
-            }
-            catch (Exception ex)
-            {
-                except = ex;
-            }
-
-            if (canceled || except != null)
-            {
-                //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1);
-
-                //Delete temporary files
-                if (except != null && except.GetType() != typeof(PatchApplicationException))
-                {
-                    // remove the entire temp directory
-                    try
-                    {
-                        Directory.Delete(OutputDirectory, true);
-                    }
-                    catch { }
-                }
-                else
-                {
-                    //only 'gut' the folder leaving the server file
-
-                    string[] dirs = Directory.GetDirectories(TempDirectory);
-
-                    foreach (string dir in dirs)
-                    {
-                        try
-                        {
-                            Directory.Delete(dir, true);
-                        }
-                        catch { }
-                    }
-                }
-
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
-            }
-            else
-            {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, "Self update complete");
-            }
-        }
-
-        private bool FindNewClient()
-        {
-            //first search the update details file
-            for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
-            {
-                if (UpdtDetails.UpdateFiles[i].IsNETAssembly)
-                {
-                    //optimize (ngen) the file
-                    m_NewIUPClientLoc = Path.Combine(OutputDirectory, UpdtDetails.UpdateFiles[i].RelativePath);
-
-                    return true;
-                }
-            }
-
-            //not found yet, so keep searching
-            //get a list of files in the "base" folder
-            string[] files = Directory.GetFiles(Path.Combine(OutputDirectory, "base"), "*.exe", SearchOption.AllDirectories);
-
-            if (files.Length >= 1)
-            {
-                m_NewIUPClientLoc = files[0];
-            }
-            else
-            {
-                throw new Exception("Self update client couldn't be found.");
-            }
-
-            //not ngen-able
-            return false;
-        }
-
-
-        public void RunUpdateRegistry()
-        {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
-            string backupFolder = Path.Combine(TempDirectory, "backup");
-            List<RegChange> rollbackRegistry = new List<RegChange>();
-
-            //parse variables in the regChanges
-            for (int i = 0; i < UpdtDetails.RegistryModifications.Count; i++)
-                UpdtDetails.RegistryModifications[i] = ParseRegChange(UpdtDetails.RegistryModifications[i]);
-
-            Exception except = null;
-            try
-            {
-                UpdateRegistry(rollbackRegistry);
-            }
-            catch (Exception ex)
-            {
-                except = ex;
-            }
-
-            RollbackUpdate.WriteRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), rollbackRegistry);
-
-            if (canceled || except != null)
-            {
-                RollbackUpdate.RollbackRegistry(TempDirectory, ProgramDirectory);
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
-            }
-            else
-            {
-                //registry modification completed sucessfully
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
-            }
-        }
 
         public void RunUpdateClientDataFile()
         {
@@ -991,55 +574,7 @@ namespace wyUpdate
         }
 
 
-        public void RunProcessesCheck()
-        {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
 
-            FileInfo[] files = new DirectoryInfo(ProgramDirectory).GetFiles("*.exe", SearchOption.AllDirectories);
-
-            RemoveSelfFromProcesses(ref files);
-
-            //check for (and delete) a newer client if it exists
-            deleteClientInPath(ProgramDirectory, Path.Combine(TempDirectory, "base"));
-
-            bool procNeedClosing = ProcessesNeedClosing(files);
-
-            if (!procNeedClosing)
-            {
-                //no processes need closing, all done
-                files = null;
-            }
-
-            Sender.BeginInvoke(SenderDelegate, new object[] { files, true });
-        }
-
-        private static void RemoveSelfFromProcesses(ref FileInfo[] files)
-        {
-            int offset = 0;
-
-            for (int i = 0; i < files.Length; i++)
-            {
-                if (ProcessIsSelf(files[i].FullName))
-                    offset++;
-
-                else if (offset > 0)
-                    files[i - offset] = files[i];
-            }
-
-            if (offset > 0)
-                Array.Resize(ref files, files.Length - offset);
-        }
-
-        public static bool ProcessIsSelf(string processPath)
-        {
-            string self = Assembly.GetExecutingAssembly().Location,
-                vhostFile = self.Substring(0, self.Length - 3) + "vshost.exe"; //for debugging
-
-            if (processPath.ToLower() == self.ToLower() || processPath.ToLower() == vhostFile.ToLower())
-                return true;
-            
-            return false;
-        }
 
 
         public void RunPreExecute()
@@ -1110,10 +645,13 @@ namespace wyUpdate
                 if (UpdtDetails.UpdateFiles[i].Execute &&
                 !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo();
+                    ProcessStartInfo psi = new ProcessStartInfo
+                                               {
+                                                   //use the absolute path
 
-                    //use the absolute path
-                    psi.FileName = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
+                                                   FileName =
+                                                       FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
+                                               };
 
                     if (!string.IsNullOrEmpty(psi.FileName))
                     {
@@ -1124,7 +662,7 @@ namespace wyUpdate
                         //start the process
                         Process p = Process.Start(psi);
 
-                        if (UpdtDetails.UpdateFiles[i].WaitForExecution)
+                        if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
                             p.WaitForExit();
                     }
                 }
@@ -1142,7 +680,7 @@ namespace wyUpdate
 
         #region NGen Install
 
-        string clrPath = null;
+        string clrPath;
 
         [DllImport("mscoree.dll")]
         private static extern int GetCORSystemDirectory([MarshalAs(UnmanagedType.LPWStr)]StringBuilder pbuffer, int cchBuffer, ref int dwlength);
@@ -1162,11 +700,15 @@ namespace wyUpdate
                 clrPath = GetClrInstallationDirectory();
             }
 
-            Process proc = new Process();
-
-            proc.StartInfo.FileName = Path.Combine(clrPath, "ngen.exe");
-            proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            proc.StartInfo.Arguments = " install \"" + filename + "\"" + " /nologo";
+            Process proc = new Process
+                               {
+                                   StartInfo =
+                                       {
+                                           FileName = Path.Combine(clrPath, "ngen.exe"),
+                                           WindowStyle = ProcessWindowStyle.Hidden,
+                                           Arguments = " install \"" + filename + "\"" + " /nologo"
+                                       }
+                               };
 
             proc.Start();
 
@@ -1180,11 +722,15 @@ namespace wyUpdate
                 clrPath = GetClrInstallationDirectory();
             }
 
-            Process proc = new Process();
-
-            proc.StartInfo.FileName = Path.Combine(clrPath, "ngen.exe");
-            proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            proc.StartInfo.Arguments = " uninstall \"" + filename + "\"" + " /nologo";
+            Process proc = new Process
+                               {
+                                   StartInfo =
+                                       {
+                                           FileName = Path.Combine(clrPath, "ngen.exe"),
+                                           WindowStyle = ProcessWindowStyle.Hidden,
+                                           Arguments = " uninstall \"" + filename + "\"" + " /nologo"
+                                       }
+                               };
 
             proc.Start();
 
@@ -1240,7 +786,7 @@ namespace wyUpdate
         //handle thread cancelation
         public void Cancel()
         {
-            this.canceled = true;
+            canceled = true;
         }
 
         #region RelativePaths
@@ -1267,7 +813,7 @@ namespace wyUpdate
 
         //returns a non-null string filename of the Client in the tempbase
         //if the Running Client will be overwritten by the Temp Client
-        private string ClientInTempBase(string actualBase, string tempBase)
+        private static string ClientInTempBase(string actualBase, string tempBase)
         {
             //relative path from origFolder to client location
             StringBuilder strBuild = new StringBuilder(MAX_PATH);

@@ -98,6 +98,10 @@
     <Compile Include="Controls\PanelDisplay.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="InstallUpdate\InstallUpdate.Extract.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.Processes.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.Registry.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.SelfUpdate.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="frmMain.resx">
@@ -133,7 +137,7 @@
     <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails.cs" />
     <Compile Include="UpdateEngine.cs" />
-    <Compile Include="InstallUpdate.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.cs" />
     <Compile Include="Util\Arguments.cs" />
     <Compile Include="UpdateHelper\CopyData.cs" />
     <Compile Include="VCDiff\AddressCache.cs" />
