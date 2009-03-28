@@ -88,15 +88,31 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// This read-only property specifies the name of the zipfile to read or
-        /// write. It can be implicitly set when the instance of the ZipFile type is
-        /// created, if you use the <see cref="ZipFile(String)"/> Constructor, or it is
-        /// set when <see cref="ZipFile.Save(String)"/> is called. When instantiating a
-        /// ZipFile to read from or write to a stream, the Name property remains null.
+        /// The name of the zipfile, on disk.
         /// </summary>
+	///
+	/// <remarks>
+	///
+	/// <para>
+        /// When the ZipFile instance was created by reading an archive using one of the
+        /// ZipFile.Read methods, this property represents the name of the zipfile that was read.
+        /// When the ZipFile instance was created by using the no-argument constructor, this value
+        /// is null (Nothing in VB).
+	/// </para>
+	///
+	/// <para>
+	/// If you use the no-argument constructor, and you then explicitly set this property,
+	/// when you call <see cref="ZipFile.Save()"/>", this name will specify the name of the
+	/// zipfile created.  Doing so is equivalent to calling <see
+	/// cref="ZipFile.Save(String)"/>.  When instantiating a ZipFile by reading from a stream
+	/// or byte array, the Name property remains null.  When saving to a stream, the Name
+	/// property is implicitly set to null.
+	/// </para>
+	/// </remarks>
         public string Name
         {
             get { return _name; }
+            set { _name = value; }
         }
 
 

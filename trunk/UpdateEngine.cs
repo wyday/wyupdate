@@ -168,9 +168,9 @@ namespace wyUpdate.Common
     {
         #region Private Variables
         //Client Side Information
-        private string productName = "";
-        private string companyName = "";
-        private string installedVersion = "";
+        private string productName;
+        private string companyName;
+        private string installedVersion;
         List<string> serverFileSites = new List<string>(1);
         List<string> clientServerSites = new List<string>(1);
 
@@ -190,7 +190,7 @@ namespace wyUpdate.Common
 
         //Server Side Information
         private string newVersion;
-        private string m_MinClientVersion = "";
+        private string m_MinClientVersion;
         public List<VersionChoice> VersionChoices = new List<VersionChoice>();
 
         private string m_NoUpdateToLatestLinkText;
@@ -311,13 +311,6 @@ namespace wyUpdate.Common
 
         #endregion Properties
 
-        //Constructors
-        public UpdateEngine()
-        {
-            productName = "";
-            companyName = "";
-            installedVersion = "";
-        }
 
         #region Client Data
 

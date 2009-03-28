@@ -174,7 +174,7 @@ namespace wyUpdate
 
             try
             {
-                ReadRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), ref rollbackRegistry);
+                ReadRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), rollbackRegistry);
             }
             catch (Exception) { }
 
@@ -189,7 +189,7 @@ namespace wyUpdate
 
         #region Write/Read RollbackRegistry
 
-        public static void WriteRollbackRegistry(string fileName, ref List<RegChange> rollbackRegistry)
+        public static void WriteRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
         {
             //if the list is empty, bail out
             if (rollbackRegistry.Count == 0)
@@ -211,7 +211,7 @@ namespace wyUpdate
             fs.Close();
         }
 
-        public static void ReadRollbackRegistry(string fileName, ref List<RegChange> rollbackRegistry)
+        public static void ReadRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
         {
             byte[] fileIDBytes = new byte[7];
 
@@ -391,12 +391,11 @@ namespace wyUpdate
             }
 
             //add files to un-NGEN
-            bool addFile;
             foreach (UpdateFile ngenedFile in updateDetailsFiles)
             {
                 if (ngenedFile.IsNETAssembly)
                 {
-                    addFile = true;
+                    bool addFile = true;
 
                     for (int i = 0; i < filesToUninstall.Count; i++)
                     {
@@ -425,7 +424,7 @@ namespace wyUpdate
             {
                 try
                 {
-                    ReadRollbackRegistry(registryRollbackFile, ref registryToDelete);
+                    ReadRollbackRegistry(registryRollbackFile, registryToDelete);
 
                     //don't include any regchanges that aren't "RemoveKey" or "RemoveValue"
                     for (int i = 0; i < registryToDelete.Count; i++)
@@ -541,7 +540,7 @@ namespace wyUpdate
             fs.Close();
         }
 
-        private static void LoadUninstallData(MemoryStream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        private static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
             byte[] fileIDBytes = new byte[7];
 
