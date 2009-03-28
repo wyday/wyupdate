@@ -28,6 +28,9 @@ namespace wyUpdate.Common
         /// <returns>-1 if versionA is less than versionB, 0 if they're equal, 1 if versionA is greater than versionB</returns>
         public static int Compare(string versionA, string versionB)
         {
+            if (versionA == null) return -1;
+            if (versionB == null) return 1;
+
             // convert version to lower, and replace all instances of "release candidate" with "rc"
             versionA = Regex.Replace(versionA.ToLower(), @"release[\s]+candidate", "rc");
             versionB = Regex.Replace(versionB.ToLower(), @"release[\s]+candidate", "rc");

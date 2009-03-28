@@ -794,7 +794,7 @@ namespace wyUpdate
                 except = ex;
             }
 
-            RollbackUpdate.WriteRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), ref rollbackRegistry);
+            RollbackUpdate.WriteRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), rollbackRegistry);
 
             if (canceled || except != null)
             {
