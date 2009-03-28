@@ -24,11 +24,13 @@ namespace wyUpdate.Common
         public Arguments(string Args)
         {
             Regex Extractor = new Regex(@"(['""][^""]+['""])\s*|([^\s]+)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            MatchCollection Matches;
             // Get matches (first string ignored because Environment.CommandLine starts with program filename)
-            Matches = Extractor.Matches(Args);
+            MatchCollection Matches = Extractor.Matches(Args);
             string[] Parts = new string[Matches.Count - 1];
-            for (int i = 1; i < Matches.Count; i++) Parts[i - 1] = Matches[i].Value.Trim();
+            
+            for (int i = 1; i < Matches.Count; i++)
+                Parts[i - 1] = Matches[i].Value.Trim();
+
             Extract(Parts);
         }
 
@@ -36,6 +38,7 @@ namespace wyUpdate.Common
         {
             Extract(Args);
         }
+
         // Extract command line parameters and values stored in a string array
         private void Extract(string[] Args)
         {
@@ -64,6 +67,7 @@ namespace wyUpdate.Common
                 }
             }
         }
+
         // Retrieve a parameter value if it exists
         public string this[string Param]
         {

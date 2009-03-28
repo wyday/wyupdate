@@ -29,8 +29,11 @@ namespace Ionic.Zip
 
 
     /// <summary>
-    /// In an EventArgs type, indicates which sort of progress event is being reported.
+    /// In an EventArgs type, indicates which sort of progress event is being reported. 
     /// </summary>
+    /// <remarks>
+    /// There are events for reading, events for saving, and events for extracting. 
+    /// </remarks>
     public enum ZipProgressEventType
     {
         /// <summary>

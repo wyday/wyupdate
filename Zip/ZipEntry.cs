@@ -715,9 +715,12 @@ namespace Ionic.Zip
         /// </summary>
         /// 
         /// <remarks>
-        /// This is usually 0x14.  (Decimal 20). If ZIP64 is in use, the version will be decimal
-        /// 45.  There are other values possible, as well. This value is set upon reading a Zip
-        /// file, or after saving a zip archive.
+        /// This is a readonly property.  An application that reads and writes zip archives
+	/// generally does not care about this value.  It is required as part of the Zip file
+	/// format, and is exposed in this class, but is probably not useful to you.  The value is
+	/// 20 for vanilla zip files. If ZIP64 is in use, the version will be decimal 45.  There
+	/// are other values possible, as well. This value is set upon reading an existing Zip
+	/// file, or after saving a zip archive.
         /// </remarks>
         public Int16 VersionNeeded
         {
@@ -1024,9 +1027,9 @@ namespace Ionic.Zip
         /// <remarks>
         /// This is a readonly property on the entry.  Upon reading an entry, this bool is
         /// determined by the data read.  After having written an entry, this bool indicates
-        /// whether encryption was actually used (which will have been true if the Password was
-        /// set and the Encryption property was something other than <see
-        /// cref="EncryptionAlgorithm.None"/>.
+        /// whether encryption was actually used (which will have been true if the <see
+        /// cref="Password"/> was set and the <see cref="Encryption"/> property was something
+        /// other than <see cref="EncryptionAlgorithm.None"/>.
         /// </remarks>
         public bool UsesEncryption
         {
