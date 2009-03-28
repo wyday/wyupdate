@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Windows.Forms;
-using Ionic.Zip;
-using wyUpdate.Common;
-using wyUpdate.Compression.Vcdiff;
 
 namespace wyUpdate
 {

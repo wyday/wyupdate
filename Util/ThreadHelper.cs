@@ -26,7 +26,7 @@ namespace wyUpdate.Common
                     sender.BeginInvoke(del, new object[] { -1, true, errorText, ex });
                     break;
                 }
-                catch (Exception) { }
+                catch { }
 
             } while (true);
         }
@@ -37,7 +37,7 @@ namespace wyUpdate.Common
             {
                 sender.BeginInvoke(del, new object[] { progress, false, text, null });
             }
-            catch (Exception)
+            catch
             {
                 // don't bother with the exception (it doesn't matter if the main window misses a progress report)
             }
@@ -56,7 +56,23 @@ namespace wyUpdate.Common
                     sender.BeginInvoke(del, new object[] { -1, true, text, null });
                     break;
                 }
-                catch (Exception) { }
+                catch { }
+
+            } while (true);
+        }
+
+        public static void ChangeRollback(ContainerControl sender, Delegate del, bool rbRegistry)
+        {
+            do
+            {
+                try
+                {
+                    //Try to send our changing status to rolling back
+
+                    sender.BeginInvoke(del, new object[] { rbRegistry });
+                    break;
+                }
+                catch { }
 
             } while (true);
         }

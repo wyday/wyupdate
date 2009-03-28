@@ -21,7 +21,11 @@ namespace wyUpdate
 
     public class UpdateItem
     {
-        private Label m_Label = new Label();
+        static readonly Image ErrorImage = new Bitmap(typeof(UpdateItem), "cross.png");
+        static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
+        static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "process-working.png");
+
+        private Label m_Label = new Label { AutoSize = true };
 
         public Label Label
         {
@@ -113,11 +117,6 @@ namespace wyUpdate
             m_Label.Text = "";
         }
 
-        public UpdateItem()
-        {
-            m_Label.AutoSize = true;
-        }
-
         public UpdateItemStatus Status
         {
             get { return m_Status; }
@@ -135,7 +134,7 @@ namespace wyUpdate
                             m_Animation.Rows = 4;
                             m_Animation.Columns = 8;
                             m_Animation.AnimationInterval = 25;
-                            m_Animation.BaseImage = new Bitmap(typeof(PanelDisplay), "cross.png");
+                            m_Animation.BaseImage = ErrorImage;
                             m_Animation.StartAnimation();
                             m_Label.Font = new Font(Label.Font, FontStyle.Regular);
                             break;
@@ -149,8 +148,7 @@ namespace wyUpdate
                             m_Animation.Rows = 5;
                             m_Animation.Columns = 10;
                             m_Animation.AnimationInterval = 25;
-                            m_Animation.BaseImage = new Bitmap(typeof(PanelDisplay), "process-working.png");
-                            //m_Animation.Location = new Point((this.Width / 2) - 25, (this.Height / 2) - 40);
+                            m_Animation.BaseImage = ProgressImage;
                             Animation.StartAnimation();
                             m_Label.Font = new Font(Label.Font, FontStyle.Bold);
                             break;
@@ -160,8 +158,7 @@ namespace wyUpdate
                             m_Animation.Rows = 4;
                             m_Animation.Columns = 8;
                             m_Animation.AnimationInterval = 25;
-                            m_Animation.BaseImage = new Bitmap(typeof(PanelDisplay), "tick.png");
-                            //m_Animation.Location = new Point((this.Width / 2) - 25, (this.Height / 2) - 40);
+                            m_Animation.BaseImage = SuccessImage;
                             m_Animation.StartAnimation();
                             m_Label.Font = new Font(Label.Font, FontStyle.Regular);
                             break;
