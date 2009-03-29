@@ -177,14 +177,14 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// The last modified time of the file created upon a call to
-        /// <c>ZipEntry.Extract()</c> may be adjusted during extraction to compensate
-        /// for differences in how the .NET Base Class Library deals with daylight
-        /// saving time (DST) versus how the Windows filesystem deals with daylight
-        /// saving time.  See
-        /// http://blogs.msdn.com/oldnewthing/archive/2003/10/24/55413.aspx for more
-        /// context.
+        /// The last modified time of the file created upon a call to <c>ZipEntry.Extract()</c>
+        /// may be adjusted during extraction to compensate for differences in how the .NET Base
+        /// Class Library deals with daylight saving time (DST) versus how the Windows filesystem
+        /// deals with daylight saving time.  Raymond Chen <see
+        /// href="http://blogs.msdn.com/oldnewthing/archive/2003/10/24/55413.aspx">provides some
+        /// good context</see>.
         /// </para>
+	///
         /// <para>
         /// In a nutshell: Daylight savings time rules change regularly.  In 2007, for example, the
         /// inception week of DST changed.  In 1977, DST was in place all year round. In 1945,
@@ -324,9 +324,10 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// I'll bet you didn't think one person could type so much about time, eh?  And reading it 
-        /// was so enjoyable, too!  Well, in appreciation, maybe you should donate?
-        /// http://cheeso.members.winisp.net/DotNetZipDonate.aspx 
+        /// I'll bet you didn't think one person could type so much about time, eh?  And reading
+        /// it was so enjoyable, too!  Well, in appreciation, <see
+        /// href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">maybe you should
+        /// donate?</see>
         /// </para>
         /// </remarks>
         ///

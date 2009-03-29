@@ -148,8 +148,10 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// According to the zip specification, the comment is not encrypted, even if there is a
-        /// password set on the zip archive.
+        /// According to <see
+        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">PKWARE's zip
+        /// specification</see>, the comment is not encrypted, even if there is a password set on
+        /// the zip archive.
         /// </para>
         ///
         /// <para>
@@ -246,36 +248,37 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Indicates whether to encode entry filenames and entry comments using Unicode 
-        /// (UTF-8) according to the PKWare specification, for those filenames and comments
-        /// that cannot be encoded in the IBM437 character set.
+        /// (UTF-8).
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// The PKWare specification provides for encoding in either the IBM437 code page, or in
-        /// UTF-8.  This flag selects the encoding according to that specification.  By default,
-        /// this flag is false, and filenames and comments are encoded into the zip file in the
-        /// IBM437 codepage.  Setting this flag to true will specify that filenames and comments
-        /// are encoded with UTF-8.
+        /// <see href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">The PKWare zip
+        /// specification</see> provides for encoding file names and file comments in either the
+        /// IBM437 code page, or in UTF-8.  This flag selects the encoding according to that
+        /// specification.  By default, this flag is false, and filenames and comments are encoded
+        /// into the zip file in the IBM437 codepage.  Setting this flag to true will specify that
+        /// filenames and comments that cannot be encoded with IBM437 will be encoded with UTF-8.
         /// </para>
         ///
         /// <para>
         /// Zip files created with strict adherence to the PKWare specification with respect to
         /// UTF-8 encoding can contain entries with filenames containing any combination of
         /// Unicode characters, including the full range of characters from Chinese, Latin,
-        /// Hebrew, Greek, Cyrillic, and many other alphabets.  However, because the UTF-8 portion
-        /// of the PKWare specification is not broadly supported by other zip libraries and
-        /// utilities, such zip files may not be readable by your favorite zip tool or
-        /// archiver. In other words, interoperability will decrease if you set this flag to true.
+        /// Hebrew, Greek, Cyrillic, and many other alphabets.  However, because at this time, the
+        /// UTF-8 portion of the PKWare specification is not broadly supported by other zip
+        /// libraries and utilities, such zip files may not be readable by your favorite zip tool
+        /// or archiver. In other words, interoperability will decrease if you set this flag to
+        /// true.
         /// </para>
         ///
         /// <para>
         /// In particular, Zip files created with strict adherence to the PKWare specification
         /// with respect to UTF-8 encoding will not work well with Explorer in Windows XP or
-        /// Windows Vista, because Vista compressed folders do not support UTF-8 in zip files.
-        /// Vista can read the zip files, but shows the filenames incorrectly.  Unpacking from
-        /// Windows Vista Explorer will result in filenames that have rubbish characters in place
-        /// of the high-order UTF-8 bytes.
+        /// Windows Vista, because Windows compressed folders, as far as I know, do not support
+        /// UTF-8 in zip files.  Vista can read the zip files, but shows the filenames
+        /// incorrectly.  Unpacking from Windows Vista Explorer will result in filenames that have
+        /// rubbish characters in place of the high-order UTF-8 bytes.
         /// </para>
         ///
         /// <para>
@@ -301,30 +304,36 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// Encoding filenames and comments using the IBM437 codepage, the default behavior, will
-        /// cause loss of information on some filenames, but the resulting zipfile will be more
-        /// interoperable with other utilities. As an example of the loss of information, the
-        /// o-tilde character will be down-coded to plain o.  Likewise, the O with a stroke
-        /// through it, used in Danish and Norwegian, will be down-coded to plain o. Chinese
-        /// characters cannot be represented in codepage IBM437; when using the default encoding,
-        /// Chinese characters in filenames will be represented as ?.
+        /// If you do not set this flag, it will remain false.  If this flag is false, your
+        /// ZipFile will encode all filenames and comments using the IBM437 codepage.  This can
+        /// cause "loss of information" on some filenames, but the resulting zipfile will be more
+        /// interoperable with other utilities. As an example of the loss of information,
+        /// diacritics can be lost.  The o-tilde character will be down-coded to plain o.  The c
+        /// with a cedilla (Unicode 0xE7) used in Portugese will be downcoded to a c.  Likewise,
+        /// the O-stroke character (Unicode 248), used in Danish and Norwegian, will be down-coded
+        /// to plain o. Chinese characters cannot be represented in codepage IBM437; when using
+        /// the default encoding, Chinese characters in filenames will be represented as ?. These
+        /// are all examples of "information loss".
         /// </para>
         ///
         /// <para>
-        /// The loss of information associated to the use of the IBM437 encoding can lead to
-        /// runtime errors. For example, using IBM437, any sequence of 4 Chinese characters will
-        /// be encoded as ????.  If your application creates a ZipFile, then adds two files, each
-        /// with names of four Chinese characters each, this will result in a duplicate filename
-        /// exception.  In the case where you add a single file with a name containing four
-        /// Chinese characters, calling Extract() on the entry that has question marks in the
-        /// filename will result in an exception, because the question mark is not legal for use
-        /// within filenames on Windows.  These are just a few examples of the problems associated
-        /// to loss of information.
+        /// The loss of information associated to the use of the IBM437 encoding is inconvenient,
+        /// and can also lead to runtime errors. For example, using IBM437, any sequence of 4
+        /// Chinese characters will be encoded as ????.  If your application creates a ZipFile,
+        /// then adds two files, each with names of four Chinese characters each, this will result
+        /// in a duplicate filename exception.  In the case where you add a single file with a
+        /// name containing four Chinese characters, calling Extract() on the entry that has
+        /// question marks in the filename will result in an exception, because the question mark
+        /// is not legal for use within filenames on Windows.  These are just a few examples of
+        /// the problems associated to loss of information.
         /// </para>
         ///
         /// <para>
-        /// This flag is independent of the encoding of the content within the 
-        /// entries in the zip file.  
+        /// This flag is independent of the encoding of the content within the entries in the zip
+        /// file. Think of the zip file as a container - it supports an encoding.  Within the
+        /// container are other "containers" - the file entries themselves.  The encoding within
+        /// those entries is independent of the encoding of the zip archive container for those
+        /// entries.
         /// </para>
         ///
         /// <para>
@@ -434,7 +443,7 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// Have you thought about donating? http://cheeso.members.winisp.net/DotNetZipDonate.aspx
+        /// <see href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">Have you thought about donating?</see>
         /// </para>
         ///
         /// </remarks>
@@ -1228,9 +1237,9 @@ namespace Ionic.Zip
         /// <para>
         /// And, if you have read this far, I would like to point out that a single
         /// person wrote all the code that does what is described above, and also wrote
-        /// the description.  Isn't it about time you donated $5 in appreciation?  The
-        /// money goes to a charity. See
-        /// http://cheeso.members.winisp.net/DotNetZipDonate.aspx.
+        /// the description.  Isn't it about time you 
+        /// <see href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">donated $5 in appreciation?</see>  The
+        /// money goes to a charity. 
         /// </para>
         ///
         /// </remarks>
@@ -1355,8 +1364,9 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        /// By the way, if you are using multiple threads with DotNetZip, you really should
-        /// donate $5 or $10 to the cause.  See http://cheeso.members.winisp.net/DotNetZipDonate.aspx.
+        /// By the way, if you are using multiple threads with DotNetZip, don't you think <see
+        /// href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">you should donate
+        /// $5 or $10?</see>
         /// </para>
         ///
         /// </remarks>
@@ -4841,7 +4851,7 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// You probably do not want to call <c>GetEnumerator</c> explicitly. Instead 
-        /// it is implicitly called when you use a <c>foreach</c> loop in C#, or a 
+        /// it is implicitly called when you use a <see langword="foreach"/> loop in C#, or a 
         /// <c>For Each</c> loop in VB.
         /// </remarks>
         ///
