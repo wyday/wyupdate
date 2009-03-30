@@ -2263,6 +2263,12 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
+	/// <para>
+	/// Any directory structure that may be present in the filenames contained in the list is
+	/// "flattened" in the archive.  Each file in the list is added to the archive in the
+	/// specified top-level directory. 
+	/// </para>
+	///
         /// <para>
         /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
         /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
@@ -2289,8 +2295,68 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
         public void AddFiles(System.Collections.Generic.ICollection<String> fileNames, String directoryPathInArchive)
         {
-            foreach (var f in fileNames)
-                this.AddFile(f, directoryPathInArchive);
+	    AddFiles(fileNames, false, directoryPathInArchive);
+        }
+
+
+
+        /// <summary>
+        /// Adds a set of files to the ZipFile, using the specified directory path 
+        /// in the archive, and preserving the full directory structure in the filenames.
+        /// </summary>
+        ///
+        /// <remarks>
+	/// <para>
+	/// If preserveDirHierarchy is true, any directory structure present in the filenames
+	/// contained in the list is preserved in the archive.  On the other hand, if
+	/// preserveDirHierarchy is false, any directory structure that may be present in the
+	/// filenames contained in the list is "flattened" in the archive; Each file in the list
+	/// is added to the archive in the specified top-level directory.
+	/// </para>
+	/// 
+        /// <para>
+        /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
+        /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
+        /// <see cref="ExtractExistingFile"/>, and <see
+        /// cref="ForceNoCompression"/>, their respective values at the time of this call will be
+        /// applied to each ZipEntry added.
+        /// </para>
+	///
+        /// </remarks>
+        ///
+        /// <param name="fileNames">
+        /// The names of the files to add. Each string should refer to a file in the filesystem.  
+        /// The name of the file may be a relative path or a fully-qualified path. 
+        /// </param>
+        ///
+        /// <param name="directoryPathInArchive">
+        /// Specifies a directory path to use to override any path in the file name.  This path
+        /// may, or may not, correspond to a real directory in the current filesystem.  If the
+        /// files within the zip are later extracted, this is the path used for the extracted
+        /// file.  Passing null (nothing in VB) will use the path on the FileName, if any.
+        /// Passing the empty string ("") will insert the item at the root path within the
+        /// archive.
+        /// </param>
+        ///
+        /// <param name="preserveDirHierarchy">
+	/// whether the entries in the zip archive will reflect the dir hierarchy that is present in each filename. 
+        /// </param>
+        /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
+        public void AddFiles(System.Collections.Generic.ICollection<String> fileNames, bool preserveDirHierarchy, String directoryPathInArchive)
+        {
+	    if (preserveDirHierarchy)
+	    {
+		foreach (var f in fileNames)
+		    if (directoryPathInArchive!=null)
+			this.AddFile(f, Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
+		    else
+			this.AddFile(f, null);
+	    }
+	    else 
+	    {
+		foreach (var f in fileNames)
+		    this.AddFile(f, directoryPathInArchive);
+	    }
         }
 
 

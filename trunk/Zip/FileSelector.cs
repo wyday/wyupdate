@@ -921,7 +921,7 @@ namespace Ionic
         /// An collection of strings containing fully-qualified pathnames of files
         /// that match the criteria specified in the FileSelector instance.
         /// </returns>
-        public System.Collections.Generic.ICollection<String> SelectFiles(String directory, bool recurseDirectories)
+        public System.Collections.Generic.List<String> SelectFiles(String directory, bool recurseDirectories)
         {
             if (_Criterion == null)
                 throw new ArgumentException("SelectionCriteria has not been set");
