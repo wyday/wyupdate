@@ -367,7 +367,17 @@ namespace Ionic.Zip
         {
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
-            this.AddFiles(filesToAdd, directoryPathInArchive);
+
+	    foreach (var f in filesToAdd)
+	    {
+		if (directoryPathInArchive!=null) 
+		{
+		    string dirInArchive = System.IO.Path.GetDirectoryName(f).Replace(directoryOnDisk, directoryPathInArchive);
+		    this.AddFile(f, dirInArchive);
+		}
+		else
+		    this.AddFile(f, null);
+	    }
         }
 
 
