@@ -444,8 +444,10 @@ namespace Ionic
 
 
     /// <summary>
-    /// FileSelector encapsulates logic that selects files from a source based on a set
-    /// of criteria.  
+    /// FileSelector encapsulates logic that selects files from a source
+    /// - a zip file or the filesystem - based on a set of criteria.  This class is used 
+    /// internally by the DotNetZip library, but you may also find utility in using it 
+    /// externally. 
     /// </summary>
     /// <remarks>
     ///
