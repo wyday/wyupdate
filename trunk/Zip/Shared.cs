@@ -106,7 +106,12 @@ namespace Ionic.Zip
 
         internal static int ReadSignature(System.IO.Stream s)
         {
-            return _ReadFourBytes(s, "Could not read signature - no data!  (position 0x{0:X8})");
+            // workitem 7711
+            //return _ReadFourBytes(s, "Could not read signature - no data!  (position 0x{0:X8})");
+            int x = 0;
+            try { x = _ReadFourBytes(s, "nul"); }
+            catch { }
+            return x;
         }
 
         internal static int ReadInt(System.IO.Stream s)
@@ -157,7 +162,10 @@ namespace Ionic.Zip
                         {
                             long curPosition = stream.Position;
                             stream.Seek(i - n, System.IO.SeekOrigin.Current);
+
+                            // workitem 7711
                             int sig = ReadSignature(stream);
+
                             success = (sig == SignatureToFind);
                             if (!success)
                             {
@@ -369,6 +377,10 @@ namespace Ionic.Zip
         public void Adjust(Int64 delta)
         {
             _bytesWritten -= delta;
+            if (_bytesWritten < 0)
+                throw new InvalidOperationException();
+	    if (_s as CountingStream != null)
+		((CountingStream)_s).Adjust(delta);
         }
 
         public override int Read(byte[] buffer, int offset, int count)

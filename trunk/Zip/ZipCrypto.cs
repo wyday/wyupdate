@@ -358,6 +358,9 @@ namespace Ionic.Zip
             if (_mode == CryptoMode.Decrypt)
                 throw new NotImplementedException();
 
+            // workitem 7696
+            if (count == 0) return; 
+
             byte[] plaintext = null;
             if (offset != 0)
             {
