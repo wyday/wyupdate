@@ -53,7 +53,6 @@ namespace Ionic.Zip
 
         #region public properties
 
-
         /// <summary>
         /// Size of the IO Buffer used while saving.
         /// </summary>
@@ -90,25 +89,25 @@ namespace Ionic.Zip
         /// <summary>
         /// The name of the zipfile, on disk.
         /// </summary>
-	///
-	/// <remarks>
-	///
-	/// <para>
+        ///
+        /// <remarks>
+        ///
+        /// <para>
         /// When the ZipFile instance was created by reading an archive using one of the
         /// ZipFile.Read methods, this property represents the name of the zipfile that was read.
         /// When the ZipFile instance was created by using the no-argument constructor, this value
         /// is null (Nothing in VB).
-	/// </para>
-	///
-	/// <para>
-	/// If you use the no-argument constructor, and you then explicitly set this property,
-	/// when you call <see cref="ZipFile.Save()"/>", this name will specify the name of the
-	/// zipfile created.  Doing so is equivalent to calling <see
-	/// cref="ZipFile.Save(String)"/>.  When instantiating a ZipFile by reading from a stream
-	/// or byte array, the Name property remains null.  When saving to a stream, the Name
-	/// property is implicitly set to null.
-	/// </para>
-	/// </remarks>
+        /// </para>
+        ///
+        /// <para>
+        /// If you use the no-argument constructor, and you then explicitly set this property,
+        /// when you call <see cref="ZipFile.Save()"/>", this name will specify the name of the
+        /// zipfile created.  Doing so is equivalent to calling <see
+        /// cref="ZipFile.Save(String)"/>.  When instantiating a ZipFile by reading from a stream
+        /// or byte array, the Name property remains null.  When saving to a stream, the Name
+        /// property is implicitly set to null.
+        /// </para>
+        /// </remarks>
         public string Name
         {
             get { return _name; }
@@ -1743,14 +1742,15 @@ namespace Ionic.Zip
             _StatusMessageTextWriter = statusMessageWriter;
             _contentsChanged = true;
             CompressionLevel = Ionic.Zlib.CompressionLevel.DEFAULT;
-            BufferSize = 8192;  // Default
+            BufferSize = 8192;  // Default 
+            // workitem 7685
+            _entries = new System.Collections.Generic.List<ZipEntry>();
             if (System.IO.File.Exists(_name))
             {
                 ReadIntoInstance(this);
                 this._fileAlreadyExists = true;
             }
-            else
-                _entries = new System.Collections.Generic.List<ZipEntry>();
+
             return;
         }
         #endregion
@@ -1863,7 +1863,7 @@ namespace Ionic.Zip
         /// where in the filesystem the files originated. The resulting zip archive will contain a
         /// toplevel directory named "flat", which itself will contain files Readme.txt,
         /// MyProposal.docx, and Image1.jpg.  A subdirectory under "flat" called SupportFiles will
-	/// contain all the files in the "c:\SupportFiles" directory on disk.
+        /// contain all the files in the "c:\SupportFiles" directory on disk.
         /// <code>
         /// String[] itemnames= { 
         ///   "c:\\fixedContent\\Readme.txt",
@@ -2177,9 +2177,9 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-	/// <para>
-	/// Use this method to add a set of files to the zip archive, in one call.  
-	/// </para>
+        /// <para>
+        /// Use this method to add a set of files to the zip archive, in one call.  
+        /// </para>
         /// <para>
         /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
         /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
@@ -2263,12 +2263,12 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-	/// <para>
-	/// Any directory structure that may be present in the filenames contained in the list is
-	/// "flattened" in the archive.  Each file in the list is added to the archive in the
-	/// specified top-level directory. 
-	/// </para>
-	///
+        /// <para>
+        /// Any directory structure that may be present in the filenames contained in the list is
+        /// "flattened" in the archive.  Each file in the list is added to the archive in the
+        /// specified top-level directory. 
+        /// </para>
+        ///
         /// <para>
         /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
         /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
@@ -2295,7 +2295,7 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
         public void AddFiles(System.Collections.Generic.ICollection<String> fileNames, String directoryPathInArchive)
         {
-	    AddFiles(fileNames, false, directoryPathInArchive);
+            AddFiles(fileNames, false, directoryPathInArchive);
         }
 
 
@@ -2306,14 +2306,14 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-	/// <para>
-	/// If preserveDirHierarchy is true, any directory structure present in the filenames
-	/// contained in the list is preserved in the archive.  On the other hand, if
-	/// preserveDirHierarchy is false, any directory structure that may be present in the
-	/// filenames contained in the list is "flattened" in the archive; Each file in the list
-	/// is added to the archive in the specified top-level directory.
-	/// </para>
-	/// 
+        /// <para>
+        /// If preserveDirHierarchy is true, any directory structure present in the filenames
+        /// contained in the list is preserved in the archive.  On the other hand, if
+        /// preserveDirHierarchy is false, any directory structure that may be present in the
+        /// filenames contained in the list is "flattened" in the archive; Each file in the list
+        /// is added to the archive in the specified top-level directory.
+        /// </para>
+        /// 
         /// <para>
         /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
         /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
@@ -2321,7 +2321,7 @@ namespace Ionic.Zip
         /// cref="ForceNoCompression"/>, their respective values at the time of this call will be
         /// applied to each ZipEntry added.
         /// </para>
-	///
+        ///
         /// </remarks>
         ///
         /// <param name="fileNames">
@@ -2339,24 +2339,24 @@ namespace Ionic.Zip
         /// </param>
         ///
         /// <param name="preserveDirHierarchy">
-	/// whether the entries in the zip archive will reflect the dir hierarchy that is present in each filename. 
+        /// whether the entries in the zip archive will reflect the dir hierarchy that is present in each filename. 
         /// </param>
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
         public void AddFiles(System.Collections.Generic.ICollection<String> fileNames, bool preserveDirHierarchy, String directoryPathInArchive)
         {
-	    if (preserveDirHierarchy)
-	    {
-		foreach (var f in fileNames)
-		    if (directoryPathInArchive!=null)
-			this.AddFile(f, Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
-		    else
-			this.AddFile(f, null);
-	    }
-	    else 
-	    {
-		foreach (var f in fileNames)
-		    this.AddFile(f, directoryPathInArchive);
-	    }
+            if (preserveDirHierarchy)
+            {
+                foreach (var f in fileNames)
+                    if (directoryPathInArchive != null)
+                        this.AddFile(f, Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
+                    else
+                        this.AddFile(f, null);
+            }
+            else
+            {
+                foreach (var f in fileNames)
+                    this.AddFile(f, directoryPathInArchive);
+            }
         }
 
 
@@ -2871,7 +2871,7 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// Calling the method is equivalent to calling RemoveEntry() if an entry by the same name
-	/// already exists, and then calling AddFileFromStream() with the given fileName and stream.
+        /// already exists, and then calling AddFileFromStream() with the given fileName and stream.
         /// </para>
         ///
         /// <para>
@@ -3389,7 +3389,10 @@ namespace Ionic.Zip
                     catch { }
                     try
                     {
-#if !NETCF20
+                        // workitem 7704
+#if NETCF20
+                        _writestream.Close();
+#else
                         _writestream.Dispose();
 #endif
                     }
@@ -3449,14 +3452,14 @@ namespace Ionic.Zip
         /// <summary>
         /// Save the zip archive to the specified stream.
         /// </summary>
-	/// 
-	/// <remarks>
-	/// If you open and manage streams yourself, you can save the zip content to the stream
+        /// 
+        /// <remarks>
+        /// If you open and manage streams yourself, you can save the zip content to the stream
         /// directly, with this method.  This is the one you would use, for example, if you were
         /// writing an ASP.NET application that dynamically generated a zip file and allowed the
         /// browser to download it. 
-	/// </remarks>
-	/// 
+        /// </remarks>
+        /// 
         /// <param name="outputStream">The <c>System.IO.Stream</c> to write to. It must be writable.</param>
         public void Save(System.IO.Stream outputStream)
         {
@@ -3804,8 +3807,8 @@ namespace Ionic.Zip
         /// <overloads>This method has a bunch of interesting overloads. They are all static
         /// (Shared in VB).  One of them is bound to be right for you.  The reason there are so
         /// many is that there are a few properties on the ZipFile class that must be set 
-	/// before you read the zipfile in, for them to be useful.  The set of overloads covers
-	/// the most interesting cases.  Probably there are still too many, though.</overloads>
+        /// before you read the zipfile in, for them to be useful.  The set of overloads covers
+        /// the most interesting cases.  Probably there are still too many, though.</overloads>
         ///
         /// <returns>The instance read from the zip archive.</returns>
         /// 
@@ -4708,14 +4711,9 @@ namespace Ionic.Zip
 
         private static void ReadCentralDirectory(ZipFile zf)
         {
-            //zf._direntries = new System.Collections.Generic.List<ZipDirEntry>();
-            zf._entries = new System.Collections.Generic.List<ZipEntry>();
-
             ZipEntry de;
             while ((de = ZipEntry.ReadDirEntry(zf.ReadStream, zf.ProvisionalAlternateEncoding)) != null)
             {
-                //zf._direntries.Add(de);
-
                 de.ResetDirEntry();
                 de._zipfile = zf;
                 de._archiveStream = zf.ReadStream;
@@ -5138,7 +5136,7 @@ namespace Ionic.Zip
         /// Calling this method is equivalent to setting the <see cref="ExtractExistingFile"/>
         /// property and then calling <see cref="ExtractAll(String)"/>.
         /// </para>
-	///
+        ///
         /// <para>
         /// This method will send verbose output messages to the StatusMessageTextWriter, if it 
         /// is set on the ZipFile instance. 
@@ -6138,7 +6136,10 @@ namespace Ionic.Zip
                     {
                         if (_readstream != null)
                         {
-#if !NETCF20
+                            // workitem 7704
+#if NETCF20
+			    _readstream.Close();
+#else
                             _readstream.Dispose();
 #endif
                             _readstream = null;
@@ -6149,7 +6150,10 @@ namespace Ionic.Zip
                     if ((_temporaryFileName != null) && (_name != null))
                         if (_writestream != null)
                         {
-#if !NETCF20
+                            // workitem 7704
+#if NETCF20
+			    _writestream.Close();
+#else
                             _writestream.Dispose();
 #endif
                             _writestream = null;

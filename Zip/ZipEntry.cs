@@ -184,7 +184,7 @@ namespace Ionic.Zip
         /// href="http://blogs.msdn.com/oldnewthing/archive/2003/10/24/55413.aspx">provides some
         /// good context</see>.
         /// </para>
-	///
+        ///
         /// <para>
         /// In a nutshell: Daylight savings time rules change regularly.  In 2007, for example, the
         /// inception week of DST changed.  In 1977, DST was in place all year round. In 1945,
@@ -717,11 +717,11 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// This is a readonly property.  An application that reads and writes zip archives
-	/// generally does not care about this value.  It is required as part of the Zip file
-	/// format, and is exposed in this class, but is probably not useful to you.  The value is
-	/// 20 for vanilla zip files. If ZIP64 is in use, the version will be decimal 45.  There
-	/// are other values possible, as well. This value is set upon reading an existing Zip
-	/// file, or after saving a zip archive.
+        /// generally does not care about this value.  It is required as part of the Zip file
+        /// format, and is exposed in this class, but is probably not useful to you.  The value is
+        /// 20 for vanilla zip files. If ZIP64 is in use, the version will be decimal 45.  There
+        /// are other values possible, as well. This value is set upon reading an existing Zip
+        /// file, or after saving a zip archive.
         /// </remarks>
         public Int16 VersionNeeded
         {
@@ -3814,13 +3814,13 @@ namespace Ionic.Zip
                 input1 = new Ionic.Zlib.CrcCalculatorStream(input);
 
                 // Wrap a counting stream around the raw output stream:
-		// This is the last thing that happens before the bits go to the 
-		// application-provided stream. 
+                // This is the last thing that happens before the bits go to the 
+                // application-provided stream. 
                 outputCounter = new CountingStream(s);
 
                 // Maybe wrap an encrypting stream around that:
-		// This will happen AFTER deflation but before counting, if encryption 
-		// is used.
+                // This will happen AFTER deflation but before counting, if encryption 
+                // is used.
                 Stream output1 = outputCounter;
                 if (Encryption == EncryptionAlgorithm.PkzipWeak)
                     output1 = new ZipCipherStream(outputCounter, _zipCrypto, CryptoMode.Encrypt);
@@ -3838,7 +3838,7 @@ namespace Ionic.Zip
                 //Stream output1a = new TraceStream(output1);
 
                 // Maybe wrap a DeflateStream around that.
-		// This will happen BEFORE encryption (if any) as we write data out.
+                // This will happen BEFORE encryption (if any) as we write data out.
                 Stream output2 = null;
                 bool mustCloseDeflateStream = false;
                 if (CompressionMethod == 0x08)
@@ -4063,10 +4063,11 @@ namespace Ionic.Zip
 #endif
 
 
-            // workitem 6414
-            //if (s.CanSeek)
+            // workitem 7216 - sometimes we don't seek even if we CAN.
+            // ASP.NET Response.OutputStream, or stdout are non-seekable.
+            // But we may also want to NOT seek in other cases, eg zip64.
+            // For all cases, we just check bit 3 to see if we want to seek.
 
-            // workitem 7216 - sometimes we don't seek even if we CAN
             if ((_BitField & 0x0008) != 0x0008)
             {
                 // seek in the raw output stream, to the beginning of the header for this entry.
@@ -4084,12 +4085,6 @@ namespace Ionic.Zip
             }
             else
             {
-                // ASP.NET Response.OutputStream, or stdout are non-seekable.
-                // But we may also want to set bit 3 in other cases, eg zip64.
-
-                //if ((_BitField & 0x0008) != 0x0008)
-                //throw new ZipException("Logic error.");
-
                 byte[] Descriptor = null;
 
                 // on non-seekable device, Zip64Option.AsNecessary is equivalent to Zip64Option.Always
@@ -4154,11 +4149,11 @@ namespace Ionic.Zip
 
 
 
-        internal void Write(System.IO.Stream outstream)
+        internal void Write(System.IO.Stream s)
         {
             if (_Source == ZipEntrySource.Zipfile && !_restreamRequiredOnSave)
             {
-                CopyThroughOneEntry(outstream);
+                CopyThroughOneEntry(s);
                 return;
             }
 
@@ -4179,7 +4174,7 @@ namespace Ionic.Zip
 
                 // write the header:
                 //Console.WriteLine("calling WriteHeader({0}): 0x{1:X8}..", FileName, _CompressionMethod);
-                WriteHeader(outstream, nCycles);
+                WriteHeader(s, nCycles);
                 //Console.WriteLine("done calling WriteHeader({0}): 0x{1:X8}..", FileName, _CompressionMethod);
 
                 if (IsDirectory)
@@ -4191,7 +4186,7 @@ namespace Ionic.Zip
                 }
 
                 // now, write the actual file data. (incl the encrypted header)
-                _EmitOne(outstream);
+                _EmitOne(s);
 
                 // The file data has now been written to the stream, and 
                 // the file pointer is positioned directly after file data.
@@ -4202,7 +4197,7 @@ namespace Ionic.Zip
                 if (readAgain)
                 {
                     if (nCycles > 1) readAgain = false;
-                    else if (!outstream.CanSeek) readAgain = false;
+                    else if (!s.CanSeek) readAgain = false;
 #if AESCRYPTO
                     else if (_aesCrypto != null && (CompressedSize - _aesCrypto.SizeOfEncryptionMetadata) <= UncompressedSize) readAgain = false;
 #endif
@@ -4214,19 +4209,18 @@ namespace Ionic.Zip
                 {
                     // seek back!
                     // seek in the raw output stream, to the beginning of the file data for this entry
-                    outstream.Seek(_RelativeOffsetOfLocalHeader, System.IO.SeekOrigin.Begin);
+                    s.Seek(_RelativeOffsetOfLocalHeader, System.IO.SeekOrigin.Begin);
 
                     // If the last entry expands, we read again; but here, we must truncate the stream
                     // to prevent garbage data after the end-of-central-directory.
-                    outstream.SetLength(outstream.Position);
+                    s.SetLength(s.Position);
 
                     // Adjust the count on the CountingStream as necessary.
-                    var s1 = outstream as CountingStream;
+                    var s1 = s as CountingStream;
                     if (s1 != null) s1.Adjust(_TotalEntrySize);
                 }
             }
             while (readAgain);
-
         }
 
 

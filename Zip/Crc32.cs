@@ -199,11 +199,12 @@ namespace Ionic.Zlib
     /// </para>
     /// <para>This class is intended primarily for use internally by the DotNetZip library.</para>
     /// </remarks>
-    public class CrcCalculatorStream : System.IO.Stream
+    public class CrcCalculatorStream : System.IO.Stream, System.IDisposable
     {
-        private System.IO.Stream _InnerStream;
+        private System.IO.Stream _innerStream;
         private CRC32 _Crc32;
         private Int64 _length = 0;
+        private bool _leaveOpen;
 
         /// <summary>
         /// Gets the total number of bytes run through the CRC32 calculator.
@@ -220,28 +221,55 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// The constructor.
+        /// The default constructor.
         /// </summary>
         /// <param name="stream">The underlying stream</param>
-        public CrcCalculatorStream(System.IO.Stream stream)
-            : base()
-        {
-            _InnerStream = stream;
-            _Crc32 = new CRC32();
+        public CrcCalculatorStream(System.IO.Stream stream) : this(stream, true) { }
 
-        }
 
         /// <summary>
-        /// The constructor.
+        /// The constructor allows the caller to specify how to handle the underlying stream at close.
         /// </summary>
+        /// <param name="stream">The underlying stream</param>
+        /// <param name="leaveOpen">true to leave the underlying stream 
+        /// open upon close of the CrcCalculatorStream.; false otherwise.</param>
+        public CrcCalculatorStream(System.IO.Stream stream, bool leaveOpen)
+            : base()
+        {
+            _innerStream = stream;
+            _Crc32 = new CRC32();
+            _leaveOpen = leaveOpen;
+        }
+
+
+        /// <summary>
+        /// A constructor allowing the specification of the length of the stream to read.
+        /// </summary>
+        /// <remarks>
+        /// Instances returned from this constructor will leave the underlying stream open
+        /// upon .Close().
+        /// </remarks>
         /// <param name="stream">The underlying stream</param>
         /// <param name="length">The length of the stream to slurp</param>
         public CrcCalculatorStream(System.IO.Stream stream, Int64 length)
+            : this(stream, length, true)
+        {
+        }
+
+        /// <summary>
+        /// A constructor allowing the specification of the length of the stream to read.
+        /// </summary>
+        /// <param name="stream">The underlying stream</param>
+        /// <param name="length">The length of the stream to slurp</param>
+        /// <param name="leaveOpen">true to leave the underlying stream 
+        /// open upon close of the CrcCalculatorStream.; false otherwise.</param>
+        public CrcCalculatorStream(System.IO.Stream stream, Int64 length, bool leaveOpen)
             : base()
         {
-            _InnerStream = stream;
+            _innerStream = stream;
             _Crc32 = new CRC32();
             _length = length;
+            _leaveOpen = leaveOpen;
         }
 
         /// <summary>
@@ -252,6 +280,14 @@ namespace Ionic.Zlib
             get { return _Crc32.Crc32Result; }
         }
 
+        /// <summary>
+        /// Indicates whether the underlying stream will be left open when the CrcCalculatorStream is Closed.
+        /// </summary>
+        public bool LeaveOpen
+        {
+            get { return _leaveOpen; }
+            set { _leaveOpen = value; }
+        }
 
         /// <summary>
         /// Read from the stream
@@ -275,9 +311,9 @@ namespace Ionic.Zlib
             {
                 if (_Crc32.TotalBytesRead >= _length) return 0; // EOF
                 Int64 bytesRemaining = _length - _Crc32.TotalBytesRead;
-                if (bytesRemaining < count) bytesToRead = (int) bytesRemaining;
+                if (bytesRemaining < count) bytesToRead = (int)bytesRemaining;
             }
-            int n = _InnerStream.Read(buffer, offset, bytesToRead);
+            int n = _innerStream.Read(buffer, offset, bytesToRead);
             if (n > 0) _Crc32.SlurpBlock(buffer, offset, n);
             return n;
         }
@@ -291,7 +327,7 @@ namespace Ionic.Zlib
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (count > 0) _Crc32.SlurpBlock(buffer, offset, count);
-            _InnerStream.Write(buffer, offset, count);
+            _innerStream.Write(buffer, offset, count);
         }
 
         /// <summary>
@@ -299,7 +335,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override bool CanRead
         {
-            get { return _InnerStream.CanRead; }
+            get { return _innerStream.CanRead; }
         }
 
         /// <summary>
@@ -307,7 +343,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override bool CanSeek
         {
-            get { return _InnerStream.CanSeek; }
+            get { return _innerStream.CanSeek; }
         }
 
         /// <summary>
@@ -315,7 +351,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override bool CanWrite
         {
-            get { return _InnerStream.CanWrite; }
+            get { return _innerStream.CanWrite; }
         }
 
         /// <summary>
@@ -323,7 +359,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override void Flush()
         {
-	    _InnerStream.Flush(); 
+            _innerStream.Flush();
         }
 
         /// <summary>
@@ -366,5 +402,22 @@ namespace Ionic.Zlib
         {
             throw new NotImplementedException();
         }
+
+
+	void IDisposable.Dispose()
+	{
+	    Close();
+	}
+
+        /// <summary>
+        /// Closes the stream.
+        /// </summary>
+        public override void Close()
+        {
+            base.Close();
+            if (!_leaveOpen)
+                _innerStream.Close();
+        }
+
     }
 }

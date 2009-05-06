@@ -222,18 +222,18 @@ namespace Ionic.Zlib
         /// <summary>
         /// The size of the working buffer for the compression codec. 
         /// </summary>
-	///
+        ///
         /// <remarks>
-	/// <para>
+        /// <para>
         /// The working buffer is used for all stream operations.  The default size is 1024 bytes.
         /// The minimum size is 128 bytes. You may get better performance with a larger buffer.
         /// Then again, you might not.  You would have to test it.
-	/// </para>
-	///
-	/// <para>
-	/// Set this before the first call to Read()  or Write() on the stream. If you try to set it 
-	/// afterwards, it will throw.
-	/// </para>
+        /// </para>
+        ///
+        /// <para>
+        /// Set this before the first call to Read()  or Write() on the stream. If you try to set it 
+        /// afterwards, it will throw.
+        /// </para>
         /// </remarks>
         public int BufferSize
         {
@@ -243,7 +243,7 @@ namespace Ionic.Zlib
             }
             set
             {
-		if (this._baseStream._workingBuffer != null)
+                if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
                 if (value < ZlibConstants.WORKING_BUFFER_SIZE_MIN)
                     throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
@@ -330,22 +330,22 @@ namespace Ionic.Zlib
         /// <summary>
         /// The position of the stream pointer. 
         /// </summary>
-	/// <remarks>
-	/// Writing this property always throws a NotImplementedException. Reading will
-	/// return the total bytes written out, if used in writing, or the total bytes 
-	/// read in, if used in reading.   The count may refer to compressed bytes or 
-	/// uncompressed bytes, depending on how you've used the stream.
-	/// </remarks>
-	public override long Position
+        /// <remarks>
+        /// Writing this property always throws a NotImplementedException. Reading will
+        /// return the total bytes written out, if used in writing, or the total bytes 
+        /// read in, if used in reading.   The count may refer to compressed bytes or 
+        /// uncompressed bytes, depending on how you've used the stream.
+        /// </remarks>
+        public override long Position
         {
             get
-	    { 
-		if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Writer)
-		    return this._baseStream._z.TotalBytesOut;
-		if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Reader)
-		    return this._baseStream._z.TotalBytesIn;
-		return 0;
-	    }
+            {
+                if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Writer)
+                    return this._baseStream._z.TotalBytesOut;
+                if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Reader)
+                    return this._baseStream._z.TotalBytesIn;
+                return 0;
+            }
 
             set { throw new NotImplementedException(); }
         }
@@ -443,7 +443,7 @@ namespace Ionic.Zlib
         protected internal string _GzipFileName;
         protected internal string _GzipComment;
         protected internal DateTime _GzipMtime;
-	protected internal int _gzipHeaderByteCount;
+        protected internal int _gzipHeaderByteCount;
 
         internal int Crc32 { get { if (crc == null) return 0; return crc.Crc32Result; } }
 
@@ -526,8 +526,8 @@ namespace Ionic.Zlib
             if (crc != null)
                 crc.SlurpBlock(buffer, offset, count);
 
-            if (_streamMode == StreamMode.Undefined) 
-		_streamMode = StreamMode.Writer;
+            if (_streamMode == StreamMode.Undefined)
+                _streamMode = StreamMode.Writer;
             else if (_streamMode != StreamMode.Writer)
                 throw new ZlibException("Cannot Write after Reading.");
 
@@ -548,7 +548,9 @@ namespace Ionic.Zlib
                     : _z.Inflate(_flushMode);
                 if (rc != ZlibConstants.Z_OK && rc != ZlibConstants.Z_STREAM_END)
                     throw new ZlibException((_wantCompress ? "de" : "in") + "flating: " + _z.Message);
-                _stream.Write(_workingBuffer, 0, _workingBuffer.Length - _z.AvailableBytesOut);
+
+                //if (_workingBuffer.Length - _z.AvailableBytesOut > 0)
+                    _stream.Write(_workingBuffer, 0, _workingBuffer.Length - _z.AvailableBytesOut);
 
                 done = _z.AvailableBytesIn == 0 && _z.AvailableBytesOut != 0;
 
@@ -756,7 +758,7 @@ namespace Ionic.Zlib
 
         private int _ReadAndValidateGzipHeader()
         {
-	    int totalBytesRead=0;
+            int totalBytesRead = 0;
             // read the header on the first read
             byte[] header = new byte[10];
             int n = _stream.Read(header, 0, header.Length);
@@ -769,19 +771,19 @@ namespace Ionic.Zlib
 
             Int32 timet = BitConverter.ToInt32(header, 4);
             _GzipMtime = GZipStream._unixEpoch.AddSeconds(timet);
-	    totalBytesRead+=n;
+            totalBytesRead += n;
             if ((header[3] & 0x04) == 0x04)
             {
                 // read and discard extra field
                 n = _stream.Read(header, 0, 2); // 2-byte length field
-		totalBytesRead+=n;
+                totalBytesRead += n;
 
                 Int16 extraLength = (Int16)(header[0] + header[1] * 256);
                 byte[] extra = new byte[extraLength];
                 n = _stream.Read(extra, 0, extra.Length);
                 if (n != extraLength)
                     throw new ZlibException("Unexpected end-of-file reading GZIP header.");
-		totalBytesRead+=n;
+                totalBytesRead += n;
             }
             if ((header[3] & 0x08) == 0x08)
                 _GzipFileName = ReadZeroTerminatedString();
@@ -790,7 +792,7 @@ namespace Ionic.Zlib
             if ((header[3] & 0x02) == 0x02)
                 Read(_buf1, 0, 1); // CRC16, ignore
 
-	    return totalBytesRead;
+            return totalBytesRead;
         }
 
 
