@@ -122,11 +122,18 @@ namespace Ionic.Zlib
         /// The Comment on the GZIP stream.
         /// </summary>
         /// <remarks>
-        /// The GZIP format allows for each file to have an associated comment stored with the
+	/// <para>
+        /// The GZIP format allows for each file to optionally have an associated comment stored with the
         /// file.  The comment is encoded with the ISO-8859-1 code page.  To include a comment in
-        /// a GZIP stream you create, set this Comment before calling Write() for the first time
-        /// on the GZipStream.  When using GZipStream to decompress, you can retrieve this comment
-        /// after the first call to Read().
+        /// a GZIP stream you create, set this property before calling Write() for the first time
+        /// on the GZipStream.  
+	/// </para>
+	///
+	/// <para>
+	/// When using GZipStream to decompress, you can retrieve this property after the first
+        /// call to Read().  If no comment has been set in the GZIP bytestream, the Comment
+        /// property will return null (Nothing in VB).
+	/// </para>
         /// </remarks>
         public String Comment;
 
@@ -135,10 +142,18 @@ namespace Ionic.Zlib
         /// The FileName for the GZIP stream.
         /// </summary>
         /// <remarks>
-        /// The GZIP format allows each file to have an associated filename, encoded in the
-        /// ISO-8859-1 code page. When compressing data (through Write()), set this FileName
-        /// before calling Write() the first time on the GZipStream. When decompressing (through
-        /// Read()), you can retrieve this value any time after the first Read().
+	/// <para>
+        /// The GZIP format optionally allows each file to have an associated filename.  When
+	/// compressing data (through Write()), set this FileName before calling Write() the first
+	/// time on the GZipStream.  The actual filename is encoded into the GZIP bytestream with
+	/// the ISO-8859-1 code page, according to RFC 1952. It is the application's responsibility to 
+	/// insure that the FileName can be encoded correctly with this code page. 
+	/// </para>
+	/// <para>
+	/// When decompressing (through Read()), you can retrieve this value any time after the
+        /// first Read().  In the case where there was no filename encoded into the GZIP
+        /// bytestream, the property will return null (Nothing in VB).
+	/// </para>
         /// </remarks>
         public String FileName
         {
@@ -179,7 +194,7 @@ namespace Ionic.Zlib
         /// </remarks>
         public int Crc32 { get { return _Crc32; } }
 
-	private int _headerByteCount;
+        private int _headerByteCount;
         internal ZlibBaseStream _baseStream;
         bool _firstReadDone;
         string _FileName;
@@ -420,18 +435,18 @@ namespace Ionic.Zlib
         /// <summary>
         /// The size of the working buffer for the compression codec. 
         /// </summary>
-	///
+        ///
         /// <remarks>
-	/// <para>
+        /// <para>
         /// The working buffer is used for all stream operations.  The default size is 1024 bytes.
         /// The minimum size is 128 bytes. You may get better performance with a larger buffer.
         /// Then again, you might not.  You would have to test it.
-	/// </para>
-	///
-	/// <para>
-	/// Set this before the first call to Read()  or Write() on the stream. If you try to set it 
-	/// afterwards, it will throw.
-	/// </para>
+        /// </para>
+        ///
+        /// <para>
+        /// Set this before the first call to Read()  or Write() on the stream. If you try to set it 
+        /// afterwards, it will throw.
+        /// </para>
         /// </remarks>
         public int BufferSize
         {
@@ -441,7 +456,7 @@ namespace Ionic.Zlib
             }
             set
             {
-		if (this._baseStream._workingBuffer != null)
+                if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
                 if (value < ZlibConstants.WORKING_BUFFER_SIZE_MIN)
                     throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
@@ -537,22 +552,22 @@ namespace Ionic.Zlib
         /// <summary>
         /// The position of the stream pointer. 
         /// </summary>
-	/// <remarks>
-	/// Writing this property always throws a NotImplementedException. Reading will
-	/// return the total bytes written out, if used in writing, or the total bytes 
-	/// read in, if used in reading.   The count may refer to compressed bytes or 
-	/// uncompressed bytes, depending on how you've used the stream.
-	/// </remarks>
+        /// <remarks>
+        /// Writing this property always throws a NotImplementedException. Reading will
+        /// return the total bytes written out, if used in writing, or the total bytes 
+        /// read in, if used in reading.   The count may refer to compressed bytes or 
+        /// uncompressed bytes, depending on how you've used the stream.
+        /// </remarks>
         public override long Position
         {
             get
-	    { 
-		if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Writer)
-		    return this._baseStream._z.TotalBytesOut + _headerByteCount;
-		if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Reader)
-		    return this._baseStream._z.TotalBytesIn + this._baseStream._gzipHeaderByteCount;
-		return 0;
-	    }
+            {
+                if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Writer)
+                    return this._baseStream._z.TotalBytesOut + _headerByteCount;
+                if (this._baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Reader)
+                    return this._baseStream._z.TotalBytesIn + this._baseStream._gzipHeaderByteCount;
+                return 0;
+            }
 
             set { throw new NotImplementedException(); }
         }
@@ -654,11 +669,11 @@ namespace Ionic.Zlib
                 if (_baseStream._wantCompress)
                 {
                     // first write in compression, therefore, emit the GZIP header
-		    _headerByteCount = EmitHeader();
+                    _headerByteCount = EmitHeader();
                 }
                 else
                 {
-		    throw new InvalidOperationException();
+                    throw new InvalidOperationException();
                 }
             }
 
@@ -721,7 +736,8 @@ namespace Ionic.Zlib
 
             return totalSlurped;
         }
-#endif
+
+
 
 
         private string SlurpZeroTerminatedString(byte[] buffer, int offset, out int count)
@@ -741,6 +757,8 @@ namespace Ionic.Zlib
             byte[] a = list.ToArray();
             return GZipStream.iso8859dash1.GetString(a, 0, a.Length);
         }
+
+#endif
 
 
         private int EmitHeader()
@@ -788,23 +806,22 @@ namespace Ionic.Zlib
             // filename
             if (fnLength != 0)
             {
-                Array.Copy(filenameBytes, 0, header, i, fnLength);
-                i += fnLength;
+                Array.Copy(filenameBytes, 0, header, i, fnLength - 1);
+                i += fnLength - 1;
                 header[i++] = 0; // terminate
             }
 
             // comment
             if (cbLength != 0)
             {
-                Array.Copy(commentBytes, 0, header, i, cbLength);
-                i += cbLength;
+                Array.Copy(commentBytes, 0, header, i, cbLength - 1);
+                i += cbLength - 1;
                 header[i++] = 0; // terminate
             }
 
             _baseStream._stream.Write(header, 0, header.Length);
 
-	    
-	    return header.Length; // bytes written
+            return header.Length; // bytes written
         }
     }
 }
