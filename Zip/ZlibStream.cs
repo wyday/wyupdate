@@ -550,7 +550,7 @@ namespace Ionic.Zlib
                     throw new ZlibException((_wantCompress ? "de" : "in") + "flating: " + _z.Message);
 
                 //if (_workingBuffer.Length - _z.AvailableBytesOut > 0)
-                    _stream.Write(_workingBuffer, 0, _workingBuffer.Length - _z.AvailableBytesOut);
+                _stream.Write(_workingBuffer, 0, _workingBuffer.Length - _z.AvailableBytesOut);
 
                 done = _z.AvailableBytesIn == 0 && _z.AvailableBytesOut != 0;
 
@@ -741,7 +741,9 @@ namespace Ionic.Zlib
             bool done = false;
             do
             {
-                if (Read(_buf1, 0, 1) == 0)
+                // workitem 7740
+                int n = _stream.Read(_buf1, 0, 1);
+                if (n != 1)
                     throw new ZlibException("Unexpected EOF reading GZIP header.");
                 else
                 {

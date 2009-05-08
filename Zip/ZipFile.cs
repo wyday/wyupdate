@@ -47,7 +47,9 @@ namespace Ionic.Zip
     /// library, available in v2.0 and later of the .NET Framework. As of v1.7 of DotNetZip, the
     /// compression is provided by a managed-code version of Zlib, included with DotNetZip.
     /// </summary>
-    public partial class ZipFile : System.Collections.Generic.IEnumerable<ZipEntry>,
+    public partial class ZipFile : 
+    System.Collections.IEnumerable,
+    System.Collections.Generic.IEnumerable<ZipEntry>,
     IDisposable
     {
 
@@ -211,7 +213,7 @@ namespace Ionic.Zip
 #endif
 
         /// <summary>
-        /// Indicates whether verbose output is sent to the StatusMessageWriter during
+        /// Indicates whether verbose output is sent to the StatusMessageTextWriter during
         /// <c>AddXxx()</c> and <c>ReadXxx()</c> operations.
         /// </summary>
         ///
@@ -219,7 +221,7 @@ namespace Ionic.Zip
         /// This is a synthetic property.  It returns true if the <see
         /// cref="StatusMessageTextWriter"/> is non-null.
         /// </remarks>
-        private bool Verbose
+        internal bool Verbose
         {
             get { return (_StatusMessageTextWriter != null); }
             //set { _Verbose = value; }
@@ -1735,6 +1737,28 @@ namespace Ionic.Zip
             }
         }
 
+
+        /// <summary>
+        /// Initialize a ZipFile instance by reading in a zip file.
+        /// </summary>
+        /// <remarks>
+        /// This method is most useful from COM Automation environments, when reading or extracting zip files.
+        /// For .NET environments, I suggest you use the ZipFile.Read() methods for clarity.  
+        /// </remarks>
+        /// <param name="zipFileName">the name of the existing zip file to read in.</param>
+        public void Initialize(string zipFileName)
+        {
+            try
+            {
+                _InitInstance(zipFileName, null);
+            }
+            catch (Exception e1)
+            {
+                throw new ZipException(String.Format("{0} is not a valid zip file", zipFileName), e1);
+            }
+        }
+
+
         private void _InitInstance(string zipFileName, System.IO.TextWriter statusMessageWriter)
         {
             // create a new zipfile
@@ -2347,10 +2371,15 @@ namespace Ionic.Zip
             if (preserveDirHierarchy)
             {
                 foreach (var f in fileNames)
+		{
                     if (directoryPathInArchive != null)
-                        this.AddFile(f, Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
+		    {
+			string s = SharedUtilities.NormalizePath(Path.Combine(directoryPathInArchive, Path.GetDirectoryName(f)));
+                        this.AddFile(f, s);
+		    }
                     else
                         this.AddFile(f, null);
+		}
             }
             else
             {
@@ -2812,7 +2841,8 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// No file need exist or is created in the filesystem.
+        /// No file need exist or is created in the filesystem. The string is encoded using the default 
+	/// text encoding. 
         /// </remarks>
         ///
         /// <param name="content">The content of the file, should it be extracted from the zip.</param>
@@ -3253,7 +3283,7 @@ namespace Ionic.Zip
                 // check if modified, before saving. 
                 if (!_contentsChanged) return;
 
-                if (Verbose) StatusMessageTextWriter.WriteLine("Saving....");
+                if (Verbose) StatusMessageTextWriter.WriteLine("saving....");
 
                 // validate the number of entries
                 if (_entries.Count >= 0xFFFF && _zip64 == Zip64Option.Never)
@@ -4170,6 +4200,8 @@ namespace Ionic.Zip
             if (readProgress != null)
                 zf.ReadProgress = readProgress;
 
+            if (zf.Verbose) zf._StatusMessageTextWriter.WriteLine("reading from {0}...", zipFileName);
+
             try
             {
                 ReadIntoInstance(zf);
@@ -4462,6 +4494,8 @@ namespace Ionic.Zip
             zf._StatusMessageTextWriter = statusMessageWriter;
             zf._readstream = zipStream;
             zf._ReadStreamIsOurs = false;
+            if (zf.Verbose) zf._StatusMessageTextWriter.WriteLine("reading from stream...");
+
             ReadIntoInstance(zf);
             return zf;
         }
@@ -4561,6 +4595,8 @@ namespace Ionic.Zip
             zf._provisionalAlternateEncoding = encoding;
             zf._readstream = new System.IO.MemoryStream(buffer);
             zf._ReadStreamIsOurs = true;
+            if (zf.Verbose) zf._StatusMessageTextWriter.WriteLine("reading from byte[]...");
+
             ReadIntoInstance(zf);
             return zf;
         }
@@ -4720,7 +4756,7 @@ namespace Ionic.Zip
                 zf.OnReadEntry(true, null);
 
                 if (zf.Verbose)
-                    zf.StatusMessageTextWriter.WriteLine("  {0}", de.FileName);
+                    zf.StatusMessageTextWriter.WriteLine("entry {0}", de.FileName);
 
                 zf._entries.Add(de);
             }
@@ -4730,8 +4766,10 @@ namespace Ionic.Zip
             if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
                 zf.StatusMessageTextWriter.WriteLine("Zip file Comment: {0}", zf.Comment);
 
-            // when finished slurping in the zip, close the read stream
-            //zf.ReadStream.Close();
+	    // We keep the read stream open after reading. 
+
+	    if (zf.Verbose)
+		zf.StatusMessageTextWriter.WriteLine("read in {0} entries.", zf._entries.Count);
 
             zf.OnReadCompleted();
         }
@@ -4908,93 +4946,6 @@ namespace Ionic.Zip
             return true;
         }
 
-
-        /// <summary>
-        /// Generic IEnumerator support, for use of a ZipFile in a foreach construct.  
-        /// </summary>
-        ///
-        /// <remarks>
-        /// You probably do not want to call <c>GetEnumerator</c> explicitly. Instead 
-        /// it is implicitly called when you use a <see langword="foreach"/> loop in C#, or a 
-        /// <c>For Each</c> loop in VB.
-        /// </remarks>
-        ///
-        /// <example>
-        /// This example reads a zipfile of a given name, then enumerates the 
-        /// entries in that zip file, and displays the information about each 
-        /// entry on the Console.
-        /// <code>
-        /// using (ZipFile zip = ZipFile.Read(zipfile))
-        /// {
-        ///   bool header = true;
-        ///   foreach (ZipEntry e in zip)
-        ///   {
-        ///     if (header)
-        ///     {
-        ///        System.Console.WriteLine("Zipfile: {0}", zip.Name);
-        ///        System.Console.WriteLine("Version Needed: 0x{0:X2}", e.VersionNeeded);
-        ///        System.Console.WriteLine("BitField: 0x{0:X2}", e.BitField);
-        ///        System.Console.WriteLine("Compression Method: 0x{0:X2}", e.CompressionMethod);
-        ///        System.Console.WriteLine("\n{1,-22} {2,-6} {3,4}   {4,-8}  {0}",
-        ///                     "Filename", "Modified", "Size", "Ratio", "Packed");
-        ///        System.Console.WriteLine(new System.String('-', 72));
-        ///        header = false;
-        ///     }
-        ///
-        ///     System.Console.WriteLine("{1,-22} {2,-6} {3,4:F0}%   {4,-8}  {0}",
-        ///                 e.FileName,
-        ///                 e.LastModified.ToString("yyyy-MM-dd HH:mm:ss"),
-        ///                 e.UncompressedSize,
-        ///                 e.CompressionRatio,
-        ///                 e.CompressedSize);
-        ///
-        ///     e.Extract();
-        ///   }
-        /// }
-        /// </code>
-        ///
-        /// <code lang="VB">
-        ///   Dim ZipFileToExtract As String = "c:\foo.zip"
-        ///   Using zip As ZipFile = ZipFile.Read(ZipFileToExtract)
-        ///       Dim header As Boolean = True
-        ///       Dim e As ZipEntry
-        ///       For Each e In zip
-        ///           If header Then
-        ///               Console.WriteLine("Zipfile: {0}", zip.Name)
-        ///               Console.WriteLine("Version Needed: 0x{0:X2}", e.VersionNeeded)
-        ///               Console.WriteLine("BitField: 0x{0:X2}", e.BitField)
-        ///               Console.WriteLine("Compression Method: 0x{0:X2}", e.CompressionMethod)
-        ///               Console.WriteLine(ChrW(10) &amp; "{1,-22} {2,-6} {3,4}   {4,-8}  {0}", _
-        ///                 "Filename", "Modified", "Size", "Ratio", "Packed" )
-        ///               Console.WriteLine(New String("-"c, 72))
-        ///               header = False
-        ///           End If
-        ///           Console.WriteLine("{1,-22} {2,-6} {3,4:F0}%   {4,-8}  {0}", _
-        ///             e.FileName, _
-        ///             e.LastModified.ToString("yyyy-MM-dd HH:mm:ss"), _
-        ///             e.UncompressedSize, _
-        ///             e.CompressionRatio, _
-        ///             e.CompressedSize )
-        ///           e.Extract
-        ///       Next
-        ///   End Using
-        /// </code>
-        /// </example>
-        /// 
-        /// <returns>A generic enumerator suitable for use  within a foreach loop.</returns>
-        public System.Collections.Generic.IEnumerator<ZipEntry> GetEnumerator()
-        {
-            foreach (ZipEntry e in _entries)
-                yield return e;
-        }
-
-        /// <summary>
-        /// IEnumerator support, for use of a ZipFile in a foreach construct.  
-        /// </summary>
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
 
         /// <summary>
         /// Extracts all of the items in the zip archive, to the specified path in the filesystem.
@@ -6163,6 +6114,7 @@ namespace Ionic.Zip
             }
         }
         #endregion
+
 
         #region private properties
 

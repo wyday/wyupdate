@@ -168,6 +168,7 @@
     <Compile Include="Zip\ZipFile.cs" />
     <Compile Include="Zip\ZipFile.Events.cs" />
     <Compile Include="Zip\ZipFile.Selector.cs" />
+    <Compile Include="Zip\ZipFile.x-IEnumerable.cs" />
     <Compile Include="Zip\Zlib.cs" />
     <Compile Include="Zip\ZlibCodec.cs" />
     <Compile Include="Zip\ZlibConstants.cs" />

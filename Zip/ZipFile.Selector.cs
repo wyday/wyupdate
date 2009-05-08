@@ -365,8 +365,11 @@ namespace Ionic.Zip
         /// </param>
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk, String directoryPathInArchive, bool recurseDirectories)
         {
+	    if (String.IsNullOrEmpty(directoryOnDisk)) directoryOnDisk= ".";
+            if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...", selectionCriteria, directoryOnDisk);
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
+            if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", filesToAdd.Count);
 
 	    foreach (var f in filesToAdd)
 	    {
