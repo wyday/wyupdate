@@ -208,7 +208,7 @@ namespace wyDay.Controls
 
         protected override void OnFontChanged(EventArgs e)
         {
-            hoverFont = new Font(Font, FontStyle.Underline);
+            hoverFont = new Font(Font, Font.Style | FontStyle.Underline);
             RefreshTextRect();
 
             base.OnFontChanged(e);

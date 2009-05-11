@@ -112,12 +112,24 @@ namespace wyUpdate
 
                 if (File.Exists(Path.Combine(progDir, tempFiles[i].Name)))
                 {
+                    string origFile = Path.Combine(progDir, tempFiles[i].Name);
+
                     //backup
-                    File.Copy(Path.Combine(progDir, tempFiles[i].Name), Path.Combine(backupFolder, tempFiles[i].Name), true);
+                    File.Copy(origFile, Path.Combine(backupFolder, tempFiles[i].Name), true);
+
+                    FileAttributes atr = File.GetAttributes(origFile);
+                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0;
+
+                    // remove the ReadOnly & Hidden atributes temporarily
+                    if (resetAttributes)
+                        File.SetAttributes(origFile, FileAttributes.Normal);
 
                     //replace
-                    File.Copy(tempFiles[i].FullName, Path.Combine(progDir, tempFiles[i].Name), true);
+                    File.Copy(tempFiles[i].FullName, origFile, true);
                     
+                    if(resetAttributes)
+                        File.SetAttributes(origFile, atr);
+
                     //Old method (didn't work on Win 98/ME):
                     //File.Replace(tempFiles[i].FullName, Path.Combine(progDir, tempFiles[i].Name), Path.Combine(backupFolder, tempFiles[i].Name));
                 }
