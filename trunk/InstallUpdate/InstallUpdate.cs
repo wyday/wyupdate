@@ -309,6 +309,8 @@ namespace wyUpdate
                         //backup the file
                         File.Copy(tempFile, Path.Combine(tempPath, Path.GetFileName(tempFile)));
 
+                        File.SetAttributes(tempFile, FileAttributes.Normal);
+
                         //delete the file
                         File.Delete(tempFile);
                     }
