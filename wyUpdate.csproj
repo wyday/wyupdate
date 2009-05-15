@@ -125,7 +125,7 @@
     <Compile Include="ReadWriteFiles.Client.cs" />
     <Compile Include="ReadWriteFiles.cs" />
     <Compile Include="RegChange.cs" />
-    <Compile Include="RollbackUpdate.cs" />
+    <Compile Include="InstallUpdate\RollbackUpdate.cs" />
     <Compile Include="Shortcuts\ShellLinkNative.cs" />
     <Compile Include="Shortcuts\ShellShortcut.cs" />
     <Compile Include="Shortcuts\ShortcutInfo.cs" />

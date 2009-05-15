@@ -99,13 +99,19 @@ namespace wyUpdate
             //delete the files
             foreach (string file in fileList)
             {
-                try { File.Delete(file); }
+                try
+                {
+                    File.SetAttributes(file, FileAttributes.Normal);
+                    File.Delete(file);
+                }
                 catch (Exception) { }
             }
 
             //delete the folders
             foreach (string folder in foldersToDelete)
             {
+
+                //TODO: test rolling back read-only / hidden folders
                 try { Directory.Delete(folder, true); }
                 catch (Exception) { }
             }
@@ -154,8 +160,24 @@ namespace wyUpdate
 
             foreach (FileInfo file in backupFiles)
             {
-                //overwrite the existing failed/cancelled update
-                File.Copy(file.FullName, Path.Combine(destDir, file.Name), true);
+                try
+                {
+                    string origFile = Path.Combine(destDir, file.Name);
+
+                    FileAttributes atr = file.Attributes;
+                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0;
+
+                    // remove the ReadOnly & Hidden atributes temporarily
+                    if (resetAttributes)
+                        File.SetAttributes(origFile, FileAttributes.Normal);
+
+                    //overwrite the existing failed/cancelled update
+                    File.Copy(file.FullName, origFile, true);
+
+                    if (resetAttributes)
+                        File.SetAttributes(origFile, atr);
+                }
+                catch { }
             }
 
             //backup all of the subdirectories
@@ -180,7 +202,13 @@ namespace wyUpdate
 
             // roll the registry back
             foreach (RegChange regCh in rollbackRegistry)
-                regCh.ExecuteOperation();
+            {
+                try
+                {
+                    regCh.ExecuteOperation();
+                }
+                catch { }
+            }
         }
 
         #region Write/Read RollbackRegistry

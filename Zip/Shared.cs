@@ -20,7 +20,7 @@ namespace Ionic.Zip
         /// private null constructor
         private SharedUtilities() { }
 
-#if LEGACY
+        #if LEGACY
         /// <summary>
         /// Round the given DateTime value to an even second value.  
         /// </summary>
@@ -51,25 +51,25 @@ namespace Ionic.Zip
             //if (source.Millisecond >= 500) dtRounded = dtRounded.AddSeconds(1);
             return dtRounded;
         }
-#endif
+        #endif
 
-	internal static string NormalizePath(string path)
-	{
-	    if (path.StartsWith(".\\")) path = path.Substring(2);
-	    path= path.Replace("\\.\\", "\\");
-	    var re = new System.Text.RegularExpressions.Regex(@"^(.*\\)?([^\\\.]+\\\.\.\\)(.+)$");
-	    path = re.Replace(path, "$1$3");
-	    return path;
-	}
+        internal static string NormalizePath(string path)
+        {
+            if (path.StartsWith(".\\")) path = path.Substring(2);
+            path= path.Replace("\\.\\", "\\");
+            var re = new System.Text.RegularExpressions.Regex(@"^(.*\\)?([^\\\.]+\\\.\.\\)(.+)$");
+            path = re.Replace(path, "$1$3");
+            return path;
+        }
 
-	internal static string NormalizeFwdSlashPath(string path)
-	{
-	    if (path.StartsWith("./")) path = path.Substring(2);
-	    path= path.Replace("/./", "/");
-	    var re = new System.Text.RegularExpressions.Regex(@"^(.*/)?([^/.]+/../)(.+)$");
-	    path = re.Replace(path, "$1$3");
-	    return path;
-	}
+        internal static string NormalizeFwdSlashPath(string path)
+        {
+            if (path.StartsWith("./")) path = path.Substring(2);
+            path= path.Replace("/./", "/");
+            var re = new System.Text.RegularExpressions.Regex(@"^(.*/)?([^/.]+/../)(.+)$");
+            path = re.Replace(path, "$1$3");
+            return path;
+        }
 
         /// <summary>
         /// Utility routine for transforming path names. 
@@ -211,33 +211,33 @@ namespace Ionic.Zip
         }
 
 
-	// If I have a time in the .NET environment, and I want to use it for 
-	// SetWastWriteTime() etc, then I need to adjust it for Win32. 
-	internal static DateTime AdjustTime_DotNetToWin32(DateTime time)
-	{
-	    DateTime adjusted = time;
-	    if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
-		adjusted = time - new System.TimeSpan(1, 0, 0);
+        // If I have a time in the .NET environment, and I want to use it for 
+        // SetWastWriteTime() etc, then I need to adjust it for Win32. 
+        internal static DateTime AdjustTime_DotNetToWin32(DateTime time)
+        {
+            DateTime adjusted = time;
+            if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
+                adjusted = time - new System.TimeSpan(1, 0, 0);
 
-	    else if (!DateTime.Now.IsDaylightSavingTime() && time.IsDaylightSavingTime())
-		adjusted = time + new System.TimeSpan(1, 0, 0);
+            else if (!DateTime.Now.IsDaylightSavingTime() && time.IsDaylightSavingTime())
+                adjusted = time + new System.TimeSpan(1, 0, 0);
 
-	    return adjusted;
-	}
+            return adjusted;
+        }
 
-	// If I read a time from a file with GetLastWriteTime() (etc), I need
-	// to adjust it for display in the .NET environment.  
-	internal static DateTime AdjustTime_Win32ToDotNet(DateTime time)
-	{
-	    DateTime adjusted = time;
-	    if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
-		adjusted = time + new System.TimeSpan(1, 0, 0);
+        // If I read a time from a file with GetLastWriteTime() (etc), I need
+        // to adjust it for display in the .NET environment.  
+        internal static DateTime AdjustTime_Win32ToDotNet(DateTime time)
+        {
+            DateTime adjusted = time;
+            if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
+                adjusted = time + new System.TimeSpan(1, 0, 0);
 
-	    else if (!DateTime.Now.IsDaylightSavingTime() && time.IsDaylightSavingTime())
-		adjusted = time - new System.TimeSpan(1, 0, 0);
+            else if (!DateTime.Now.IsDaylightSavingTime() && time.IsDaylightSavingTime())
+                adjusted = time - new System.TimeSpan(1, 0, 0);
 
-	    return adjusted;
-	}
+            return adjusted;
+        }
 
 
 
@@ -266,13 +266,39 @@ namespace Ionic.Zip
             if (hour >= 24) { day++; hour = 0; }
 
             DateTime d = System.DateTime.Now;
-            try { d = new System.DateTime(year, month, day, hour, minute, second, 0); }
-            catch (System.ArgumentOutOfRangeException ex1)
+            bool success= false;
+            try
+            {
+                d = new System.DateTime(year, month, day, hour, minute, second, 0);
+                success=true;
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                if (year==1980 && month==0 && day ==0)
+                {
+                    try
+                    {
+                        d = new System.DateTime(1980, 1, 1, hour, minute, second, 0);
+                        success= true;
+                    }
+                    catch (System.ArgumentOutOfRangeException)
+                    {
+                    try
+                    {
+                        d = new System.DateTime(1980, 1, 1, 0, 0, 0, 0);
+                        success= true;
+                    }
+                    catch (System.ArgumentOutOfRangeException) { } 
+                        
+                    }
+                }
+            }
+            if (!success)
             {
                 string msg = String.Format("y({0}) m({1}) d({2}) h({3}) m({4}) s({5})", year, month, day, hour, minute, second);
-                throw new ZipException(String.Format("Bad date/time format in the zip file. ({0})", msg), ex1);
-            }
+                throw new ZipException(String.Format("Bad date/time format in the zip file. ({0})", msg));
 
+            }
             return d;
         }
 
@@ -290,7 +316,7 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Creates a <c>MemoryStream</c> for the given string, using the default encoding. 
-	/// This is used internally by Library, specifically by 
+        /// This is used internally by Library, specifically by 
         /// the ZipFile.AddStringAsFile() method.   But it may be useful in other scenarios. 
         /// </summary>
         /// <param name="s">The string to use as input for the MemoryStream</param>
@@ -398,8 +424,8 @@ namespace Ionic.Zip
             _bytesWritten -= delta;
             if (_bytesWritten < 0)
                 throw new InvalidOperationException();
-	    if (_s as CountingStream != null)
-		((CountingStream)_s).Adjust(delta);
+            if (_s as CountingStream != null)
+                ((CountingStream)_s).Adjust(delta);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
