@@ -11,11 +11,11 @@ namespace wyUpdate
     {
         ClientLanguage clientLang;
         List<Process> runningProcesses = new List<Process>();
-        FileInfo[] filenames;
+        List<FileInfo> filenames;
 
         private const int SidePadding = 12;
 
-        public frmProcesses(FileInfo[] files, ClientLanguage cLang)
+        public frmProcesses(List<FileInfo> files, ClientLanguage cLang)
         {
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;

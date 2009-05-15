@@ -92,7 +92,7 @@ namespace wyUpdate
 
         delegate void ShowProgressDelegate(int percentDone, bool statusDone, string extraStatus, Exception ex);
         delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
-        delegate void CheckProcessesDel(FileInfo[] files, bool statusDone);
+        delegate void CheckProcessesDel(List<FileInfo> files, bool statusDone);
 
         delegate void ChangeRollbackDelegate(bool rbRegistry);
 
@@ -656,7 +656,7 @@ namespace wyUpdate
             }
         }
 
-        private void CheckProcess(FileInfo[] files, bool done)
+        private void CheckProcess(List<FileInfo> files, bool done)
         {
             if (done)
             {
