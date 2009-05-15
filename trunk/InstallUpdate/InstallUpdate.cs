@@ -490,8 +490,26 @@ namespace wyUpdate
                 string tempClient = Path.Combine(OutputDirectory, "client.file");
                 ClientFile.SaveClientFile(files, tempClient);
 
+                
+
+                // overrite existing client.wyc, while keeping the file attributes
+
+                FileAttributes atr = FileAttributes.Normal;
+
+                if(File.Exists(Filename))
+                    atr = File.GetAttributes(Filename);
+
+                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0;
+
+                // remove the ReadOnly & Hidden atributes temporarily
+                if (resetAttributes)
+                    File.SetAttributes(Filename, FileAttributes.Normal);
+
                 //replace the original
                 File.Copy(tempClient, Filename, true);
+
+                if (resetAttributes)
+                    File.SetAttributes(Filename, atr);
 
 
                 if (oldClientFile != null)
