@@ -1,3 +1,29 @@
+// Events.cs
+// ------------------------------------------------------------------
+//
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:30:14>
+//
+// ------------------------------------------------------------------
+//
+// This module defines events used by the ZipFile class.
+//
+//
+
+
 using System;
 using System.Collections.Generic;
 using System.Text;

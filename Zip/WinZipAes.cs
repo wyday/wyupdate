@@ -1,4 +1,32 @@
-﻿using System;
+// WinZipAes.cs
+// ------------------------------------------------------------------
+//
+// Copyright (c) 2009 Dino Chiesa.
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:33:57>
+//
+// ------------------------------------------------------------------
+//
+// This module defines the classes for dealing with WinZip's AES encryption,
+// according to the specifications for the format available on WinZip's website.
+//
+// Created: January 2009
+// 
+// ------------------------------------------------------------------
+
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -366,7 +394,7 @@ namespace Ionic.Zip
 
 
 #if WANT_TRACE
-	    Stream untransformed;
+            Stream untransformed;
         String traceFileUntransformed;
         Stream transformed;
         String traceFileTransformed;
@@ -408,7 +436,7 @@ namespace Ionic.Zip
 
 
 #if WANT_TRACE
-		traceFileUntransformed = "unpack\\WinZipAesCipherStream.trace.untransformed.out";
+                traceFileUntransformed = "unpack\\WinZipAesCipherStream.trace.untransformed.out";
             traceFileTransformed = "unpack\\WinZipAesCipherStream.trace.transformed.out";
 
             untransformed = System.IO.File.Create(traceFileUntransformed);
@@ -434,57 +462,57 @@ namespace Ionic.Zip
             System.Array.Copy(BitConverter.GetBytes(_nonce++), 0, counter, 0, 4);
 
 
-	    if (bytesToRead == (last - offset))
-	    {
-		// We're doing the last bytes in this batch.
-		// 
-		// For the AES encryption stream to work properly, We must transform full
-		// blocks of 16 bytes each, until the very last one.  But, we don't know
-		// how to recognize the "last" bytes.  The approach taken here: buffer
-		// the last full or partial block of bytes in a batch.  Then at time of
-		// Close(), we set the _NextXformWillBeFinal flag and flush that buffer.
-		//
-		// This works when the caller writes in odd-sized batches, for example
-		// 5000 bytes, or in batches that are neat multiples of block-size (16).
+            if (bytesToRead == (last - offset))
+            {
+                // We're doing the last bytes in this batch.
+                // 
+                // For the AES encryption stream to work properly, We must transform full
+                // blocks of 16 bytes each, until the very last one.  But, we don't know
+                // how to recognize the "last" bytes.  The approach taken here: buffer
+                // the last full or partial block of bytes in a batch.  Then at time of
+                // Close(), we set the _NextXformWillBeFinal flag and flush that buffer.
+                //
+                // This works when the caller writes in odd-sized batches, for example
+                // 5000 bytes, or in batches that are neat multiples of block-size (16).
 
 
-		if (_NextXformWillBeFinal) 
-		{
-		    //Console.WriteLine("WinZipAesCipherStream::ProcessOneBlockWriting:   _NextXformWillBeFinal = true");
-		    counterOut = _xform.TransformFinalBlock(counter,
-							    0,
-							    BLOCK_SIZE_IN_BYTES);
-		    _finalBlock = true;
-		}
+                if (_NextXformWillBeFinal) 
+                {
+                    //Console.WriteLine("WinZipAesCipherStream::ProcessOneBlockWriting:   _NextXformWillBeFinal = true");
+                    counterOut = _xform.TransformFinalBlock(counter,
+                                                            0,
+                                                            BLOCK_SIZE_IN_BYTES);
+                    _finalBlock = true;
+                }
 
-		else if (buffer==_PendingWriteBuffer && bytesToRead==BLOCK_SIZE_IN_BYTES)
-		{
-// 		    Console.WriteLine("POBW({0},{1,5},{2,5}): pc({4})  flushing {3} bytes ...", 
-// 				      _NextXformWillBeFinal, offset, last, bytesToRead, _pendingCount);
-		}
+                else if (buffer==_PendingWriteBuffer && bytesToRead==BLOCK_SIZE_IN_BYTES)
+                {
+//                  Console.WriteLine("POBW({0},{1,5},{2,5}): pc({4})  flushing {3} bytes ...", 
+//                                    _NextXformWillBeFinal, offset, last, bytesToRead, _pendingCount);
+                }
 
 
-		else
-		{
-		    // NOT the final block, therefore buffer it.
+                else
+                {
+                    // NOT the final block, therefore buffer it.
 
-// 		    Console.WriteLine("POBW({0},{1,5},{2,5}): pc({4})  buffering {3} more bytes ...", 
-// 				      _NextXformWillBeFinal, offset, last, bytesToRead, _pendingCount);
+//                  Console.WriteLine("POBW({0},{1,5},{2,5}): pc({4})  buffering {3} more bytes ...", 
+//                                    _NextXformWillBeFinal, offset, last, bytesToRead, _pendingCount);
 
-		    Array.Copy(buffer, offset,
-			       _PendingWriteBuffer, _pendingCount,
-			       bytesToRead);
+                    Array.Copy(buffer, offset,
+                               _PendingWriteBuffer, _pendingCount,
+                               bytesToRead);
 
-		    _pendingCount += bytesToRead;
+                    _pendingCount += bytesToRead;
 
-		    // remember to decrement the nonce.
-		    _nonce--;
-		    return 0;
-		}
-	    }
+                    // remember to decrement the nonce.
+                    _nonce--;
+                    return 0;
+                }
+            }
             
 
-	    if (!_finalBlock)
+            if (!_finalBlock)
             {
                 // Next, do the AES transform.  According to the AES/CTR method used
                 // by WinZip, apply the transform to the counter, and then XOR 
@@ -534,10 +562,10 @@ namespace Ionic.Zip
             // and totalBytesRead ? YES.
             if (_length > 0)
             {
-                // 		Console.WriteLine("POBR: Comparing _totalBytesXferred({0}) + count({1}) == _length({2})", 
-                // 				  _totalBytesXferred,  count,  _length); 
-                // 		Console.WriteLine("      Comparing bytesToRead({0}) == bytesRemaining({1})",
-                // 				  bytesToRead, bytesRemaining);
+                //              Console.WriteLine("POBR: Comparing _totalBytesXferred({0}) + count({1}) == _length({2})", 
+                //                                _totalBytesXferred,  count,  _length); 
+                //              Console.WriteLine("      Comparing bytesToRead({0}) == bytesRemaining({1})",
+                //                                bytesToRead, bytesRemaining);
                 if ((_totalBytesXferred + count == _length) && (bytesToRead == bytesRemaining))
                 {
                     _NextXformWillBeFinal = true;
@@ -674,13 +702,13 @@ namespace Ionic.Zip
 
 
 #if WANT_TRACE
-		untransformed.Write(buffer, offset, bytesToRead);
+                untransformed.Write(buffer, offset, bytesToRead);
 #endif
 
             TransformInPlace(buffer, offset, bytesToRead);
 
 #if WANT_TRACE
-		transformed.Write(buffer, offset, bytesToRead);
+                transformed.Write(buffer, offset, bytesToRead);
 #endif
             _totalBytesXferred += n;
 
@@ -700,14 +728,14 @@ namespace Ionic.Zip
             get
             {
                 if (!_finalBlock)
-		{
-		    // special-case zero-byte files
-		    if ( _totalBytesXferred != 0)
-			throw new Exception("The final hash has not been computed.");
+                {
+                    // special-case zero-byte files
+                    if ( _totalBytesXferred != 0)
+                        throw new Exception("The final hash has not been computed.");
 
-		    byte[] nilMac = new byte[10]; // all zeros when no data xferred
-		    return nilMac;
-		}
+                    byte[] nilMac = new byte[10]; // all zeros when no data xferred
+                    return nilMac;
+                }
                 byte[] macBytes10 = new byte[10];
                 System.Array.Copy(_mac.Hash, 0, macBytes10, 0, 10);
                 return macBytes10;
@@ -752,20 +780,20 @@ namespace Ionic.Zip
                            count);
                     _pendingCount += count;
 
-		    // At this point, _PendingWriteBuffer contains up to BLOCK_SIZE_IN_BYTES
-		    // bytes, and _pendingCount ranges from 0 to 16. We don't want to
-		    // xform+write them yet, because this may have been the last block.  The
-		    // last block gets written at Close().
+                    // At this point, _PendingWriteBuffer contains up to BLOCK_SIZE_IN_BYTES
+                    // bytes, and _pendingCount ranges from 0 to 16. We don't want to
+                    // xform+write them yet, because this may have been the last block.  The
+                    // last block gets written at Close().
                     return;
                 }
 
                 // We have more than one block of data to write, therefore it is safe
-		// to xform+write. 
+                // to xform+write. 
                 int extra = BLOCK_SIZE_IN_BYTES - _pendingCount;
 
-		// NB: extra is possibly zero here.
+                // NB: extra is possibly zero here.
 
-		//Console.WriteLine("WZACS::Write Flush  extra({0}) pc({1})", extra, _pendingCount);
+                //Console.WriteLine("WZACS::Write Flush  extra({0}) pc({1})", extra, _pendingCount);
 
                 Array.Copy(buffer, offset,
                        _PendingWriteBuffer, _pendingCount,
@@ -779,7 +807,7 @@ namespace Ionic.Zip
                 // xform and write: 
                 ProcessOneBlockWriting(_PendingWriteBuffer, 0, BLOCK_SIZE_IN_BYTES);
                 _s.Write(_PendingWriteBuffer, 0, BLOCK_SIZE_IN_BYTES);
-		_totalBytesXferred += BLOCK_SIZE_IN_BYTES;
+                _totalBytesXferred += BLOCK_SIZE_IN_BYTES;
             }
 
             TransformInPlace(buffer, offset, count);
@@ -805,7 +833,7 @@ namespace Ionic.Zip
                 _NextXformWillBeFinal = true;
                 ProcessOneBlockWriting(_PendingWriteBuffer, 0, _pendingCount);
                 _s.Write(_PendingWriteBuffer, 0, _pendingCount);
-		_totalBytesXferred += _pendingCount;
+                _totalBytesXferred += _pendingCount;
             }
 
 

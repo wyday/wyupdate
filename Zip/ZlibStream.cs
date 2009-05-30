@@ -64,6 +64,7 @@ namespace Ionic.Zlib
     public class ZlibStream : System.IO.Stream
     {
         internal ZlibBaseStream _baseStream;
+        bool _disposed;
 
         /// <summary>
         /// Create a ZlibStream using the specified CompressionMode.
@@ -79,7 +80,7 @@ namespace Ionic.Zlib
         /// <param name="stream">The stream which will be read or written.</param>
         /// <param name="mode">Indicates whether the ZlibStream will compress or decompress.</param>
         public ZlibStream(System.IO.Stream stream, CompressionMode mode)
-            : this(stream, mode, CompressionLevel.LEVEL6_DEFAULT, false)
+            : this(stream, mode, CompressionLevel.Default, false)
         {
         }
 
@@ -121,7 +122,7 @@ namespace Ionic.Zlib
         /// <param name="mode">Indicates whether the ZlibStream will compress or decompress.</param>
         /// <param name="leaveOpen">true if the application would like the stream to remain open after inflation/deflation.</param>
         public ZlibStream(System.IO.Stream stream, CompressionMode mode, bool leaveOpen)
-            : this(stream, mode, CompressionLevel.LEVEL6_DEFAULT, leaveOpen)
+            : this(stream, mode, CompressionLevel.Default, leaveOpen)
         {
         }
 
@@ -216,7 +217,11 @@ namespace Ionic.Zlib
         virtual public FlushType FlushMode
         {
             get { return (this._baseStream._flushMode); }
-            set { this._baseStream._flushMode = value; }
+            set
+            {
+                if (_disposed) throw new ObjectDisposedException("ZlibStream");
+                this._baseStream._flushMode = value;
+            }
         }
 
         /// <summary>
@@ -243,9 +248,10 @@ namespace Ionic.Zlib
             }
             set
             {
+                if (_disposed) throw new ObjectDisposedException("ZlibStream");
                 if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
-                if (value < ZlibConstants.WORKING_BUFFER_SIZE_MIN)
+                if (value < ZlibConstants.WorkingBufferSizeMin)
                     throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
                 this._baseStream._bufferSize = value;
             }
@@ -266,18 +272,32 @@ namespace Ionic.Zlib
         #endregion
 
         #region System.IO.Stream methods
+
         /// <summary>
-        /// Close the stream.  
+        /// Dispose the stream.  
         /// </summary>
         /// <remarks>
-        /// This may or may not close the captive stream. 
-        /// See the ctor's with leaveOpen parameters for more information.
+        /// This may or may not result in a Close() call on the captive stream. 
+        /// See the constructors that have a leaveOpen parameter for more information.
         /// </remarks>
-        public override void Close()
+        protected override void Dispose(bool disposing)
         {
-            _baseStream.Close();
+            try
+            {
+                if (!_disposed)
+                {
+                    if (disposing && (this._baseStream != null))
+                        this._baseStream.Close();
+                    _disposed = true;
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
+            }
         }
-
+        
+            
         /// <summary>
         /// Indicates whether the stream can be read.
         /// </summary>
@@ -286,7 +306,11 @@ namespace Ionic.Zlib
         /// </remarks>
         public override bool CanRead
         {
-            get { return _baseStream._stream.CanRead; }
+            get
+            {
+                if (_disposed) throw new ObjectDisposedException("ZlibStream");
+                return _baseStream._stream.CanRead;
+            }
         }
 
         /// <summary>
@@ -308,7 +332,11 @@ namespace Ionic.Zlib
         /// </remarks>
         public override bool CanWrite
         {
-            get { return _baseStream._stream.CanWrite; }
+            get
+            {
+                if (_disposed) throw new ObjectDisposedException("ZlibStream");
+                return _baseStream._stream.CanWrite;
+            }
         }
 
         /// <summary>
@@ -316,6 +344,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override void Flush()
         {
+            if (_disposed) throw new ObjectDisposedException("ZlibStream");
             _baseStream.Flush();
         }
 
@@ -371,6 +400,7 @@ namespace Ionic.Zlib
         /// <param name="count">the number of bytes to read.</param>
         public override int Read(byte[] buffer, int offset, int count)
         {
+                if (_disposed) throw new ObjectDisposedException("ZlibStream");
             return _baseStream.Read(buffer, offset, count);
         }
 
@@ -413,6 +443,7 @@ namespace Ionic.Zlib
         /// <param name="count">the number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
+                if (_disposed) throw new ObjectDisposedException("ZlibStream");
             _baseStream.Write(buffer, offset, count);
         }
         #endregion
@@ -432,11 +463,11 @@ namespace Ionic.Zlib
         protected internal CompressionLevel _level;
         protected internal bool _leaveOpen;
         protected internal byte[] _workingBuffer;
-        protected internal int _bufferSize = ZlibConstants.WORKING_BUFFER_SIZE_DEFAULT;
+        protected internal int _bufferSize = ZlibConstants.WorkingBufferSizeDefault;
         protected internal byte[] _buf1 = new byte[1];
 
         protected internal System.IO.Stream _stream;
-        protected internal CompressionStrategy Strategy = CompressionStrategy.DEFAULT;
+        protected internal CompressionStrategy Strategy = CompressionStrategy.Default;
 
         // workitem 7159
         Ionic.Zlib.CRC32 crc;
@@ -508,14 +539,15 @@ namespace Ionic.Zlib
         }
 
 
-        public override void WriteByte(byte b)
-        {
-            _buf1[0] = (byte)b;
-            // workitem 7159
-            if (crc != null)
-                crc.SlurpBlock(_buf1, 0, 1);
-            Write(_buf1, 0, 1);
-        }
+        // workitem 7813 - totally unnecessary
+//         public override void WriteByte(byte b)
+//         {
+//             _buf1[0] = (byte)b;
+//             // workitem 7159
+//             if (crc != null)
+//                 crc.SlurpBlock(_buf1, 0, 1);
+//             Write(_buf1, 0, 1);
+//         }
 
 
 
@@ -534,6 +566,7 @@ namespace Ionic.Zlib
             if (count == 0)
                 return;
 
+            // first reference of z property will initialize the private var _z
             z.InputBuffer = buffer;
             _z.NextIn = offset;
             _z.AvailableBytesIn = count;
@@ -566,7 +599,7 @@ namespace Ionic.Zlib
 
         private void finish()
         {
-            if (z == null) return;
+            if (_z == null) return;
 
             if (_streamMode == StreamMode.Writer)
             {
@@ -611,14 +644,9 @@ namespace Ionic.Zlib
                         _stream.Write(BitConverter.GetBytes(c1), 0, 4);
                         int c2 = (Int32)(crc.TotalBytesRead & 0x00000000FFFFFFFF);
                         _stream.Write(BitConverter.GetBytes(c2), 0, 4);
-
-                        //Console.WriteLine("GZipStream: Writing trailer  crc(0x{0:X8}) isize({1})", c1, c2);
-
                     }
                     else
                     {
-                        //Console.WriteLine("ZlibBaseStream::finish / Writer / GZIP / decompression");
-                        // should validate the trailer here
                         throw new ZlibException("Writing with decompression is not supported.");
                     }
                 }
@@ -634,7 +662,7 @@ namespace Ionic.Zlib
                         byte[] trailer = new byte[8];
 
                         if (_z.AvailableBytesIn != 8)
-                            throw new ZlibException(String.Format("Can't handle this! AvailableBytesIn={0}",
+                            throw new ZlibException(String.Format("Can't handle this! AvailableBytesIn={0}, expected 8",
                                  _z.AvailableBytesIn));
 
                         Array.Copy(_z.InputBuffer, _z.NextIn, trailer, 0, trailer.Length);
@@ -684,16 +712,10 @@ namespace Ionic.Zlib
 
         public override void Close()
         {
+            if (_stream == null) return;
             try
             {
-                try
-                {
-                    finish();
-                }
-                catch (System.IO.IOException)
-                {
-                    // swallow exceptions?
-                }
+                finish();
             }
             finally
             {
@@ -724,9 +746,9 @@ namespace Ionic.Zlib
         {
             if (Read(_buf1, 0, 1) == 0)
                 return 0;
-	    // calculate CRC after reading
-	    if (crc!=null)
-		crc.SlurpBlock(_buf1,0,1);
+            // calculate CRC after reading
+            if (crc!=null)
+                crc.SlurpBlock(_buf1,0,1);
             return (_buf1[0] & 0xFF);
         }
 #endif
@@ -801,8 +823,15 @@ namespace Ionic.Zlib
 
         public override System.Int32 Read(System.Byte[] buffer, System.Int32 offset, System.Int32 count)
         {
+            // According to MS documentation, any implementation of the IO.Stream.Read function must:
+            // (a) throw an exception if offset & count reference an invalid part of the buffer,
+            //     or if count < 0, or if buffer is null
+            // (b) return 0 only upon EOF, or if count = 0
+            // (c) if not EOF, then return at least 1 byte, up to <count> bytes
+
             if (_streamMode == StreamMode.Undefined)
             {
+                if (!this._stream.CanRead) throw new ZlibException("The stream is not readable.");
                 // for the first read, set up some controls.
                 _streamMode = StreamMode.Reader;
                 // (The first reference to _z goes through the private accessor which
@@ -815,9 +844,11 @@ namespace Ionic.Zlib
             if (_streamMode != StreamMode.Reader)
                 throw new ZlibException("Cannot Read after Writing.");
 
-            if (!this._stream.CanRead) throw new ZlibException("The stream is not readable.");
-            if (count == 0)
-                return 0;
+            if (count == 0) return 0;
+            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (count < 0) throw new ArgumentOutOfRangeException("count");
+            if (offset < buffer.GetLowerBound(0)) throw new ArgumentOutOfRangeException("offset");
+            if ((offset + count) > buffer.GetLength(0)) throw new ArgumentOutOfRangeException("count");
 
             int rc;
 
@@ -838,13 +869,10 @@ namespace Ionic.Zlib
                 {
                     // No data available, so try to Read data from the captive stream.
                     _z.NextIn = 0;
-                    _z.AvailableBytesIn = SharedUtils.ReadInput(_stream, _workingBuffer, 0, _workingBuffer.Length);
-                    //(bufsize<z.avail_out ? bufsize : z.avail_out));
-                    if (_z.AvailableBytesIn == -1)
-                    {
-                        _z.AvailableBytesIn = 0;
+                    _z.AvailableBytesIn = _stream.Read(_workingBuffer, 0, _workingBuffer.Length);
+                    if (_z.AvailableBytesIn == 0)
                         nomoreinput = true;
-                    }
+
                 }
                 // we have data in InputBuffer; now compress or decompress as appropriate
                 rc = (_wantCompress)
@@ -852,8 +880,7 @@ namespace Ionic.Zlib
                     : _z.Inflate(_flushMode);
 
                 if (nomoreinput && (rc == ZlibConstants.Z_BUF_ERROR))
-                    throw new ZlibException((_wantCompress ? "de" : "in") + "flating: unexpected end of stream");
-                //return (-1);  // should I throw here?
+                    return 0;
 
                 if (rc != ZlibConstants.Z_OK && rc != ZlibConstants.Z_STREAM_END)
                     throw new ZlibException(String.Format("{0}flating:  rc={1}  msg={2}", (_wantCompress ? "de" : "in"), rc, _z.Message));

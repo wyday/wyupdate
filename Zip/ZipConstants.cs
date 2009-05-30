@@ -1,3 +1,28 @@
+// ZipConstants.cs
+// ------------------------------------------------------------------
+//
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:38:57>
+//
+// ------------------------------------------------------------------
+//
+// This module defines a few constants that are used in the project. 
+//
+// ------------------------------------------------------------------
+
 using System;
 
 namespace Ionic.Zip

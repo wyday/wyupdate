@@ -1,13 +1,32 @@
 #define OPTIMIZE_WI6612
 
 // ZipDirEntry.cs
+// ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
 //
-// Part of an implementation of a zipfile class library. 
-// See the file ZipFile.cs for the license and for further information.
+// This code module is part of DotNetZip, a zipfile class library.
 //
-// Tue, 27 Mar 2007  15:30
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:37:01>
+//
+// ------------------------------------------------------------------
+//
+// This module defines members of the ZipEntry class for reading the
+// Zip file central directory.
+//
+// Created: Tue, 27 Mar 2007  15:30
+// 
+// ------------------------------------------------------------------
 
 
 using System;
@@ -83,7 +102,7 @@ namespace Ionic.Zip
 
             int i = 0;
             ZipEntry zde = new ZipEntry();
-	    zde._Source = ZipEntrySource.Zipfile;
+            zde._Source = ZipEntrySource.Zipfile;
             zde._archiveStream = s;
             zde._cdrPosition = cdrPosition;
 
@@ -112,6 +131,9 @@ namespace Ionic.Zip
 
             zde._RelativeOffsetOfLocalHeader = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
 
+            // workitem 7801
+            zde.IsText = ((zde._InternalFileAttrs & 0x01) == 0x01);
+
             block = new byte[zde._filenameLength];
             n = s.Read(block, 0, block.Length);
             bytesRead += n;
@@ -132,7 +154,7 @@ namespace Ionic.Zip
             // Console.WriteLine("  Lastmod:              {0}", zde._LastModified.ToString("u"));
             // Console.WriteLine("  CRC:                  0x{0:X8}", zde._Crc32);
             // Console.WriteLine("  Comp / Uncomp:        0x{0:X8} ({0})   0x{1:X8} ({1})", zde._CompressedSize, zde._UncompressedSize);
-	    
+            
             zde._FileNameInArchive = zde._LocalFileName;
 
             if (zde.AttributesIndicateDirectory) zde.MarkAsDirectory();  // may append a slash to filename if nec.
@@ -161,10 +183,10 @@ namespace Ionic.Zip
                 zde._CompressedFileDataSize = zde._CompressedSize;
 
                 // if (zde._InputUsesZip64)
-		// {
-		// Console.WriteLine("  Z64 updated values");
-		// Console.WriteLine("    Comp / Uncomp:      0x{0:X16} ({0})   0x{1:X16} ({1})", zde._CompressedSize, zde._UncompressedSize);
-		// }
+                // {
+                // Console.WriteLine("  Z64 updated values");
+                // Console.WriteLine("    Comp / Uncomp:      0x{0:X16} ({0})   0x{1:X16} ({1})", zde._CompressedSize, zde._UncompressedSize);
+                // }
             }
 
             // we've processed the extra field, so we know the encryption method is set now.

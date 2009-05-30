@@ -45,15 +45,17 @@ using System;
 namespace Ionic.Zlib
 {
     /// <summary>
-    /// Encoder and Decoder for ZLIB (IETF RFC1950 and RFC1951).
+    /// Encoder and Decoder for ZLIB and DEFLATE (IETF RFC1950 and RFC1951).
     /// </summary>
+    ///
     /// <remarks>
-    /// This class compresses and decompresses data according to the Deflate algorithm documented in RFC1950 and RFC1951. 
+    /// This class compresses and decompresses data according to the Deflate algorithm
+    /// and optionally, the ZLIB format, as documented in <see
+    /// href="http://www.ietf.org/rfc/rfc1950.txt">RFC 1950 - ZLIB</see> and <see
+    /// href="http://www.ietf.org/rfc/rfc1951.txt">RFC 1951 - DEFLATE</see>.
     /// </remarks>
     sealed public class ZlibCodec
     {
-        //private const int MAX_MEM_LEVEL = 9;
-
         /// <summary>
         /// The buffer from which data is taken.
         /// </summary>
@@ -115,7 +117,7 @@ namespace Ionic.Zlib
         /// <summary>
         /// The compression level to use in this codec.  Useful only in compression mode.
         /// </summary>
-        public CompressionLevel CompressLevel = CompressionLevel.LEVEL6_DEFAULT;
+        public CompressionLevel CompressLevel = CompressionLevel.Default;
 
         /// <summary>
         /// The number of Window Bits to use.  
@@ -126,7 +128,7 @@ namespace Ionic.Zlib
         /// setting alone if you don't know what it is.  The maximum value is 15 bits, which implies
         /// a 32k window.  
         /// </remarks>
-        public int WindowBits = ZlibConstants.WINDOW_BITS_DEFAULT;
+        public int WindowBits = ZlibConstants.WindowBitsDefault;
 
         /// <summary>
         /// The compression strategy to use.
@@ -141,7 +143,7 @@ namespace Ionic.Zlib
         /// different strategy options and evaluates them on different file types. If you do that,
         /// let me know your results.
         /// </remarks>
-        public CompressionStrategy Strategy = CompressionStrategy.DEFAULT;
+        public CompressionStrategy Strategy = CompressionStrategy.Default;
 
 
         /// <summary>
@@ -195,15 +197,22 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Initialize the inflation state with an explicit flag to govern the handling of RFC1950 header bytes. 
+        /// Initialize the inflation state with an explicit flag to
+        /// govern the handling of RFC1950 header bytes.
         /// </summary>
+        ///
         /// <remarks>
-        /// By default, the RFC1950 header is expected.  If you want to read a zlib stream 
-        /// you should specify true for expectRfc1950Header.  If you have a deflate stream, you will
-        /// want to specify false. It is only necessary to invoke this initializer explicitly if you want 
-        /// to specify false.
+        /// By default, the ZLIB header defined in <see
+        /// href="http://www.ietf.org/rfc/rfc1950.txt">RFC 1950</see> is expected.  If
+        /// you want to read a zlib stream you should specify true for
+        /// expectRfc1950Header.  If you have a deflate stream, you will want to specify
+        /// false. It is only necessary to invoke this initializer explicitly if you
+        /// want to specify false.
         /// </remarks>
-        /// <param name="expectRfc1950Header">whether to expect an RFC1950 header byte pair when reading the stream of data to be inflated.</param>
+        ///
+        /// <param name="expectRfc1950Header">whether to expect an RFC1950 header byte
+        /// pair when reading the stream of data to be inflated.</param>
+        ///
         /// <returns>Z_OK if everything goes well.</returns>
         public int InitializeInflate(bool expectRfc1950Header)
         {
@@ -223,13 +232,19 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Initialize the inflation state with an explicit flag to govern the handling of RFC1950 header bytes. 
+        /// Initialize the inflation state with an explicit flag to govern the handling of
+        /// RFC1950 header bytes. 
         /// </summary>
+        ///
         /// <remarks>
-        /// If you want to read a zlib stream 
-        /// you should specify true for expectRfc1950Header.  If you have a deflate stream, you will
-        /// want to specify false. 
+        /// If you want to read a zlib stream you should specify true for
+        /// expectRfc1950Header. In this case, the library will expect to find a ZLIB
+        /// header, as defined in <see href="http://www.ietf.org/rfc/rfc1950.txt">RFC
+        /// 1950</see>, in the compressed stream.  If you will be reading a DEFLATE or
+        /// GZIP stream, which does not have such a header, you will want to specify
+        /// false.
         /// </remarks>
+        ///
         /// <param name="expectRfc1950Header">whether to expect an RFC1950 header byte pair when reading 
         /// the stream of data to be inflated.</param>
         /// <param name="windowBits">The number of window bits to use. If you need to ask what that is, 
@@ -392,7 +407,8 @@ namespace Ionic.Zlib
         /// Initialize the ZlibCodec for deflation operation, using the specified CompressionLevel.
         /// </summary>
         /// <remarks>
-        /// The codec will use the MAX window bits and the specified CompressionLevel.
+        /// The codec will use the maximum window bits (15) and the specified
+        /// CompressionLevel.  It will emit a ZLIB stream as it compresses.
         /// </remarks>
         /// <param name="level">The compression level for the codec.</param>
         /// <returns>Z_OK if all goes well.</returns>
@@ -408,7 +424,11 @@ namespace Ionic.Zlib
         /// and the explicit flag governing whether to emit an RFC1950 header byte pair.
         /// </summary>
         /// <remarks>
-        /// The codec will use the MAX window bits and the specified CompressionLevel.
+        /// The codec will use the maximum window bits (15) and the specified CompressionLevel.
+        /// If you want to generate a zlib stream, you should specify true for
+        /// wantRfc1950Header. In this case, the library will emit a ZLIB
+        /// header, as defined in <see href="http://www.ietf.org/rfc/rfc1950.txt">RFC
+        /// 1950</see>, in the compressed stream.  
         /// </remarks>
         /// <param name="level">The compression level for the codec.</param>
         /// <param name="wantRfc1950Header">whether to emit an initial RFC1950 byte pair in the compressed stream.</param>
@@ -438,9 +458,11 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Initialize the ZlibCodec for deflation operation, using the specified CompressionLevel, 
-        /// the specified number of window bits, and the explicit flag governing whether to emit an RFC1950 header byte pair.
+        /// Initialize the ZlibCodec for deflation operation, using the specified
+        /// CompressionLevel, the specified number of window bits, and the explicit flag
+        /// governing whether to emit an RFC1950 header byte pair.
         /// </summary>
+        ///
         /// <param name="level">The compression level for the codec.</param>
         /// <param name="wantRfc1950Header">whether to emit an initial RFC1950 byte pair in the compressed stream.</param>
         /// <param name="bits">the number of window bits to use.  If you don't know what this means, don't use this method.</param>
@@ -557,8 +579,8 @@ namespace Ionic.Zlib
         /// </summary>
         /// <remarks>
         /// Call this to reset the deflation state.  For example if a thread is deflating
-	/// non-consecutive blocks, you can call Reset() after the Deflate(Sync) of the first
-	/// block and before the next Deflate(None) of the second block.
+        /// non-consecutive blocks, you can call Reset() after the Deflate(Sync) of the first
+        /// block and before the next Deflate(None) of the second block.
         /// </remarks>
         /// <returns>Z_OK if all goes well.</returns>
         public void ResetDeflate()
@@ -664,12 +686,12 @@ namespace Ionic.Zlib
 
 
 #if SILLINESS_PREVAILS
-		public void Free()
-		{
-			InputBuffer = null;
-			OutputBuffer = null;
-			Message = null;
-		}
+                public void Free()
+                {
+                        InputBuffer = null;
+                        OutputBuffer = null;
+                        Message = null;
+                }
 #endif
     }
 }

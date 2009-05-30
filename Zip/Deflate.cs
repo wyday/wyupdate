@@ -55,35 +55,58 @@ namespace Ionic.Zlib
     /// <summary>
     /// Describes how to flush the current deflate operation. 
     /// </summary>
+    /// <remarks>
+    /// The different FlushType values are useful when using a Deflate in a streaming application.
+    /// </remarks>
     public enum FlushType
     {
-	/// <summary>No flush at all.</summary>
-	None=0,
-	/// <summary>Apparently this was marked as deprecated but isn't really going to be removed.</summary>
-	Partial,
-	/// <summary>Use this if you want to flush a block to a byte boundary, in the middle of a deflate session.</summary>
-	Sync,
-	/// <summary>Hmmm.....</summary>
-	Full,
-	/// <summary>???</summary>
-	Finish,
-	/// <summary>?</summary>
-	Block,
+        /// <summary>No flush at all.</summary>
+        None=0,
+        
+        /// <summary>Closes the current block, but doesn't flush it to
+        /// the output. Used internally only in hypothetical
+        /// scenarios.  This was supposed to be removed by Zlib, but it is
+        /// still in use in some edge cases. 
+        /// </summary>
+        Partial,
+        
+        /// <summary>
+        /// Use this during compression to specify that all pending output should be
+        /// flushed to the output buffer and the output should be aligned on a byte
+        /// boundary.  You might use this in a streaming communication scenario, so that
+        /// the decompressor can get all input data available so far.  When using this
+        /// with a ZlibCodec, <c>AvailableBytesIn</c> will be zero after the call if
+        /// enough output space has been provided before the call.  Flushing will
+        /// degrade compression and so it should be used only when necessary.
+        /// </summary>
+        Sync,
+        
+        /// <summary>
+        /// Use this during compression to specify that all output should be flushed, as
+        /// with <c>FlushType.Sync</c>, but also, the compression state should be reset
+        /// so that decompression can restart from this point if previous compressed
+        /// data has been damaged or if random access is desired.  Using
+        /// <c>FlushType.Full</c> too often can significantly degrade the compression.
+        /// </summary>
+        Full,
+        
+        /// <summary>Signals the end of the compression/decompression stream.</summary>
+        Finish,
     }
 
     internal enum BlockState
     {
-	NeedMore = 0,	    // block not completed, need more input or more output
-	BlockDone,  	    // block flush performed
-	FinishStarted,  	    // finish started, need only more output at next deflate
-	FinishDone  	    // finish done, accept no more input or output
+        NeedMore = 0,       // block not completed, need more input or more output
+        BlockDone,          // block flush performed
+        FinishStarted,              // finish started, need only more output at next deflate
+        FinishDone          // finish done, accept no more input or output
     }
 
     internal enum DeflateFlavor
     {
-	Store,
-	Fast,
-	Slow
+        Store,
+        Fast,
+        Slow
     }
 
     internal sealed class DeflateManager
@@ -91,24 +114,24 @@ namespace Ionic.Zlib
         private const int MEM_LEVEL_MAX = 9;
         private const int MEM_LEVEL_DEFAULT = 8;
 
-	internal delegate BlockState CompressFunc(FlushType flush);
-	
+        internal delegate BlockState CompressFunc(FlushType flush);
+        
         internal class Config
         {
-	    // Use a faster search when the previous match is longer than this
+            // Use a faster search when the previous match is longer than this
             internal int GoodLength; // reduce lazy search above this match length
 
-	    // Attempt to find a better match only when the current match is
-	    // strictly smaller than this value. This mechanism is used only for
-	    // compression levels >= 4.  For levels 1,2,3: MaxLazy is actually
-	    // MaxInsertLength. (See DeflateFast)
+            // Attempt to find a better match only when the current match is
+            // strictly smaller than this value. This mechanism is used only for
+            // compression levels >= 4.  For levels 1,2,3: MaxLazy is actually
+            // MaxInsertLength. (See DeflateFast)
 
             internal int MaxLazy;    // do not perform lazy search above this match length
 
             internal int NiceLength; // quit search above this match length
 
-	    // To speed up deflation, hash chains are never searched beyond this
-	    // length.  A higher limit improves compression ratio but degrades the speed.
+            // To speed up deflation, hash chains are never searched beyond this
+            // length.  A higher limit improves compression ratio but degrades the speed.
 
             internal int MaxChainLength;
 
@@ -123,34 +146,34 @@ namespace Ionic.Zlib
                 this.Flavor = flavor;
             }
 
-	    public static Config Lookup(CompressionLevel level)
-	    {
-		return Table[(int) level];
-	    }
+            public static Config Lookup(CompressionLevel level)
+            {
+                return Table[(int) level];
+            }
 
-	    
-	    static Config()
-	    {
-		Table = new Config[] {
-		    new Config(0, 0, 0, 0, DeflateFlavor.Store),
-		    new Config(4, 4, 8, 4, DeflateFlavor.Fast),
-		    new Config(4, 5, 16, 8, DeflateFlavor.Fast),
-		    new Config(4, 6, 32, 32, DeflateFlavor.Fast),
+            
+            static Config()
+            {
+                Table = new Config[] {
+                    new Config(0, 0, 0, 0, DeflateFlavor.Store),
+                    new Config(4, 4, 8, 4, DeflateFlavor.Fast),
+                    new Config(4, 5, 16, 8, DeflateFlavor.Fast),
+                    new Config(4, 6, 32, 32, DeflateFlavor.Fast),
 
-		    new Config(4, 4, 16, 16, DeflateFlavor.Slow),
-		    new Config(8, 16, 32, 32, DeflateFlavor.Slow),
-		    new Config(8, 16, 128, 128, DeflateFlavor.Slow),
-		    new Config(8, 32, 128, 256, DeflateFlavor.Slow),
-		    new Config(32, 128, 258, 1024, DeflateFlavor.Slow),
-		    new Config(32, 258, 258, 4096, DeflateFlavor.Slow),
-		};
-	    }
+                    new Config(4, 4, 16, 16, DeflateFlavor.Slow),
+                    new Config(8, 16, 32, 32, DeflateFlavor.Slow),
+                    new Config(8, 16, 128, 128, DeflateFlavor.Slow),
+                    new Config(8, 32, 128, 256, DeflateFlavor.Slow),
+                    new Config(32, 128, 258, 1024, DeflateFlavor.Slow),
+                    new Config(32, 258, 258, 4096, DeflateFlavor.Slow),
+                };
+            }
 
-	    private static Config[] Table;
+            private static Config[] Table;
         }
 
 
-	private CompressFunc DeflateFunction;
+        private CompressFunc DeflateFunction;
 
         //UPGRADE_NOTE: Final was removed from the declaration of 'z_errmsg'. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
         private static readonly System.String[] z_errmsg = new System.String[] { "need dictionary", "stream end", "", "file error", "stream error", "data error", "insufficient memory", "buffer error", "incompatible version", "" };
@@ -253,7 +276,7 @@ namespace Ionic.Zlib
 
         internal int block_start;
 
-	Config config;
+        Config config;
         internal int match_length; // length of best match
         internal int prev_match; // previous match
         internal int match_available; // set if previous match exists
@@ -344,27 +367,27 @@ namespace Ionic.Zlib
             bl_tree = new short[(2 * BL_CODES + 1) * 2]; // Huffman tree for bit lengths
         }
 
-	// lm_init
+        // lm_init
         private void _InitializeLazyMatch()
         {
             window_size = 2 * w_size;
 
-	    // clear the hash
+            // clear the hash
             for (int i = 0; i < hash_size; i++) head[i] = 0;
 
-	    config = Config.Lookup(compressionLevel);
-	    switch (config.Flavor)
-	    {
-	    case DeflateFlavor.Store: 
-		DeflateFunction = DeflateNone;
-		break;
-	    case DeflateFlavor.Fast: 
-		DeflateFunction = DeflateFast;
-		break;
-	    case DeflateFlavor.Slow: 
-		DeflateFunction = DeflateSlow;
-		break;
-	    }
+            config = Config.Lookup(compressionLevel);
+            switch (config.Flavor)
+            {
+            case DeflateFlavor.Store: 
+                DeflateFunction = DeflateNone;
+                break;
+            case DeflateFlavor.Fast: 
+                DeflateFunction = DeflateFast;
+                break;
+            case DeflateFlavor.Slow: 
+                DeflateFunction = DeflateSlow;
+                break;
+            }
 
             strstart = 0;
             block_start = 0;
@@ -1162,7 +1185,7 @@ namespace Ionic.Zlib
                 {
                     ins_h = (((ins_h) << hash_shift) ^ (window[(strstart) + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
 
-                    //	prev[strstart&w_mask]=hash_head=head[ins_h];
+                    //  prev[strstart&w_mask]=hash_head=head[ins_h];
                     hash_head = (head[ins_h] & 0xffff);
                     prev[strstart & w_mask] = head[ins_h];
                     head[ins_h] = unchecked((short)strstart);
@@ -1176,7 +1199,7 @@ namespace Ionic.Zlib
                     // To simplify the code, we prevent matches with the string
                     // of window index 0 (in particular we have to avoid a match
                     // of the string with itself at the start of the input file).
-                    if (compressionStrategy != CompressionStrategy.HUFFMAN_ONLY)
+                    if (compressionStrategy != CompressionStrategy.HuffmanOnly)
                     {
                         match_length = longest_match(hash_head);
                     }
@@ -1200,7 +1223,7 @@ namespace Ionic.Zlib
                             strstart++;
 
                             ins_h = ((ins_h << hash_shift) ^ (window[(strstart) + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
-                            //	    prev[strstart&w_mask]=hash_head=head[ins_h];
+                            //      prev[strstart&w_mask]=hash_head=head[ins_h];
                             hash_head = (head[ins_h] & 0xffff);
                             prev[strstart & w_mask] = head[ins_h];
                             head[ins_h] = unchecked((short)strstart);
@@ -1270,7 +1293,7 @@ namespace Ionic.Zlib
                 {
                     _fillWindow();
                     if (lookahead < MIN_LOOKAHEAD && flush == FlushType.None)
-			return BlockState.NeedMore;
+                        return BlockState.NeedMore;
         
                     if (lookahead == 0)
                         break; // flush the current block
@@ -1282,7 +1305,7 @@ namespace Ionic.Zlib
                 if (lookahead >= MIN_MATCH)
                 {
                     ins_h = (((ins_h) << hash_shift) ^ (window[(strstart) + (MIN_MATCH - 1)] & 0xff)) & hash_mask;
-                    //	prev[strstart&w_mask]=hash_head=head[ins_h];
+                    //  prev[strstart&w_mask]=hash_head=head[ins_h];
                     hash_head = (head[ins_h] & 0xffff);
                     prev[strstart & w_mask] = head[ins_h];
                     head[ins_h] = unchecked((short)strstart);
@@ -1290,24 +1313,24 @@ namespace Ionic.Zlib
 
                 // Find the longest match, discarding those <= prev_length.
                 prev_length = match_length; 
-		prev_match = match_start;
+                prev_match = match_start;
                 match_length = MIN_MATCH - 1;
 
                 if (hash_head != 0 && prev_length < config.MaxLazy && 
-		    ((strstart - hash_head) & 0xffff) <= w_size - MIN_LOOKAHEAD)
+                    ((strstart - hash_head) & 0xffff) <= w_size - MIN_LOOKAHEAD)
                 {
                     // To simplify the code, we prevent matches with the string
                     // of window index 0 (in particular we have to avoid a match
                     // of the string with itself at the start of the input file).
 
-                    if (compressionStrategy != CompressionStrategy.HUFFMAN_ONLY)
+                    if (compressionStrategy != CompressionStrategy.HuffmanOnly)
                     {
                         match_length = longest_match(hash_head);
                     }
                     // longest_match() sets match_start
 
-                    if (match_length <= 5 && (compressionStrategy == CompressionStrategy.FILTERED ||
-					      (match_length == MIN_MATCH && strstart - match_start > 4096)))
+                    if (match_length <= 5 && (compressionStrategy == CompressionStrategy.Filtered ||
+                                              (match_length == MIN_MATCH && strstart - match_start > 4096)))
                     {
 
                         // If prev_match is also MIN_MATCH, match_start is garbage
@@ -1460,13 +1483,13 @@ namespace Ionic.Zlib
                 {
                 }
                 while (window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] &&
-		       window[++scan] == window[++match] && scan < strend);
+                       window[++scan] == window[++match] &&
+                       window[++scan] == window[++match] &&
+                       window[++scan] == window[++match] &&
+                       window[++scan] == window[++match] &&
+                       window[++scan] == window[++match] &&
+                       window[++scan] == window[++match] &&
+                       window[++scan] == window[++match] && scan < strend);
 
                 len = MAX_MATCH - (int)(strend - scan);
                 scan = strend - MAX_MATCH;
@@ -1500,12 +1523,12 @@ namespace Ionic.Zlib
 
         internal int Initialize(ZlibCodec codec, CompressionLevel level)
         {
-            return Initialize(codec, level, ZlibConstants.WINDOW_BITS_MAX);
+            return Initialize(codec, level, ZlibConstants.WindowBitsMax);
         }
 
         internal int Initialize(ZlibCodec codec, CompressionLevel level, int bits)
         {
-            return Initialize(codec, level, bits, MEM_LEVEL_DEFAULT, CompressionStrategy.DEFAULT);
+            return Initialize(codec, level, bits, MEM_LEVEL_DEFAULT, CompressionStrategy.Default);
         }
 
         internal int Initialize(ZlibCodec codec, CompressionLevel level, int bits, CompressionStrategy compressionStrategy)
@@ -1515,7 +1538,7 @@ namespace Ionic.Zlib
 
         internal int Initialize(ZlibCodec codec, CompressionLevel level, int windowBits, int memLevel, CompressionStrategy strategy)
         {
-	    _codec = codec;
+            _codec = codec;
             _codec.Message = null;
 
             // validation
@@ -1553,8 +1576,8 @@ namespace Ionic.Zlib
             this.compressionStrategy = strategy;
             this.method = 0x08;  // (sbyte)method;
 
-	    Reset();
-	    return ZlibConstants.Z_OK;
+            Reset();
+            return ZlibConstants.Z_OK;
         }
 
 
@@ -1601,32 +1624,32 @@ namespace Ionic.Zlib
 
             if (compressionLevel != level)
             {
-		Config newConfig = Config.Lookup(level);
+                Config newConfig = Config.Lookup(level);
 
-		// change in the deflate flavor (Fast vs slow vs none)?
-		if (newConfig.Flavor != config.Flavor && _codec.TotalBytesIn != 0)
-		{
-		    // Flush the last buffer:
-		    result = _codec.Deflate(FlushType.Partial);
-		}
+                // change in the deflate flavor (Fast vs slow vs none)?
+                if (newConfig.Flavor != config.Flavor && _codec.TotalBytesIn != 0)
+                {
+                    // Flush the last buffer:
+                    result = _codec.Deflate(FlushType.Partial);
+                }
 
                 compressionLevel = level;
-		config = newConfig;
-		switch (config.Flavor)
-		{
-		case DeflateFlavor.Store: 
-		    DeflateFunction = DeflateNone;
-		    break;
-		case DeflateFlavor.Fast: 
-		    DeflateFunction = DeflateFast;
-		    break;
-		case DeflateFlavor.Slow: 
-		    DeflateFunction = DeflateSlow;
-		    break;
-		}
+                config = newConfig;
+                switch (config.Flavor)
+                {
+                case DeflateFlavor.Store: 
+                    DeflateFunction = DeflateNone;
+                    break;
+                case DeflateFlavor.Fast: 
+                    DeflateFunction = DeflateFast;
+                    break;
+                case DeflateFlavor.Slow: 
+                    DeflateFunction = DeflateSlow;
+                    break;
+                }
             }
 
-	    // no need to flush with change in strategy?  Really? 
+            // no need to flush with change in strategy?  Really? 
             compressionStrategy = strategy;
 
             return result;
@@ -1677,8 +1700,8 @@ namespace Ionic.Zlib
             int old_flush;
 
             if (_codec.OutputBuffer == null || 
-		(_codec.InputBuffer == null && _codec.AvailableBytesIn != 0) ||
-		(status == FINISH_STATE && flush != FlushType.Finish))
+                (_codec.InputBuffer == null && _codec.AvailableBytesIn != 0) ||
+                (status == FINISH_STATE && flush != FlushType.Finish))
             {
                 _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_STREAM_ERROR)];
                 throw new ZlibException(String.Format("Something is fishy. [{0}]", _codec.Message));
@@ -1741,8 +1764,8 @@ namespace Ionic.Zlib
                 // returning Z_STREAM_END instead of Z_BUFF_ERROR.
             }
             else if (_codec.AvailableBytesIn == 0 && 
-		     (int) flush <= old_flush && 
-		     flush != FlushType.Finish)
+                     (int) flush <= old_flush && 
+                     flush != FlushType.Finish)
             {
                 _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
                 throw new ZlibException("AvailableBytesOut == 0 && flush<=old_flush && flush != FlushType.Finish");
@@ -1795,7 +1818,7 @@ namespace Ionic.Zlib
                         // as a special marker by inflate_sync().
                         if (flush == FlushType.Full)
                         {
-			    // clear hash (forget the history)
+                            // clear hash (forget the history)
                             for (int i = 0; i < hash_size; i++)
                                 head[i] = 0;
                         }

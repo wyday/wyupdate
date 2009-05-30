@@ -1,12 +1,28 @@
 // Shared.cs
+// ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
 //
-// Part of an implementation of a zipfile class library. 
-// See the file ZipFile.cs for further information.
+// This code module is part of DotNetZip, a zipfile class library.
 //
-// Tue, 27 Mar 2007  15:30
-
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:31:32>
+//
+// ------------------------------------------------------------------
+//
+// This module defines some shared utility classes and methods.
+//
+// Created: Tue, 27 Mar 2007  15:30
+// 
 
 using System;
 
@@ -55,8 +71,13 @@ namespace Ionic.Zip
 
         internal static string NormalizePath(string path)
         {
+            // remove leading single dot slash
             if (path.StartsWith(".\\")) path = path.Substring(2);
+            
+            // remove intervening dot-slash
             path= path.Replace("\\.\\", "\\");
+            
+            // remove double dot when preceded by a directory name
             var re = new System.Text.RegularExpressions.Regex(@"^(.*\\)?([^\\\.]+\\\.\.\\)(.+)$");
             path = re.Replace(path, "$1$3");
             return path;
@@ -66,7 +87,7 @@ namespace Ionic.Zip
         {
             if (path.StartsWith("./")) path = path.Substring(2);
             path= path.Replace("/./", "/");
-            var re = new System.Text.RegularExpressions.Regex(@"^(.*/)?([^/.]+/../)(.+)$");
+            var re = new System.Text.RegularExpressions.Regex(@"^(.*/)b?([^/\\.]+/\\.\\./)(.+)$");
             path = re.Replace(path, "$1$3");
             return path;
         }
