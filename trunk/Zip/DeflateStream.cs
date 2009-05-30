@@ -63,6 +63,7 @@ namespace Ionic.Zlib
     public class DeflateStream : System.IO.Stream
     {
         internal ZlibBaseStream _baseStream;
+        bool _disposed;
 
         /// <summary>
         /// Create a DeflateStream using the specified CompressionMode.
@@ -95,16 +96,16 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        /// 	Using compressor As Stream = New DeflateStream(raw, CompressionMode.Compress)
-        /// 	    Dim buffer As Byte() = New Byte(4096) {}
-        /// 	    Dim n As Integer = -1
-        /// 	    Do While (n &lt;&gt; 0)
-        /// 		If (n &gt; 0) Then
-        /// 		    compressor.Write(buffer, 0, n)
-        /// 		End If
-        /// 		n = input.Read(buffer, 0, buffer.Length)
-        /// 	    Loop
-        /// 	End Using
+        ///     Using compressor As Stream = New DeflateStream(raw, CompressionMode.Compress)
+        ///         Dim buffer As Byte() = New Byte(4096) {}
+        ///         Dim n As Integer = -1
+        ///         Do While (n &lt;&gt; 0)
+        ///             If (n &gt; 0) Then
+        ///                 compressor.Write(buffer, 0, n)
+        ///             End If
+        ///             n = input.Read(buffer, 0, buffer.Length)
+        ///         Loop
+        ///     End Using
         ///     End Using
         /// End Using
         /// </code>
@@ -112,7 +113,7 @@ namespace Ionic.Zlib
         /// <param name="stream">The stream which will be read or written.</param>
         /// <param name="mode">Indicates whether the DeflateStream will compress or decompress.</param>
         public DeflateStream(System.IO.Stream stream, CompressionMode mode)
-            : this(stream, mode, CompressionLevel.LEVEL6_DEFAULT, false)
+            : this(stream, mode, CompressionLevel.Default, false)
         {
         }
 
@@ -146,16 +147,16 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        /// 	Using compressor As Stream = New DeflateStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION)
-        /// 	    Dim buffer As Byte() = New Byte(4096) {}
-        /// 	    Dim n As Integer = -1
-        /// 	    Do While (n &lt;&gt; 0)
-        /// 		If (n &gt; 0) Then
-        /// 		    compressor.Write(buffer, 0, n)
-        /// 		End If
-        /// 		n = input.Read(buffer, 0, buffer.Length)
-        /// 	    Loop
-        /// 	End Using
+        ///     Using compressor As Stream = New DeflateStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION)
+        ///         Dim buffer As Byte() = New Byte(4096) {}
+        ///         Dim n As Integer = -1
+        ///         Do While (n &lt;&gt; 0)
+        ///             If (n &gt; 0) Then
+        ///                 compressor.Write(buffer, 0, n)
+        ///             End If
+        ///             n = input.Read(buffer, 0, buffer.Length)
+        ///         Loop
+        ///     End Using
         ///     End Using
         /// End Using
         /// </code>
@@ -192,7 +193,7 @@ namespace Ionic.Zlib
         /// <param name="mode">Indicates whether the DeflateStream will compress or decompress.</param>
         /// <param name="leaveOpen">true if the application would like the stream to remain open after inflation/deflation.</param>
         public DeflateStream(System.IO.Stream stream, CompressionMode mode, bool leaveOpen)
-            : this(stream, mode, CompressionLevel.LEVEL6_DEFAULT, leaveOpen)
+            : this(stream, mode, CompressionLevel.Default, leaveOpen)
         {
         }
 
@@ -235,16 +236,16 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        /// 	Using compressor As Stream = New DeflateStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION, True)
-        /// 	    Dim buffer As Byte() = New Byte(4096) {}
-        /// 	    Dim n As Integer = -1
-        /// 	    Do While (n &lt;&gt; 0)
-        /// 		If (n &gt; 0) Then
-        /// 		    compressor.Write(buffer, 0, n)
-        /// 		End If
-        /// 		n = input.Read(buffer, 0, buffer.Length)
-        /// 	    Loop
-        /// 	End Using
+        ///     Using compressor As Stream = New DeflateStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION, True)
+        ///         Dim buffer As Byte() = New Byte(4096) {}
+        ///         Dim n As Integer = -1
+        ///         Do While (n &lt;&gt; 0)
+        ///             If (n &gt; 0) Then
+        ///                 compressor.Write(buffer, 0, n)
+        ///             End If
+        ///             n = input.Read(buffer, 0, buffer.Length)
+        ///         Loop
+        ///     End Using
         ///     End Using
         /// End Using
         /// </code>
@@ -268,7 +269,11 @@ namespace Ionic.Zlib
         virtual public FlushType FlushMode
         {
             get { return (this._baseStream._flushMode); }
-            set { this._baseStream._flushMode = value; }
+            set
+            {
+                if (_disposed) throw new ObjectDisposedException("DeflateStream");
+                this._baseStream._flushMode = value;
+            }
         }
 
         /// <summary>
@@ -295,9 +300,10 @@ namespace Ionic.Zlib
             }
             set
             {
+            if (_disposed) throw new ObjectDisposedException("DeflateStream");
                 if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
-                if (value < ZlibConstants.WORKING_BUFFER_SIZE_MIN)
+                if (value < ZlibConstants.WorkingBufferSizeMin)
                     throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
                 this._baseStream._bufferSize = value;
             }
@@ -314,6 +320,7 @@ namespace Ionic.Zlib
             }
             set
             {
+            if (_disposed) throw new ObjectDisposedException("DeflateStream");
                 this._baseStream.Strategy = value;
             }
         }
@@ -340,16 +347,31 @@ namespace Ionic.Zlib
 
         #region System.IO.Stream methods
         /// <summary>
-        /// Close the stream.  
+        /// Dispose the stream.  
         /// </summary>
         /// <remarks>
-        /// This may or may not close the captive stream. 
-        /// See the ctor's with leaveOpen parameters for more information.
+        /// This may or may not result in a Close() call on the captive stream. 
+        /// See the constructors that have a leaveOpen parameter for more information.
         /// </remarks>
-        public override void Close()
+        protected override void Dispose(bool disposing)
         {
-            _baseStream.Close();
+            try
+            {
+                if (!_disposed)
+                {
+                    if (disposing && (this._baseStream != null))
+                        this._baseStream.Close();
+                    _disposed = true;
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
+            }
+    
         }
+
+        
 
         /// <summary>
         /// Indicates whether the stream can be read.
@@ -359,7 +381,11 @@ namespace Ionic.Zlib
         /// </remarks>
         public override bool CanRead
         {
-            get { return _baseStream._stream.CanRead; }
+            get
+            {
+                if (_disposed) throw new ObjectDisposedException("DeflateStream");
+                return _baseStream._stream.CanRead;
+            }
         }
 
         /// <summary>
@@ -382,7 +408,11 @@ namespace Ionic.Zlib
         /// </remarks>
         public override bool CanWrite
         {
-            get { return _baseStream._stream.CanWrite; }
+            get
+            {
+                if (_disposed) throw new ObjectDisposedException("DeflateStream");
+                return _baseStream._stream.CanWrite;
+            }
         }
 
         /// <summary>
@@ -390,6 +420,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override void Flush()
         {
+            if (_disposed) throw new ObjectDisposedException("DeflateStream");
             _baseStream.Flush();
         }
 
@@ -446,6 +477,7 @@ namespace Ionic.Zlib
         /// <returns>the number of bytes actually read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (_disposed) throw new ObjectDisposedException("DeflateStream");
             return _baseStream.Read(buffer, offset, count);
         }
 
@@ -491,6 +523,7 @@ namespace Ionic.Zlib
         /// <param name="count">the number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (_disposed) throw new ObjectDisposedException("DeflateStream");
             _baseStream.Write(buffer, offset, count);
         }
         #endregion

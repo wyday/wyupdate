@@ -1,6 +1,25 @@
 // ZipFile.Events.cs
+// ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:35:04>
+//
+// ------------------------------------------------------------------
+//
+// This module defines the methods for issuing events from the ZipFile class.
 //
 // ------------------------------------------------------------------
 //
@@ -137,16 +156,16 @@ namespace Ionic.Zip
         ///         if (justHadByteUpdate) 
         ///             Console.WriteLine();
         ///         Console.WriteLine("  Writing: {0} ({1}/{2})",  
-        ///                           e.NameOfLatestEntry, e.EntriesSaved, e.EntriesTotal);
+        ///                           e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal);
         ///         justHadByteUpdate= false;
         ///     }
         /// 
-        ///     else if (e.EventType == ZipProgressEventType.Saving_EntryBytesWritten)
+        ///     else if (e.EventType == ZipProgressEventType.Saving_EntryBytesRead)
         ///     {
         ///         if (justHadByteUpdate)
         ///             Console.SetCursorPosition(0, Console.CursorTop);
-        ///          Console.Write("     {0}/{1} ({2:N0}%)", e.BytesWritten, e.TotalBytesToWrite,
-        ///                       e.BytesWritten / (0.01 * e.TotalBytesToWrite ));
+        ///          Console.Write("     {0}/{1} ({2:N0}%)", e.BytesTransferred, e.TotalBytesToTransfer,
+        ///                       e.BytesTransferred / (0.01 * e.TotalBytesToTransfer ));
         ///         justHadByteUpdate= true;
         ///     }
         /// }
@@ -161,6 +180,37 @@ namespace Ionic.Zip
         /// }
         ///
         /// </code>
+        ///
+        /// <code lang="VB">
+        /// Public Sub SaveProgress(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
+        /// 
+        ///     If (e.EventType = ZipProgressEventType.Saving_Started) Then
+        ///         Console.WriteLine("Saving: {0}", e.ArchiveName)
+        /// 
+        ///     Elseif (e.EventType = ZipProgressEventType.Saving_Completed) Then
+        ///     
+        ///         justHadByteUpdate= False
+        ///         Console.WriteLine()
+        ///         Console.WriteLine("Done: {0}", e.ArchiveName)
+        /// 
+        ///     ElseIf (e.EventType = ZipProgressEventType.Saving_BeforeWriteEntry) Then
+        ///         If (justHadByteUpdate) Then Console.WriteLine()
+        ///         Console.WriteLine("  Writing: {0} ({1}/{2})", _
+        ///                           e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal)
+        ///         justHadByteUpdate= False
+        ///     
+        /// 
+        ///     ElseIf (e.EventType = ZipProgressEventType.Saving_EntryBytesRead) Then
+        ///         If (justHadByteUpdate) Then
+        ///             Console.SetCursorPosition(0, Console.CursorTop)
+        ///         End If
+        ///         Console.Write("     {0}/{1} ({2:N0}%)", e.BytesTransferred, e.TotalBytesToTransfer, _
+        ///                       (CDbl(e.BytesTransferred) / (0.01 * e.TotalBytesToTransfer )))
+        ///         justHadByteUpdate= True
+        ///     End If
+        /// End Sub
+        /// </code>
+        ///
         /// <para>
         /// This is an example of using the SaveProgress events in a WinForms app.
         /// </para>
@@ -417,15 +467,15 @@ namespace Ionic.Zip
         ///
         /// <code lang="VB">
         /// Public Sub ZipUp(ByVal targetZip As String, ByVal directory As String)
-        /// 	Try 
-        /// 	    Using zip As ZipFile = New ZipFile
-        /// 		AddHandler zip.SaveProgress, AddressOf MySaveProgress
-        /// 		zip.AddDirectory(directory)
-        /// 		zip.Save(targetZip)
-        /// 	    End Using
-        /// 	Catch ex1 As Exception
-        /// 	    Console.Error.WriteLine(("exception: " &amp; ex1.ToString))
-        /// 	End Try
+        ///     Try 
+        ///         Using zip As ZipFile = New ZipFile
+        ///             AddHandler zip.SaveProgress, AddressOf MySaveProgress
+        ///             zip.AddDirectory(directory)
+        ///             zip.Save(targetZip)
+        ///         End Using
+        ///     Catch ex1 As Exception
+        ///         Console.Error.WriteLine(("exception: " &amp; ex1.ToString))
+        ///     End Try
         /// End Sub
         /// 
         /// Private Shared justHadByteUpdate As Boolean = False
@@ -443,16 +493,16 @@ namespace Ionic.Zip
         ///         If CreateLargeZip.justHadByteUpdate Then
         ///             Console.WriteLine
         ///         End If
-        ///         Console.WriteLine("  Writing: {0} ({1}/{2})", e.NameOfLatestEntry, e.EntriesSaved, e.EntriesTotal)
+        ///         Console.WriteLine("  Writing: {0} ({1}/{2})", e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal)
         ///         CreateLargeZip.justHadByteUpdate = False
         /// 
-        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_EntryBytesWritten) Then
+        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_EntryBytesRead) Then
         ///         If CreateLargeZip.justHadByteUpdate Then
         ///             Console.SetCursorPosition(0, Console.CursorTop)
         ///         End If
-        ///         Console.Write("     {0}/{1} ({2:N0}%)", e.BytesWritten, _
-        ///                       e.TotalBytesToWrite, _
-        ///                       (CDbl(e.BytesWritten) / (0.01 * e.TotalBytesToWrite)))
+        ///         Console.Write("     {0}/{1} ({2:N0}%)", e.BytesTransferred, _
+        ///                       e.TotalBytesToTransfer, _
+        ///                       (CDbl(e.BytesTransferred) / (0.01 * e.TotalBytesToTransfer)))
         ///         CreateLargeZip.justHadByteUpdate = True
         ///     End If
         /// End Sub
@@ -564,7 +614,7 @@ namespace Ionic.Zip
         /// <item>
         /// <term>ZipProgressEventType.Reading_ArchiveBytesRead</term>
         /// <description>Fired while reading, updates the number of bytes read for the entire archive. 
-        /// Meaningful properties: ArchiveName, NameOfLatestEntry, BytesTransferred, TotalBytesToTransfer.
+        /// Meaningful properties: ArchiveName, CurrentEntry, BytesTransferred, TotalBytesToTransfer.
         /// </description>
         /// </item>
         /// 
@@ -578,7 +628,7 @@ namespace Ionic.Zip
         /// <item>
         /// <term>ZipProgressEventType.Reading_AfterReadEntry</term>
         /// <description>Indicates an entry has just been read from the archive.
-        /// Meaningful properties: ArchiveName, EntriesTotal, NameOfLatestEntry.
+        /// Meaningful properties: ArchiveName, EntriesTotal, CurrentEntry.
         /// </description>
         /// </item>
         ///
@@ -693,7 +743,7 @@ namespace Ionic.Zip
         /// <item>
         /// <term>ZipProgressEventType.Extracting_BeforeExtractEntry</term>
         /// <description>Set when an Extract() on an entry in the ZipFile has begun.  
-        /// Properties that are meaningful:  ArchiveName, EntriesTotal, NameOfLatestEntry, Overwrite, 
+        /// Properties that are meaningful:  ArchiveName, EntriesTotal, CurrentEntry, Overwrite, 
         /// ExtractLocation, EntriesExtracted.
         /// </description>
         /// </item>
@@ -701,7 +751,7 @@ namespace Ionic.Zip
         /// <item>
         /// <term>ZipProgressEventType.Extracting_AfterExtractEntry</term>
         /// <description>Set when an Extract() on an entry in the ZipFile has completed.  
-        /// Properties that are meaningful:  ArchiveName, EntriesTotal, NameOfLatestEntry, Overwrite, 
+        /// Properties that are meaningful:  ArchiveName, EntriesTotal, CurrentEntry, Overwrite, 
         /// ExtractLocation, EntriesExtracted.
         /// </description>
         /// </item>
@@ -710,7 +760,7 @@ namespace Ionic.Zip
         /// <term>ZipProgressEventType.Extracting_EntryBytesWritten</term>
         /// <description>Set within a call to Extract() on an entry in the ZipFile, as
         /// data is extracted for the entry.  Properties that are meaningful:  ArchiveName, 
-        /// NameOfLatestEntry, BytesWritten, TotalBytesToWrite. 
+        /// CurrentEntry, BytesTransferred, TotalBytesToTransfer. 
         /// </description>
         /// </item>
         /// 
@@ -728,15 +778,15 @@ namespace Ionic.Zip
         ///     if (justHadByteUpdate)
         ///       Console.SetCursorPosition(0, Console.CursorTop);
         ///
-        ///     Console.Write("   {0}/{1} ({2:N0}%)", e.BytesWritten, e.TotalBytesToWrite,
-        ///                   e.BytesWritten / (0.01 * e.TotalBytesToWrite ));
+        ///     Console.Write("   {0}/{1} ({2:N0}%)", e.BytesTransferred, e.TotalBytesToTransfer,
+        ///                   e.BytesTransferred / (0.01 * e.TotalBytesToTransfer ));
         ///     justHadByteUpdate = true;
         ///   }
         ///   else if(e.EventType == ZipProgressEventType.Extracting_BeforeExtractEntry)
         ///   {
         ///     if (justHadByteUpdate) 
         ///       Console.WriteLine();
-        ///     Console.WriteLine("Extracting: {0}", e.NameOfLatestEntry);
+        ///     Console.WriteLine("Extracting: {0}", e.CurrentEntry.FileName);
         ///     justHadByteUpdate= false;
         ///   }
         /// }
@@ -775,13 +825,13 @@ namespace Ionic.Zip
         ///         If ExtractTest.justHadByteUpdate Then
         ///             Console.SetCursorPosition(0, Console.CursorTop)
         ///         End If
-        ///         Console.Write("   {0}/{1} ({2:N0}%)", e.BytesWritten, e.TotalBytesToWrite, (CDbl(e.BytesWritten) / (0.01 * e.TotalBytesToWrite)))
+        ///         Console.Write("   {0}/{1} ({2:N0}%)", e.BytesTransferred, e.TotalBytesToTransfer, (CDbl(e.BytesTransferred) / (0.01 * e.TotalBytesToTransfer)))
         ///         ExtractTest.justHadByteUpdate = True
         ///     ElseIf (e.EventType Is ZipProgressEventType.Extracting_BeforeExtractEntry) Then
         ///         If ExtractTest.justHadByteUpdate Then
         ///             Console.WriteLine
         ///         End If
-        ///         Console.WriteLine("Extracting: {0}", e.NameOfLatestEntry)
+        ///         Console.WriteLine("Extracting: {0}", e.CurrentEntry.FileName)
         ///         ExtractTest.justHadByteUpdate = False
         ///     End If
         /// End Sub

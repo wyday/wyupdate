@@ -122,44 +122,55 @@ namespace Ionic.Zlib
         /// The Comment on the GZIP stream.
         /// </summary>
         /// <remarks>
-	/// <para>
+        /// <para>
         /// The GZIP format allows for each file to optionally have an associated comment stored with the
         /// file.  The comment is encoded with the ISO-8859-1 code page.  To include a comment in
         /// a GZIP stream you create, set this property before calling Write() for the first time
         /// on the GZipStream.  
-	/// </para>
-	///
-	/// <para>
-	/// When using GZipStream to decompress, you can retrieve this property after the first
+        /// </para>
+        ///
+        /// <para>
+        /// When using GZipStream to decompress, you can retrieve this property after the first
         /// call to Read().  If no comment has been set in the GZIP bytestream, the Comment
         /// property will return null (Nothing in VB).
-	/// </para>
+        /// </para>
         /// </remarks>
-        public String Comment;
-
+        public String Comment
+        {
+            get
+            {
+                return _Comment;
+            }
+            set
+            {
+                if (_disposed) throw new ObjectDisposedException("GZipStream");
+                _Comment = value;                
+            }
+        }
 
         /// <summary>
         /// The FileName for the GZIP stream.
         /// </summary>
         /// <remarks>
-	/// <para>
+        /// <para>
         /// The GZIP format optionally allows each file to have an associated filename.  When
-	/// compressing data (through Write()), set this FileName before calling Write() the first
-	/// time on the GZipStream.  The actual filename is encoded into the GZIP bytestream with
-	/// the ISO-8859-1 code page, according to RFC 1952. It is the application's responsibility to 
-	/// insure that the FileName can be encoded correctly with this code page. 
-	/// </para>
-	/// <para>
-	/// When decompressing (through Read()), you can retrieve this value any time after the
+        /// compressing data (through Write()), set this FileName before calling Write() the first
+        /// time on the GZipStream.  The actual filename is encoded into the GZIP bytestream with
+        /// the ISO-8859-1 code page, according to RFC 1952. It is the application's responsibility to 
+        /// insure that the FileName can be encoded correctly with this code page. 
+        /// </para>
+        /// <para>
+        /// When decompressing (through Read()), you can retrieve this value any time after the
         /// first Read().  In the case where there was no filename encoded into the GZIP
         /// bytestream, the property will return null (Nothing in VB).
-	/// </para>
+        /// </para>
         /// </remarks>
         public String FileName
         {
             get { return _FileName; }
             set
             {
+                if (_disposed) throw new ObjectDisposedException("GZipStream");
                 _FileName = value;
                 if (_FileName == null) return;
                 if (_FileName.IndexOf("/") != -1)
@@ -196,8 +207,10 @@ namespace Ionic.Zlib
 
         private int _headerByteCount;
         internal ZlibBaseStream _baseStream;
+        bool _disposed;
         bool _firstReadDone;
         string _FileName;
+        string _Comment;
         int _Crc32;
 
 
@@ -240,16 +253,16 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        /// 	Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress)
-        /// 	    Dim buffer As Byte() = New Byte(4096) {}
-        /// 	    Dim n As Integer = -1
-        /// 	    Do While (n &lt;&gt; 0)
-        /// 		If (n &gt; 0) Then
-        /// 		    compressor.Write(buffer, 0, n)
-        /// 		End If
-        /// 		n = input.Read(buffer, 0, buffer.Length)
-        /// 	    Loop
-        /// 	End Using
+        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress)
+        ///         Dim buffer As Byte() = New Byte(4096) {}
+        ///         Dim n As Integer = -1
+        ///         Do While (n &lt;&gt; 0)
+        ///             If (n &gt; 0) Then
+        ///                 compressor.Write(buffer, 0, n)
+        ///             End If
+        ///             n = input.Read(buffer, 0, buffer.Length)
+        ///         Loop
+        ///     End Using
         ///     End Using
         /// End Using
         /// </code>
@@ -257,7 +270,7 @@ namespace Ionic.Zlib
         /// <param name="stream">The stream which will be read or written.</param>
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
         public GZipStream(System.IO.Stream stream, CompressionMode mode)
-            : this(stream, mode, CompressionLevel.LEVEL6_DEFAULT, false)
+            : this(stream, mode, CompressionLevel.Default, false)
         {
         }
 
@@ -298,16 +311,16 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        /// 	Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION)
-        /// 	    Dim buffer As Byte() = New Byte(4096) {}
-        /// 	    Dim n As Integer = -1
-        /// 	    Do While (n &lt;&gt; 0)
-        /// 		If (n &gt; 0) Then
-        /// 		    compressor.Write(buffer, 0, n)
-        /// 		End If
-        /// 		n = input.Read(buffer, 0, buffer.Length)
-        /// 	    Loop
-        /// 	End Using
+        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION)
+        ///         Dim buffer As Byte() = New Byte(4096) {}
+        ///         Dim n As Integer = -1
+        ///         Do While (n &lt;&gt; 0)
+        ///             If (n &gt; 0) Then
+        ///                 compressor.Write(buffer, 0, n)
+        ///             End If
+        ///             n = input.Read(buffer, 0, buffer.Length)
+        ///         Loop
+        ///     End Using
         ///     End Using
         /// End Using
         /// </code>
@@ -350,7 +363,7 @@ namespace Ionic.Zlib
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
         /// <param name="leaveOpen">true if the application would like the base stream to remain open after inflation/deflation.</param>
         public GZipStream(System.IO.Stream stream, CompressionMode mode, bool leaveOpen)
-            : this(stream, mode, CompressionLevel.LEVEL6_DEFAULT, leaveOpen)
+            : this(stream, mode, CompressionLevel.Default, leaveOpen)
         {
         }
 
@@ -398,16 +411,16 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        /// 	Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION, True)
-        /// 	    Dim buffer As Byte() = New Byte(4096) {}
-        /// 	    Dim n As Integer = -1
-        /// 	    Do While (n &lt;&gt; 0)
-        /// 		If (n &gt; 0) Then
-        /// 		    compressor.Write(buffer, 0, n)
-        /// 		End If
-        /// 		n = input.Read(buffer, 0, buffer.Length)
-        /// 	    Loop
-        /// 	End Using
+        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION, True)
+        ///         Dim buffer As Byte() = New Byte(4096) {}
+        ///         Dim n As Integer = -1
+        ///         Do While (n &lt;&gt; 0)
+        ///             If (n &gt; 0) Then
+        ///                 compressor.Write(buffer, 0, n)
+        ///             End If
+        ///             n = input.Read(buffer, 0, buffer.Length)
+        ///         Loop
+        ///     End Using
         ///     End Using
         /// End Using
         /// </code>
@@ -429,7 +442,10 @@ namespace Ionic.Zlib
         virtual public FlushType FlushMode
         {
             get { return (this._baseStream._flushMode); }
-            set { this._baseStream._flushMode = value; }
+            set {
+                if (_disposed) throw new ObjectDisposedException("GZipStream");
+                this._baseStream._flushMode = value;
+            }
         }
 
         /// <summary>
@@ -456,9 +472,10 @@ namespace Ionic.Zlib
             }
             set
             {
+                if (_disposed) throw new ObjectDisposedException("GZipStream");
                 if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
-                if (value < ZlibConstants.WORKING_BUFFER_SIZE_MIN)
+                if (value < ZlibConstants.WorkingBufferSizeMin)
                     throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
                 this._baseStream._bufferSize = value;
             }
@@ -486,18 +503,34 @@ namespace Ionic.Zlib
         #endregion
 
         #region System.IO.Stream methods
+        
         /// <summary>
-        /// Close the stream.  
+        /// Dispose the stream.  
         /// </summary>
         /// <remarks>
-        /// This may or may not close the captive stream. 
+        /// This may or may not result in a Close() call on the captive stream. 
         /// See the ctor's with leaveOpen parameters for more information.
         /// </remarks>
-        public override void Close()
+        protected override void Dispose(bool disposing)
         {
-            _baseStream.Close();
-            this._Crc32 = _baseStream.Crc32;
+            try
+            {
+                if (!_disposed)
+                {
+                    if (disposing && (this._baseStream != null))
+                    {
+                        this._baseStream.Close();
+                        this._Crc32 = _baseStream.Crc32;
+                    }
+                    _disposed = true;
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
+            }
         }
+        
 
         /// <summary>
         /// Indicates whether the stream can be read.
@@ -507,7 +540,11 @@ namespace Ionic.Zlib
         /// </remarks>
         public override bool CanRead
         {
-            get { return _baseStream._stream.CanRead; }
+            get
+            {
+                if (_disposed) throw new ObjectDisposedException("GZipStream");
+                return _baseStream._stream.CanRead;
+            }
         }
 
         /// <summary>
@@ -530,7 +567,11 @@ namespace Ionic.Zlib
         /// </remarks>
         public override bool CanWrite
         {
-            get { return _baseStream._stream.CanWrite; }
+            get
+            {
+                if (_disposed) throw new ObjectDisposedException("GZipStream");
+                return _baseStream._stream.CanWrite;
+            }
         }
 
         /// <summary>
@@ -538,6 +579,7 @@ namespace Ionic.Zlib
         /// </summary>
         public override void Flush()
         {
+            if (_disposed) throw new ObjectDisposedException("GZipStream");
             _baseStream.Flush();
         }
 
@@ -607,6 +649,7 @@ namespace Ionic.Zlib
         /// <returns>the number of bytes actually read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (_disposed) throw new ObjectDisposedException("GZipStream");
             int n = _baseStream.Read(buffer, offset, count);
 
             // Console.WriteLine("GZipStream::Read(buffer, off({0}), c({1}) = {2}", offset, count, n);
@@ -663,6 +706,7 @@ namespace Ionic.Zlib
         /// <param name="count">the number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (_disposed) throw new ObjectDisposedException("GZipStream");
             if (_baseStream._streamMode == Ionic.Zlib.ZlibBaseStream.StreamMode.Undefined)
             {
                 //Console.WriteLine("GZipStream: First write");
@@ -684,81 +728,6 @@ namespace Ionic.Zlib
 
         internal static System.DateTime _unixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         internal static System.Text.Encoding iso8859dash1 = System.Text.Encoding.GetEncoding("iso-8859-1");
-
-
-#if NOTUSED
-        private int SlurpHeader(byte[] buffer, int offset)
-        {
-            int totalSlurped = 0;
-
-            byte[] header = new byte[10];
-            Array.Copy(buffer, offset, header, 0, header.Length);
-            totalSlurped += header.Length;
-            offset += header.Length;
-
-            if (header[0] != 0x1F || header[1] != 0x8B || header[2] != 8)
-                throw new ZlibException("Bad GZIP header.");
-
-            if ((header[3] & 0x04) == 0x04)  // There is an extra field
-            {
-                // slurp and discard extra field
-                Int16 extraLength = (Int16)(buffer[10] + buffer[11] * 256);
-
-                offset += 2;
-                byte[] extra = new byte[extraLength];
-
-                Array.Copy(buffer, offset, extra, 0, extra.Length);
-                totalSlurped += extra.Length;
-                offset += extra.Length;
-            }
-
-            int count = 0;
-            if ((header[3] & 0x08) == 0x08)
-            {
-                FileName = SlurpZeroTerminatedString(buffer, offset, out count);
-                totalSlurped += count;
-                offset += count;
-            }
-
-            if ((header[3] & 0x10) == 0x010)
-            {
-                Comment = SlurpZeroTerminatedString(buffer, offset, out count);
-                totalSlurped += count;
-                offset += count;
-            }
-
-            if ((header[3] & 0x02) == 0x02)
-            {
-                // CRC16, ignore the data
-                totalSlurped += 1;
-                offset += 1;
-            }
-
-            return totalSlurped;
-        }
-
-
-
-
-        private string SlurpZeroTerminatedString(byte[] buffer, int offset, out int count)
-        {
-            var list = new System.Collections.Generic.List<byte>();
-            bool done = false;
-            count = 0;
-            do
-            {
-                int ix = offset + count;
-                if (buffer[ix] == 0)
-                    done = true;
-                else
-                    list.Add(buffer[ix]);
-                count++;
-            } while (!done);
-            byte[] a = list.ToArray();
-            return GZipStream.iso8859dash1.GetString(a, 0, a.Length);
-        }
-
-#endif
 
 
         private int EmitHeader()

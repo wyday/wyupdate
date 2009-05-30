@@ -1,20 +1,29 @@
 // ZipCrypto.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
 //
-// Part of an implementation of a zipfile class library. 
-// See the file ZipFile.cs for the license and for further information.
+// This code module is part of DotNetZip, a zipfile class library.
 //
-// This module provides the implementation for "traditional" Zip encryption
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:35:37>
+//
+// ------------------------------------------------------------------
+//
+// This module provides the implementation for "traditional" Zip encryption.
 //
 // Created Tue Apr 15 17:39:56 2008
 //
-// last saved: 
-// Time-stamp: <2009-January-25 08:50:18>
-//
 // ------------------------------------------------------------------
-
 
 using System;
 
@@ -118,7 +127,7 @@ namespace Ionic.Zip
         ///     temp :=- Key(2) | 2
         ///     decrypt_byte := (temp * (temp ^ 1)) bitshift-right 8
         /// end decrypt_byte
-        /// </summary>		
+        /// </summary>          
         private byte MagicByte
         {
             get
@@ -140,7 +149,7 @@ namespace Ionic.Zip
         /// <summary> 
         /// Call this method on a cipher text to render the plaintext. You must
         /// first initialize the cipher with a call to InitCipher.
-        /// </summary>		
+        /// </summary>          
         /// <example>
         /// <code>
         /// var cipher = new ZipCrypto();

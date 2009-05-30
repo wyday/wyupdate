@@ -584,7 +584,7 @@ namespace wyUpdate.Common
                     zip.UseUnicodeAsNecessary = true;
 
                     // 0 (store only) to 9 (best compression)
-                    zip.CompressionLevel = Ionic.Zlib.CompressionLevel.LEVEL7;
+                    zip.CompressionLevel = Ionic.Zlib.CompressionLevel.Level7;
 
                     for (int i = 0; i < files.Count; i++)
                     {

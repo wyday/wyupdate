@@ -1,10 +1,21 @@
 // FileSelector.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
 //
-// This code is released under the Microsoft Public License . 
-// See the License.txt for details.  
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-29 17:31:02>
 //
 // ------------------------------------------------------------------
 //
@@ -353,7 +364,7 @@ namespace Ionic
         internal override bool Evaluate(string filename)
         {
 #if NETCF
-		FileAttributes fileAttrs = NetCfFile.GetAttributes(filename);
+                FileAttributes fileAttrs = NetCfFile.GetAttributes(filename);
 #else
             FileAttributes fileAttrs = System.IO.File.GetAttributes(filename);
 #endif
@@ -1026,101 +1037,101 @@ namespace Ionic
 #if DEMO
     public class DemonstrateFileSelector
     {
-	// Fields
-	private string _directory;
-	private bool _recurse;
-	private string _selectionCriteria;
-	private FileSelector f;
+        // Fields
+        private string _directory;
+        private bool _recurse;
+        private string _selectionCriteria;
+        private FileSelector f;
 
-	// Methods
-	public DemonstrateFileSelector()
-	{
-	    this._directory = ".";
-	    this._recurse = true;
-	}
+        // Methods
+        public DemonstrateFileSelector()
+        {
+            this._directory = ".";
+            this._recurse = true;
+        }
 
-	public DemonstrateFileSelector(string[] args)
-	{
-	    this._directory = ".";
-	    this._recurse = true;
-	    for (int i = 0; i < args.Length; i++)
-	    {
-		switch(args[i])
-		{
-		case"-?":
-		    Usage();
-		    Environment.Exit(0);
-		    break;
-		case "-directory":
-		    i++;
-		    if (args.Length <= i)
-		    {
-			throw new ArgumentException("-directory");
-		    }
-		    this._directory = args[i];
-		    break;
-		case "-norecurse":
-		    this._recurse = false;
-		    break;
+        public DemonstrateFileSelector(string[] args)
+        {
+            this._directory = ".";
+            this._recurse = true;
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch(args[i])
+                {
+                case"-?":
+                    Usage();
+                    Environment.Exit(0);
+                    break;
+                case "-directory":
+                    i++;
+                    if (args.Length <= i)
+                    {
+                        throw new ArgumentException("-directory");
+                    }
+                    this._directory = args[i];
+                    break;
+                case "-norecurse":
+                    this._recurse = false;
+                    break;
 
-		default:
-		    if (this._selectionCriteria != null)
-		    {
-			throw new ArgumentException(args[i]);
-		    }
-		    this._selectionCriteria = args[i];
-		    break;
-		}
-
-
-		if (this._selectionCriteria != null)
-		{
-		    this.f = new FileSelector(this._selectionCriteria);
-		}
-	    }
-	}
-
-	public static void Main(string[] args)
-	{
-	    try
-	    {
-		new DemonstrateFileSelector(args).Run();
-	    }
-	    catch (Exception exc1)
-	    {
-		Console.WriteLine("Exception: {0}", exc1.ToString());
-		Usage();
-	    }
-	}
+                default:
+                    if (this._selectionCriteria != null)
+                    {
+                        throw new ArgumentException(args[i]);
+                    }
+                    this._selectionCriteria = args[i];
+                    break;
+                }
 
 
-	public void Run()
-	{
-	    if (this.f == null)
-	    {
-		this.f = new FileSelector("name = *.jpg AND (size > 1000 OR atime < 2009-02-14-00:00:00)");
-	    }
-	    Console.WriteLine("\nSelecting files:\n" + this.f.ToString());
-	    var files = this.f.SelectFiles(this._directory, this._recurse);
-	    if (files.Count == 0)
-	    {
-		Console.WriteLine("no files.");
-	    }
-	    else
-	    {
-		Console.WriteLine("files: {0}", files.Count);
-		foreach (string file in files)
-		{
-		    Console.WriteLine("  " + file);
-		}
-	    }
-	}
+                if (this._selectionCriteria != null)
+                {
+                    this.f = new FileSelector(this._selectionCriteria);
+                }
+            }
+        }
 
-	public static void Usage()
-	{
-	    Console.WriteLine("FileSelector: select files based on selection criteria.\n");
-	    Console.WriteLine("Usage:\n  FileSelector <selectionCriteria>  [-directory <dir>] [-norecurse]");
-	}
+        public static void Main(string[] args)
+        {
+            try
+            {
+                new DemonstrateFileSelector(args).Run();
+            }
+            catch (Exception exc1)
+            {
+                Console.WriteLine("Exception: {0}", exc1.ToString());
+                Usage();
+            }
+        }
+
+
+        public void Run()
+        {
+            if (this.f == null)
+            {
+                this.f = new FileSelector("name = *.jpg AND (size > 1000 OR atime < 2009-02-14-00:00:00)");
+            }
+            Console.WriteLine("\nSelecting files:\n" + this.f.ToString());
+            var files = this.f.SelectFiles(this._directory, this._recurse);
+            if (files.Count == 0)
+            {
+                Console.WriteLine("no files.");
+            }
+            else
+            {
+                Console.WriteLine("files: {0}", files.Count);
+                foreach (string file in files)
+                {
+                    Console.WriteLine("  " + file);
+                }
+            }
+        }
+
+        public static void Usage()
+        {
+            Console.WriteLine("FileSelector: select files based on selection criteria.\n");
+            Console.WriteLine("Usage:\n  FileSelector <selectionCriteria>  [-directory <dir>] [-norecurse]");
+        }
     }
 
 #endif
