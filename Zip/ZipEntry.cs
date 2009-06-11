@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:34:03>
+// Time-stamp: <2009-June-05 13:48:31>
 //
 // ------------------------------------------------------------------
 //
@@ -592,56 +592,63 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// <para>
-        /// The application can use this property to set the input stream for an entry on a
-        /// just-in-time basis. Imagine a scenario where the application creates a zipfile 
-        /// comprised of content obtained from hundreds of files. The DotNetZip library opens
-        /// streams on these files on a just-in-time basis, only when writing the entry out to an
-        /// external store within the scope of a ZipFile.Save() call.  Only one input stream is
-        /// opened at a time, as each entry is being written out. 
-        /// </para>
         ///
-        /// <para>
-        /// Now imagine a different application that creates a zipfile with content obtained from
-        /// hundreds of streams, added through <see cref="ZipFile.AddFileFromStream(string,
-        /// string, System.IO.Stream)"/>.  At the time of calling <see
-        /// cref="ZipFile.AddFileFromStream(string, string, System.IO.Stream)"/>, the application
-        /// can supply null as the value of the stream parameter.
-        /// </para>
+        /// <para> The application can use this property to set the input stream for an
+        /// entry on a just-in-time basis. Imagine a scenario where the application
+        /// creates a <c>ZipFile</c> comprised of content obtained from hundreds of
+        /// files, via calls to <c>AddFile()</c>. The DotNetZip library opens streams on
+        /// these files on a just-in-time basis, only when writing the entry out to an
+        /// external store within the scope of a <c>ZipFile.Save()</c> call.  Only one
+        /// input stream is opened at a time, as each entry is being written
+        /// out. </para>
         ///
-        /// <para>
-        /// The application can then open the stream on a just-in-time basis, setting this property,
-        /// and thus insuring, as with the file example, that only one stream need be opened at a
-        /// time while constructing and saving the ZipFile. 
-        /// </para>
+        /// <para> Now imagine a different application that creates a zipfile with
+        /// content obtained from hundreds of streams, added through <see
+        /// cref="ZipFile.AddFileFromStream(string, string, System.IO.Stream)"/>.
+        /// Normally the application would supply an open stream to that call.  But when
+        /// large numbers of streams are being added, this can mean many open streams at
+        /// one time, unnecessarily.  </para>
         ///
-        /// <para>
-        /// To do this, the application should set the InputStream property within the context of
-        /// the SaveProgress event, when the event type is <see
-        /// cref="ZipProgressEventType.Saving_BeforeWriteEntry"/>. The application should only set
-        /// <see cref="InputStream" /> for a ZipEntry which has the Source equal to <See
-        /// cref="ZipEntrySource.Stream" />.  When the input stream is provided by the application
-        /// in this way, the application is also responsible for closing and disposing the stream.
-        /// This would normally be done in the <see cref="ZipFile.SaveProgress"/> event, when the
-        /// event type is <see cref="ZipProgressEventType.Saving_AfterWriteEntry"/>. See the
-        /// example for how this can be done.
-        /// </para>
+        /// <para> To avoid this, at the time of calling
+        /// <c>ZipFile.AddFileFromStream</c> for each entry, the application can supply
+        /// null (Nothing in VB) as the value of the stream parameter. The application
+        /// can then open the stream on a just-in-time basis, setting this property, and
+        /// thus insuring, as with the latter example, that only one stream need be
+        /// opened at a time while constructing and saving the ZipFile.  </para>
         ///
-        /// <para>
-        /// Setting the value of this property when the entry was added from a filesystem file
-        /// (for example, with <see cref="ZipFile.AddFile(String)"/> or <see
-        /// cref="ZipFile.AddDirectory(String)"/>) will throw an exception.
-        /// </para>
+        /// <para> To do this, the application should set the <c>InputStream</c>
+        /// property within the context of the <see cref="ZipFile.SaveProgress"/> event,
+        /// when the event type is <see
+        /// cref="ZipProgressEventType.Saving_BeforeWriteEntry"/>. The application
+        /// should only set <see cref="InputStream" /> for a ZipEntry which has the <see
+        /// cref="ZipEntry.Source"/> equal to <see cref="ZipEntrySource.Stream"/>.  When
+        /// the input stream is provided by the application in this way, the application
+        /// is also responsible for closing or disposing the stream.  This would
+        /// normally be done in the <see cref="ZipFile.SaveProgress"/> event, when the
+        /// event type is <see cref="ZipProgressEventType.Saving_AfterWriteEntry"/>. See
+        /// the example code provided here for how this can be done. </para>
+        ///
+        /// <para> Setting the value of this property when the entry was not added from
+        /// a stream (for example, when the ZipEntry was added with <see
+        /// cref="ZipFile.AddFile(String)"/> or <see
+        /// cref="ZipFile.AddDirectory(String)"/>, or when the entry was added by
+        /// reading an existing zip archive) will throw an exception.  </para>
+        ///
         /// </remarks>
         ///
         /// <example>
-        /// <code>
-        /// public static void SaveProgress(object sender, SaveProgressEventArgs e)
+        ///
+        /// <para> This example adds a large number of entries to a ZipFile. The
+        /// application uses the just-in-time stream provisioning mechanism to avoid
+        /// keeping all the streams open simultaneiously. </para>
+        ///
+        /// <code lang="C#">
+        /// public static void ProvisionStreams(object sender, SaveProgressEventArgs e)
         /// {
         ///     if (e.EventType == ZipProgressEventType.Saving_BeforeWriteEntry)
         ///     {
         ///         if (e.CurrentEntry.Source == ZipEntrySource.Stream &amp;&amp;
-        ///             e.CurrentEntry.InputStream == null)
+        ///               e.CurrentEntry.InputStream == null)
         ///         {
         ///             System.IO.Stream s = MyStreamOpener(e.CurrentEntry.FileName);
         ///             e.CurrentEntry.InputStream = s;
@@ -652,26 +659,51 @@ namespace Ionic.Zip
         ///         if (e.CurrentEntry.InputStreamWasJitProvided)
         ///         {
         ///             e.CurrentEntry.InputStream.Close();
-        ///             e.CurrentEntry.InputStream.Dispose();
         ///         }
+        ///     }
+        /// }
+        ///
+        /// public void CreateZip()
+        /// {
+        ///     using (ZipFile zip = new ZipFile())
+        ///     {
+        ///         // add content into a "content" dir in the zip archive
+        ///         foreach (string s in namesOfStreamsToZip)
+        ///             zip.AddFileFromStream(s, "content", null);
+        ///         // set up the event handler to provision streams "just-in-time"
+        ///         zip.SaveProgress += ProvisionStreams;
+        ///         zip.AddFile("Readme.txt");
+        ///         zip.Save(ZipToCreate);
         ///     }
         /// }
         /// </code>
         /// <code lang="VB">
-        /// Public Shared Sub SaveProgress(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
+        /// Public Shared Sub ProvisionStreams(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
         ///     If (e.EventType = ZipProgressEventType.Saving_BeforeWriteEntry) Then
         ///         If (e.CurrentEntry.Source = ZipEntrySource.Stream) Then
         ///             If (e.CurrentEntry.InputStream Is Nothing) Then
-        ///                 Dim s As Stream = wi7192.MyStreamOpener(e.CurrentEntry.FileName)
+        ///                 Dim s As Stream = MyStreamOpener(e.CurrentEntry.FileName)
         ///                 e.CurrentEntry.InputStream = s
         ///             End If
         ///         End If
         ///     ElseIf (e.EventType = ZipProgressEventType.Saving_AfterWriteEntry) Then
         ///         If (e.CurrentEntry.InputStreamWasJitProvided) Then
         ///             e.CurrentEntry.InputStream.Close
-        ///             e.CurrentEntry.InputStream.Dispose
         ///         End If
         ///     End If
+        /// End Sub
+        ///
+        /// Public Sub CreateZip()
+        ///     Using zip As ZipFile = new ZipFile()
+        ///         ' add content into a "content" dir in the zip archive
+        ///         Dim s As String
+        ///         For Each s In namesOfStreamsToZip
+        ///             zip.AddFileFromStream(s, "content", Nothing)
+        ///         ' set up the event handler to provision streams "just-in-time"
+        ///         AddHandler zip.SaveProgress, AddressOf ProvisionStreams
+        ///         zip.AddFile("Readme.txt")
+        ///         zip.Save(ZipToCreate)
+        ///     End Using
         /// End Sub
         /// </code>
         /// </example>
@@ -685,14 +717,6 @@ namespace Ionic.Zip
             {
                 if (this._Source != ZipEntrySource.Stream)
                     throw new ZipException("You must not set the input stream for this ZipEntry.");
-
-                // I was going to disallow setting the stream after it has already been set. 
-                // but then I decided that should be ok to do.  
-                // if (_sourceStream != null)
-                // throw new ZipException("You have already set the input stream for this ZipEntry.");
-
-                // if (value == null)
-                // throw new ZipException("You must not set the input stream to null.");
 
                 _sourceWasJitProvided = true;
                 _sourceStream = value;
@@ -2329,8 +2353,8 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        /// If the entry is protected with a password, then you need to set the password on the
-        /// entry prior to calling <see cref="OpenReader()"/>.
+        /// If the entry is protected with a password, then you need to set the password either on the
+        /// entry, or on the ZipFile itself, prior to calling <see cref="OpenReader()"/>.
         /// </para>
         /// 
         /// </remarks>
@@ -2382,7 +2406,8 @@ namespace Ionic.Zip
         /// <returns>The Stream for reading.</returns>
         public Ionic.Zlib.CrcCalculatorStream OpenReader()
         {
-            return InternalOpenReader(this._Password);
+            // use the entry password if it is non-null, else use the zipfile password, which is possibly null
+            return InternalOpenReader(this._Password==null ? this._zipfile._Password : this._Password);
         }
 
         /// <summary>
@@ -2749,16 +2774,11 @@ namespace Ionic.Zip
 
         private void SetupCrypto(string password)
         {
-            //Console.Write("SetupCrypto:");
             if (password == null)
-            {
-                //Console.WriteLine(" -none-");
                 return;
-            }
 
             if (Encryption == EncryptionAlgorithm.PkzipWeak)
             {
-                //Console.WriteLine("Weak");
                 this.ArchiveStream.Seek(this.FileDataPosition - 12, System.IO.SeekOrigin.Begin);
                 _zipCrypto = ZipCrypto.ForRead(password, this);
             }
@@ -4893,7 +4913,7 @@ namespace Ionic.Zip
 
         /// <summary>
         /// The entry was instantiated via <see cref="ZipFile.AddFileFromStream"/> or 
-        /// <see cref="ZipFile.AddFileFromString"/>.
+        /// <see cref="ZipFile.AddFileFromString(String,String,String)"/>.
         /// </summary>
         Stream,
 

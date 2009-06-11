@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:35:04>
+// Time-stamp: <2009-June-05 08:48:14>
 //
 // ------------------------------------------------------------------
 //
@@ -182,31 +182,44 @@ namespace Ionic.Zip
         /// </code>
         ///
         /// <code lang="VB">
-        /// Public Sub SaveProgress(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
+        /// Public Sub ZipUp(ByVal targetZip As String, ByVal directory As String)
+        ///     Try 
+        ///         Using zip As ZipFile = New ZipFile
+        ///             AddHandler zip.SaveProgress, AddressOf MySaveProgress
+        ///             zip.AddDirectory(directory)
+        ///             zip.Save(targetZip)
+        ///         End Using
+        ///     Catch ex1 As Exception
+        ///         Console.Error.WriteLine(("exception: " &amp; ex1.ToString))
+        ///     End Try
+        /// End Sub
         /// 
-        ///     If (e.EventType = ZipProgressEventType.Saving_Started) Then
+        /// Private Shared justHadByteUpdate As Boolean = False
+        /// 
+        /// Public Shared Sub MySaveProgress(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
+        ///     If (e.EventType Is ZipProgressEventType.Saving_Started) Then
         ///         Console.WriteLine("Saving: {0}", e.ArchiveName)
         /// 
-        ///     Elseif (e.EventType = ZipProgressEventType.Saving_Completed) Then
-        ///     
-        ///         justHadByteUpdate= False
-        ///         Console.WriteLine()
+        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_Completed) Then
+        ///         justHadByteUpdate = False
+        ///         Console.WriteLine
         ///         Console.WriteLine("Done: {0}", e.ArchiveName)
         /// 
-        ///     ElseIf (e.EventType = ZipProgressEventType.Saving_BeforeWriteEntry) Then
-        ///         If (justHadByteUpdate) Then Console.WriteLine()
-        ///         Console.WriteLine("  Writing: {0} ({1}/{2})", _
-        ///                           e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal)
-        ///         justHadByteUpdate= False
-        ///     
+        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_BeforeWriteEntry) Then
+        ///         If justHadByteUpdate Then
+        ///             Console.WriteLine
+        ///         End If
+        ///         Console.WriteLine("  Writing: {0} ({1}/{2})", e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal)
+        ///         justHadByteUpdate = False
         /// 
-        ///     ElseIf (e.EventType = ZipProgressEventType.Saving_EntryBytesRead) Then
-        ///         If (justHadByteUpdate) Then
+        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_EntryBytesRead) Then
+        ///         If justHadByteUpdate Then
         ///             Console.SetCursorPosition(0, Console.CursorTop)
         ///         End If
-        ///         Console.Write("     {0}/{1} ({2:N0}%)", e.BytesTransferred, e.TotalBytesToTransfer, _
-        ///                       (CDbl(e.BytesTransferred) / (0.01 * e.TotalBytesToTransfer )))
-        ///         justHadByteUpdate= True
+        ///         Console.Write("     {0}/{1} ({2:N0}%)", e.BytesTransferred, _
+        ///                       e.TotalBytesToTransfer, _
+        ///                       (CDbl(e.BytesTransferred) / (0.01 * e.TotalBytesToTransfer)))
+        ///         justHadByteUpdate = True
         ///     End If
         /// End Sub
         /// </code>
@@ -465,48 +478,6 @@ namespace Ionic.Zip
         /// }
         /// </code>
         ///
-        /// <code lang="VB">
-        /// Public Sub ZipUp(ByVal targetZip As String, ByVal directory As String)
-        ///     Try 
-        ///         Using zip As ZipFile = New ZipFile
-        ///             AddHandler zip.SaveProgress, AddressOf MySaveProgress
-        ///             zip.AddDirectory(directory)
-        ///             zip.Save(targetZip)
-        ///         End Using
-        ///     Catch ex1 As Exception
-        ///         Console.Error.WriteLine(("exception: " &amp; ex1.ToString))
-        ///     End Try
-        /// End Sub
-        /// 
-        /// Private Shared justHadByteUpdate As Boolean = False
-        /// 
-        /// Public Shared Sub MySaveProgress(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
-        ///     If (e.EventType Is ZipProgressEventType.Saving_Started) Then
-        ///         Console.WriteLine("Saving: {0}", e.ArchiveName)
-        /// 
-        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_Completed) Then
-        ///         CreateLargeZip.justHadByteUpdate = False
-        ///         Console.WriteLine
-        ///         Console.WriteLine("Done: {0}", e.ArchiveName)
-        /// 
-        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_BeforeWriteEntry) Then
-        ///         If CreateLargeZip.justHadByteUpdate Then
-        ///             Console.WriteLine
-        ///         End If
-        ///         Console.WriteLine("  Writing: {0} ({1}/{2})", e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal)
-        ///         CreateLargeZip.justHadByteUpdate = False
-        /// 
-        ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_EntryBytesRead) Then
-        ///         If CreateLargeZip.justHadByteUpdate Then
-        ///             Console.SetCursorPosition(0, Console.CursorTop)
-        ///         End If
-        ///         Console.Write("     {0}/{1} ({2:N0}%)", e.BytesTransferred, _
-        ///                       e.TotalBytesToTransfer, _
-        ///                       (CDbl(e.BytesTransferred) / (0.01 * e.TotalBytesToTransfer)))
-        ///         CreateLargeZip.justHadByteUpdate = True
-        ///     End If
-        /// End Sub
-        /// </code>
         /// </example>
         public event EventHandler<SaveProgressEventArgs> SaveProgress;
 

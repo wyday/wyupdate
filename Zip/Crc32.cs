@@ -1,7 +1,23 @@
 // Crc32.cs
+// ------------------------------------------------------------------
 //
-// Copyright (c) 2006-2009 Microsoft Corporation.  All rights reserved.
+// Copyright (c) 2006-2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
 //
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-31 09:02:58>
+//
+// ------------------------------------------------------------------
 //
 // Implements the CRC algorithm, which is used in zip files.  The zip format calls for
 // the zipfile to contain a CRC for the unencrypted byte stream of each file.
@@ -14,8 +30,9 @@
 // avoids the need to read through the uncompressed stream twice - once to compute CRC
 // and another time to compress.
 //
-// Thu, 30 Mar 2006  13:58
-// 
+// ------------------------------------------------------------------
+
+
 
 using System;
 
@@ -404,10 +421,10 @@ namespace Ionic.Zlib
         }
 
 
-	void IDisposable.Dispose()
-	{
-	    Close();
-	}
+        void IDisposable.Dispose()
+        {
+            Close();
+        }
 
         /// <summary>
         /// Closes the stream.

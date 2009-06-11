@@ -1,12 +1,31 @@
-// Copyright (c) 2009, Dino Chiesa.  
-// This code is licensed under the Microsoft public license.  See the license.txt file in the source
-// distribution for details. 
+// ZlibConstants.cs
+// ------------------------------------------------------------------
 //
-// The zlib code is derived from the jzlib implementation, but significantly modified.
-// The object model is not the same, and many of the behaviors are different.
-// Nonetheless, in keeping with the license for jzlib, I am reproducing the copyright to that code here.
+// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-31 09:35:39>
+//
+// ------------------------------------------------------------------
+//
+// This module defines constants used by the zlib class library.  This
+// code is derived from the jzlib implementation of zlib, but
+// significantly modified.  In keeping with the license for jzlib, the
+// copyright to that code is included here.
+//
+// ------------------------------------------------------------------
 // 
-// -----------------------------------------------------------------------
 // Copyright (c) 2000,2001,2002,2003 ymnk, JCraft,Inc. All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -33,12 +52,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-
-/*
-* This program is based on zlib-1.1.3; credit to authors
-* Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
-* and contributors of zlib.
-*/
+// -----------------------------------------------------------------------
+//
+// This program is based on zlib-1.1.3; credit to authors
+// Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
+// and contributors of zlib.
+//
+// -----------------------------------------------------------------------
 
 
 using System;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -13,96 +14,33 @@ namespace wyUpdate.Common
 
     public class UpdateFile
     {
-        //full path of file for creating zip file
-        string m_Filename;
-        
-        //relative path
-        string m_RelativePath;
-        
-        //execute the file?
-        bool m_Execute;
-        
-        //if so, before or after update?
-        bool m_ExBeforeUpdate;
-
-        bool m_WaitForExecution;
-
-
-        //command line arguents
-        string m_CommandLineArgs;
-
-        //is it a .NET assembly?
-        bool m_IsNETAssembly;
-
-        //Delta Patching Particulars:
-
-        bool m_DeleteFile;
-        string m_DeltaPatchRelativePath;
-
-        long m_NewFileAdler32;
-
-
         #region Properties
 
-        public string Filename
-        {
-            get { return m_Filename; }
-            set { m_Filename = value; }
-        }
+        //full path of file for creating zip file
+        public string Filename { get; set; }
 
-        public string RelativePath
-        {
-            get { return m_RelativePath; }
-            set { m_RelativePath = value; }
-        }
+        public string RelativePath { get; set; }
 
-        public bool Execute
-        {
-            get { return m_Execute; }
-            set { m_Execute = value; }
-        }
+        //execute the file?
+        public bool Execute { get; set; }
 
-        public bool ExBeforeUpdate
-        {
-            get { return m_ExBeforeUpdate; }
-            set { m_ExBeforeUpdate = value; }
-        }
+        //if so, before or after update?
+        public bool ExBeforeUpdate { get; set; }
 
-        public string CommandLineArgs
-        {
-            get { return m_CommandLineArgs; }
-            set { m_CommandLineArgs = value; }
-        }
+        //command line arguents
+        public string CommandLineArgs { get; set; }
 
-        public bool IsNETAssembly
-        {
-            get { return m_IsNETAssembly; }
-            set { m_IsNETAssembly = value; }
-        }
+        //is it a .NET assembly?
+        public bool IsNETAssembly { get; set; }
 
-        public bool WaitForExecution
-        {
-            get { return m_WaitForExecution; }
-            set { m_WaitForExecution = value; }
-        }
+        public bool WaitForExecution { get; set; }
 
-        public string DeltaPatchRelativePath
-        {
-            get { return m_DeltaPatchRelativePath; }
-            set { m_DeltaPatchRelativePath = value; }
-        }
+        //Delta Patching Particulars:
+        public string DeltaPatchRelativePath { get; set; }
 
-        public bool DeleteFile
-        {
-            get { return m_DeleteFile; }
-            set { m_DeleteFile = value; }
-        }
+        public bool DeleteFile { get; set; }
 
-        public long NewFileAdler32
-        {
-            get { return m_NewFileAdler32; }
-            set { m_NewFileAdler32 = value; }
-        }
+        public long NewFileAdler32 { get; set; }
 
         #endregion Properties
 
@@ -110,23 +48,23 @@ namespace wyUpdate.Common
 
         public UpdateFile(string filename, string prefix)
         {
-            m_Filename = filename;
+            Filename = filename;
 
             if (!string.IsNullOrEmpty(filename))
-                m_RelativePath = prefix + Path.GetExtension(filename);
+                RelativePath = prefix + Path.GetExtension(filename);
         }
 
         public UpdateFile(string filename, string relative, bool execute, bool executeBef, bool waitForExecution, string commArgs, bool deleteFile, string oldFile)
         {
-            m_Filename = filename;
-            m_RelativePath = relative;
-            m_Execute = execute;
-            m_ExBeforeUpdate = executeBef;
-            m_WaitForExecution = waitForExecution;
-            m_CommandLineArgs = commArgs;
+            Filename = filename;
+            RelativePath = relative;
+            Execute = execute;
+            ExBeforeUpdate = executeBef;
+            WaitForExecution = waitForExecution;
+            CommandLineArgs = commArgs;
 
-            m_DeleteFile = deleteFile;
-            m_DeltaPatchRelativePath = oldFile;
+            DeleteFile = deleteFile;
+            DeltaPatchRelativePath = oldFile;
         }
     }
 
@@ -184,7 +122,7 @@ namespace wyUpdate.Common
         private Image m_SideImage;
         private string m_SideImageFilename;
 
-        public List<LanguageCulture> Languages = new List<LanguageCulture>();
+        public Hashtable Languages = new Hashtable();
 
         private UpdateOn m_CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
@@ -372,7 +310,7 @@ namespace wyUpdate.Common
                         {
                             m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadString(fs));
                         }
-                        catch (Exception) { }
+                        catch { }
                         break;
                     case 0x12://Header text indent
                         m_HeaderTextIndent = ReadFiles.ReadInt(fs);
@@ -415,6 +353,8 @@ namespace wyUpdate.Common
                 throw new Exception("The client file does not have the correct identifier - this is usually caused by file corruption.");
             }
 
+            LanguageCulture lastLanguage = null;
+
             byte bType = (byte)ms.ReadByte();
             while (!ReadFiles.ReachedEndByte(ms, bType, 0xFF))
             {
@@ -455,14 +395,17 @@ namespace wyUpdate.Common
                         m_SideImageFilename = ReadFiles.ReadString(ms);
                         break;
                     case 0x18: // language culture
-                        Languages.Add(new LanguageCulture(ReadFiles.ReadString(ms)));
+
+                        lastLanguage = new LanguageCulture(ReadFiles.ReadString(ms));
+
+                        Languages.Add(lastLanguage.Culture, lastLanguage);
                         break;
                     case 0x16: //language filename
 
-                        if (Languages.Count > 0)
-                            Languages[Languages.Count - 1].Filename = ReadFiles.ReadString(ms);
+                        if (lastLanguage != null)
+                            lastLanguage.Filename = ReadFiles.ReadString(ms);
                         else
-                            Languages.Add(new LanguageCulture(null) { Filename = ReadFiles.ReadString(ms) });
+                            Languages.Add(string.Empty, new LanguageCulture(null) { Filename = ReadFiles.ReadString(ms) });
 
                         break;
                     case 0x17: //hide the header divider
@@ -537,11 +480,11 @@ namespace wyUpdate.Common
                 
                 // Backwards compatability with pre-v1.3 of wyUpdate:
                 // if the languages has a culture with a null name, load that file
-                if(Languages.Count == 1 && string.IsNullOrEmpty(Languages[0].Culture))
+                if(Languages.Count == 1 && Languages.Contains(string.Empty))
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        zip.Extract(Languages[0].Filename, ms);
+                        zip.Extract(((LanguageCulture)Languages[string.Empty]).Filename, ms);
                         lang.Open(ms);
                     }
                 }
@@ -550,20 +493,32 @@ namespace wyUpdate.Common
                     // detect the current culture 
                     string currentCultureName = CultureInfo.CurrentUICulture.Name;
 
-                    foreach (LanguageCulture l in Languages)
+                    // try to find the current culture
+                    LanguageCulture useLang = (LanguageCulture)Languages[currentCultureName];
+
+                    if(useLang == null)
                     {
-                        // see if the culture is included with the client file
-                        if (l.Culture == currentCultureName)
+                        // if current culture isn't available, use the default culture (english)
+                        useLang = (LanguageCulture) Languages["en-US"];
+                    }
+
+
+                    // if the default culture isn't available, use the first available language
+                    if(useLang == null)
+                    {
+                        foreach (LanguageCulture l in Languages.Values)
                         {
-                            if(!string.IsNullOrEmpty(l.Filename))
-                            {
-                                using (MemoryStream ms = new MemoryStream())
-                                {
-                                    zip.Extract(l.Filename, ms);
-                                    lang.Open(ms);
-                                }
-                            }
+                            useLang = l;
                             break;
+                        }
+                    }
+
+                    if (useLang != null && !string.IsNullOrEmpty(useLang.Filename))
+                    {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            zip.Extract(useLang.Filename, ms);
+                            lang.Open(ms);
                         }
                     }
                 }
