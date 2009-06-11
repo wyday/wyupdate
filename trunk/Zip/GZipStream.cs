@@ -1,44 +1,31 @@
-// Copyright (c) 2009, Dino Chiesa.  
-// This code is licensed under the Microsoft public license.  See the license.txt file in the source
-// distribution for details. 
+// GZipStream.cs
+// ------------------------------------------------------------------
 //
-// The zlib code is derived from the jzlib implementation, but significantly modified.
-// The object model is not the same, and many of the behaviors are different.
-// Nonetheless, in keeping with the license for jzlib, I am reproducing the copyright to that code here.
-// 
-// -----------------------------------------------------------------------
-// Copyright (c) 2000,2001,2002,2003 ymnk, JCraft,Inc. All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// 
-// 1. Redistributions of source code must retain the above copyright notice,
-// this list of conditions and the following disclaimer.
-// 
-// 2. Redistributions in binary form must reproduce the above copyright 
-// notice, this list of conditions and the following disclaimer in 
-// the documentation and/or other materials provided with the distribution.
-// 
-// 3. The names of the authors may not be used to endorse or promote products
-// derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
-// INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-// FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL JCRAFT,
-// INC. OR ANY CONTRIBUTORS TO THIS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-May-31 09:12:44>
+//
+// ------------------------------------------------------------------
+//
+// This module defines the GZipStream class, which can be used as a replacement for
+// the System.IO.Compression.GZipStream class in the .NET BCL.  NB: The design is not
+// completely OO clean: there is some intelligence in the ZlibBaseStream that reads the 
+// GZip header.  
+//
+// ------------------------------------------------------------------
 
-/*
- * This code is based on zlib-1.1.3;  credit to authors
- * Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
- * and contributors of zlib.
- */
 
 using System;
 namespace Ionic.Zlib
@@ -293,7 +280,7 @@ namespace Ionic.Zlib
         ///     {
         ///         using (Stream compressor = new GZipStream(raw,
         ///                                                   CompressionMode.Compress, 
-        ///                                                   CompressionLevel.BEST_COMPRESSION))
+        ///                                                   CompressionLevel.BestCompression))
         ///         {
         ///             byte[] buffer = new byte[WORKING_BUFFER_SIZE];
         ///             int n= -1;
@@ -311,7 +298,7 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION)
+        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BestCompression)
         ///         Dim buffer As Byte() = New Byte(4096) {}
         ///         Dim n As Integer = -1
         ///         Do While (n &lt;&gt; 0)
@@ -393,7 +380,7 @@ namespace Ionic.Zlib
         /// {
         ///     using (var raw = System.IO.File.Create(outputFile))
         ///     {
-        ///         using (Stream compressor = new GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION, true))
+        ///         using (Stream compressor = new GZipStream(raw, CompressionMode.Compress, CompressionLevel.BestCompression, true))
         ///         {
         ///             byte[] buffer = new byte[WORKING_BUFFER_SIZE];
         ///             int n= -1;
@@ -411,7 +398,7 @@ namespace Ionic.Zlib
         /// Dim outputFile As String = (fileToCompress &amp; ".compressed")
         /// Using input As Stream = File.OpenRead(fileToCompress)
         ///     Using raw As FileStream = File.Create(outputFile)
-        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BEST_COMPRESSION, True)
+        ///     Using compressor As Stream = New GZipStream(raw, CompressionMode.Compress, CompressionLevel.BestCompression, True)
         ///         Dim buffer As Byte() = New Byte(4096) {}
         ///         Dim n As Integer = -1
         ///         Do While (n &lt;&gt; 0)

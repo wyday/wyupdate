@@ -1,12 +1,33 @@
-// Copyright (c) 2009, Dino Chiesa.  
-// This code is licensed under the Microsoft public license.  See the license.txt file in the source
-// distribution for details. 
+// Zlib.cs
+// ------------------------------------------------------------------
 //
-// The zlib code is derived from the jzlib implementation, but significantly modified.
-// The object model is not the same, and many of the behaviors are different.
-// Nonetheless, in keeping with the license for jzlib, I am reproducing the copyright to that code here.
+// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  
+// All rights reserved.
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License. 
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
+//
+// ------------------------------------------------------------------
+//
+// last saved (in emacs): 
+// Time-stamp: <2009-June-02 10:48:55>
+//
+// ------------------------------------------------------------------
+//
+// This module defines classes for ZLIB compression and
+// decompression. This code is derived from the jzlib implementation of
+// zlib, but significantly modified.  The object model is not the same,
+// and many of the behaviors are new or different.  Nonetheless, in
+// keeping with the license for jzlib, the copyright to that code is
+// included below.
+//
+// ------------------------------------------------------------------
 // 
-// -----------------------------------------------------------------------
 // Copyright (c) 2000,2001,2002,2003 ymnk, JCraft,Inc. All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -33,12 +54,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+// -----------------------------------------------------------------------
+//
+// This program is based on zlib-1.1.3; credit to authors
+// Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
+// and contributors of zlib.
+//
+// -----------------------------------------------------------------------
 
-/*
-* This program is based on zlib-1.1.3; credit to authors
-* Jean-loup Gailly(jloup@gzip.org) and Mark Adler(madler@alumni.caltech.edu)
-* and contributors of zlib.
-*/
 
 
 using System;
@@ -214,12 +237,23 @@ namespace Ionic.Zlib
         /// <returns>The resulting number from the shift operation</returns>
         public static int URShift(int number, int bits)
         {
-            if (number >= 0)
-                return number >> bits;
-            else
-                return (number >> bits) + (2 << ~bits);
+            return (int)((uint)number >> bits);
         }
 
+        /// <summary>
+        /// Performs an unsigned bitwise right shift with the specified number
+        /// </summary>
+        /// <param name="number">Number to operate on</param>
+        /// <param name="bits">Ammount of bits to shift</param>
+        /// <returns>The resulting number from the shift operation</returns>
+        public static long URShift(long number, int bits)
+        {
+            return (long) ((UInt64)number >> bits);
+        }
+
+
+        #if NOTUSED
+        
         /// <summary>
         /// Performs an unsigned bitwise right shift with the specified number
         /// </summary>
@@ -237,26 +271,13 @@ namespace Ionic.Zlib
         /// <param name="number">Number to operate on</param>
         /// <param name="bits">Ammount of bits to shift</param>
         /// <returns>The resulting number from the shift operation</returns>
-        public static long URShift(long number, int bits)
-        {
-            if (number >= 0)
-                return number >> bits;
-            else
-                return (number >> bits) + (2L << ~bits);
-        }
-
-        /// <summary>
-        /// Performs an unsigned bitwise right shift with the specified number
-        /// </summary>
-        /// <param name="number">Number to operate on</param>
-        /// <param name="bits">Ammount of bits to shift</param>
-        /// <returns>The resulting number from the shift operation</returns>
         public static long URShift(long number, long bits)
         {
             return URShift(number, (int)bits);
         }
 
-
+        #endif
+        
 #if POINTLESS        
         /*******************************/
         /// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>

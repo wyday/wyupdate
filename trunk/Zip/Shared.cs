@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:31:32>
+// Time-stamp: <2009-June-05 09:28:07>
 //
 // ------------------------------------------------------------------
 //
@@ -332,23 +332,6 @@ namespace Ionic.Zip
 
             Int32 result = (Int32)(((UInt32)(packedDate << 16)) | packedTime);
             return result;
-        }
-
-
-        /// <summary>
-        /// Creates a <c>MemoryStream</c> for the given string, using the default encoding. 
-        /// This is used internally by Library, specifically by 
-        /// the ZipFile.AddStringAsFile() method.   But it may be useful in other scenarios. 
-        /// </summary>
-        /// <param name="s">The string to use as input for the MemoryStream</param>
-        /// <returns>the MemoryStream. Reading the stream will give you the content of the String.</returns>
-        public static System.IO.MemoryStream StringToMemoryStream(string s)
-        {
-            System.IO.MemoryStream m = new System.IO.MemoryStream();
-            System.IO.StreamWriter sw = new System.IO.StreamWriter(m);
-            sw.Write(s);
-            sw.Flush();
-            return m;
         }
 
 
