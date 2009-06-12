@@ -4882,10 +4882,11 @@ namespace Ionic.Zip
         private static uint VerifyBeginningOfZipFile(Stream s)
         {
             uint datum = (uint)Ionic.Zip.SharedUtilities.ReadInt(s);
-            if (datum != ZipConstants.PackedToRemovableMedia  // weird edge case
-                && datum != ZipConstants.ZipEntrySignature   // normal BOF marker
-                && datum != ZipConstants.EndOfCentralDirectorySignature  // for zip file with no entries
-                && (datum & 0x0000FFFF) != 0x00005A4D // PE/COFF BOF marker (for SFX)
+            if (datum != ZipConstants.PackedToRemovableMedia              // weird edge case #1
+                && datum != ZipConstants.ZipEntryDataDescriptorSignature  // weird edge case #2
+                && datum != ZipConstants.ZipEntrySignature                // normal BOF marker
+                && datum != ZipConstants.EndOfCentralDirectorySignature   // for zip file with no entries
+                && (datum & 0x0000FFFF) != 0x00005A4D                     // PE/COFF BOF marker (for SFX)
                 )
             {
                 //Console.WriteLine("WTF, datum = 0x{0:X8}", datum);
