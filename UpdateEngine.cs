@@ -608,8 +608,10 @@ namespace wyUpdate.Common
             if (!string.IsNullOrEmpty(m_SideImageFilename))
                 WriteFiles.WriteString(ms, 0x15, m_SideImageFilename);
 
-            foreach (LanguageCulture lang in Languages)
+            foreach (DictionaryEntry dLang in Languages)
             {
+                LanguageCulture lang = (LanguageCulture)dLang.Value;
+
                 //Language culture
                 WriteFiles.WriteString(ms, 0x18, lang.Culture);
                 
