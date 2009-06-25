@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-31 09:15:24>
+// Time-stamp: <2009-June-16 06:48:40>
 //
 // ------------------------------------------------------------------
 //
@@ -1737,7 +1737,7 @@ namespace Ionic.Zlib
             old_flush = last_flush;
             last_flush = (int)flush;
 
-            // Write the zlib header
+            // Write the zlib (rfc1950) header bytes
             if (status == INIT_STATE)
             {
                 int header = (Z_DEFLATED + ((w_bits - 8) << 4)) << 8;

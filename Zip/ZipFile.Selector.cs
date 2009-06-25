@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:33:13>
+// Time-stamp: <2009-June-18 23:05:42>
 //
 // ------------------------------------------------------------------
 //
@@ -131,11 +131,11 @@ namespace Ionic.Zip
         /// 
         /// <para>
         /// There is no logic in this method that insures that the file inclusion criteria are
-        /// internally consistent.  For example, it's possible to specify criteria that says the
-        /// file must have a size of less than 100 bytes, as well as a size that is greater than
-        /// 1000 bytes.  Obviously no file will ever satisfy such criteria, but this method does
-        /// not detect such inconsistencies. The caller is responsible for insuring the criteria
-        /// are sensible.
+        /// internally consistent.  For example, it's possible to specify criteria that says
+        /// the file must have a size of less than 100 bytes, as well as a size that is
+        /// greater than 1000 bytes. Obviously no file will ever satisfy such criteria, but
+        /// this method does not detect such logical inconsistencies. The caller is
+        /// responsible for insuring the criteria are sensible.
         /// </para>
         /// 
         /// </remarks>
@@ -172,8 +172,9 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// This method selects files from the the current working directory matching the specified
-        /// criteria, and adds them to the ZipFile.  The selection optionally recurses into
-        /// subdirectories.
+        /// criteria, and adds them to the ZipFile.  If <c>recurseDirectories</c> is true, files are also 
+        /// selected from subdirectories, and the directory structure in the filesystem is reproduced 
+        /// in the zip archive, rooted at the directory specified by <c>directoryOnDisk</c>.
         /// </para>
         ///
         /// <para>
@@ -183,8 +184,8 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <example>
-        /// This example zips up all *.xml files in the current working directory, or any subdirectory, that
-        /// are larger than 1mb.
+        /// This example zips up all *.xml files in the current working directory, or any 
+        /// subdirectory, that are larger than 1mb.
         /// <code>
         /// using (ZipFile zip = new ZipFile())
         /// {
@@ -203,7 +204,10 @@ namespace Ionic.Zip
         /// </example>
         /// 
         /// <param name="selectionCriteria">The criteria for file selection</param>
-        /// <param name="recurseDirectories">If true, the file selection will recurse into subdirectories.</param>
+        /// 
+        /// <param name="recurseDirectories">
+        /// If true, the file selection will recurse into subdirectories.
+        /// </param>
         public void AddSelectedFiles(String selectionCriteria, bool recurseDirectories)
         {
             this.AddSelectedFiles(selectionCriteria, ".", null, recurseDirectories);
@@ -240,7 +244,10 @@ namespace Ionic.Zip
         /// </example>
         /// 
         /// <param name="selectionCriteria">The criteria for file selection</param>
-        /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
+        /// 
+        /// <param name="directoryOnDisk">
+        /// The name of the directory on the disk from which to select files.
+        /// </param>
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk)
         {
             this.AddSelectedFiles(selectionCriteria, directoryOnDisk, null, false);
@@ -253,9 +260,11 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// This method selects files from the the specified disk directory matching the specified
-        /// selection criteria, and adds them to the ZipFile.  The search will recurse into subdirectores if
-        /// recurseDirectories is true.  For details on the syntax for the selectionCriteria
-        /// parameter, see <see cref="AddSelectedFiles(String)"/>.
+        /// selection criteria, and adds them to the ZipFile.  If <c>recurseDirectories</c> is true,
+        /// files are also selected from subdirectories, and the directory structure in the
+        /// filesystem is reproduced in the zip archive, rooted at the directory specified by
+        /// <c>directoryOnDisk</c>. For details on the syntax for the selectionCriteria parameter,
+        /// see <see cref="AddSelectedFiles(String)"/>.
         /// </remarks>
         /// 
         /// <example>
@@ -279,8 +288,14 @@ namespace Ionic.Zip
         /// </example>
         /// 
         /// <param name="selectionCriteria">The criteria for file selection</param>
-        /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
-        /// <param name="recurseDirectories">If true, the file selection will recurse into subdirectories.</param>
+        ///
+        /// <param name="directoryOnDisk">
+        /// The name of the directory on the disk from which to select files.
+        /// </param>
+        /// 
+        /// <param name="recurseDirectories">
+        /// If true, the file selection will recurse into subdirectories.
+        /// </param>
         public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk, bool recurseDirectories)
         {
             this.AddSelectedFiles(selectionCriteria, directoryOnDisk, null, recurseDirectories);
@@ -288,7 +303,8 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds to the ZipFile a selection of files from the disk that conform to the specified criteria.
+        /// Adds to the ZipFile a selection of files from the disk that conform to the
+        /// specified criteria.
         /// </summary>
         /// 
         /// <remarks>
@@ -300,10 +316,10 @@ namespace Ionic.Zip
         /// </remarks>
         /// 
         /// <example>
-        /// This example zips up all *.psd files in the "photos" directory that
-        /// have been saved since 2009 February 14th, and puts them all in a zip file, using the directory 
-        /// name of "content" in the zip archive itself. When the zip archive is unzipped, the folder containing 
-        /// the .psd files will be named "content".
+        /// This example zips up all *.psd files in the "photos" directory that have been saved
+        /// since 2009 February 14th, and puts them all in a zip file, using the directory name of
+        /// "content" in the zip archive itself. When the zip archive is unzipped, the folder
+        /// containing the .psd files will be named "content".
         /// <code>
         /// using (ZipFile zip = new ZipFile())
         /// {
@@ -322,7 +338,9 @@ namespace Ionic.Zip
         /// 
         /// <param name="selectionCriteria">The criteria for selection of files to Add</param>
         ///
-        /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
+        /// <param name="directoryOnDisk">
+        /// The name of the directory on the disk from which to select files.
+        /// </param>
         ///
         /// <param name="directoryPathInArchive">
         /// Specifies a directory path to use to override any path in the FileName.  This path may,
@@ -331,7 +349,9 @@ namespace Ionic.Zip
         /// Passing null (nothing in VB) will use the path on the FileName, if any.  Passing the
         /// empty string ("") will insert the item at the root path within the archive.
         /// </param>
-        public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk, String directoryPathInArchive)
+        public void AddSelectedFiles(String selectionCriteria,
+                                     String directoryOnDisk,
+                                     String directoryPathInArchive)
         {
             this.AddSelectedFiles(selectionCriteria, directoryOnDisk, directoryPathInArchive, false);
         }
@@ -343,14 +363,16 @@ namespace Ionic.Zip
         /// <remarks>
         /// This method selects files from the specified disk directory that match the specified
         /// selection criteria, and adds those files to the ZipFile, using the specified directory
-        /// path in the archive.  If recurseDirectories is true, files are also selected from
-        /// subdirectories.  For details on the syntax for the selectionCriteria parameter, see
-        /// <see cref="AddSelectedFiles(String)" />.
+        /// path in the archive. If <c>recurseDirectories</c> is true, files are also selected from
+        /// subdirectories, and the directory structure in the filesystem is reproduced in the zip
+        /// archive, rooted at the directory specified by <c>directoryOnDisk</c>.  For details on the
+        /// syntax for the selectionCriteria parameter, see <see
+        /// cref="AddSelectedFiles(String)" />.
         /// </remarks>
         /// 
         /// <example>
-        /// This example zips up all files that are NOT *.pst files, in the current working directory 
-        /// and any subdirectories.
+        /// This example zips up all files that are NOT *.pst files, in the current working 
+        /// directory and any subdirectories.
         /// <code>
         /// using (ZipFile zip = new ZipFile())
         /// {
@@ -368,7 +390,9 @@ namespace Ionic.Zip
         ///
         /// <param name="selectionCriteria">The criteria for selection of files to Add</param>
         ///
-        /// <param name="directoryOnDisk">The name of the directory on the disk from which to select files. </param>
+        /// <param name="directoryOnDisk">
+        /// The name of the directory on the disk from which to select files.
+        /// </param>
         /// 
         /// <param name="directoryPathInArchive">
         /// Specifies a directory path to use to override any path in the FileName.  This path may,
@@ -381,7 +405,10 @@ namespace Ionic.Zip
         /// <param name="recurseDirectories">
         /// If true, the method also scans subdirectories for files matching the criteria.
         /// </param>
-        public void AddSelectedFiles(String selectionCriteria, String directoryOnDisk, String directoryPathInArchive, bool recurseDirectories)
+        public void AddSelectedFiles(String selectionCriteria,
+                                     String directoryOnDisk,
+                                     String directoryPathInArchive,
+                                     bool recurseDirectories)
         {
             if (String.IsNullOrEmpty(directoryOnDisk)) directoryOnDisk= ".";
             if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...", selectionCriteria, directoryOnDisk);
@@ -389,6 +416,8 @@ namespace Ionic.Zip
             var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
             if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", filesToAdd.Count);
 
+            OnAddStarted();
+            
             foreach (var f in filesToAdd)
             {
                 if (directoryPathInArchive!=null) 
@@ -399,6 +428,8 @@ namespace Ionic.Zip
                 else
                     this.AddFile(f, null);
             }
+
+            OnAddCompleted();
         }
 
 

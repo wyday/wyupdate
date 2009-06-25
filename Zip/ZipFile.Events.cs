@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-05 08:48:14>
+// Time-stamp: <2009-June-19 06:32:34>
 //
 // ------------------------------------------------------------------
 //
@@ -30,19 +30,9 @@ using System.IO;
 
 namespace Ionic.Zip
 {
-    /// <summary>
-    /// The ZipFile type represents a zip archive file.  This is the main type in the DotNetZip
-    /// class library.  This class reads and writes zip files, as defined in the format for zip
-    /// described by PKWare.  The compression for this implementation was, at one time, based on
-    /// the System.IO.Compression.DeflateStream base class in the .NET Framework base class
-    /// library, available in v2.0 and later of the .NET Framework. As of v1.7 of DotNetZip, the
-    /// compression is provided by a managed-code version of Zlib, included with DotNetZip.
-    /// </summary>
     public partial class ZipFile : System.Collections.Generic.IEnumerable<ZipEntry>,
     IDisposable
     {
-
-        #region Events
 
         private string ArchiveNameForEvent
         {
@@ -52,6 +42,8 @@ namespace Ionic.Zip
             }
         }
 
+
+        #region Save
 
         /// <summary>
         /// An event handler invoked when a Save() starts, before and after each entry has been
@@ -548,10 +540,10 @@ namespace Ionic.Zip
                 }
             }
         }
+        #endregion
 
 
-
-
+        #region Read
         /// <summary>
         /// An event handler invoked before, during, and after the reading of a zip archive.
         /// </summary>
@@ -677,8 +669,10 @@ namespace Ionic.Zip
                 return _lengthOfReadStream;
             }
         }
+        #endregion
 
 
+        #region Extract
         /// <summary>
         /// An event handler invoked before, during, and after extraction of entries 
         /// in the zip archive. 
@@ -910,5 +904,95 @@ namespace Ionic.Zip
         #endregion
 
 
+
+        #region Add
+        /// <summary>
+        /// An event handler invoked before, during, and after Adding entries to a zip archive.
+        /// </summary>
+        ///
+        /// <remarks> Adding a large number of entries to a zip file can take a long
+        ///     time.  For example, when calling <see cref="AddDirectory(string)"/> on a
+        ///     directory that contains 50,000 files, it could take 3 minutes or so.
+        ///     This event handler allws an application to track the progress of the Add
+        ///     operation.  </remarks>
+        ///
+        /// <example>
+        /// <code lang="C#">
+        ///
+        /// int _numEntriesToAdd= 0;
+        /// int _numEntriesAdded= 0;
+        /// void AddProgressHandler(object sender, AddProgressEventArgs e)
+        /// {
+        ///     switch (e.EventType)
+        ///     {
+        ///         case ZipProgressEventType.Adding_Started:
+        ///             Console.WriteLine("Adding files to the zip...");
+        ///             break;
+        ///          case ZipProgressEventType.Adding_AfterAddEntry:
+        ///             _numEntriesAdded++;
+        ///             Console.WriteLine(String.Format("Adding file {0}/{1} :: {2}",
+        ///                                      _numEntriesAdded, _numEntriesToAdd, e.CurrentEntry.FileName));
+        ///             break;
+        ///             
+        ///         case ZipProgressEventType.Adding_Completed:
+        ///             Console.WriteLine("Added all files");
+        ///             break;
+        ///     }
+        /// }
+        ///    
+        /// void CreateTheZip()
+        /// {
+        ///     using (ZipFile zip = new ZipFile())
+        ///     {
+        ///         zip.AddProgress += AddProgressHandler;
+        ///         zip.AddDirectory(System.IO.Path.GetFileName(DirToZip));
+        ///         zip.BufferSize = 4096;
+        ///         zip.SaveProgress += SaveProgressHandler;
+        ///         zip.Save(ZipFileToCreate);
+        ///     }
+        /// }
+        ///     
+        /// </code>
+        /// </example>
+        public event EventHandler<AddProgressEventArgs> AddProgress;
+
+        private void OnAddStarted()
+        {
+            if (AddProgress != null)
+            {
+                lock (LOCK)
+                {
+                    var e = AddProgressEventArgs.Started(ArchiveNameForEvent);
+                    AddProgress(this, e);
+                }
+            }
+        }
+
+        private void OnAddCompleted()
+        {
+            if (AddProgress != null)
+            {
+                lock (LOCK)
+                {
+                    var e = AddProgressEventArgs.Completed(ArchiveNameForEvent);
+                    AddProgress(this, e);
+                }
+            }
+        }
+
+        internal void AfterAddEntry(ZipEntry entry)
+        {
+            if (AddProgress != null)
+            {
+                lock (LOCK)
+                {
+                    var e = AddProgressEventArgs.AfterEntry(ArchiveNameForEvent, entry, _entries.Count);
+                    AddProgress(this, e);
+                }
+            }
+        }
+
+        #endregion
+            
     }
 }

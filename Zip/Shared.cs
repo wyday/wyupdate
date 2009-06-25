@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-05 09:28:07>
+// Time-stamp: <2009-June-18 18:43:15>
 //
 // ------------------------------------------------------------------
 //
@@ -384,6 +384,41 @@ namespace Ionic.Zip
             return (char)(_rnd.Next(26) + delta);
         }
 
+
+        /// <summary>
+        /// Workitem 7889: handle ERROR_LOCK_VIOLATION during read
+        /// </summary>
+        /// <remarks>
+        /// This could be gracefully handled with an extension attribute, but
+        /// This assembly is built for .NET 2.0, so I cannot use them. 
+        /// </remarks>
+        internal static int ReadWithRetry(System.IO.Stream s, byte[] buffer, int offset, int count, string FileName)
+        {
+            int n = 0;
+            bool done = false;
+            int retries= 0;
+            do
+            {
+                try 
+                {
+                    n= s.Read(buffer, offset, count);
+                    done = true;
+                }
+                catch (System.IO.IOException ioexc1)
+                {
+                    uint hresult = unchecked((uint)System.Runtime.InteropServices.Marshal.GetHRForException(ioexc1));
+                    if (hresult != 0x80070021)
+                        throw new System.IO.IOException(String.Format("Cannot read file {0}", FileName), ioexc1);
+                    retries++;
+                    if (retries > 10)
+                        throw new System.IO.IOException(String.Format("Cannot read file {0}, at offset 0x{1:X8} after 10 retries", FileName, offset), ioexc1);
+                    System.Threading.Thread.Sleep(250 + retries * 20);
+                }
+            }
+            while (!done);
+            
+            return n;
+        }
 
     }
 

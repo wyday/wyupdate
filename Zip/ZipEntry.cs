@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-05 13:48:31>
+// Time-stamp: <2009-June-22 12:55:35>
 //
 // ------------------------------------------------------------------
 //
@@ -135,24 +135,31 @@ namespace Ionic.Zip
     public enum ExtractExistingFileAction
     {
         /// <summary>
-        /// Throw an exception when extraction would overwrite an existing file. 
+        /// Throw an exception when extraction would overwrite an existing file. (For COM clients, 
+        /// this is a 0 (zero).)
         /// </summary>
         Throw,
 
         /// <summary>
-        /// When extraction would overwrite an existing file, overwrite the file silently. 
+        /// When extraction would overwrite an existing file, overwrite the file silently.
+        /// The overwrite will happen even if the target file is marked as read-only.
+        /// (For COM clients, this is a 1.)
         /// </summary>
         OverwriteSilently,
 
         /// <summary>
         /// When extraction would overwrite an existing file, don't overwrite the file, silently. 
+        /// (For COM clients, this is a 2.)
         /// </summary>
         DontOverwrite,
 
         /// <summary>
         /// When extraction would overwrite an existing file, invoke the ExtractProgress event,
         /// using an event type of <see
-        /// cref="ZipProgressEventType.Extracting_ExtractEntryWouldOverwrite"/>.
+        /// cref="ZipProgressEventType.Extracting_ExtractEntryWouldOverwrite"/>.  In this way, the
+        /// application can decide, just-in-time, whether to overwrite the file. For example, a
+        /// GUI application may wish to pop up a dialog to allow the user to choose.  
+        /// (For COM clients, this is a 3.)
         /// </summary>
         InvokeExtractProgressEvent,
     }
@@ -172,9 +179,9 @@ namespace Ionic.Zip
         /// <remarks>Applications should never need to call this directly.  It is exposed to 
         /// support COM Automation environments.
         /// </remarks>
-        public ZipEntry() { BufferSize = IO_BUFFER_SIZE_DEFAULT; }
+        public ZipEntry() { }
 
-        internal ZipEntry(int size) { BufferSize = size; }
+        //internal ZipEntry(int size) { BufferSize = size; }
 
         /// <summary>
         /// The time and date at which the file indicated by the ZipEntry was last modified. 
@@ -202,17 +209,20 @@ namespace Ionic.Zip
         /// specification. 
         /// </para>
         ///
-        /// <para>
-        /// The LastModified time is stored in two ways in the zip file: first in the so-called
-        /// "DOS" format, which has a precision to the nearest even second. If the time on the
-        /// file is 12:34:43, then it will be stored as 12:34:44.  Secondly, the LastModified time
-        /// is stored as an 8-byte integer quantity expressed as the number of 1/10 milliseconds
-        /// (aka 100 nanoseconds) since January 1, 1601 (UTC).  This is the so-called Win32 time.
-        /// Zip tools and libraries will always at least handle the DOS time, and may also handle
-        /// the Win32 time. When reading ZIP files, The DotNetZip library handles the Win32 time,
-        /// if it is stored in the entry. When writing ZIP files, the DotNetZip library will write
-        /// both time quantities.
-        /// </para>
+        /// <para> The actual last modified time of a file can be stored in two ways in the
+        /// zip file: first in the so-called "DOS" format, which has a 2-second
+        /// precision. Values are rounded to the nearest even second. For example, if the
+        /// time on the file is 12:34:43, then it will be stored as 12:34:44. This first
+        /// value is accessible via the <c>LastModified</c> property.  Also, the last
+        /// modified time can optionally be stored as an 8-byte integer quantity expressed
+        /// as the number of 1/10 milliseconds (in other words the number of 100 nanosecond
+        /// units) since January 1, 1601 (UTC).  This is the so-called Win32 time.  This
+        /// time is accessible via the <c>Mtime</c> property.  Zip tools and libraries will
+        /// always at least handle (read or write) the DOS time, and may also handle the
+        /// Win32 time. When reading ZIP files, The DotNetZip library reads the Win32 time,
+        /// if it is stored in the entry, and sets both <c>LastModified</c> and <c>Mtime</c>
+        /// to that value. When writing ZIP files, the DotNetZip library will write both
+        /// time quantities.  </para>
         ///
         /// <para>
         /// The last modified time of the file created upon a call to <c>ZipEntry.Extract()</c>
@@ -281,7 +291,7 @@ namespace Ionic.Zip
             }
         }
 
-
+#if NOTNEEDED
         /// <summary>
         /// Size of the buffer used when extracting or saving.
         /// </summary>
@@ -290,82 +300,100 @@ namespace Ionic.Zip
             get;
             set;
         }
-
+#endif
+        
+        private int BufferSize
+        {
+            get { return this._zipfile.BufferSize; }
+        }
+        
         /// <summary>
         /// Last Modified time for the file represented by the entry.
         /// </summary>
         ///
         /// <remarks>
-        /// <para>
-        /// This value corresponds to the NTFS file times as described in the Zip specification.
-        /// You're wondering, how is this value different from <see cref="LastModified" /> ?
+        ///
+        /// <para> This value corresponds to the "last modified" time in the NTFS file times
+        /// as described in <see
+        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">the Zip
+        /// specification</see>.  This value is different from <see cref="LastModified" />.
         /// </para>
         ///
-        /// <para>
-        /// Let me explain. Originally, waaaaay back in 1989 when the ZIP specification was
-        /// originally described by the esteemed Mr. Phil Katz, the dominant operating system of
-        /// the time was MS-DOS. MSDOS stored file times in 2-second intervals, because, c'mon,
-        /// who is ever going to need better resolution that THAT?  And the ZIP spec stores file
-        /// times in exactly the same format that DOS used in 1989.
+        /// <para> Let me explain. Originally, waaaaay back in 1989 when the ZIP
+        /// specification was originally described by the esteemed Mr. Phil Katz, the
+        /// dominant operating system of the time was MS-DOS. MSDOS stored file times with a
+        /// 2-second precision, because, c'mon, <em>who is ever going to need better
+        /// resolution than THAT?</em> And so ZIP files, regardless of the platform on which
+        /// the zip file was created, store file times in exactly <see
+        /// href="http://www.vsft.com/hal/dostime.htm">the same format that DOS used in
+        /// 1989</see>.  </para>
+        ///
+        /// <para> Since then, the ZIP spec has evolved, but the internal format for file
+        /// timestamps remains the same.  Despite the fact that the way times are stored in
+        /// a zip file is rooted in DOS heritage, any program on any operating system can
+        /// format a time in this way, and most zip tools and libraries DO - they round file
+        /// times to the nearest even second and store it just like DOS did 20 years ago.
         /// </para>
         ///
-        /// <para>
-        /// Since then, the ZIP spec has evolved, but the way the spec stores file timestamps
-        /// remains the same.  Despite the fact that the way times are stored is rooted in DOS
-        /// heritage, any program on any operating system can format a time in this way, and most
-        /// zip tools and libraries DO - they round file times to the nearest even second and
-        /// store it just like DOS did 20 years ago.
-        /// </para>
+        /// <para> PKWare extended the ZIP specification to allow a zip file to store what
+        /// is called "NTFS Times" for a file.  These are the <em>last write</em>, <em>last
+        /// access</em>, and <em>file creation</em> times of a particular file. These
+        /// metadata are not actually specific to NTFS. They are tracked for each file by
+        /// NTFS, but they are also tracked by other filesystems. DotNetZip represents this
+        /// with the <c>Mtime</c>, <c>Atime</c> and <c>Ctime</c> properties on a
+        /// <c>ZipEntry</c>.</para>
+        ///
+        /// <para> Inside a zip file, these three distinct timestamps are stored in the same
+        /// format that Windows NTFS uses to store file times. Rather than a resolution of 2
+        /// seconds, NTFS times have a resolution of 100 nanoseconds. And, just as with the
+        /// DOS time, any tool or library on any operating system is capable of formatting a
+        /// time in this way and embedding it into the zip file. The key is, not all zip
+        /// tools or libraries do.  Storing the higher-precision times for each entry is
+        /// optional for zip files, and many tools and libraries don't use the option,
+        /// though it is much nicer than the DOS time.  And futher, there are also cases
+        /// where the timestamp of the file entry is not known, and is not stored. For
+        /// example, this happens when content for the entry is obtained from a stream.  The
+        /// bottom line is that the higher-resolution time is not guaranteed to be present
+        /// for a ZipEntry.  The old DOS time, represented by <see cref="LastModified"/>, is
+        /// guaranteed to be present, though it sometimes unset. </para>
+        ///
+        /// <para> Ok, getting back to the question about how the <c>LastModified</c>
+        /// property relates to this <c>Mtime</c> property... <c>LastModified</c> is always
+        /// set, while <c>Mtime</c> is not. (The other times stored in the <em>NTFS times
+        /// extension</em>, <c>Ctime</c> and <c>Atime</c> also may not be set on an entry
+        /// that is read from an existing zip file.) When reading a zip file, then
+        /// <c>LastModified</c> takes the DOS time that is stored with the file. If the DOS time
+        /// has been stored as zero in the zipfile, then this library will use
+        /// <c>DateTime.Now</c> for the <c>LastModified</c> value.  If the ZIP file was
+        /// created by an evolved tool, then there will also be NTFS times in the zip file.
+        /// In that case, this library will read those times, and set <c>LastModified</c>
+        /// and <c>Mtime</c> to the same value, the one corresponding to the last write time
+        /// of the file.  If there are no "NTFS times" stored for the entry, then
+        /// <c>Mtime</c> remains unset (likewise <c>Atime</c> and <c>Ctime</c>), and
+        /// <c>LastModified</c> keeps its DOS time. </para>
+        ///
+        /// <para> When creating zip files with this library, then the NTFS time properties
+        /// (<c>Mtime</c>, <c>Atime</c>, and <c>Ctime</c>) are always set on the ZipEntry
+        /// instance, and these data are always stored in the zip archive for each entry. If
+        /// you add an entry from an actual filesystem file, then the entry gets the actual
+        /// NTFS times for that file.  If you add an entry from a stream, or a string, then
+        /// the times get the value <c>DateTime.Now</c>.  In this case <c>LastModified</c>
+        /// and <c>Mtime</c> will be identical, to 2 seconds of precision.  You can
+        /// explicitly set the <c>Ctime</c>, <c>Atime</c>, and <c>Mtime</c> of an entry
+        /// using <see cref="SetNtfsTimes(DateTime, DateTime, DateTime)"/>. Those changes
+        /// are not made permanent in the zip file until you call <see
+        /// cref="ZipFile.Save()"/> or one of its cousins.  </para>
         ///
         /// <para>
-        /// There is an extension that allows a zip file to store what is called "NTFS Times" for
-        /// a file.  These are the LastWrite, LastAccess, and Created times of a particular file -
-        /// stuff that is tracked by NTFS, but it is also tracked by other filesystems. They are
-        /// stored in the same format that Windows uses to store file times. Rather than a
-        /// resolution of 2 seconds, NTFS times have a resolution of 100 nanoseconds. And, just as
-        /// with the DOS time, any tool or library on any operating system is capable of
-        /// formatting a time in this way and embedding it into the zip file. The key is, not all
-        /// zip tools or libraries do.  This part is optional, and many tools don't use the
-        /// option, though it is much nicer than the DOS time.  There are also cases where the
-        /// time of the file is not known, and is not stored. It doesn't really matter - the point
-        /// is that the higher-resolution time is not guaranteed to be present.  Only the old DOS
-        /// time is guaranteed to be present (but even then, it is sometimes unset).
-        /// </para>
-        ///
-        /// <para>
-        /// Ok, getting back to the question about how the LastModified property relates to this
-        /// Mtime property... LastModified is always set. If you read a zip file, then
-        /// LastModified takes the DOS time that is stored with the file. If the DOS time has been
-        /// stored as zero in the zipfile, then this library will use <c>DateTime.Now</c> for the
-        /// LastModified time.  If the ZIP file was created by an evolved tool, then there will
-        /// also be NTFS times in the zip file.  In that case, this library will read those times,
-        /// and set LastModified and Mtime to the same value, the one corresponding to the
-        /// LastWrite time.  If there are no NTFS times, then Mtime remains unset, and
-        /// LastModified keeps its DOS time.
-        /// </para>
-        ///
-        /// <para>
-        /// If you create a zip with this library, then the NTFS time properties (Mtime, Atime,
-        /// and Ctime) are always set on the ZipEntry instance, and these data are always stored
-        /// in the zip archive for each entry. If the entry was added from an actual filesystem
-        /// file, then the entry gets the actual NTFS times for that file.  If the entry is added
-        /// from a stream, or a string, then those times get the value <c>DateTime.Now</c>.  In
-        /// this case LastModified and Mtime will be identical.  You can explicitly set the
-        /// Ctime,Atime, and Mtime of an entry using <see cref="SetNtfsTimes(DateTime, DateTime,
-        /// DateTime)"/>. Those changes are not permanent until you callZipFile.Save() or one of
-        /// its cousins.
-        /// </para>
-        ///
-        /// <para>
-        /// And that is why Mtime may or may not be meaningful, and it may or may not agree with
-        /// the LastModified time on the ZipEntry.
+        /// And that is why <c>Mtime</c> may or may not be meaningful, and it may or may not agree 
+        /// exactly with the <c>LastModified</c> time on the <c>ZipEntry</c>.
         /// </para>
         ///
         /// <para>
         /// I'll bet you didn't think one person could type so much about time, eh?  And reading
         /// it was so enjoyable, too!  Well, in appreciation, <see
         /// href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">maybe you should
-        /// donate?</see>
+        /// donate</see>?
         /// </para>
         /// </remarks>
         ///
@@ -383,14 +411,13 @@ namespace Ionic.Zip
         public DateTime Atime { get { return _Atime; } }
 
         /// <summary>
-        /// Created time for the file represented by the entry.
+        /// The file creation time for the file represented by the entry.
         /// </summary>
         ///
-        /// <remarks>
-        /// This value may or may not be meaningful.  If the ZipEntry was read from an existing
-        /// Zip archive, this information may not be available. For an explanation of why, see
-        /// <see cref="Mtime"/>.
-        /// </remarks>
+        /// <remarks> This value may or may not be meaningful.  If the ZipEntry was read
+        /// from an existing Zip archive, and the creation time was not set on the entry
+        /// when the zip file was created, then this property may be meaningless. For an
+        /// explanation of why, see <see cref="Mtime"/>.  </remarks>
         public DateTime Ctime { get { return _Ctime; } }
 
         /// <summary>
@@ -433,11 +460,12 @@ namespace Ionic.Zip
         /// The file attributes for the entry.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// When adding a ZipEntry to a ZipFile, these attributes are set implicitly when adding
-        /// an entry from the filesystem.  When adding an entry from a stream or string, the
-        /// Attributes are not set.  
-        /// </para>
+        ///
+        /// <para> The <see cref="System.IO.FileAttributes">attributes</see> in NTFS include
+        /// ReadOnly, Archive, Hidden, System, and Indexed.  When adding a ZipEntry to a
+        /// ZipFile, these attributes are set implicitly when adding an entry from the
+        /// filesystem.  When adding an entry from a stream or string, the Attributes are
+        /// not set.  </para>
         ///
         /// <para>
         /// When reading a ZipEntry from a ZipFile, the attributes are set according to the data
@@ -496,15 +524,13 @@ namespace Ionic.Zip
         /// may also want to turn off compression for other reasons.
         /// </para>
         ///
-        /// <para>
-        /// When updating a ZipFile, you may not turn off compression on an entry that
-        /// has been encrypted.  In other words, if you read an existing ZipFile with one of the
-        /// ZipFile.Read() methods, and then change the CompressionMethod on an entry that has
-        /// Encryption not equal to None, you will receive an exception.  There is no way to
-        /// modify the compression on an encrypted entry, without extracting it and re-adding it
-        /// into the ZipFile.
-        /// </para>
-        /// </remarks>
+        /// <para> When updating a ZipFile, you may not turn off compression on an entry
+        /// that has been encrypted.  In other words, if you read an existing ZipFile with
+        /// one of the <c>ZipFile.Read()</c> methods, and then change the
+        /// <c>CompressionMethod</c> on an entry that has <c>Encryption</c> not equal to
+        /// <c>None</c>, you will receive an exception.  There is no way to modify the
+        /// compression on an encrypted entry, without extracting it and re-adding it into
+        /// the ZipFile.  </para> </remarks>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.ForceNoCompression"/>
         /// <seealso cref="CompressionMethod"/>
@@ -539,7 +565,7 @@ namespace Ionic.Zip
         /// 
         /// </remarks>
         /// <seealso cref="FileName"/>
-        public string LocalFileName
+        private string LocalFileName
         {
             get { return _LocalFileName; }
         }
@@ -549,28 +575,29 @@ namespace Ionic.Zip
         /// </summary>
         /// 
         /// <remarks>
-        /// <para>
-        /// When writing a zip, this path has backslashes replaced with forward
-        /// slashes, according to the zip spec, for compatibility with Unix(tm) and
-        /// ... get this.... Amiga!
+        ///
+        /// <para> This is the name of the entry in the ZipFile itself.  When creating or
+        /// updating a zip file, this name may be different than the name of the filesystem
+        /// file used to create the entry (LocalFileName). In fact, there may be no
+        /// filesystem file at all, if the entry is created from a stream or a string.  When
+        /// reading a zip file, this property takes the value of the entry name as stored in
+        /// the zip file. If you extract such an entry, the extracted file will take the name
+        /// given by this property.</para>
+        ///
+        /// <para> When setting this property, the value is made permanent only after a call
+        /// to one of the <c>ZipFile.Save()</c> methods on the <c>ZipFile</c> that contains
+        /// the ZipEntry. By reading in a <c>ZipFile</c>, then explicitly setting the
+        /// FileName on an entry contained within the <c>ZipFile</c>, and then calling
+        /// <c>Save()</c>, you will effectively rename the entry within the zip archive.
         /// </para>
         ///
-        /// <para>
-        /// This is the name of the entry in the ZipFile itself.  This name may be
-        /// different than the name of the filesystem file used to create the entry
-        /// (LocalFileName). In fact, there may be no filesystem file at all, if the
-        /// entry is created from a stream or a string.
+        /// <para> When writing a zip, this value written to the zip file replaces
+        /// backslashes with forward slashes, according to <see
+        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">the Zip
+        /// specification</see>, for compatibility with Unix(tm) and ... get this.... Amiga!
         /// </para>
         ///
-        /// <para>
-        /// When setting this property, the value is made permanent only after a call
-        /// to one of the ZipFile.Save() methods on the ZipFile that contains the
-        /// ZipEntry. By reading in a ZipFile, then explicitly setting the FileName on
-        /// an entry contained within the ZipFile, and then calling Save(), you will
-        /// effectively rename the entry within the zip archive.
-        /// </para>
         /// </remarks>
-        /// <seealso cref="LocalFileName"/>
         public string FileName
         {
             get { return _FileNameInArchive; }
@@ -795,10 +822,17 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// By default, the Comment is encoded in IBM437 code page. You can specify 
+        /// <para>
+        /// Each entry in a Zip file can optionally have a comment associated to it. The
+        /// comment might be displayed by a zip tool during extraction, for example. 
+        /// </para>
+        ///
+        /// <para>
+        /// By default, the <c>Comment</c> is encoded in IBM437 code page. You can specify 
         /// an alternative with <see cref="ProvisionalAlternateEncoding"/>
+        /// </para>
         /// </remarks>
-        /// <seealso cref="ProvisionalAlternateEncoding">ProvisionalAlternateEncoding</seealso>
+        /// <seealso cref="ProvisionalAlternateEncoding"/>
         public string Comment
         {
             get { return _Comment; }
@@ -815,32 +849,31 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// <para>
-        /// This property is null (Nothing in VB) until a Save() method on the containing 
-        /// <see cref="ZipFile"/> instance has been called. The property is non-null (HasValue is true)
-        /// only after a Save() method has been called. 
+        ///
+        /// <para> This property is null (Nothing in VB) until a <c>Save()</c> method on the
+        /// containing <see cref="ZipFile"/> instance has been called. The property is
+        /// non-null (<c>HasValue</c> is true) only after a <c>Save()</c> method has been called.
         /// </para>
         ///
-        /// <para>
-        /// After the containing ZipFile has been saved. the Value of this property is true if
-        /// any of the following three conditions holds: the uncompressed size of the entry is
-        /// larger than 0xFFFFFFFF; the compressed size of the entry is larger than 0xFFFFFFFF;
-        /// the relative offset of the entry within the zip archive is larger than 0xFFFFFFFF.
-        /// These quantities are not known until a Save() is attempted on the zip archive and
-        /// the compression is applied.
+        /// <para> After the containing <c>ZipFile</c> has been saved, the Value of this
+        /// property is true if any of the following three conditions holds: the
+        /// uncompressed size of the entry is larger than 0xFFFFFFFF; the compressed size of
+        /// the entry is larger than 0xFFFFFFFF; the relative offset of the entry within the
+        /// zip archive is larger than 0xFFFFFFFF.  These quantities are not known until a
+        /// <c>Save()</c> is attempted on the zip archive and the compression is applied.
         /// </para>
         ///
-        /// <para>If none of the three conditions holds, then the Value is false.</para>
+        /// <para>If none of the three conditions holds, then the <c>Value</c> is false.</para>
         ///
-        /// <para>
-        /// A value of false does not indicate that the entry, as saved in the zip archive, does
-        /// not use ZIP64.  It merely indicates that ZIP64 is not required.  An entry may use
-        /// ZIP64 even when not required if the <see cref="ZipFile.UseZip64WhenSaving"/>
-        /// property on the containing ZipFile instance is set to <see
-        /// cref="Zip64Option.Always"/>, or if the <see cref="ZipFile.UseZip64WhenSaving"/>
-        /// property on the containing ZipFile instance is set to <see
-        /// cref="Zip64Option.AsNecessary"/> and the output stream was not seekable.
-        /// </para>
+        /// <para> A <c>Value</c> of false does not indicate that the entry, as saved in the
+        /// zip archive, does not use ZIP64.  It merely indicates that ZIP64 is <em>not
+        /// required</em>.  An entry may use ZIP64 even when not required if the <see
+        /// cref="ZipFile.UseZip64WhenSaving"/> property on the containing ZipFile instance
+        /// is set to <see cref="Zip64Option.Always"/>, or if the <see
+        /// cref="ZipFile.UseZip64WhenSaving"/> property on the containing <c>ZipFile</c>
+        /// instance is set to <see cref="Zip64Option.AsNecessary"/> and the output stream
+        /// was not seekable.  </para>
+        ///
         /// </remarks>
         /// <seealso cref="OutputUsedZip64"/>
         public Nullable<bool> RequiresZip64
@@ -852,18 +885,20 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Indicates whether the entry actually used ZIP64 extensions, as it was most recently written 
-        /// to the output file or stream.
+        /// Indicates whether the entry actually used ZIP64 extensions, as it was most recently 
+        /// written to the output file or stream.
         /// </summary>
+        ///
         /// <remarks>
-        /// <para>
-        /// This Nullable property is null (Nothing in VB) until a Save() method on the containing 
-        /// <see cref="ZipFile"/> instance has been called. HasValue is true only after a Save() method
-        /// has been called. 
-        /// </para>
+        ///
+        /// <para> This Nullable property is null (Nothing in VB) until a <c>Save()</c>
+        /// method on the containing <see cref="ZipFile"/> instance has been
+        /// called. <c>HasValue</c> is true only after a <c>Save()</c> method has been
+        /// called.  </para>
+        ///
         /// <para>
         /// The value of this property for a particular ZipEntry may change over successive calls to
-        /// Save() methods on the containing ZipFile, even if the file that corresponds to the ZipEntry does
+        /// <c>Save()</c> methods on the containing ZipFile, even if the file that corresponds to the ZipEntry does
         /// not. This may happen if other entries contained in the ZipFile expand, causing the offset 
         /// for this particular entry to exceed 0xFFFFFFFF. 
         /// </para>
@@ -920,10 +955,10 @@ namespace Ionic.Zip
         /// </summary>
         /// 
         /// <remarks>
-        /// <para>
-        /// The ZIP specification allows a variety of compression methods.  This library 
-        /// supports just two:  0x08 = Deflate.  0x00 = Store (no compression).  
-        /// </para>
+        ///
+        /// <para> <see href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">The
+        /// Zip specification</see> allows a variety of compression methods.  This library
+        /// supports just two: 0x08 = Deflate.  0x00 = Store (no compression).  </para>
         /// 
         /// <para>
         /// When reading an entry from an existing zipfile, the value you retrieve here
@@ -932,20 +967,19 @@ namespace Ionic.Zip
         /// try setting something else, you will get an exception.  
         /// </para>
         /// 
-        /// <para>
-        /// You may wish to set CompressionMethod to 0 (None) when zipping previously compressed
-        /// data like a jpg, png, or mp3 file.  This can save time and cpu cycles.
-        /// Setting CompressionMethod to 0 is equivalent to setting ForceNoCompression to true. 
-        /// </para>
+        /// <para> You may wish to set <c>CompressionMethod</c> to 0 (None) when zipping
+        /// previously compressed data like a jpg, png, or mp3 file.  This can save time and
+        /// cpu cycles.  Setting <c>CompressionMethod</c> to 0 is equivalent to setting
+        /// <c>ForceNoCompression</c> to <c>true</c>.  </para>
         /// 
-        /// <para>
-        /// When updating a ZipFile, you may not modify the CompressionMethod on an entry that
-        /// has been encrypted.  In other words, if you read an existing ZipFile with one of the
-        /// ZipFile.Read() methods, and then change the CompressionMethod on an entry that has
-        /// Encryption not equal to None, you will receive an exception.  There is no way to
-        /// modify the compression on an encrypted entry, without extracting it and re-adding it
-        /// into the ZipFile.
-        /// </para>
+        /// <para> When updating a <c>ZipFile</c>, you may not modify the
+        /// <c>CompressionMethod</c> on an entry that has been encrypted.  In other words,
+        /// if you read an existing <c>ZipFile</c> with one of the <c>ZipFile.Read()</c>
+        /// methods, and then change the <c>CompressionMethod</c> on an entry that has
+        /// <c>Encryption</c> not equal to <c>None</c>, you will receive an exception.
+        /// There is no way to modify the compression on an encrypted entry, without
+        /// extracting it and re-adding it into the <c>ZipFile</c>.  </para>
+        ///
         /// </remarks>
         /// 
         /// <example>
@@ -998,11 +1032,12 @@ namespace Ionic.Zip
         /// <summary>
         /// The compressed size of the file, in bytes, within the zip archive. 
         /// </summary>
-        /// <remarks>
-        /// The compressed size is computed during compression. This means that it is only
-        /// valid to read this AFTER reading in an existing zip file, or AFTER saving a
-        /// zipfile you are creating.
-        /// </remarks>
+        ///
+        /// <remarks> The compressed size is computed during compression. The value is valid
+        /// AFTER reading in an existing zip file, or AFTER saving a zipfile you are
+        /// creating.  </remarks>
+        ///
+        /// <seealso cref="Ionic.Zip.ZipEntry.UncompressedSize"/>
         public Int64 CompressedSize
         {
             get { return _CompressedSize; }
@@ -1015,6 +1050,7 @@ namespace Ionic.Zip
         /// This property is valid AFTER reading in an existing zip file, or AFTER saving the 
         /// ZipFile that contains the ZipEntry.
         /// </remarks>
+        /// <seealso cref="Ionic.Zip.ZipEntry.CompressedSize"/>
         public Int64 UncompressedSize
         {
             get { return _UncompressedSize; }
@@ -1060,14 +1096,21 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// The CRC (Cyclic Redundancy Check) on the contents of the ZipEntry. 
+        /// The 32-bit CRC (Cyclic Redundancy Check) on the contents of the ZipEntry. 
         /// </summary>
         /// 
         /// <remarks>
-        /// You probably don't need to concern yourself with this. The CRC is generated according
-        /// to the algorithm described in the Pkzip specification. It is a read-only property;
-        /// when creating a Zip archive, the CRC for each entry is set only after a call to
-        /// Save() on the containing ZipFile.
+        ///
+        /// <para> You probably don't need to concern yourself with this. It is used
+        /// internally by DotNetZip to verify files or streams upon extraction.  </para>
+        ///
+        /// <para> The value is a <see href="http://en.wikipedia.org/wiki/CRC32">32-bit
+        /// CRC</see> using 0xEDB88320 for the polynomial. This is the same CRC-32 used in
+        /// PNG, MPEG-2, and other protocols and formats.  It is a read-only property; when
+        /// creating a Zip archive, the CRC for each entry is set only after a call to
+        /// Save() on the containing ZipFile. When reading an existing zip file, the value
+        /// of this property reflects the stored CRC for the entry.  </para>
+        ///
         /// </remarks>
         public Int32 Crc32
         {
@@ -1087,13 +1130,12 @@ namespace Ionic.Zip
         /// A derived property that is <c>true</c> if the entry uses encryption.  
         /// </summary>
         ///
-        /// <remarks>
-        /// This is a readonly property on the entry.  Upon reading an entry, this bool is
-        /// determined by the data read.  After having written an entry, this bool indicates
+        /// <remarks> This is a readonly property on the entry.  When reading a zip file,
+        /// the value for the ZipEntry is determined by the data read from the zip file.
+        /// After saving a ZipFile, the value of this property for each ZipEntry indicates
         /// whether encryption was actually used (which will have been true if the <see
-        /// cref="Password"/> was set and the <see cref="Encryption"/> property was something
-        /// other than <see cref="EncryptionAlgorithm.None"/>.
-        /// </remarks>
+        /// cref="Password"/> was set and the <see cref="Encryption"/> property was
+        /// something other than <see cref="EncryptionAlgorithm.None"/>.  </remarks>
         public bool UsesEncryption
         {
             get { return (Encryption != EncryptionAlgorithm.None); }
@@ -1104,29 +1146,32 @@ namespace Ionic.Zip
         /// </summary>
         /// 
         /// <remarks>
-        /// <para>
-        /// When setting this property, you must also set a Password on the entry in order to get
-        /// encryption.  If you set a value other than <see cref="EncryptionAlgorithm.None"/> on
-        /// this property and do not set a <see cref="Password"/> then the entry will not be
-        /// encrypted. Of course the encryption applies only to the data that is streamed out when
-        /// you call <see cref="ZipFile.Save()"/> or one of its cousins on the containing ZipFile instance.
+        ///
+        /// <para> When setting this property, you must also set a <see cref="Password"/> on
+        /// the entry in order to encrypt the entry when the <c>ZipFile</c> is saved.  If
+        /// you set a value other than <see cref="EncryptionAlgorithm.None"/> on this
+        /// property and do not set a <c>Password</c> then the entry will not be
+        /// encrypted. The <c>ZipEntry</c> data is encrypted as the <c>ZipFile</c> is saved, 
+        /// when you call <see cref="ZipFile.Save()"/> or one of its cousins on the
+        /// containing <c>ZipFile</c> instance.  </para>
+        ///
+        /// <para> There is no common, ubiquitous multi-vendor standard for strong
+        /// encryption. There is broad support for so-called "traditional" Zip encryption,
+        /// sometimes called Zip 2.0 encryption, as <see
+        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">specified by
+        /// PKWare</see>, but this encryption is considered weak and breakable. This library
+        /// currently supports the Zip 2.0 "weak" encryption, and also a stronger
+        /// WinZip-compatible AES encryption, using either 128-bit or 256-bit key strength.
         /// </para>
         ///
-        /// <para>
-        /// There is no common, ubiquitous multi-vendor standard for strong encryption. There is
-        /// broad support for "traditional" Zip encryption, sometimes called Zip 2.0 encryption,
-        /// as specified by PKWare, but this encryption is considered weak. This library currently
-        /// supports AES 128 and 256 in addition to the Zip 2.0 "weak" encryption.
-        /// </para>
-        ///
-        /// <para>
-        /// The PKZIP specification from PKWare defines a set of encryption algorithms, and the
-        /// data formats for the zip archive that support them. Other vendors of tools and
-        /// libraries, such as WinZip or Xceed, also specify and support different encryption
-        /// algorithms and data formats.  This library supports a subset of the complete set of
-        /// algorithms.  If you want one that is not currently supported, call me and maybe we can
-        /// talk business.
-        /// </para>
+        /// <para> The
+        /// Zip specification from PKWare defines a set of encryption algorithms, and
+        /// the data formats for the zip archive that support them. Other vendors of tools
+        /// and libraries, such as WinZip or Xceed, also specify and support different
+        /// encryption algorithms and data formats, as extensions to the basic ZIP
+        /// specification.  This library supports a subset of the complete set of
+        /// algorithms.  If you want one that is not currently supported, call me and maybe
+        /// we can talk business.  </para>
         ///
         /// <para>
         /// The WinZip AES encryption algorithms are not supported on the .NET Compact Framework. 
@@ -1356,16 +1401,27 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Set to indicate whether to use UTF-8 encoding on filenames and 
-        /// comments, according to the PKWare specification.  
+        /// Set to indicate whether to use UTF-8 encoding for filenames and 
+        /// comments.  
         /// </summary>
+        ///
         /// <remarks>
-        /// If this flag is set, the entry will be marked as encoded with UTF-8, 
-        /// according to the PWare spec, if necessary.  Necessary means, if the filename or 
-        /// entry comment (if any) cannot be reflexively encoded with the default (IBM437) code page. 
-        /// </remarks>
-        /// <remarks>
-        /// Setting this flag to true is equivalent to setting <see cref="ProvisionalAlternateEncoding"/> to <c>System.Text.Encoding.UTF8</c>
+        ///
+        /// <para> If this flag is set, the comment and filename for the entry will be
+        /// encoded with UTF-8, as described in <see
+        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">the Zip
+        /// specification</see>, if necessary. "Necessary" means, the filename or entry
+        /// comment (if any) cannot be reflexively encoded and decoded using the default
+        /// code page, IBM437.  </para>
+        ///
+        /// <para>
+        /// Setting this flag to true is equivalent to setting
+        /// <see cref="ProvisionalAlternateEncoding"/> to <c>System.Text.Encoding.UTF8</c>.
+        /// </para>
+        ///
+        /// <para> This flag has no effect or relation to the text encoding used within the file
+        /// itself. </para>
+        ///
         /// </remarks>
         public bool UseUnicodeAsNecessary
         {
@@ -1380,41 +1436,46 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// The text encoding to use for this ZipEntry, when the default
-        /// encoding is insufficient.
+        /// The text encoding to use for the FileName and Comment on this ZipEntry, when the 
+        /// default encoding is insufficient.
         /// </summary>
         ///
         /// <remarks>
-        /// <para>
-        /// According to the zip specification from PKWare, filenames and comments for a
-        /// ZipEntry are encoded either with IBM437 or with UTF8.  But, some archivers do not
-        /// follow the specification, and instead encode characters using the system default
-        /// code page, or an arbitrary code page.  For example, WinRAR when run on a machine in
-        /// Shanghai may encode filenames with the Chinese (Big-5) code page.  This behavior is
-        /// contrary to the Zip specification, but it occurs anyway.  This property exists to
-        /// support that non-compliant behavior when reading or writing zip files.
-        /// </para>
+        ///
+        /// <para> According to <see
+        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">the Zip
+        /// specification from PKWare</see>, filenames and comments for a ZipEntry are
+        /// encoded either with IBM437 or with UTF8.  But, some zip archiver tools or
+        /// libraries do not follow the specification, and instead encode characters using
+        /// the system default code page, or an arbitrary code page.  For example, WinRAR
+        /// when run on a machine in Shanghai may encode filenames with the Chinese (Big-5)
+        /// code page.  This behavior is contrary to the Zip specification, but it occurs
+        /// anyway.  This property exists to support that non-compliant behavior when
+        /// reading or writing zip files.  </para>
+        ///
         /// <para>
         /// When writing zip archives that will be read by one of these other archivers, use
         /// this property to specify the code page to use when encoding filenames and comments
         /// into the zip file, when the IBM437 code page will not suffice.
         /// </para>
-        /// <para>
-        /// Be aware that a zip file created after you've explicitly specified the code page will
-        /// not be compliant to the PKWare specification, and may not be readable by compliant
-        /// archivers.  On the other hand, many archivers are non-compliant and can read zip files
-        /// created in arbitrary code pages. If you run WinRar on your PC desktop in Tokyo, you
-        /// will probably be able to open Zip files that we encoded by DotNetZip in the Shift_JIS
-        /// code page.
+        ///
+        /// <para> Be aware that a zip file created after you've explicitly specified the
+        /// code page will not be compliant to the PKWare specification, and may not be
+        /// readable by compliant archivers.  On the other hand, many archivers are
+        /// non-compliant and can read zip files created in arbitrary code pages. For
+        /// example, if you run WinRar on your PC desktop in Kyoto, Japan, you will probably be
+        /// able to open Zip files that we encoded by DotNetZip in the Shift_JIS code page.
         /// </para>
-        /// <para>
-        /// When using an arbitrary, non-UTF8 code page for encoding, there is no standard way
-        /// for the creator (DotNetZip) to specify in the zip file which code page has been
-        /// used. DotNetZip is not able to inspect the zip file and determine the codepage used
-        /// for the entries within it. Therefore, you, the application author, must determine
-        /// that.  If you use a codepage which results in filenames that are not legal in
-        /// Windows, you will get exceptions upon extract. Caveat Emptor.
-        /// </para>
+        ///
+        /// <para> When using an arbitrary, non-UTF8 code page for encoding, there is no
+        /// standard way for the creator (DotNetZip) to specify in the zip file which code
+        /// page has been used. DotNetZip is not able to inspect the zip file and determine
+        /// the codepage used for the entries within it. Therefore, you, the application
+        /// author, must determine that.  If you read a zip file using a codepage other than
+        /// the one used to encode the zipfile, this may result in filenames that are not
+        /// legal in the filesystem, and you will get exceptions during calls to
+        /// <c>Extract()</c> methods for those entries.  Caveat Emptor.  </para>
+        ///
         /// </remarks>
         public System.Text.Encoding ProvisionalAlternateEncoding
         {
@@ -1434,26 +1495,22 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// <para>
-        /// This read-only property describes the encoding used by the ZipEntry.  If the entry has
-        /// been read in from an existing ZipFile, then it may take the value UTF-8, if the entry
-        /// is coded to specify UTF-8.  If the entry does not specify UTF-8, the typical case,
-        /// then the encoding used is whatever the application specified in the call to
-        /// <c>ZipFile.Read()</c>. If the application has used one of the overloads of
-        /// <c>ZipFile.Read()</c> that does not accept an encoding parameter, then the encoding
-        /// used is IBM437, which is the default encoding described in the ZIP specification.
-        /// </para>
         ///
-        /// <para>
-        /// If the entry is being created, then the value of ActualEncoding is taken according to
-        /// the logic described in the documentation for <see
-        /// cref="ZipFile.ProvisionalAlternateEncoding" />.
-        /// </para>
+        /// <para> This read-only property describes the encoding used by the
+        /// <c>ZipEntry</c>.  If the entry has been read in from an existing ZipFile, then
+        /// it may take the value UTF-8, if the entry is coded to specify UTF-8.  If the
+        /// entry does not specify UTF-8, the typical case, then the encoding used is
+        /// whatever the application specified in the call to <c>ZipFile.Read()</c>. If the
+        /// application has used one of the overloads of <c>ZipFile.Read()</c> that does not
+        /// accept an encoding parameter, then the encoding used is IBM437, which is the
+        /// default encoding described in the ZIP specification.  </para>
         ///
-        /// <para>
-        /// An application might be interested in retrieving this property to see if an entry read
-        /// in from a file has used Unicode (UTF-8).
-        /// </para>
+        /// <para> If the entry is being created, then the value of ActualEncoding is taken
+        /// according to the logic described in the documentation for <see
+        /// cref="ZipFile.ProvisionalAlternateEncoding" />.  </para>
+        ///
+        /// <para> An application might be interested in retrieving this property to see if
+        /// an entry read in from a file has used Unicode (UTF-8).  </para>
         ///
         /// </remarks>
         ///
@@ -1472,7 +1529,7 @@ namespace Ionic.Zip
         {
             int bytesRead = 0;
 
-            ze._RelativeOffsetOfLocalHeader = (int)ze.ArchiveStream.Position;
+            ze._RelativeOffsetOfLocalHeader = ze.ArchiveStream.Position;
 
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(ze.ArchiveStream);
             bytesRead += 4;
@@ -1866,6 +1923,9 @@ namespace Ionic.Zip
             }
             result = SharedUtilities.TrimVolumeAndSwapSlashes(result);
             result = SharedUtilities.NormalizeFwdSlashPath(result);
+            
+            while (result.StartsWith("/")) result = result.Substring(1);
+
             return result;
         }
 
@@ -1957,14 +2017,22 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipEntry.Extract(bool)"/>
         ///
         /// <remarks>
+        ///
+        /// <para> This method extracts an entry from a zip file into the current working
+        /// directory.  The path of the entry as extracted is the full path as specified in
+        /// the zip archive, relative to the current working directory.  After the file is
+        /// extracted successfully, the file attributes and timestamps are set.  </para>
+        ///
         /// <para>
-        /// The action taken when extraction an entry  would overwrite an existing file
+        /// The action taken when extraction an entry would overwrite an existing file
         /// is determined by the <see cref="ExtractExistingFile" /> property. 
         /// </para>
+        ///
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
-        /// about how the last modified time of the created file is set.
+        /// See the remarks the <see cref="LastModified"/> property, for some details 
+        /// about how the last modified time of the file is set after extraction.
         /// </para>
+        ///
         /// </remarks>
         public void Extract()
         {
@@ -1981,8 +2049,8 @@ namespace Ionic.Zip
         /// cref="Extract(ExtractExistingFileAction)"/> instead.
         /// </para>
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
-        /// about how the last modified time of the created file is set.
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// about how the last modified time of the created file is set after extraction.
         /// </para>
         /// </remarks>
         /// <param name="overwrite">
@@ -2003,8 +2071,8 @@ namespace Ionic.Zip
         /// </summary>
         /// <remarks>
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
-        /// about how the last modified time of the created file is set.
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// about how the last modified time of the file is set after extraction.
         /// </para>
         /// </remarks>
         /// <param name="extractExistingFile">The action to take if extraction would 
@@ -2021,12 +2089,10 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// 
-        /// <para>
-        /// For example, the caller could specify Console.Out, or a MemoryStream, or ASP.NET's
-        /// Response.OutputStream.  The content will be decrypted and decompressed as
-        /// necessary. If the entry is encrypted and no password is provided, this method will
-        /// throw.
-        /// </para>
+        /// <para> For example, the caller could specify <c>Console.Out</c>, or a
+        /// <c>MemoryStream</c>, or ASP.NET's <c>Response.OutputStream</c>.  The content
+        /// will be decrypted and decompressed as necessary. If the entry is encrypted and
+        /// no password is provided, this method will throw.  </para>
         /// 
         /// </remarks>
         /// 
@@ -2043,8 +2109,8 @@ namespace Ionic.Zip
         /// 
         /// <param name="baseDirectory">the pathname of the base directory</param>
         /// 
-        /// <seealso cref="Ionic.Zip.ZipEntry.OverwriteOnExtract"/>
-        /// <seealso cref="Ionic.Zip.ZipEntry.Extract(string, bool)"/>
+        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
+        /// <seealso cref="Ionic.Zip.ZipEntry.Extract(string, ExtractExistingFileAction)"/>
         /// <seealso cref="Ionic.Zip.ZipFile.Extract(string)"/>
         /// 
         /// <example>
@@ -2057,8 +2123,7 @@ namespace Ionic.Zip
         ///   {
         ///     if (s1.EndsWith(".txt")) 
         ///     {
-        ///       ZipEntry entry= zip[s1];
-        ///       entry.Extract("textfiles");
+        ///       zip[s1].Extract("textfiles");
         ///     }
         ///   }
         /// }
@@ -2068,9 +2133,7 @@ namespace Ionic.Zip
         ///       Dim s1 As String
         ///       For Each s1 In zip.EntryFilenames
         ///           If s1.EndsWith(".txt") Then
-        ///               Dim entry as ZipEntry
-        ///               entry = zip(s1)
-        ///               entry.Extract("textfiles")
+        ///               zip(s1).Extract("textfiles")
         ///           End If
         ///       Next
         ///   End Using
@@ -2078,12 +2141,12 @@ namespace Ionic.Zip
         /// </example>
         /// 
         /// <remarks>
-        /// <para>
-        /// Existing entries in the filesystem will not be overwritten. If you would like to 
-        /// force the overwrite of existing files, see the <c>OverwriteOnExtract</c> property, 
-        /// or try one of the overloads of the Extract method that accept a boolean flag
-        /// to indicate explicitly whether you want overwrite.
-        /// </para>
+        ///
+        /// <para> Using this method, existing entries in the filesystem will not be
+        /// overwritten. If you would like to force the overwrite of existing files, see the
+        /// <see cref="ExtractExistingFile"/> property, or call <see cref="Extract(string,
+        /// ExtractExistingFileAction)"/>. </para>
+        ///
         /// <para>
         /// See the remarks on the LastModified property, for some details 
         /// about how the last modified time of the created file is set.
@@ -2107,7 +2170,9 @@ namespace Ionic.Zip
         /// </remarks>
         /// 
         /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// <param name="overwrite">If true, overwrite any existing files if necessary upon extraction.</param>
+        /// <param name="overwrite">If true, overwrite any existing files if necessary
+        /// upon extraction.</param>
+        ///
         /// <seealso cref="Extract(String,ExtractExistingFileAction)"/>
         [Obsolete("Please use method Extract(String,ExtractExistingFileAction)")]
         public void Extract(string baseDirectory, bool overwrite)
@@ -2130,7 +2195,8 @@ namespace Ionic.Zip
         /// </remarks>
         /// 
         /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// <param name="extractExistingFile">The action to take if extraction would overwrite an existing file.</param>
+        /// <param name="extractExistingFile">The action to take if extraction would
+        /// overwrite an existing file.</param>
         public void Extract(string baseDirectory, ExtractExistingFileAction extractExistingFile)
         {
             ExtractExistingFile = extractExistingFile;
@@ -2148,16 +2214,16 @@ namespace Ionic.Zip
         /// the right one for you...
         /// </overloads>
         ///         
-        /// <seealso cref="Ionic.Zip.ZipEntry.OverwriteOnExtract"/>
-        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractWithPassword(bool, string)"/>
+        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
+        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractWithPassword(ExtractExistingFileAction, string)"/>
         ///
         /// <remarks>
-        /// <para>
-        /// Existing entries in the filesystem will not be overwritten. If you would like to 
-        /// force the overwrite of existing files, see the <c>OverwriteOnExtract</c> property, 
-        /// or try one of the overloads of the ExtractWithPassword method that accept a boolean flag
-        /// to indicate explicitly that you want overwrite.
-        /// </para>
+        ///
+        /// <para> Existing entries in the filesystem will not be overwritten. If you would
+        /// like to force the overwrite of existing files, see the <see
+        /// cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>property, or call <see
+        /// cref="ExtractWithPassword(ExtractExistingFileAction,string)"/>.</para>
+        ///
         /// <para>
         /// See the remarks on the <see cref="LastModified"/> property for some details 
         /// about how the "last modified" time of the created file is set.
@@ -2202,16 +2268,15 @@ namespace Ionic.Zip
         /// and using the specified password. 
         /// </summary>
         /// 
-        /// <seealso cref="Ionic.Zip.ZipEntry.OverwriteOnExtract"/>
-        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractWithPassword(string, bool, string)"/>
+        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
+        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractWithPassword(string, ExtractExistingFileAction, string)"/>
         ///
         /// <remarks>
-        /// <para>
-        /// Existing entries in the filesystem will not be overwritten. If you would like to 
-        /// force the overwrite of existing files, see the <c>OverwriteOnExtract</c> property, 
-        /// or try one of the overloads of the ExtractWithPassword method that accept a boolean flag
-        /// to indicate explicitly whether you want overwrite.
-        /// </para>
+        /// <para> Existing entries in the filesystem will not be overwritten. If you would
+        /// like to force the overwrite of existing files, see the <see
+        /// cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>property, or call <see
+        /// cref="ExtractWithPassword(ExtractExistingFileAction,string)"/>.</para>
+        ///
         /// <para>
         /// See the remarks on the LastModified property, for some details 
         /// about how the last modified time of the created file is set.
@@ -2250,7 +2315,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Extract the entry to a file in the filesystem,
+        /// Extract the entry to a file in the filesystem, relative to the current directory,
         /// using the specified behavior when extraction would overwrite an existing file.
         /// </summary>
         /// 
@@ -2283,8 +2348,12 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// <param name="overwrite">If true, overwrite any existing files if necessary upon extraction.</param>
+        ///
+        /// <param name="overwrite">If true, overwrite any existing files if necessary
+        /// upon extraction.</param>
+        ///
         /// <param name="password">The Password to use for decrypting the entry.</param>
+        ///
         /// <seealso cref="ExtractWithPassword(String,ExtractExistingFileAction,String)"/>
         [Obsolete("Please use method ExtractWithPassword(String,ExtractExistingFileAction,String)")]
         public void ExtractWithPassword(string baseDirectory, bool overwrite, string password)
@@ -2304,7 +2373,10 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// <param name="extractExistingFile">The action to take if extraction would overwrite an existing file.</param>
+        ///
+        /// <param name="extractExistingFile">The action to take if extraction would
+        /// overwrite an existing file.</param>
+        ///
         /// <param name="password">The Password to use for decrypting the entry.</param>
         public void ExtractWithPassword(string baseDirectory, ExtractExistingFileAction extractExistingFile, string password)
         {
@@ -2407,7 +2479,7 @@ namespace Ionic.Zip
         public Ionic.Zlib.CrcCalculatorStream OpenReader()
         {
             // use the entry password if it is non-null, else use the zipfile password, which is possibly null
-            return InternalOpenReader(this._Password==null ? this._zipfile._Password : this._Password);
+            return InternalOpenReader(this._Password ?? this._zipfile._Password);
         }
 
         /// <summary>
@@ -2416,8 +2488,8 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// <para>
-        /// See the documentation on the <see cref="OpenReader()"/> method for full details.  This overload allows the 
-        /// application to specify a password for the ZipEntry to be read. 
+        /// See the documentation on the <see cref="OpenReader()"/> method for full details.  
+        /// This overload allows the application to specify a password for the ZipEntry to be read. 
         /// </para>
         /// </remarks>
         /// 
@@ -2515,6 +2587,19 @@ namespace Ionic.Zip
             _ioOperationCanceled = _zipfile.OnSaveBlock(this, bytesXferred, totalBytesToXfer);
         }
 
+        private void ReallyDelete(string fileName)
+        {
+            // workitem 7881
+            // reset ReadOnly bit if necessary
+#if NETCF
+            if ( (NetCfFile.GetAttributes(fileName) & (uint)FileAttributes.ReadOnly) == (uint)FileAttributes.ReadOnly)
+                NetCfFile.SetAttributes(fileName, (uint)FileAttributes.Normal);
+#else
+            if ( (File.GetAttributes(fileName) & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                File.SetAttributes(fileName, FileAttributes.Normal);
+#endif
+            File.Delete(fileName);
+        }
 
         // Pass in either basedir or s, but not both. 
         // In other words, you can extract to a stream or to a directory (filesystem), but not both!
@@ -2541,10 +2626,15 @@ namespace Ionic.Zip
                     return;
                 }
 
-                // if no password explicitly specified, use the password on the entry itself.
-                if (password == null) password = this._Password;  // may be null
-
-                SetupCrypto(password);
+                // if no password explicitly specified, use the password on the entry itself,
+                // or on the zipfile itself.
+                string p = password ?? this._Password ?? this._zipfile._Password;
+                if (UsesEncryption)
+                {
+                    if (p == null)
+                        throw new BadPasswordException();
+                    SetupCrypto(p); // may be null
+                }
 
                 // set up the output stream
                 if (TargetFile != null)
@@ -2560,28 +2650,44 @@ namespace Ionic.Zip
                         fileExistsBeforeExtraction = true;
                         switch (ExtractExistingFile)
                         {
-                            case ExtractExistingFileAction.Throw:
+                        case ExtractExistingFileAction.Throw:
+                            throw new ZipException("The file already exists.");
+                        case ExtractExistingFileAction.OverwriteSilently:
+                            {
+                            if (_zipfile.Verbose)
+                                _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", FileName);
+                                
+                            //System.IO.File.Delete(TargetFile);
+                            ReallyDelete(TargetFile);
+                            }
+                            break;
+                        case ExtractExistingFileAction.DontOverwrite:
+                            if (_zipfile.Verbose)
+                                _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
+                            OnAfterExtract(baseDir);
+                            return;
+                        case ExtractExistingFileAction.InvokeExtractProgressEvent:
+                            OnExtractExisting(baseDir);
+                            // Check the ExtractExistingFile property again, it may have been reset.
+                            if (ExtractExistingFile == ExtractExistingFileAction.Throw)
                                 throw new ZipException("The file already exists.");
-                            case ExtractExistingFileAction.OverwriteSilently:
-                                System.IO.File.Delete(TargetFile);
-                                break;
-                            case ExtractExistingFileAction.DontOverwrite:
+                            else if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
+                                //System.IO.File.Delete(TargetFile);
+                            {
+                                if (_zipfile.Verbose)
+                                    _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", FileName);
+                                //System.IO.File.Delete(TargetFile);
+                                ReallyDelete(TargetFile);
+                            }
+                            else if (ExtractExistingFile == ExtractExistingFileAction.DontOverwrite)
+                            {
+                                if (_zipfile.Verbose)
+                                    _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
                                 OnAfterExtract(baseDir);
                                 return;
-                            case ExtractExistingFileAction.InvokeExtractProgressEvent:
-                                OnExtractExisting(baseDir);
-                                // Check the ExtractExistingFile property again, it may have been reset.
-                                if (ExtractExistingFile == ExtractExistingFileAction.Throw)
-                                    throw new ZipException("The file already exists.");
-                                else if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
-                                    System.IO.File.Delete(TargetFile);
-                                else if (ExtractExistingFile == ExtractExistingFileAction.DontOverwrite)
-                                {
-                                    OnAfterExtract(baseDir);
-                                    return;
-                                }
-                                else throw new ZipException("The file already exists.");
-                                break;
+                            }
+                            else throw new ZipException("The file already exists.");
+                            break;
                         }
                     }
                     output = new System.IO.FileStream(TargetFile, System.IO.FileMode.CreateNew);
@@ -2660,7 +2766,6 @@ namespace Ionic.Zip
 
                     if (_ntfsTimesAreSet)
                     {
-
                         DateTime[] adjusted = new DateTime[] {
                             Ionic.Zip.SharedUtilities.AdjustTime_DotNetToWin32(_Ctime),
                             Ionic.Zip.SharedUtilities.AdjustTime_DotNetToWin32(_Atime),
@@ -2845,7 +2950,6 @@ namespace Ionic.Zip
         }
 
 
-
         private void _CheckRead(int nbytes)
         {
             if (nbytes == 0)
@@ -2854,6 +2958,7 @@ namespace Ionic.Zip
 
         }
 
+        
 
         private Int32 _ExtractOne(System.IO.Stream output)
         {
@@ -2886,7 +2991,10 @@ namespace Ionic.Zip
 #endif
 
             else
-                input2 = new Ionic.Zlib.CrcCalculatorStream(input, _CompressedFileDataSize);
+                // Thu, 18 Jun 2009  01:45
+                // why do I need a CrcCalculatorStream?  couldn't I just assign input1 ?
+                //input2 = new Ionic.Zlib.CrcCalculatorStream(input, _CompressedFileDataSize);
+                input2 = input;
 
 
             //Stream input2a = new TraceStream(input2);
@@ -2912,7 +3020,9 @@ namespace Ionic.Zip
 
                     //Console.WriteLine("ExtractOne: Read {0} bytes\n{1}", n, Util.FormatByteArray(bytes,n));
 
+                    // must check data read - essential for detecting corrupt zip files
                     _CheckRead(n);
+                    
                     output.Write(bytes, 0, n);
                     LeftToRead -= n;
                     bytesWritten += n;
@@ -3565,7 +3675,7 @@ namespace Ionic.Zip
                     _CompressionMethod = 0x00;
 
 
-        // Ok, we're getting the data to be compressed from a non-zero length file
+                // Ok, we're getting the data to be compressed from a non-zero length file
                 // or stream.  In that case we check the callback to see if the app
                 // wants to tell us whether to compress or not.  
 
@@ -3903,6 +4013,7 @@ namespace Ionic.Zip
 
             try
             {
+                long fileLength = 0;
                 // get the original stream:
                 if (this._Source == ZipEntrySource.Stream)
                 {
@@ -3910,6 +4021,9 @@ namespace Ionic.Zip
                         throw new ZipException(String.Format("The input stream is null for entry '{0}'.", FileName));
                     this._sourceStream.Position = 0;
                     input = this._sourceStream;
+
+                    if (this._sourceStream.CanSeek)
+                        fileLength = this._sourceStream.Length;
                 }
                 else
                 {
@@ -3920,15 +4034,12 @@ namespace Ionic.Zip
                     // FileShare.Delete is not defined for the Compact Framework
                     fs |= FileShare.Delete;
 #endif
+                    System.IO.FileInfo fi = new System.IO.FileInfo(LocalFileName);
+                    fileLength = fi.Length;
+
                     input = System.IO.File.Open(LocalFileName, FileMode.Open, FileAccess.Read, fs);
                 }
 
-                long fileLength = 0;
-                if (this._Source != ZipEntrySource.Stream)
-                {
-                    System.IO.FileInfo fi = new System.IO.FileInfo(LocalFileName);
-                    fileLength = fi.Length;
-                }
 
                 // wrap a CRC Calculator Stream around the raw input stream. 
                 input1 = new Ionic.Zlib.CrcCalculatorStream(input);
@@ -3981,14 +4092,13 @@ namespace Ionic.Zip
 
                 // as we emit the file, we maybe deflate, then maybe encrypt, then write the bytes. 
                 byte[] buffer = new byte[BufferSize];
-                int n = input1.Read(buffer, 0, BufferSize);
-                while (n > 0)
+                int n;
+                while ((n= SharedUtilities.ReadWithRetry(input1,buffer, 0, buffer.Length, FileName)) != 0)
                 {
                     output2.Write(buffer, 0, n);
                     OnWriteBlock(input1.TotalBytesSlurped, fileLength);
                     if (_ioOperationCanceled)
                         break;
-                    n = input1.Read(buffer, 0, BufferSize);
                 }
 
                 // by calling Close() on the deflate stream, we write the footer bytes, as necessary.
@@ -4072,7 +4182,6 @@ namespace Ionic.Zip
             if (_zipfile._zip64 == Zip64Option.Never && _entryRequiresZip64.Value)
                 throw new ZipException("Compressed or Uncompressed size, or offset exceeds the maximum value. Consider setting the UseZip64WhenSaving property on the ZipFile instance.");
 
-
             _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
 
             // (i==26) filename length (Int16)
@@ -4085,6 +4194,11 @@ namespace Ionic.Zip
                 _EntryHeader[4] = (byte)(45 & 0x00FF);
                 _EntryHeader[5] = 0x00;
 
+                // workitem 7917
+                // set bit 3 for ZIP64 compatibility with WinZip12
+                _BitField |= 0x0008;
+                _EntryHeader[6] = (byte)(_BitField & 0x00FF);
+                
                 // CompressedSize and UncompressedSize - 0xFF
                 for (int j = 0; j < 8; j++)
                     _EntryHeader[i++] = 0xff;
@@ -4207,8 +4321,8 @@ namespace Ionic.Zip
             {
                 byte[] Descriptor = null;
 
-                // on non-seekable device, Zip64Option.AsNecessary is equivalent to Zip64Option.Always
-                if (_zipfile._zip64 == Zip64Option.Always || _zipfile._zip64 == Zip64Option.AsNecessary)
+                // workitem 7917
+                if (_OutputUsesZip64.Value)
                 {
                     Descriptor = new byte[24];
                     i = 0;
@@ -4419,8 +4533,9 @@ namespace Ionic.Zip
             byte[] bytes = new byte[BufferSize];
 
             // just read from the existing input zipfile and write to the output
-            System.IO.Stream input = this.ArchiveStream;
-
+             System.IO.Stream input = this.ArchiveStream;
+            var input1 = new Ionic.Zlib.CrcCalculatorStream(input);
+                
             // must re-compute metadata if it changed, or if the Zip64 option changed.
             if (_metadataChanged ||
         (_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Never) ||
@@ -4453,12 +4568,15 @@ namespace Ionic.Zip
                         int len = (Remaining > bytes.Length) ? bytes.Length : (int)Remaining;
 
                         // read
-                        n = input.Read(bytes, 0, len);
-                        _CheckRead(n);
+                        n = input1.Read(bytes, 0, len);
+                        //_CheckRead(n);
 
                         // write
                         outstream.Write(bytes, 0, n);
                         Remaining -= n;
+                        OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
+                        if (_ioOperationCanceled)
+                            break;
                     }
 
                     _LengthOfTrailer = 0;
@@ -4565,7 +4683,7 @@ namespace Ionic.Zip
                 // This may have changed if any of the other entries changed (eg, if a different
                 // entry was removed or added.)
                 var counter = outstream as CountingStream;
-                _RelativeOffsetOfLocalHeader = (int)((counter != null) ? counter.BytesWritten : outstream.Position);
+                _RelativeOffsetOfLocalHeader = (counter != null) ? counter.BytesWritten : outstream.Position;
 
                 // copy through the header, filedata, trailer, everything...
                 long Remaining = this._TotalEntrySize;
@@ -4574,12 +4692,16 @@ namespace Ionic.Zip
                     int len = (Remaining > bytes.Length) ? bytes.Length : (int)Remaining;
 
                     // read
-                    n = input.Read(bytes, 0, len);
-                    _CheckRead(n);
+                    n = input1.Read(bytes, 0, len);
+                    //_CheckRead(n);
 
                     // write
                     outstream.Write(bytes, 0, n);
                     Remaining -= n;
+                    //OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
+                    OnWriteBlock(input1.TotalBytesSlurped, this._TotalEntrySize);
+                    if (_ioOperationCanceled)
+                        break;
                 }
 
             }
@@ -4770,7 +4892,18 @@ namespace Ionic.Zip
             // Indicates that the value has not yet been set. 
             // Therefore, seek to the local header, figure the start of file data.
             long origPosition = this.ArchiveStream.Position;
-            this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, System.IO.SeekOrigin.Begin);
+            // BFJ's Exception:  "An attempt was made to move the file pointer before the beginning of the file."
+            try 
+            {
+                this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, System.IO.SeekOrigin.Begin);
+            }
+            catch (System.Exception exc1)
+            {
+                string description = String.Format("Exception seeking  entry({0}) offset(0x{1:X8}) len(0x{2:X8})",
+                                                   this.FileName, this._RelativeOffsetOfLocalHeader,
+                                                   this.ArchiveStream.Length);
+                throw new Exception(description, exc1);
+            }
 
             byte[] block = new byte[30];
             this.ArchiveStream.Read(block, 0, block.Length);
@@ -4887,10 +5020,10 @@ namespace Ionic.Zip
         private Nullable<bool> _OutputUsesZip64;
         private bool _IsText; // workitem 7801
 
-        /// <summary>
-        /// The default size of the IO buffer for ZipEntry instances. Currently it is 8192 bytes.
-        /// </summary>
-        public const int IO_BUFFER_SIZE_DEFAULT = 8192; // 0x8000; // 0x4400
+        // summary
+        // The default size of the IO buffer for ZipEntry instances. Currently it is 8192 bytes.
+        // summary
+        //public const int IO_BUFFER_SIZE_DEFAULT = 8192; // 0x8000; // 0x4400
 
     }
 
@@ -4988,7 +5121,7 @@ namespace Ionic.Zip
 
 
         [System.Runtime.InteropServices.DllImport("coredll", EntryPoint="GetFileAttributes", SetLastError=true)]
-        internal static extern int GetAttributes(string lpFileName);
+        internal static extern uint GetAttributes(string lpFileName);
 
         [System.Runtime.InteropServices.DllImport("coredll", EntryPoint="SetFileAttributes", SetLastError=true)]
         internal static extern bool SetAttributes(string lpFileName, uint dwFileAttributes);
