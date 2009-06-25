@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-02 10:48:55>
+// Time-stamp: <2009-June-16 06:44:10>
 //
 // ------------------------------------------------------------------
 //
@@ -404,9 +404,10 @@ namespace Ionic.Zlib
     /// Computes an Adler-32 checksum. 
     /// </summary>
     /// <remarks>
-    /// The Adler checksum is similar to a CRC checksum, but faster to compute, though less reliable.  
-    /// It is used in producing RFC1950 compressed streams.  The Adler checksum is a required part of the "ZLIB" standard.
-    /// Applications will almost never need to use this class directly. 
+    /// The Adler checksum is similar to a CRC checksum, but faster to compute, though less
+    /// reliable.  It is used in producing RFC1950 compressed streams.  The Adler checksum
+    /// is a required part of the "ZLIB" standard.  Applications will almost never need to
+    /// use this class directly.
     /// </remarks>
     internal sealed class Adler
     {

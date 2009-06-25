@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:42:04>
+// Time-stamp: <2009-June-15 17:03:40>
 //
 // ------------------------------------------------------------------
 //
@@ -46,13 +46,13 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Generic IEnumerator support, for use of a ZipFile in a foreach construct.  
+        /// Generic IEnumerator support, for use of a ZipFile in an enumeration.  
         /// </summary>
         ///
         /// <remarks>
         /// You probably do not want to call <c>GetEnumerator</c> explicitly. Instead 
         /// it is implicitly called when you use a <see langword="foreach"/> loop in C#, or a 
-        /// <c>For Each</c> loop in VB.
+        /// <c>For Each</c> loop in VB.NET.
         /// </remarks>
         ///
         /// <example>
@@ -133,6 +133,17 @@ namespace Ionic.Zip
         /// <summary>
         /// IEnumerator support, for use of a ZipFile in a foreach construct.  
         /// </summary>
+        ///
+        /// <remarks>
+        /// This method is included for COM support.  An application generally does not call
+        /// this method directly.  It is called implicitly by COM clients when enumerating
+        /// the entries in the ZipFile instance.  In VBScript, this is done with a <c>For Each</c>
+        /// statement.  In Javascript, this is done with <c>new Enumerator(zipfile)</c>.
+        /// </remarks>
+        ///
+        /// <returns>
+        /// The IEnumerator over the entries in the ZipFile. 
+        /// </returns>
         [System.Runtime.InteropServices.DispId(-4)]
         public System.Collections.IEnumerator GetNewEnum()          // the name of this method is not significant
         {

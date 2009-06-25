@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:30:14>
+// Time-stamp: <2009-June-18 22:50:58>
 //
 // ------------------------------------------------------------------
 //
@@ -62,6 +62,21 @@ namespace Ionic.Zip
     /// </remarks>
     public enum ZipProgressEventType
     {
+        /// <summary>
+        /// Indicates that a Add() operation has started.
+        /// </summary>
+        Adding_Started,
+
+        /// <summary>
+        /// Indicates that an individual entry in the archive has been added.
+        /// </summary>
+        Adding_AfterAddEntry,
+
+        /// <summary>
+        /// Indicates that a Add() operation has completed.
+        /// </summary>
+        Adding_Completed,
+
         /// <summary>
         /// Indicates that a Read() operation has started.
         /// </summary>
@@ -309,6 +324,40 @@ namespace Ionic.Zip
         internal static ReadProgressEventArgs Completed(string archiveName)
         {
             var x = new ReadProgressEventArgs(archiveName, ZipProgressEventType.Reading_Completed);
+            return x;
+        }
+
+    }
+
+    
+    /// <summary>
+    /// Provides information about the progress of a Add operation.
+    /// </summary>
+    public class AddProgressEventArgs : ZipProgressEventArgs
+    {
+        internal AddProgressEventArgs() { }
+
+        private AddProgressEventArgs(string archiveName, ZipProgressEventType flavor)
+            : base(archiveName, flavor)
+        { }
+
+        internal static AddProgressEventArgs AfterEntry(string archiveName, ZipEntry entry, int entriesTotal)
+        {
+            var x = new AddProgressEventArgs(archiveName, ZipProgressEventType.Adding_AfterAddEntry);
+            x.EntriesTotal = entriesTotal;
+            x.CurrentEntry = entry;
+            return x;
+        }
+
+        internal static AddProgressEventArgs Started(string archiveName)
+        {
+            var x = new AddProgressEventArgs(archiveName, ZipProgressEventType.Adding_Started);
+            return x;
+        }
+
+        internal static AddProgressEventArgs Completed(string archiveName)
+        {
+            var x = new AddProgressEventArgs(archiveName, ZipProgressEventType.Adding_Completed);
             return x;
         }
 
