@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-18 23:05:42>
+// Time-stamp: <2009-July-01 13:49:40>
 //
 // ------------------------------------------------------------------
 //
@@ -63,7 +63,7 @@ namespace Ionic.Zip
         /// "attributes" for the file attributes; and "size" for the file length (uncompressed).
         /// The "attributes" and "name" nouns both support = and != as operators.  The "size",
         /// "atime", "mtime", and "ctime" nouns support = and !=, and &gt;, &gt;=, &lt;, &lt;=
-        /// as well.
+        /// as well. The times are taken to be expressed in "local time". 
         /// </para> 
         ///
         /// <para>
@@ -410,17 +410,17 @@ namespace Ionic.Zip
                                      String directoryPathInArchive,
                                      bool recurseDirectories)
         {
-            if (String.IsNullOrEmpty(directoryOnDisk)) directoryOnDisk= ".";
+            if (String.IsNullOrEmpty(directoryOnDisk)) directoryOnDisk = ".";
             if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...", selectionCriteria, directoryOnDisk);
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
             if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", filesToAdd.Count);
 
             OnAddStarted();
-            
+
             foreach (var f in filesToAdd)
             {
-                if (directoryPathInArchive!=null) 
+                if (directoryPathInArchive != null)
                 {
                     string dirInArchive = System.IO.Path.GetDirectoryName(f).Replace(directoryOnDisk, directoryPathInArchive);
                     this.AddFile(f, dirInArchive);
@@ -980,8 +980,7 @@ namespace Ionic
                 case WhichTime.ctime:
                     x = entry.Ctime;
                     break;
-                default:
-                    throw new ArgumentException("?time");
+                default: throw new Exception("??time");
             }
             return _Evaluate(x);
         }
@@ -1016,8 +1015,6 @@ namespace Ionic
                 case LogicalConjunction.XOR:
                     result ^= Right.Evaluate(entry);
                     break;
-                default:
-                    throw new ArgumentException("Conjunction");
             }
             return result;
         }

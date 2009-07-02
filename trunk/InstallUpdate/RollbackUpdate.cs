@@ -501,7 +501,7 @@ namespace wyUpdate
                     using (MemoryStream ms = new MemoryStream())
                     {
                         //read in the uninstall data
-                        zip.Extract("uninstall.dat", ms);
+                        zip["uninstall.dat"].Extract(ms);
 
                         LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry);
                     }

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:31:02>
+// Time-stamp: <2009-July-01 14:07:51>
 //
 // ------------------------------------------------------------------
 //
@@ -164,18 +164,17 @@ namespace Ionic
 
         internal override bool Evaluate(string filename)
         {
-            System.IO.FileInfo fi = new System.IO.FileInfo(filename);
             DateTime x;
             switch (Which)
             {
                 case WhichTime.atime:
-                    x = System.IO.File.GetLastAccessTime(filename);
+                    x = System.IO.File.GetLastAccessTimeUtc(filename);
                     break;
                 case WhichTime.mtime:
-                    x = System.IO.File.GetLastWriteTime(filename);
+                    x = System.IO.File.GetLastWriteTimeUtc(filename);
                     break;
                 case WhichTime.ctime:
-                    x = System.IO.File.GetCreationTime(filename);
+                    x = System.IO.File.GetCreationTimeUtc(filename);
                     break;
                 default:
                     throw new ArgumentException("Operator");
@@ -186,7 +185,6 @@ namespace Ionic
 
         private bool _Evaluate(DateTime x)
         {
-
             bool result = false;
             switch (Operator)
             {
@@ -387,8 +385,6 @@ namespace Ionic
             if (Operator != ComparisonOperator.EqualTo)
                 result = !result;
 
-            //Console.WriteLine("AttributesCriterion[{2}]({0})= {1}", filename, result, AttributeString);
-
             return result;
         }
     }
@@ -481,6 +477,7 @@ namespace Ionic
     {
         internal SelectionCriterion _Criterion;
 
+        #if NOTUSED
         /// <summary>
         /// The default constructor.  
         /// </summary>
@@ -491,7 +488,7 @@ namespace Ionic
         /// SelectFiles().
         /// </remarks>
         protected FileSelector() { }
-
+        #endif
 
         /// <summary>
         /// Constructor that allows the caller to specify file selection criteria.
@@ -728,6 +725,7 @@ namespace Ionic
                         {
                             t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd", null);
                         }
+                        t= DateTime.SpecifyKind(t, DateTimeKind.Local).ToUniversalTime();
                         current = new TimeCriterion
                         {
                             Which = (WhichTime)Enum.Parse(typeof(WhichTime), tokens[i]),
@@ -876,7 +874,7 @@ namespace Ionic
         /// selection criteria for this instance. </returns>
         public override String ToString()
         {
-            return _Criterion.ToString();
+            return "FileSelector("+_Criterion.ToString()+")";
         }
 
 

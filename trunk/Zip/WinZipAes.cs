@@ -255,9 +255,10 @@ namespace Ionic.Zip
 
 #if DEBUG
             if (invalid)
-                throw new Exception(String.Format("The MAC does not match '{0}' != '{1}'",
-                          Util.FormatByteArray(_StoredMac),
-                          Util.FormatByteArray(CalculatedMac)));
+                throw new Exception("The MAC does not match.");
+            //throw new Exception(String.Format("The MAC does not match '{0}' != '{1}'",
+            //              Util.FormatByteArray(_StoredMac),
+            //              Util.FormatByteArray(CalculatedMac)));
 #else
             if (invalid)
                 throw new Exception("The MAC does not match");
@@ -270,8 +271,8 @@ namespace Ionic.Zip
     }
 
 
-
-#if DEBUG
+    #region DONT_COMPILE_BUT_KEEP_FOR_POTENTIAL_FUTURE_USE
+#if NO
     internal class Util
     {
         internal static string FormatByteArray(byte[] b)
@@ -324,6 +325,7 @@ namespace Ionic.Zip
         }
     }
 #endif
+    #endregion
 
 
 

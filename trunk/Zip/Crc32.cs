@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-31 09:02:58>
+// Time-stamp: <2009-June-25 17:10:53>
 //
 // ------------------------------------------------------------------
 //
@@ -218,9 +218,11 @@ namespace Ionic.Zlib
     /// </remarks>
     public class CrcCalculatorStream : System.IO.Stream, System.IDisposable
     {
+        private static readonly Int64 UnsetLengthLimit = -99;
+        
         private System.IO.Stream _innerStream;
         private CRC32 _Crc32;
-        private Int64 _length = 0;
+        private Int64 _lengthLimit = -99;
         private bool _leaveOpen;
 
         /// <summary>
@@ -240,8 +242,15 @@ namespace Ionic.Zlib
         /// <summary>
         /// The default constructor.
         /// </summary>
+        /// <remarks>
+        /// Instances returned from this constructor will leave the underlying stream open
+        /// upon Close().
+        /// </remarks>
         /// <param name="stream">The underlying stream</param>
-        public CrcCalculatorStream(System.IO.Stream stream) : this(stream, true) { }
+        public CrcCalculatorStream(System.IO.Stream stream)
+            : this(true, CrcCalculatorStream.UnsetLengthLimit, stream)
+        {
+        }
 
 
         /// <summary>
@@ -251,11 +260,8 @@ namespace Ionic.Zlib
         /// <param name="leaveOpen">true to leave the underlying stream 
         /// open upon close of the CrcCalculatorStream.; false otherwise.</param>
         public CrcCalculatorStream(System.IO.Stream stream, bool leaveOpen)
-            : base()
+            : this(leaveOpen, CrcCalculatorStream.UnsetLengthLimit, stream)
         {
-            _innerStream = stream;
-            _Crc32 = new CRC32();
-            _leaveOpen = leaveOpen;
         }
 
 
@@ -264,31 +270,47 @@ namespace Ionic.Zlib
         /// </summary>
         /// <remarks>
         /// Instances returned from this constructor will leave the underlying stream open
-        /// upon .Close().
+        /// upon Close().
         /// </remarks>
         /// <param name="stream">The underlying stream</param>
         /// <param name="length">The length of the stream to slurp</param>
         public CrcCalculatorStream(System.IO.Stream stream, Int64 length)
-            : this(stream, length, true)
+            : this(true, length, stream)
         {
+            if (length < 0)
+                throw new ArgumentException("length");
         }
 
         /// <summary>
-        /// A constructor allowing the specification of the length of the stream to read.
+        /// A constructor allowing the specification of the length of the stream to read, as
+        /// well as whether to keep the underlying stream open upon Close().
         /// </summary>
         /// <param name="stream">The underlying stream</param>
         /// <param name="length">The length of the stream to slurp</param>
         /// <param name="leaveOpen">true to leave the underlying stream 
         /// open upon close of the CrcCalculatorStream.; false otherwise.</param>
         public CrcCalculatorStream(System.IO.Stream stream, Int64 length, bool leaveOpen)
+            : this(leaveOpen, length, stream)
+        {
+            if (length < 0)
+                throw new ArgumentException("length");
+        }
+
+
+        // This ctor is private - no validation is done here.  This is to allow the use
+        // of a (specific) negative value for the _lengthLimit, to indicate that there
+        // is no length set.  So we validate the length limit in those ctors that use an
+        // explicit param, otherwise we don't validate, because it could be our special
+        // value.
+        private CrcCalculatorStream(bool leaveOpen, Int64 length, System.IO.Stream stream)
             : base()
         {
             _innerStream = stream;
             _Crc32 = new CRC32();
-            _length = length;
+            _lengthLimit = length;
             _leaveOpen = leaveOpen;
         }
-
+        
         /// <summary>
         /// Provides the current CRC for all blocks slurped in.
         /// </summary>
@@ -324,10 +346,10 @@ namespace Ionic.Zlib
             // calling ReadToEnd() on it, We can "over-read" the zip data and get a corrupt string.  
             // The length limits that, prevents that problem. 
 
-            if (_length != 0)
+            if (_lengthLimit != CrcCalculatorStream.UnsetLengthLimit)
             {
-                if (_Crc32.TotalBytesRead >= _length) return 0; // EOF
-                Int64 bytesRemaining = _length - _Crc32.TotalBytesRead;
+                if (_Crc32.TotalBytesRead >= _lengthLimit) return 0; // EOF
+                Int64 bytesRemaining = _lengthLimit - _Crc32.TotalBytesRead;
                 if (bytesRemaining < count) bytesToRead = (int)bytesRemaining;
             }
             int n = _innerStream.Read(buffer, offset, bytesToRead);
@@ -386,8 +408,9 @@ namespace Ionic.Zlib
         {
             get
             {
-                if (_length == 0) throw new NotImplementedException();
-                else return _length;
+                if (_lengthLimit == CrcCalculatorStream.UnsetLengthLimit)
+                    return _innerStream.Length;
+                else return _lengthLimit;
             }
         }
 

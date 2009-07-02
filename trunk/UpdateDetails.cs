@@ -266,6 +266,7 @@ namespace wyUpdate.Common
             //end of file
             ms.WriteByte(0xFF);
 
+            ms.Position = 0;
             return ms;
         }
     }

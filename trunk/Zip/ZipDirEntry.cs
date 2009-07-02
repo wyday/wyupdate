@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:37:01>
+// Time-stamp: <2009-July-01 19:03:28>
 //
 // ------------------------------------------------------------------
 //
@@ -48,21 +48,20 @@ namespace Ionic.Zip
 #if OPTIMIZE_WI6612
         internal void ResetDirEntry()
         {
-            // The length of the "local header" for an entry is not necessarily
-            // the same as the length of the record in the central directory.
-            // Therefore we cannot know the __FileDataPosition until we read the
-            // local header.
+            // __FileDataPosition is the position of the file data for an entry.
+            // It is _RelativeOffsetOfLocalHeader + size of local header.
+            
+            // We cannot know the __FileDataPosition until we read the local
+            // header.
 
-            //e._LengthOfHeader = 30 + _filenameLength + _extraFieldLength;
-
-            //e.__FileDataPosition = e._RelativeOffsetOfHeader + 30 + _filenameLength + _extraFieldLength;
-            // mark as -1 to indicate we need to read this later
+            // You might think the local header is the same length as the record
+            // in the central directory, but that's not necessarily the case.
+            
+            // Set to -1, to indicate we need to read this later.
             this.__FileDataPosition = -1;
 
-            // The length of the "local header" for an entry is not necessarily the same as
-            // the length of the record in the central directory.  
-            //e._LengthOfHeader = 30 + _filenameLength + _extraFieldLength;
-            this._LengthOfHeader = 0;  // mark as zero to indicate we need to read later
+            // set _LengthOfHeader to 0, to indicate we need to read later.
+            this._LengthOfHeader = 0;
         }
 #endif
 
@@ -172,7 +171,6 @@ namespace Ionic.Zip
 
             if (zde._extraFieldLength > 0)
             {
-                // Console.WriteLine("  ZDE Extra Field:      {0} bytes", zde._extraFieldLength);
                 zde._InputUsesZip64 = (zde._CompressedSize == 0xFFFFFFFF ||
                       zde._UncompressedSize == 0xFFFFFFFF ||
                       zde._RelativeOffsetOfLocalHeader == 0xFFFFFFFF);
@@ -181,12 +179,6 @@ namespace Ionic.Zip
 
                 bytesRead += zde.ProcessExtraField(zde._extraFieldLength);
                 zde._CompressedFileDataSize = zde._CompressedSize;
-
-                // if (zde._InputUsesZip64)
-                // {
-                // Console.WriteLine("  Z64 updated values");
-                // Console.WriteLine("    Comp / Uncomp:      0x{0:X16} ({0})   0x{1:X16} ({1})", zde._CompressedSize, zde._UncompressedSize);
-                // }
             }
 
             // we've processed the extra field, so we know the encryption method is set now.
@@ -200,10 +192,8 @@ namespace Ionic.Zip
                         zde.Encryption == EncryptionAlgorithm.WinZipAes256)
             {
                 zde._CompressedFileDataSize = zde.CompressedSize -
-                    ((zde._KeyStrengthInBits / 8 / 2) + 10 + 2);// zde._aesCrypto.SizeOfEncryptionMetadata;
-                zde._LengthOfTrailer = 10;
-                //Console.WriteLine("  CFDS:        0x{0:X8} ({0})", zde._CompressedFileDataSize);
-                //Console.WriteLine("  Actual Compression: 0x{0:X4}", zde._CompressionMethod);
+                    ((zde._KeyStrengthInBits / 8 / 2) + 10 + 2); // zde._aesCrypto.SizeOfEncryptionMetadata;
+                //zde._LengthOfTrailer = 10;
             }
 #endif
             if (zde._commentLength > 0)

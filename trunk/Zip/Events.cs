@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-18 22:50:58>
+// Time-stamp: <2009-July-01 07:55:25>
 //
 // ------------------------------------------------------------------
 //
@@ -461,31 +461,37 @@ namespace Ionic.Zip
 
         internal static ExtractProgressEventArgs BeforeExtractEntry(string archiveName, ZipEntry entry, string extractLocation)
         {
-            var x = new ExtractProgressEventArgs();
-            x.ArchiveName = archiveName;
-            x.EventType = ZipProgressEventType.Extracting_BeforeExtractEntry;
-            x.CurrentEntry = entry;
-            x._target = extractLocation;
+            var x = new ExtractProgressEventArgs
+                {
+                    ArchiveName = archiveName,
+                    EventType = ZipProgressEventType.Extracting_BeforeExtractEntry,
+                    CurrentEntry = entry,
+                    _target = extractLocation,
+                };
             return x;
         }
 
         internal static ExtractProgressEventArgs ExtractExisting(string archiveName, ZipEntry entry, string extractLocation)
         {
-            var x = new ExtractProgressEventArgs();
-            x.ArchiveName = archiveName;
-            x.EventType = ZipProgressEventType.Extracting_BeforeExtractEntry;
-            x.CurrentEntry = entry;
-            x._target = extractLocation;
+            var x = new ExtractProgressEventArgs
+                {
+                    ArchiveName = archiveName,
+                    EventType = ZipProgressEventType.Extracting_ExtractEntryWouldOverwrite,
+                    CurrentEntry = entry,
+                    _target = extractLocation,
+                };
             return x;
         }
 
         internal static ExtractProgressEventArgs AfterExtractEntry(string archiveName, ZipEntry entry, string extractLocation)
         {
-            var x = new ExtractProgressEventArgs();
-            x.ArchiveName = archiveName;
-            x.EventType = ZipProgressEventType.Extracting_AfterExtractEntry;
-            x.CurrentEntry = entry;
-            x._target = extractLocation;
+            var x = new ExtractProgressEventArgs
+                {
+                    ArchiveName = archiveName,
+                    EventType = ZipProgressEventType.Extracting_AfterExtractEntry,
+                    CurrentEntry = entry,
+                    _target = extractLocation,
+                };
             return x;
         }
 
