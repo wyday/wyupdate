@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:30:48>
+// Time-stamp: <2009-July-01 12:25:24>
 //
 // ------------------------------------------------------------------
 //
@@ -27,6 +27,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+#if !NETCF
+using System.Runtime.Serialization;
+#endif
 
 namespace Ionic.Zip
 {
@@ -35,6 +38,7 @@ namespace Ionic.Zip
     ///// </summary>
     //[AttributeUsage(AttributeTargets.Class)]
     //public class ZipExceptionAttribute : Attribute { }
+
 
 
     /// <summary>
@@ -66,15 +70,16 @@ namespace Ionic.Zip
             : base(message, innerException)
         {
         } 
+
         
 #if !NETCF
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
-        /// <param name="serializationInfo">The serialization info for the exception.</param>
-        /// <param name="streamingContext">The streaming context from which to deserialize.</param>
-        protected BadPasswordException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
+        /// <param name="info">The serialization info for the exception.</param>
+        /// <param name="context">The streaming context from which to deserialize.</param>
+        protected BadPasswordException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
           {  }
 #endif
 
@@ -87,10 +92,12 @@ namespace Ionic.Zip
     [Serializable]
     public class BadReadException : ZipException
     {
+#if NOTUSED
         /// <summary>
         /// Default ctor.
         /// </summary>
         public BadReadException() { }
+#endif
 
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
@@ -100,29 +107,33 @@ namespace Ionic.Zip
             : base(message)
         { }
 
+#if NOTUSED
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
         /// <param name="message">The message in the exception.</param>
         /// <param name="innerException">The innerException for this exception.</param>
-        public BadReadException(String message,
-            Exception innerException)
+        public BadReadException(String message, Exception innerException)
             : base(message, innerException)
         {
         }
+#endif
+
 
 #if !NETCF
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
-        /// <param name="serializationInfo">The serialization info for the exception.</param>
-        /// <param name="streamingContext">The streaming context from which to deserialize.</param>
-        protected BadReadException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
+        /// <param name="info">The serialization info for the exception.</param>
+        /// <param name="context">The streaming context from which to deserialize.</param>
+        protected BadReadException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
           {  }        
 #endif
 
     }
+
+
 
     /// <summary>
     /// Issued when an CRC check fails upon extracting an entry from a zip archive.
@@ -130,10 +141,12 @@ namespace Ionic.Zip
     [Serializable]
     public class BadCrcException : ZipException
     {
+#if NOTUSED
         /// <summary>
         /// Default ctor.
         /// </summary>
         public BadCrcException() { }
+#endif
 
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
@@ -143,25 +156,26 @@ namespace Ionic.Zip
             : base(message)
         { }
 
+#if NOTUSED
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
         /// <param name="message">The message in the exception.</param>
         /// <param name="innerException">The innerException for this exception.</param>
-        public BadCrcException(String message,
-            Exception innerException)
+        public BadCrcException(String message, Exception innerException)
             : base(message, innerException)
         {
         }
+#endif
 
 #if !NETCF
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
-        /// <param name="serializationInfo">The serialization info for the exception.</param>
-        /// <param name="streamingContext">The streaming context from which to deserialize.</param>
-        protected BadCrcException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
+        /// <param name="info">The serialization info for the exception.</param>
+        /// <param name="context">The streaming context from which to deserialize.</param>
+        protected BadCrcException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
           {  }
 #endif
 
@@ -187,6 +201,7 @@ namespace Ionic.Zip
             : base(message)
         { }
 
+#if NOTUSED
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -195,16 +210,16 @@ namespace Ionic.Zip
         public SfxGenerationException(String message, Exception innerException)
             : base(message, innerException)
         { }
-
+#endif
         
 #if !NETCF
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
-        /// <param name="serializationInfo">The serialization info for the exception.</param>
-        /// <param name="streamingContext">The streaming context from which to deserialize.</param>
-        protected SfxGenerationException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
+        /// <param name="info">The serialization info for the exception.</param>
+        /// <param name="context">The streaming context from which to deserialize.</param>
+        protected SfxGenerationException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
           {  }
 #endif
 
@@ -219,10 +234,12 @@ namespace Ionic.Zip
     [Serializable]
     public class BadStateException : ZipException
     {
+#if NOTUSED
         /// <summary>
         /// Default ctor.
         /// </summary>
         public BadStateException() { }
+#endif
 
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
@@ -232,24 +249,25 @@ namespace Ionic.Zip
             : base(message)
         { }
 
+#if NOTUSED
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
         /// <param name="message">The message in the exception.</param>
         /// <param name="innerException">The innerException for this exception.</param>
-        public BadStateException(String message,
-            Exception innerException)
+        public BadStateException(String message, Exception innerException)
             : base(message, innerException)
         {}
+#endif
 
 #if !NETCF
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
-        /// <param name="serializationInfo">The serialization info for the exception.</param>
-        /// <param name="streamingContext">The streaming context from which to deserialize.</param>
-        protected BadStateException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
+        /// <param name="info">The serialization info for the exception.</param>
+        /// <param name="context">The streaming context from which to deserialize.</param>
+        protected BadStateException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
           {  }
 #endif
 
@@ -277,8 +295,7 @@ namespace Ionic.Zip
         /// </summary>
         /// <param name="message">The message in the exception.</param>
         /// <param name="innerException">The innerException for this exception.</param>
-        public ZipException(String message,
-            Exception innerException)
+        public ZipException(String message, Exception innerException)
             : base(message, innerException)
         { }
 
@@ -286,10 +303,10 @@ namespace Ionic.Zip
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
-        /// <param name="serializationInfo">The serialization info for the exception.</param>
-        /// <param name="streamingContext">The streaming context from which to deserialize.</param>
-        protected ZipException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-            : base(serializationInfo, streamingContext)
+        /// <param name="info">The serialization info for the exception.</param>
+        /// <param name="context">The streaming context from which to deserialize.</param>
+        protected ZipException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         { }
 #endif
 

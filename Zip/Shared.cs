@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-18 18:43:15>
+// Time-stamp: <2009-July-01 12:30:53>
 //
 // ------------------------------------------------------------------
 //
@@ -236,6 +236,7 @@ namespace Ionic.Zip
         // SetWastWriteTime() etc, then I need to adjust it for Win32. 
         internal static DateTime AdjustTime_DotNetToWin32(DateTime time)
         {
+            if (time.Kind == DateTimeKind.Utc) return time;
             DateTime adjusted = time;
             if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
                 adjusted = time - new System.TimeSpan(1, 0, 0);
@@ -250,6 +251,7 @@ namespace Ionic.Zip
         // to adjust it for display in the .NET environment.  
         internal static DateTime AdjustTime_Win32ToDotNet(DateTime time)
         {
+            if (time.Kind == DateTimeKind.Utc) return time;
             DateTime adjusted = time;
             if (DateTime.Now.IsDaylightSavingTime() && !time.IsDaylightSavingTime())
                 adjusted = time + new System.TimeSpan(1, 0, 0);
@@ -327,6 +329,7 @@ namespace Ionic.Zip
         internal
          static Int32 DateTimeToPacked(DateTime time)
         {
+            // see http://www.vsft.com/hal/dostime.htm for the format
             UInt16 packedDate = (UInt16)((time.Day & 0x0000001F) | ((time.Month << 5) & 0x000001E0) | (((time.Year - 1980) << 9) & 0x0000FE00));
             UInt16 packedTime = (UInt16)((time.Second / 2 & 0x0000001F) | ((time.Minute << 5) & 0x000007E0) | ((time.Hour << 11) & 0x0000F800));
 
@@ -412,7 +415,9 @@ namespace Ionic.Zip
                     retries++;
                     if (retries > 10)
                         throw new System.IO.IOException(String.Format("Cannot read file {0}, at offset 0x{1:X8} after 10 retries", FileName, offset), ioexc1);
-                    System.Threading.Thread.Sleep(250 + retries * 20);
+                    // max time waited on last retry = 250 + 10*550 = 5.75s
+                    // aggregate time waited after 10 retries: 250 + 55*550 = 30.5s
+                    System.Threading.Thread.Sleep(250 + retries * 550);
                 }
             }
             while (!done);

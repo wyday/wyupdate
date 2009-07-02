@@ -41,6 +41,8 @@ namespace wyUpdate
         //client file location
         string clientFileLoc;
 
+        private string serverOverwrite;
+
         //the base directory (same path as the executable, unless specified)
         string baseDirectory;
         //the extract directory
@@ -379,7 +381,11 @@ namespace wyUpdate
                         dontDestroyTempFolder = true;
                 }
                 */
-                
+
+                // load the passed server argument
+                if (commands["server"] != null)
+                    serverOverwrite = commands["server"];
+
 
                 //only allow silent uninstalls 
                 //TODO: allow silent checking and updating
@@ -893,8 +899,17 @@ namespace wyUpdate
 
                     if (!isWaitMode)
                     {
-                        //download the server file
-                        BeginDownload(update.ServerFileSites, 0, false);
+                        if(!string.IsNullOrEmpty(serverOverwrite))
+                        {
+                            // overrite server file
+                            List<string> overwriteServer = new List<string> {serverOverwrite};
+                            BeginDownload(overwriteServer, 0, false);
+                        }
+                        else
+                        {
+                            //download the server file
+                            BeginDownload(update.ServerFileSites, 0, false);
+                        }
                     }
 
                     break;
@@ -1259,8 +1274,17 @@ namespace wyUpdate
             {
                 case UpdateStep.CheckForUpdate:
 
-                    //download the server file
-                    BeginDownload(update.ServerFileSites, 0, false);
+                    if (!string.IsNullOrEmpty(serverOverwrite))
+                    {
+                        // overrite server file
+                        List<string> overwriteServer = new List<string> { serverOverwrite };
+                        BeginDownload(overwriteServer, 0, false);
+                    }
+                    else
+                    {
+                        //download the server file
+                        BeginDownload(update.ServerFileSites, 0, false);
+                    }
 
                     break;
                 case UpdateStep.DownloadUpdate:
@@ -1463,6 +1487,9 @@ namespace wyUpdate
             //check if the new client really has been elevated
             WriteFiles.WriteBool(fs, 0x08, needElevation);
 
+            if (!string.IsNullOrEmpty(serverOverwrite))
+                WriteFiles.WriteString(fs, 0x09, serverOverwrite);
+
             fs.WriteByte(0xFF);
             fs.Close();
         }
@@ -1532,6 +1559,9 @@ namespace wyUpdate
                         break;
                     case 0x08: //is elevation required
                         needElevation = ReadFiles.ReadBool(fs);
+                        break;
+                    case 0x09:
+                        serverOverwrite = ReadFiles.ReadString(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);

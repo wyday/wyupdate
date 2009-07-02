@@ -447,7 +447,7 @@ namespace wyUpdate.Common
                 // load the client details (image filenames, languages, etc.)
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    zip.Extract("iuclient.iuc", ms);
+                    zip["iuclient.iuc"].Extract(ms);
 
                     //read in the client data
                     LoadClientData(ms);
@@ -458,7 +458,7 @@ namespace wyUpdate.Common
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        zip.Extract(m_TopImageFilename, ms);
+                        zip[m_TopImageFilename].Extract(ms);
 
                         // convert the bytes to an images
                         m_TopImage = Image.FromStream(ms, true);
@@ -470,7 +470,7 @@ namespace wyUpdate.Common
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        zip.Extract(m_SideImageFilename, ms);
+                        zip[m_SideImageFilename].Extract(ms);
 
                         // convert the bytes to an images
                         m_SideImage = Image.FromStream(ms, true);
@@ -484,7 +484,7 @@ namespace wyUpdate.Common
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        zip.Extract(((LanguageCulture)Languages[string.Empty]).Filename, ms);
+                        zip[((LanguageCulture)Languages[string.Empty]).Filename].Extract(ms);
                         lang.Open(ms);
                     }
                 }
@@ -517,7 +517,7 @@ namespace wyUpdate.Common
                     {
                         using (MemoryStream ms = new MemoryStream())
                         {
-                            zip.Extract(useLang.Filename, ms);
+                            zip[useLang.Filename].Extract(ms);
                             lang.Open(ms);
                         }
                     }
@@ -549,7 +549,7 @@ namespace wyUpdate.Common
                     }
 
                     //add the client file
-                    entry = zip.AddFileFromStream("iuclient.iuc", "", SaveClientFile());
+                    entry = zip.AddEntry("iuclient.iuc", "", SaveClientFile());
                     entry.LastModified = DateTime.Now;
 
                     zip.Save();
@@ -628,6 +628,7 @@ namespace wyUpdate.Common
 
             ms.WriteByte(0xFF);
 
+            ms.Position = 0;
             return ms;
         }
 
@@ -804,7 +805,7 @@ namespace wyUpdate.Common
                 {
                     fs = new MemoryStream();
 
-                    zip.Extract("0", fs);
+                    zip["0"].Extract(fs);
                 }
 
 
