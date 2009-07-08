@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 19:03:28>
+// Time-stamp: <2009-July-01 23:28:46>
 //
 // ------------------------------------------------------------------
 //
@@ -192,10 +192,21 @@ namespace Ionic.Zip
                         zde.Encryption == EncryptionAlgorithm.WinZipAes256)
             {
                 zde._CompressedFileDataSize = zde.CompressedSize -
-                    ((zde._KeyStrengthInBits / 8 / 2) + 10 + 2); // zde._aesCrypto.SizeOfEncryptionMetadata;
-                //zde._LengthOfTrailer = 10;
+                    (zde.LengthOfCryptoHeaderBytes + 10); 
+                zde._LengthOfTrailer = 10;
             }
 #endif
+
+            // tally the trailing descriptor
+            if ((zde._BitField & 0x0008) == 0x0008)
+            {
+                // sig, CRC, Comp and Uncomp sizes
+                if (zde._InputUsesZip64)
+                    zde._LengthOfTrailer += 24;
+                else
+                    zde._LengthOfTrailer += 16;
+            }
+
             if (zde._commentLength > 0)
             {
                 block = new byte[zde._commentLength];
