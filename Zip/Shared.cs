@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 12:30:53>
+// Time-stamp: <2009-July-03 15:11:01>
 //
 // ------------------------------------------------------------------
 //
@@ -322,6 +322,7 @@ namespace Ionic.Zip
                 throw new ZipException(String.Format("Bad date/time format in the zip file. ({0})", msg));
 
             }
+            d = DateTime.SpecifyKind(d, DateTimeKind.Local);
             return d;
         }
 
@@ -329,6 +330,14 @@ namespace Ionic.Zip
         internal
          static Int32 DateTimeToPacked(DateTime time)
         {
+            // The time is passed in here only for purposes of writing LastModified to the
+            // zip archive. It should always be LocalTime, but we convert anyway.  And,
+            // since the time is being written out, it needs to be adjusted. 
+            
+            time = time.ToLocalTime();
+            // workitem 7966
+            time = AdjustTime_Win32ToDotNet(time);
+            
             // see http://www.vsft.com/hal/dostime.htm for the format
             UInt16 packedDate = (UInt16)((time.Day & 0x0000001F) | ((time.Month << 5) & 0x000001E0) | (((time.Year - 1980) << 9) & 0x0000FE00));
             UInt16 packedTime = (UInt16)((time.Second / 2 & 0x0000001F) | ((time.Minute << 5) & 0x000007E0) | ((time.Hour << 11) & 0x0000F800));
