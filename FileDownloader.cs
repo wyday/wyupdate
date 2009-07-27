@@ -275,7 +275,10 @@ namespace wyUpdate.Downloader
             }
             catch (Exception e)
             {
-                throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", downloadingTo, e.Message), e);
+                if(string.IsNullOrEmpty(downloadingTo))
+                    throw new Exception(String.Format("Error trying to save file: {0}", e.Message), e);
+                else
+                    throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", downloadingTo, e.Message), e);
             }
             finally
             {
@@ -381,8 +384,7 @@ namespace wyUpdate.Downloader
             }
             catch (Exception e)
             {
-                throw new Exception(String.Format(
-                    "Error downloading \"{0}\": {1}", url, e.Message), e);
+                throw new Exception(String.Format("Error downloading \"{0}\": {1}", url, e.Message), e);
             }
 
             // Check to make sure the response isn't an error. If it is this method

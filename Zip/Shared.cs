@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-03 15:11:01>
+// Time-stamp: <2009-July-20 12:52:44>
 //
 // ------------------------------------------------------------------
 //
@@ -25,6 +25,7 @@
 // 
 
 using System;
+using System.Security.Permissions;
 
 namespace Ionic.Zip
 {
@@ -36,23 +37,26 @@ namespace Ionic.Zip
         /// private null constructor
         private SharedUtilities() { }
 
-        #if LEGACY
+#if LEGACY
         /// <summary>
         /// Round the given DateTime value to an even second value.  
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// Round up in the case of an odd second value.  The rounding does not consider fractional seconds.
+        /// Round up in the case of an odd second value.  The rounding does not consider
+        /// fractional seconds.
         /// </para>
         /// <para>
-        /// This is useful because the Zip spec allows storage of time only to the nearest even second.
-        /// So if you want to compare the time of an entry in the archive with it's actual time in the filesystem, you 
-        /// need to round the actual filesystem time, or use a 2-second threshold for the comparison. 
+        /// This is useful because the Zip spec allows storage of time only to the nearest
+        /// even second.  So if you want to compare the time of an entry in the archive with
+        /// it's actual time in the filesystem, you need to round the actual filesystem
+        /// time, or use a 2-second threshold for the comparison.
         /// </para>
         /// <para>
-        /// This is most nautrally an extension method for the DateTime class but this library is 
-        /// built for .NET 2.0, not for .NET 3.5;  This means extension methods are a no-no.  
+        /// This is most nautrally an extension method for the DateTime class but this
+        /// library is built for .NET 2.0, not for .NET 3.5; This means extension methods
+        /// are a no-no.
         /// </para>
         /// </remarks>
         /// <param name="source">The DateTime value to round</param>
@@ -67,16 +71,16 @@ namespace Ionic.Zip
             //if (source.Millisecond >= 500) dtRounded = dtRounded.AddSeconds(1);
             return dtRounded;
         }
-        #endif
+#endif
 
         internal static string NormalizePath(string path)
         {
             // remove leading single dot slash
             if (path.StartsWith(".\\")) path = path.Substring(2);
-            
+
             // remove intervening dot-slash
-            path= path.Replace("\\.\\", "\\");
-            
+            path = path.Replace("\\.\\", "\\");
+
             // remove double dot when preceded by a directory name
             var re = new System.Text.RegularExpressions.Regex(@"^(.*\\)?([^\\\.]+\\\.\.\\)(.+)$");
             path = re.Replace(path, "$1$3");
@@ -86,7 +90,7 @@ namespace Ionic.Zip
         internal static string NormalizeFwdSlashPath(string path)
         {
             if (path.StartsWith("./")) path = path.Substring(2);
-            path= path.Replace("/./", "/");
+            path = path.Replace("/./", "/");
             var re = new System.Text.RegularExpressions.Regex(@"^(.*/)b?([^/\\.]+/\\.\\./)(.+)$");
             path = re.Replace(path, "$1$3");
             return path;
@@ -269,7 +273,7 @@ namespace Ionic.Zip
             // workitem 7074 & workitem 7170
             if (packedDateTime == 0xFFFF || packedDateTime == 0)
                 return new System.DateTime(1995, 1, 1, 0, 0, 0, 0);  // return a fixed date when none is supplied.
- 
+
             Int16 packedTime = unchecked((Int16)(packedDateTime & 0x0000ffff));
             Int16 packedDate = unchecked((Int16)((packedDateTime & 0xffff0000) >> 16));
 
@@ -289,30 +293,30 @@ namespace Ionic.Zip
             if (hour >= 24) { day++; hour = 0; }
 
             DateTime d = System.DateTime.Now;
-            bool success= false;
+            bool success = false;
             try
             {
                 d = new System.DateTime(year, month, day, hour, minute, second, 0);
-                success=true;
+                success = true;
             }
             catch (System.ArgumentOutOfRangeException)
             {
-                if (year==1980 && month==0 && day ==0)
+                if (year == 1980 && month == 0 && day == 0)
                 {
                     try
                     {
                         d = new System.DateTime(1980, 1, 1, hour, minute, second, 0);
-                        success= true;
+                        success = true;
                     }
                     catch (System.ArgumentOutOfRangeException)
                     {
-                    try
-                    {
-                        d = new System.DateTime(1980, 1, 1, 0, 0, 0, 0);
-                        success= true;
-                    }
-                    catch (System.ArgumentOutOfRangeException) { } 
-                        
+                        try
+                        {
+                            d = new System.DateTime(1980, 1, 1, 0, 0, 0, 0);
+                            success = true;
+                        }
+                        catch (System.ArgumentOutOfRangeException) { }
+
                     }
                 }
             }
@@ -333,11 +337,11 @@ namespace Ionic.Zip
             // The time is passed in here only for purposes of writing LastModified to the
             // zip archive. It should always be LocalTime, but we convert anyway.  And,
             // since the time is being written out, it needs to be adjusted. 
-            
+
             time = time.ToLocalTime();
             // workitem 7966
             time = AdjustTime_Win32ToDotNet(time);
-            
+
             // see http://www.vsft.com/hal/dostime.htm for the format
             UInt16 packedDate = (UInt16)((time.Day & 0x0000001F) | ((time.Month << 5) & 0x000001E0) | (((time.Year - 1980) << 9) & 0x0000FE00));
             UInt16 packedTime = (UInt16)((time.Second / 2 & 0x0000001F) | ((time.Minute << 5) & 0x000007E0) | ((time.Hour << 11) & 0x0000F800));
@@ -360,7 +364,7 @@ namespace Ionic.Zip
         /// by randomly chosen characters.</returns>
         public static string GetTempFilename()
         {
-            string candidate= null;
+            string candidate = null;
             do
             {
                 candidate = "DotNetZip-" + GenerateRandomStringImpl(8, 97) + ".tmp";
@@ -408,33 +412,83 @@ namespace Ionic.Zip
         {
             int n = 0;
             bool done = false;
-            int retries= 0;
+            int retries = 0;
             do
             {
-                try 
+                try
                 {
-                    n= s.Read(buffer, offset, count);
+                    n = s.Read(buffer, offset, count);
                     done = true;
                 }
                 catch (System.IO.IOException ioexc1)
                 {
-                    uint hresult = unchecked((uint)System.Runtime.InteropServices.Marshal.GetHRForException(ioexc1));
-                    if (hresult != 0x80070021)
-                        throw new System.IO.IOException(String.Format("Cannot read file {0}", FileName), ioexc1);
-                    retries++;
-                    if (retries > 10)
-                        throw new System.IO.IOException(String.Format("Cannot read file {0}, at offset 0x{1:X8} after 10 retries", FileName, offset), ioexc1);
-                    // max time waited on last retry = 250 + 10*550 = 5.75s
-                    // aggregate time waited after 10 retries: 250 + 55*550 = 30.5s
-                    System.Threading.Thread.Sleep(250 + retries * 550);
+
+#if !NETCF
+                    // Check if we can call GetHRForException, 
+                    // which makes unmanaged code calls.
+                    var p = new SecurityPermission(SecurityPermissionFlag.UnmanagedCode);
+                    if (p.IsUnrestricted())
+                    {
+#endif
+                        uint hresult = _HRForException(ioexc1);
+                        if (hresult != 0x80070021)  // ERROR_LOCK_VIOLATION
+                            throw new System.IO.IOException(String.Format("Cannot read file {0}", FileName), ioexc1);
+                        retries++;
+                        if (retries > 10)
+                            throw new System.IO.IOException(String.Format("Cannot read file {0}, at offset 0x{1:X8} after 10 retries", FileName, offset), ioexc1);
+
+                        // max time waited on last retry = 250 + 10*550 = 5.75s
+                        // aggregate time waited after 10 retries: 250 + 55*550 = 30.5s
+                        System.Threading.Thread.Sleep(250 + retries * 550);
+
+#if !NETCF
+                    }
+                    else
+                    {
+                        // The permission.Demand() failed. Therefore, we cannot call
+                        // GetHRForException, and cannot do the subtle handling of
+                        // ERROR_LOCK_VIOLATION.  Just bail.
+                        throw (ioexc1);
+                    }
+#endif
+
                 }
             }
             while (!done);
-            
+
+
             return n;
         }
 
+
+#if !NETCF
+        // workitem 8009
+        //
+        // This method must remain separate.
+        //
+        // Marshal.GetHRForException() is needed to do special exception handling for
+        // the read.  But, that method requires UnmanagedCode permissions, and is marked
+        // with LinkDemand for UnmanagedCode.  In an ASP.NET medium trust environment,
+        // where UnmanagedCode is restricted, will generate a SecurityException at the
+        // time of JIT of the method that calls a method that is marked with LinkDemand
+        // for UnmanagedCode. The SecurityException, if it is restricted, will occur
+        // when this method is JITed.
+        //
+        // The Marshal.GetHRForException() is factored out of ReadWithRetry in order to
+        // avoid the SecurityException at JIT compile time. Because _HRForException is
+        // called only when the UnmanagedCode is allowed.  This means .NET never
+        // JIT-compiles this method when UnmanagedCode is disallowed, and thus never
+        // generates the JIT-compile time exception.
+        //
+#endif
+        private static uint _HRForException(System.Exception ex1)
+        {
+            return unchecked((uint)System.Runtime.InteropServices.Marshal.GetHRForException(ex1));
+        }
+
     }
+
+
 
 
     /// <summary> 

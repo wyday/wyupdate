@@ -3,7 +3,7 @@
 // ZipDirEntry.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2006-2009 Dino Chiesa and Microsoft Corporation.  
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 23:28:46>
+// Time-stamp: <2009-July-23 08:45:25>
 //
 // ------------------------------------------------------------------
 //
@@ -68,24 +68,29 @@ namespace Ionic.Zip
         /// <summary>
         /// Reads one entry from the zip directory structure in the zip file. 
         /// </summary>
-        /// <param name="s">the stream from which to read.</param>
-        /// <param name="expectedEncoding">
-        /// The text encoding to use if the entry is not marked UTF-8.
+        /// <param name="zf">
+        /// The zipfile for which a directory entry will be read.  From this param, the
+        /// method gets the ReadStream and the expected text encoding
+        /// (ProvisionalAlternateEncoding) which is used if the entry is not marked
+        /// UTF-8.
         /// </param>
         /// <returns>the entry read from the archive.</returns>
-        internal static ZipEntry ReadDirEntry(System.IO.Stream s, System.Text.Encoding expectedEncoding)
+        internal static ZipEntry ReadDirEntry(ZipFile zf)
         {
-            long cdrPosition = s.Position;
+            System.IO.Stream s = zf.ReadStream;
+            System.Text.Encoding expectedEncoding = zf.ProvisionalAlternateEncoding;
+
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(s);
             // return null if this is not a local file header signature
             if (IsNotValidZipDirEntrySig(signature))
             {
                 s.Seek(-4, System.IO.SeekOrigin.Current);
 
-                // Getting "not a ZipDirEntry signature" here is not always wrong or an error. 
-                // This can happen when walking through a zipfile.  After the last ZipDirEntry, 
-                // we expect to read an EndOfCentralDirectorySignature.  When we get this is how we 
-                // know we've reached the end of the central directory. 
+                // Getting "not a ZipDirEntry signature" here is not always wrong or an
+                // error.  This can happen when walking through a zipfile.  After the
+                // last ZipDirEntry, we expect to read an
+                // EndOfCentralDirectorySignature.  When we get this is how we know
+                // we've reached the end of the central directory.
                 if (signature != ZipConstants.EndOfCentralDirectorySignature &&
                     signature != ZipConstants.Zip64EndOfCentralDirectoryRecordSignature)
                 {
@@ -103,7 +108,8 @@ namespace Ionic.Zip
             ZipEntry zde = new ZipEntry();
             zde._Source = ZipEntrySource.Zipfile;
             zde._archiveStream = s;
-            zde._cdrPosition = cdrPosition;
+            zde._zipfile = zf;
+            //zde._cdrPosition = cdrPosition;
 
             unchecked
             {
@@ -113,6 +119,8 @@ namespace Ionic.Zip
                 zde._CompressionMethod = (short)(block[i++] + block[i++] * 256);
                 zde._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
                 zde._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(zde._TimeBlob);
+                zde._timestamp |= ZipEntryTimestamp.DOS;
+
                 zde._Crc32 = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
                 zde._CompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
                 zde._UncompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
@@ -226,6 +234,7 @@ namespace Ionic.Zip
             return zde;
         }
 
+        
         /// <summary>
         /// Returns true if the passed-in value is a valid signature for a ZipDirEntry. 
         /// </summary>
