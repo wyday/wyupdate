@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-19 06:32:34>
+// Time-stamp: <2009-July-21 07:50:31>
 //
 // ------------------------------------------------------------------
 //
@@ -30,8 +30,7 @@ using System.IO;
 
 namespace Ionic.Zip
 {
-    public partial class ZipFile : System.Collections.Generic.IEnumerable<ZipEntry>,
-    IDisposable
+    public partial class ZipFile 
     {
 
         private string ArchiveNameForEvent

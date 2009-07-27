@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-25 17:10:53>
+// Time-stamp: <2009-July-22 10:16:55>
 //
 // ------------------------------------------------------------------
 //
@@ -39,9 +39,10 @@ using System;
 namespace Ionic.Zlib
 {
     /// <summary>
-    /// Calculates a 32bit Cyclic Redundancy Checksum (CRC) using the
-    /// same polynomial used by Zip. This type is used internally by DotNetZip; it is generally not used directly
-    /// by applications wishing to create, read, or manipulate zip archive files.
+    /// Calculates a 32bit Cyclic Redundancy Checksum (CRC) using the same polynomial
+    /// used by Zip. This type is used internally by DotNetZip; it is generally not used
+    /// directly by applications wishing to create, read, or manipulate zip archive
+    /// files.
     /// </summary>
     public class CRC32
     {
@@ -80,7 +81,8 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Returns the CRC32 for the specified stream, and writes the input into the output stream.
+        /// Returns the CRC32 for the specified stream, and writes the input into the
+        /// output stream.
         /// </summary>
         /// <param name="input">The stream over which to calculate the CRC32</param>
         /// <param name="output">The stream into which to deflate the input</param>
@@ -103,12 +105,6 @@ namespace Ionic.Zlib
                 _TotalBytesRead += count;
                 while (count > 0)
                 {
-                    //for (int i = 0; i < count; i++)
-                    //{
-                    //    _RunningCrc32Result = ((_RunningCrc32Result) >> 8) ^ crc32Table[(buffer[i]) ^ ((_RunningCrc32Result) & 0x000000FF)];
-                    //}
-
-
                     SlurpBlock(buffer, 0, count);
                     count = input.Read(buffer, 0, readSize);
                     if (output != null) output.Write(buffer, 0, count);
@@ -121,8 +117,8 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// Get the CRC32 for the given (word,byte) combo. 
-        /// This is a computation defined by PKzip.
+        /// Get the CRC32 for the given (word,byte) combo.  This is a computation
+        /// defined by PKzip.
         /// </summary>
         /// <param name="W">The word to start with.</param>
         /// <param name="B">The byte to combine it with.</param>
@@ -209,12 +205,17 @@ namespace Ionic.Zlib
     ///
     /// <remarks>
     /// <para>
-    /// This class can be used to verify the CRC of a ZipEntry when reading from a stream, 
-    /// or to calculate a CRC when writing to a stream.  The stream should be used to either 
-    /// read, or write, but not both.  If you intermix reads and writes, the results are
-    /// not defined. 
+    /// This class can be used to verify the CRC of a ZipEntry when
+    /// reading from a stream, or to calculate a CRC when writing to a
+    /// stream.  The stream should be used to either read, or write, but
+    /// not both.  If you intermix reads and writes, the results are not
+    /// defined.
     /// </para>
-    /// <para>This class is intended primarily for use internally by the DotNetZip library.</para>
+    /// 
+    /// <para>
+    /// This class is intended primarily for use internally by the
+    /// DotNetZip library.
+    /// </para>
     /// </remarks>
     public class CrcCalculatorStream : System.IO.Stream, System.IDisposable
     {
@@ -230,8 +231,8 @@ namespace Ionic.Zlib
         /// </summary>
         ///
         /// <remarks>
-        /// This is either the total number of bytes read, or the total number
-        /// of bytes written, depending on the direction of this stream.
+        /// This is either the total number of bytes read, or the total number of bytes
+        /// written, depending on the direction of this stream.
         /// </remarks>
         public Int64 TotalBytesSlurped
         {
@@ -243,8 +244,8 @@ namespace Ionic.Zlib
         /// The default constructor.
         /// </summary>
         /// <remarks>
-        /// Instances returned from this constructor will leave the underlying stream open
-        /// upon Close().
+        /// Instances returned from this constructor will leave the underlying stream
+        /// open upon Close().
         /// </remarks>
         /// <param name="stream">The underlying stream</param>
         public CrcCalculatorStream(System.IO.Stream stream)
@@ -254,7 +255,8 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// The constructor allows the caller to specify how to handle the underlying stream at close.
+        /// The constructor allows the caller to specify how to handle the underlying
+        /// stream at close.
         /// </summary>
         /// <param name="stream">The underlying stream</param>
         /// <param name="leaveOpen">true to leave the underlying stream 
@@ -282,8 +284,8 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// A constructor allowing the specification of the length of the stream to read, as
-        /// well as whether to keep the underlying stream open upon Close().
+        /// A constructor allowing the specification of the length of the stream to
+        /// read, as well as whether to keep the underlying stream open upon Close().
         /// </summary>
         /// <param name="stream">The underlying stream</param>
         /// <param name="length">The length of the stream to slurp</param>
@@ -320,7 +322,8 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Indicates whether the underlying stream will be left open when the CrcCalculatorStream is Closed.
+        /// Indicates whether the underlying stream will be left open when the
+        /// CrcCalculatorStream is Closed.
         /// </summary>
         public bool LeaveOpen
         {
@@ -339,12 +342,13 @@ namespace Ionic.Zlib
         {
             int bytesToRead = count;
 
-            // Need to limit the # of bytes returned, if the stream is intended to have a definite length.
-            // This is especially useful when returning a stream for the uncompressed data directly to the 
-            // application.  The app won't necessarily read only the UncompressedSize number of bytes.  
-            // For example wrapping the stream returned from OpenReader() into a StreadReader() and
-            // calling ReadToEnd() on it, We can "over-read" the zip data and get a corrupt string.  
-            // The length limits that, prevents that problem. 
+            // Need to limit the # of bytes returned, if the stream is intended to have
+            // a definite length.  This is especially useful when returning a stream for
+            // the uncompressed data directly to the application.  The app won't
+            // necessarily read only the UncompressedSize number of bytes.  For example
+            // wrapping the stream returned from OpenReader() into a StreadReader() and
+            // calling ReadToEnd() on it, We can "over-read" the zip data and get a
+            // corrupt string.  The length limits that, prevents that problem.
 
             if (_lengthLimit != CrcCalculatorStream.UnsetLengthLimit)
             {

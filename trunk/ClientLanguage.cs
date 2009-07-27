@@ -56,10 +56,11 @@ namespace wyUpdate
         private string m_EnglishName, m_Name = "English", m_Culture = "en-US";
 
         //Buttons
-        private string m_NextButton = "Next", 
-            m_UpdateButton = "Update", 
-            m_FinishButton = "Finish", 
-            m_CancelButton = "Cancel";
+        private string m_NextButton = "Next",
+                       m_UpdateButton = "Update",
+                       m_FinishButton = "Finish",
+                       m_CancelButton = "Cancel",
+                       m_ShowDetails = "Show details";
 
         //Dialogs
         private ScreenDialog 
@@ -75,13 +76,13 @@ namespace wyUpdate
             m_CancelUpdate = "Cancel Update";
 
         //Errors
-        private string m_ServerError = "Unable to check for updates, the server file failed to load:",
+        private string m_ServerError = "Unable to check for updates, the server file failed to load.",
             m_AdminError = "wyUpdate needs administrative privileges to update %product%. You can do this one of two ways:\r\n\r\n" +
                 "1. When prompted, enter an administrator's username and password.\r\n\r\n" +
                 "2. In Windows Explorer right click wyUpdate.exe and click \"Run as Administrator\"",
-            m_DownloadError = "The update failed to download:",
-            m_GeneralUpdateError = "The update failed to install:",
-            m_SelfUpdateInstallError = "The updated version of wyUpdate required to update %product% failed to install:",
+            m_DownloadError = "The update failed to download.",
+            m_GeneralUpdateError = "The update failed to install.",
+            m_SelfUpdateInstallError = "The updated version of wyUpdate required to update %product% failed to install.",
             m_LogOffError = "Updating %product%. You must cancel wyUpdate before you can log off.";
 
         //Update Screens
@@ -208,6 +209,18 @@ namespace wyUpdate
                 return m_CancelButton;
             }
             set { m_CancelButton = value; }
+        }
+
+        public string ShowDetails
+        {
+            get
+            {
+                if (m_ReturnParsedStrings)
+                    return ParseText(m_ShowDetails);
+
+                return m_ShowDetails;
+            }
+            set { m_ShowDetails = value; }
         }
 
         //Dialogs
@@ -673,6 +686,7 @@ namespace wyUpdate
             m_UpdateButton = null;
             m_FinishButton = null;
             m_CancelButton = null;
+            m_ShowDetails = null;
             m_ClosePrc = null;
             m_CloseAllPrc = null;
             m_CancelUpdate = null;
@@ -920,6 +934,8 @@ namespace wyUpdate
                         m_FinishButton = reader.ReadString();
                     else if (reader.LocalName.Equals("Cancel"))
                         m_CancelButton = reader.ReadString();
+                    else if (reader.LocalName.Equals("ShowDetails"))
+                        m_ShowDetails = reader.ReadString();
                     else if (reader.LocalName.Equals("Close"))
                         m_ClosePrc = reader.ReadString();
                     else if (reader.LocalName.Equals("CloseAll"))
@@ -1133,6 +1149,7 @@ namespace wyUpdate
                     WriteString(writer, "Update", m_UpdateButton);
                     WriteString(writer, "Finish", m_FinishButton);
                     WriteString(writer, "Cancel", m_CancelButton);
+                    WriteString(writer, "ShowDetails", m_ShowDetails);
                     WriteString(writer, "Close", m_ClosePrc);
                     WriteString(writer, "CloseAll", m_CloseAllPrc);
                     WriteString(writer, "CancelUpdate", m_CancelUpdate);

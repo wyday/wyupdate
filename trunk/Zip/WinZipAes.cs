@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:33:57>
+// Time-stamp: <2009-July-26 23:15:32>
 //
 // ------------------------------------------------------------------
 //
@@ -735,8 +735,12 @@ namespace Ionic.Zip
                     if ( _totalBytesXferred != 0)
                         throw new Exception("The final hash has not been computed.");
 
-                    byte[] nilMac = new byte[10]; // all zeros when no data xferred
-                    return nilMac;
+                    // Must call ComputeHash on an empty byte array when no data
+                    // has run through the MAC.
+
+                    byte[] b = {  };
+                    _mac.ComputeHash(b);
+                    // fall through
                 }
                 byte[] macBytes10 = new byte[10];
                 System.Array.Copy(_mac.Hash, 0, macBytes10, 0, 10);

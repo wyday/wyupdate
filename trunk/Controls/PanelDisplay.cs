@@ -199,10 +199,10 @@ namespace wyUpdate
         private Rectangle m_BottomRect;
 
         //message (and/or license)
-        private RichTextBoxEx messageBox = new RichTextBoxEx();
+        private readonly RichTextBoxEx messageBox = new RichTextBoxEx();
 
         //downloading and installing
-        private ProgressBar progressBar = new ProgressBar();
+        private readonly Windows7ProgressBar progressBar = new Windows7ProgressBar();
         private int m_Progress;
 
         private string m_ProgressStatus;
@@ -226,6 +226,8 @@ namespace wyUpdate
 
         private LinkLabel2 noUpdateAvailableLink;
         private string noUpdateAvailableURL;
+
+        private Button errorDetailsButton;
 
         #endregion Private Variables
 
@@ -437,6 +439,8 @@ namespace wyUpdate
             set { m_ShowChecklist = value; }
         }
 
+        public string ErrorDetails { get; set; }
+
         #endregion
 
         #region Constructors
@@ -509,7 +513,14 @@ namespace wyUpdate
 
             if (panType == FrameType.WelcomeFinish)
             {
-                messageBox.Hide();
+                if (ErrorDetails == null)
+                    messageBox.Hide();
+                else
+                {
+                    messageBox.Clear();
+                    AppendText(ErrorDetails);
+                }
+
                 progressBar.Hide();
                 HideAnimations();
 
@@ -522,6 +533,8 @@ namespace wyUpdate
 
             //calculate the text sizes and positions
             UpdateTextRectangles();
+
+            progressBar.ShowInTaskbar = false;
 
             //handle specifics
             switch (panType)
@@ -538,6 +551,9 @@ namespace wyUpdate
                 case FrameType.Update:
                     messageBox.Hide();
                     progressBar.Show();
+
+                    progressBar.ContainerControl = (Form)TopLevelControl;
+                    progressBar.ShowInTaskbar = m_ShowChecklist;
 
                     if (m_ShowChecklist)
                     {
@@ -581,6 +597,27 @@ namespace wyUpdate
             System.Diagnostics.Process.Start(noUpdateAvailableURL);
         }
 
+        public void SetUpErrorDetails(string detailsButton)
+        {
+            errorDetailsButton = new Button
+                                     {
+                                         Text = detailsButton,
+                                         FlatStyle = FlatStyle.System,
+                                         Visible = false,
+                                         AutoSize = true,
+                                         Padding = new Padding(6, 0, 6, 0)
+                                     };
+
+            errorDetailsButton.Click += errorDetailsButton_Click;
+
+            Controls.Add(errorDetailsButton);
+        }
+
+        void errorDetailsButton_Click(object sender, EventArgs e)
+        {
+            errorDetailsButton.Visible = false;
+            messageBox.Show();
+        }
 
         static void messageBox_LinkClicked(object sender, string link)
         {
@@ -624,7 +661,7 @@ namespace wyUpdate
                 //calculate description rectangle
                 m_DescriptionRect = UpdateTextSize(m_Description,
                     new Padding(lPad, m_TitleRect.Bottom + m_TopPad, m_RightPad, 0),
-                    TextFormatFlags.WordBreak, Font);
+                    TextFormatFlags.WordBreak | TextFormatFlags.NoClipping, Font);
             }
             else //header Title & description
             {
@@ -677,7 +714,16 @@ namespace wyUpdate
                 noUpdateAvailableLink.Location = new Point(m_DescriptionRect.Left, m_DescriptionRect.Bottom + 20);
                 noUpdateAvailableLink.Visible = true;
             }
+            else if (ErrorDetails != null) // m_TypeofFrame == FrameType.WelcomeFinish
+            {
+                errorDetailsButton.Location = new Point(Width - m_RightPad - errorDetailsButton.Width, m_DescriptionRect.Bottom + 5);
+                errorDetailsButton.Visible = true;
 
+                //Resize the messageBox
+                messageBox.Location = new Point(lPad, m_DescriptionRect.Bottom + 5);
+                messageBox.Size = new Size(Width - lPad - m_RightPad,
+                           Height - messageBox.Top - 5 - (Bottom - m_BottomRect.Top));
+            }
         }
 
         private Rectangle UpdateTextSize(string text, Padding padding, TextFormatFlags flags, Font font)

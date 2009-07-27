@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-16 06:44:10>
+// Time-stamp: <2009-July-27 13:15:53>
 //
 // ------------------------------------------------------------------
 //
@@ -105,7 +105,8 @@ namespace Ionic.Zlib
         /// <summary>
         /// A little slower, but better, than level 3.
         /// </summary>
-        LevelL4 = 4,
+        Level4 = 4,
+        
         /// <summary>
         /// A little slower than level 4, but with better compression.
         /// </summary>

@@ -46,7 +46,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -76,12 +76,17 @@
     <Compile Include="Controls\AnimationControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Controls\COMTypes.cs" />
     <Compile Include="Controls\LinkLabel2.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Controls\RichTextBoxEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Controls\Windows7ProgressBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Windows7Taskbar.cs" />
     <Compile Include="FileDownloader.cs" />
     <Compile Include="frmProcesses.cs">
       <SubType>Form</SubType>

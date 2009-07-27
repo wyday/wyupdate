@@ -33,6 +33,7 @@ namespace wyUpdate
         bool isCancelled;
 
         string error;
+        string errorDetails;
 
         //The full filename of the update & servers files 
         string updateFilename;
@@ -179,7 +180,9 @@ namespace wyUpdate
             {
                 clientLang.SetVariables(update.ProductName, update.InstalledVersion);
 
-                error = ex.Message;
+                error = "Client file failed to load. The client.wyc file might be corrupt.";
+                errorDetails = ex.Message;
+
                 ShowFrame(-1);
                 return;
             }
@@ -216,7 +219,9 @@ namespace wyUpdate
                 }
                 catch (Exception ex)
                 {
-                    error = clientLang.ServerError + "\n\n" + ex.Message;
+                    error = clientLang.ServerError;
+                    errorDetails = ex.Message;
+
                     ShowFrame(-1);
                     return;
                 }
@@ -246,7 +251,9 @@ namespace wyUpdate
                 }
                 catch (Exception ex)
                 {
-                    error = clientLang.ServerError + "\n\n" + ex.Message;
+                    error = clientLang.ServerError;
+                    errorDetails = ex.Message;
+
                     ShowFrame(-1);
                     return;
                 }
@@ -493,14 +500,16 @@ namespace wyUpdate
                 //Show the error (rollback has already been done)
                 if (frameOn == 1)
                 {
-                    error = clientLang.ServerError + "\n\n" + ex.Message;
+                    error = clientLang.ServerError;
+                    errorDetails = ex.Message;
                 }
                 else
                 {
                     if (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
                     {
                         //a download error occurred
-                        error = clientLang.DownloadError + "\n\n" + ex.Message;
+                        error = clientLang.DownloadError;
+                        errorDetails = ex.Message;
                     }
                     else // an update error occurred
                     {
@@ -524,7 +533,8 @@ namespace wyUpdate
                             return;
                         }
 
-                        error = clientLang.GeneralUpdateError + "\n\n" + ex.Message;
+                        error = clientLang.GeneralUpdateError;
+                        errorDetails = ex.Message;
                     }
                 }
 
@@ -589,7 +599,9 @@ namespace wyUpdate
                 if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), update.MinClientVersion) == -1)
                 {
                     //show an error and bail out
-                    error = clientLang.SelfUpdateInstallError + "\n\n" + ex.Message;
+                    error = clientLang.SelfUpdateInstallError;
+                    errorDetails = ex.Message;
+
                     ShowFrame(-1);
                 }
                 else //self update isn't necessary, so handle gracefully
@@ -1036,6 +1048,10 @@ namespace wyUpdate
                     returnCode = 1;
 
                     frameOn = -1;
+
+                    // show details button to hide all the complex crap from users
+                    panelDisplaying.ErrorDetails = errorDetails;
+                    panelDisplaying.SetUpErrorDetails(clientLang.ShowDetails);
 
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.UpdateError.Title,
@@ -1671,7 +1687,9 @@ namespace wyUpdate
                 //Note: this error even occurs when the administrator is using
                 // a blank password
                 //Note2: Can't run as a Guest account
-                error = clientLang.AdminError + "\n\n" + ex.Message;
+                error = clientLang.AdminError;
+                errorDetails = ex.Message;
+
                 ShowFrame(-1);
             }
         }
