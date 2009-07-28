@@ -1,5 +1,3 @@
-using System;
-
 namespace wyUpdate.Compression.Vcdiff
 {
 	/// <summary>

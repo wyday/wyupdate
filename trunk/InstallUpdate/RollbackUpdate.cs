@@ -494,9 +494,9 @@ namespace wyUpdate
 
         public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
-            using (ZipFile zip = ZipFile.Read(clientFile))
+            try
             {
-                try
+                using (ZipFile zip = ZipFile.Read(clientFile))
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
@@ -506,8 +506,8 @@ namespace wyUpdate
                         LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry);
                     }
                 }
-                catch { }
             }
+            catch { }
         }
 
         private static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)

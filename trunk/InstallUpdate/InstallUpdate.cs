@@ -601,7 +601,11 @@ namespace wyUpdate
             //uninstall registry
             foreach (RegChange reg in registryToDelete)
             {
-                reg.ExecuteOperation();
+                try
+                {
+                    reg.ExecuteOperation();
+                }
+                catch { }
             }
 
             //All done

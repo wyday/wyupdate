@@ -3496,7 +3496,7 @@ namespace Ionic.Zip
         ///
         /// <param name="encoding">
         /// The text encoding to use when encoding the string. Be aware: This is
-        /// distinct from the text encoding used to encode the fileName. See <see
+        /// distinct from the text encoding used to encode the fileName, as specified in <see
         /// cref="ProvisionalAlternateEncoding" />.
         /// </param>
         ///
