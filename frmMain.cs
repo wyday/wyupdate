@@ -668,9 +668,14 @@ namespace wyUpdate
             }
             else if (ex != null)
             {
-                //Show the error (rollback has ocurred)
-                error = ex.Message;
-                ShowFrame(-1);
+                if (isSilent)
+                    Close();
+                else
+                {
+                    //Show the error (rollback has ocurred)
+                    error = ex.Message;
+                    ShowFrame(-1);
+                }
             }
         }
 
