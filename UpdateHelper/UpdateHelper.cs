@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using wyUpdate.Common;
-using System.Windows.Forms;
 using System.IO;
-using System.Diagnostics;
+using System.Windows.Forms;
 using wyDay.Controls;
 
 namespace wyUpdate.Common
 {
     class UpdateHelper
     {
-        CopyData copyData = new CopyData();
-
-        Process SenderProcess;
-        IntPtr SenderMainWindowHandle;
+        readonly PipeServer pipeServer = new PipeServer();
 
         public UpdateStep UpdateStep;
 
@@ -30,31 +24,48 @@ namespace wyUpdate.Common
         public event RequestHandler RequestReceived;
 
 
-        public UpdateHelper(IntPtr OwnerHandle)
+        private Control owner;
+
+        public UpdateHelper(Form OwnerHandle)
         {
-            copyData.AssignHandle(OwnerHandle);
+            owner = OwnerHandle;
 
-            // Create the channel to send on:
-            copyData.Channels.Add("UpdateHelper");
+            pipeServer.MessageReceived += pipeServer_MessageReceived;
+            pipeServer.ClientDisconnected += pipeServer_ClientDisconnected;
 
-
-            copyData.DataReceived += new wyUpdate.Common.DataReceivedEventHandler(CopyData_DataReceived);
+            //TODO: needs to be a unique pipe name
+            pipeServer.Start("\\\\.\\pipe\\wyUpdate");
         }
 
-        private void CopyData_DataReceived(object sender, wyUpdate.Common.DataReceivedEventArgs e)
+        void pipeServer_ClientDisconnected()
+        {
+            try
+            {
+                owner.Invoke(new PipeServer.ClientDisconnectedHandler(ClientDisconnected));
+            }
+            catch { }
+        }
+
+        void ClientDisconnected()
+        {
+            if (SenderProcessClosed != null && pipeServer.TotalConnectedClients == 0)
+                SenderProcessClosed(this, EventArgs.Empty);
+        }
+
+        void pipeServer_MessageReceived(byte[] message)
+        {
+            try
+            {
+                owner.Invoke(new PipeServer.MessageReceivedHandler(ProcessReceivedData),
+                             new object[] {message});
+            }
+            catch { }
+        }
+
+        void ProcessReceivedData(byte[] message)
         {
             // get the data
-            UpdateHelperData data = UpdateHelperData.FromByteArray(e.Data);
-
-
-            if (data.ProcessIDValid)
-            {
-                SenderMainWindowHandle = data.MainWindowHandle;
-
-                SenderProcess = Process.GetProcessById(data.ProcessID);
-                SenderProcess.EnableRaisingEvents = true;
-                SenderProcess.Exited += new EventHandler(SenderProcess_Exited);
-            }
+            UpdateHelperData data = UpdateHelperData.FromByteArray(message);
 
             UpdateStep = data.UpdateStep;
 
@@ -77,17 +88,9 @@ namespace wyUpdate.Common
                 RequestReceived(this, UpdateStep);
         }
 
-        void SenderProcess_Exited(object sender, EventArgs e)
-        {
-            SenderProcess = null;
-
-            if (SenderProcessClosed != null)
-                SenderProcessClosed(this, null);
-        }
-
         public void SendProgress(int progress)
         {
-            copyData.Channels["UpdateHelper"].Send(new UpdateHelperData(Response.Progress, UpdateStep, progress).GetByteArray(), SenderMainWindowHandle);
+            pipeServer.SendMessage(new UpdateHelperData(Response.Progress, UpdateStep, progress).GetByteArray());
         }
 
         public void SendSuccess(string extraData1, string extraData2, bool ed2IsRtf, List<RichTextBoxLink> links)
@@ -98,19 +101,19 @@ namespace wyUpdate.Common
             
             uh.LinksData = links;
 
-            copyData.Channels["UpdateHelper"].Send(uh.GetByteArray(), SenderMainWindowHandle);
+            pipeServer.SendMessage(uh.GetByteArray());
         }
 
         public void SendSuccess()
         {
             UpdateHelperData uh = new UpdateHelperData(Response.Succeeded, UpdateStep);
 
-            copyData.Channels["UpdateHelper"].Send(uh.GetByteArray(), SenderMainWindowHandle);
+            pipeServer.SendMessage(uh.GetByteArray());
         }
 
         public void SendFailed(Exception ex)
         {
-            copyData.Channels["UpdateHelper"].Send(new UpdateHelperData(Response.Failed, UpdateStep, ex.Message, ex.StackTrace).GetByteArray(), SenderMainWindowHandle);
+            pipeServer.SendMessage(new UpdateHelperData(Response.Failed, UpdateStep, ex.Message, ex.StackTrace).GetByteArray());
         }
     }
 
@@ -119,25 +122,10 @@ namespace wyUpdate.Common
     {
         public UpdateStep UpdateStep;
 
-        private int m_ProcessID;
-        public bool ProcessIDValid = false;
-
-        public IntPtr MainWindowHandle;
-
 
         public List<string> ExtraData = new List<string>();
         public List<bool> ExtraDataIsRTF = new List<bool>();
 
-
-        public int ProcessID
-        {
-            get { return m_ProcessID; }
-            set
-            {
-                m_ProcessID = value;
-                ProcessIDValid = true;
-            }
-        }
 
 
         public List<RichTextBoxLink> LinksData;
@@ -166,14 +154,14 @@ namespace wyUpdate.Common
 
         public UpdateHelperData(Response responseType, UpdateStep step)
         {
-            this.ResponseType = responseType;
-            this.UpdateStep = step;
+            ResponseType = responseType;
+            UpdateStep = step;
         }
 
         public UpdateHelperData(Response responseType, UpdateStep step, int progress)
             : this(responseType, step)
         {
-            this.Progress = progress;
+            Progress = progress;
         }
 
         public UpdateHelperData(Response responseType, UpdateStep step, string message, string stackTrace)
@@ -189,8 +177,6 @@ namespace wyUpdate.Common
 
         public byte[] GetByteArray()
         {
-            byte[] arr;
-
             MemoryStream ms = new MemoryStream();
 
             // what update step are we on?
@@ -219,12 +205,6 @@ namespace wyUpdate.Common
                 }
             }
 
-            if (MainWindowHandle != IntPtr.Zero)
-                WriteFiles.WriteLong(ms, 0x03, MainWindowHandle.ToInt64());
-
-            if (ProcessIDValid)
-                WriteFiles.WriteInt(ms, 0x04, m_ProcessID);
-
             if (Progress > -1 && Progress <= 100)
                 WriteFiles.WriteInt(ms, 0x05, Progress);
 
@@ -233,7 +213,7 @@ namespace wyUpdate.Common
 
             ms.WriteByte(0xFF);
 
-            arr = ms.ToArray();
+            byte[] arr = ms.ToArray();
 
             ms.Close();
 
@@ -267,12 +247,6 @@ namespace wyUpdate.Common
                         if (uhData.ExtraDataIsRTF.Count != uhData.ExtraData.Count)
                             uhData.ExtraDataIsRTF.Add(false);
 
-                        break;
-                    case 0x03:
-                        uhData.MainWindowHandle = new IntPtr(ReadFiles.ReadLong(ms));
-                        break;
-                    case 0x04:
-                        uhData.ProcessID = ReadFiles.ReadInt(ms);
                         break;
                     case 0x05:
                         uhData.Progress = ReadFiles.ReadInt(ms);

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-26 23:15:32>
+// Time-stamp: <2009-July-28 23:27:14>
 //
 // ------------------------------------------------------------------
 //
@@ -34,16 +34,15 @@ using System.Security.Cryptography;
 #if AESCRYPTO
 namespace Ionic.Zip
 {
-
-
     /// <summary> 
     /// This is a helper class supporting WinZip AES encryption.  
     /// This class is intended for use only by the DotNetZip library.
     /// </summary>
     /// <remarks>
     /// Most uses of the DotNetZip library will not involve direct calls into the
-    /// WinZipAesCrypto class.  Instead, the WinZipAesCrypto class is instantiated and used by
-    /// the ZipEntry() class when WinZip AES encryption or decryption on an entry is employed.
+    /// WinZipAesCrypto class.  Instead, the WinZipAesCrypto class is instantiated and
+    /// used by the ZipEntry() class when WinZip AES encryption or decryption on an
+    /// entry is employed.
     /// </remarks>
     internal class WinZipAesCrypto
     {

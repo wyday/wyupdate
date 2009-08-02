@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-27 00:20:04>
+// Time-stamp: <2009-July-30 22:49:08>
 //
 // ------------------------------------------------------------------
 //
@@ -2737,6 +2737,7 @@ namespace Ionic.Zip
             InternalExtract(baseDirectory, null, null);
         }
 
+        
         /// <summary>
         /// Extract the entry to the filesystem, starting at the specified base directory, 
         /// and potentially overwriting existing files in the filesystem. 
@@ -2769,14 +2770,45 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
+        ///
+        /// <example>
+        /// <code lang="C#">
+        /// String sZipPath = "Airborne.zip";
+        /// String sFilePath = "Readme.txt";
+        /// String sRootFolder = "Digado";
+        /// using (ZipFile zip = ZipFile.Read(sZipPath))
+        /// {
+        ///   if (zip.EntryFileNames.Contains(sFilePath))
+        ///   {
+        ///     // use the string indexer on the zip file
+        ///     zip[sFileName].Extract(sRootFolder,
+        ///                            ExtractExistingFileAction.OverwriteSilently);
+        ///   }
+        /// }
+        /// </code>
         /// 
+        /// <code lang="VB">
+        /// Dim sZipPath as String = "Airborne.zip"
+        /// Dim sFilePath As String = "Readme.txt"
+        /// Dim sRootFolder As String = "Digado"
+        /// Using zip As ZipFile = ZipFile.Read(sZipPath)
+        ///   If zip.EntryFileNames.Contains(sFilePath)
+        ///     ' use the string indexer on the zip file
+        ///     zip(sFilePath).Extract(sRootFolder, _
+        ///                            ExtractExistingFileAction.OverwriteSilently)
+        ///   End If
+        /// End Using
+        /// </code>
+        /// </example>
+        ///
         /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// <param name="extractExistingFile">The action to take if extraction would
-        /// overwrite an existing file.</param>
+        /// <param name="extractExistingFile">
+        /// The action to take if extraction would overwrite an existing file.
+        /// </param>
         public void Extract(string baseDirectory, ExtractExistingFileAction extractExistingFile)
         {
             ExtractExistingFile = extractExistingFile;
@@ -3225,7 +3257,7 @@ namespace Ionic.Zip
             string TargetFile = null;
             Stream output = null;
             bool fileExistsBeforeExtraction = false;
-
+            bool checkLaterForResetDirTimes = false;
             try
             {
                 ValidateCompression();
@@ -3256,7 +3288,16 @@ namespace Ionic.Zip
                     if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("extract file {0}...", TargetFile);
                     // ensure the target path exists
                     if (!Directory.Exists(Path.GetDirectoryName(TargetFile)))
+                    {
+                        // we create the directory here, but we do not set the
+                        // create/modified/accessed times on it because it is being
+                        // created implicitly, not explcitly. There's no entry in the
+                        // zip archive for the directory. 
                         Directory.CreateDirectory(Path.GetDirectoryName(TargetFile));
+                    }
+                    else
+                        checkLaterForResetDirTimes = true;  // workitem 8264
+
 
                     // Take care of the behavior when extraction would overwrite an existing file
                     if (File.Exists(TargetFile))
@@ -3378,43 +3419,19 @@ namespace Ionic.Zip
                     output.Close();
                     output = null;
 
-                    if (_ntfsTimesAreSet)
+                    _SetTimes(TargetFile, true);
+
+                    // workitem 8264
+                    if (checkLaterForResetDirTimes)
                     {
-
-#if NETCF
-                        // workitem 7944: set time should not be a fatal error on CF
-                        int rc = NetCfFile.SetTimes(TargetFile, _Ctime, _Atime, _Mtime);
-                        if ( rc != 0)
+                        // String.Contains is not available on .NET CF 2.0
+                        if (this.FileName.IndexOf('/') != -1)
                         {
-                            if (_zipfile.Verbose)
-                                _zipfile.StatusMessageTextWriter.WriteLine("Warning: SetTimes failed.  entry({0})  file({1})  rc({2})",
-                                                                           FileName, TargetFile, rc);
+                            string dirname = Path.GetDirectoryName(this.FileName);
+                            if (this._zipfile[dirname]!=null)
+                                _SetTimes(Path.GetDirectoryName(TargetFile), false);
                         }
-#else
-                        File.SetCreationTimeUtc(TargetFile, _Ctime);
-                        File.SetLastAccessTimeUtc(TargetFile, _Atime);
-                        File.SetLastWriteTimeUtc(TargetFile, _Mtime);
-#endif
                     }
-                    else
-                    {
-                        // workitem 6191
-                        DateTime AdjustedLastModified = Ionic.Zip.SharedUtilities.AdjustTime_DotNetToWin32(LastModified);
-
-#if NETCF
-                        int rc = NetCfFile.SetLastWriteTime(TargetFile, AdjustedLastModified);
-                        
-                        if ( rc != 0)
-                        {
-                            if (_zipfile.Verbose)
-                                _zipfile.StatusMessageTextWriter.WriteLine("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
-                                                                           FileName, TargetFile, rc);
-                        }
-#else
-                        File.SetLastWriteTime(TargetFile, AdjustedLastModified);
-#endif
-                    }
-
 
 #if NETCF
                     // workitem 7926 - version made by OS can be zero or 10
@@ -3464,7 +3481,59 @@ namespace Ionic.Zip
         }
 
 
+        private void _SetTimes(string fileOrDirectory, bool isFile)
+        {
+            if (_ntfsTimesAreSet)
+            {
+#if NETCF
+                // workitem 7944: set time should not be a fatal error on CF
+                int rc = NetCfFile.SetTimes(fileOrDirectory, _Ctime, _Atime, _Mtime);
+                if ( rc != 0)
+                {
+                    if (_zipfile.Verbose)
+                        _zipfile.StatusMessageTextWriter.WriteLine("Warning: SetTimes failed.  entry({0})  file({1})  rc({2})",
+                                                                   FileName, fileOrDirectory, rc);
+                }
+#else
+                if (isFile)
+                {
+                File.SetCreationTimeUtc(fileOrDirectory, _Ctime);
+                File.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
+                File.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                }
+                else
+                {
+                Directory.SetCreationTimeUtc(fileOrDirectory, _Ctime);
+                Directory.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
+                Directory.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                }
+#endif
+            }
+            else
+            {
+                // workitem 6191
+                DateTime AdjustedLastModified = Ionic.Zip.SharedUtilities.AdjustTime_DotNetToWin32(LastModified);
 
+#if NETCF
+                int rc = NetCfFile.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
+                        
+                if ( rc != 0)
+                {
+                    if (_zipfile.Verbose)
+                        _zipfile.StatusMessageTextWriter.WriteLine("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
+                                                                   FileName, fileOrDirectory, rc);
+                }
+#else
+                if (isFile)
+                    File.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
+                else
+                    Directory.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
+#endif
+            }
+        }
+
+
+        
         private void ValidateEncryption()
         {
             if (Encryption != EncryptionAlgorithm.PkzipWeak &&
@@ -3545,11 +3614,20 @@ namespace Ionic.Zip
             ? Path.Combine(basedir, this.FileName.Substring(1))
             : Path.Combine(basedir, this.FileName);
 
-                // check if a directory
+                // check if it is a directory
                 if ((IsDirectory) || (FileName.EndsWith("/")))
                 {
                     if (!Directory.Exists(OutputFile))
+                    {
                         Directory.CreateDirectory(OutputFile);
+                        _SetTimes(OutputFile, false);
+                    }
+                    else
+                    {
+                        // the dir exists, maybe we want to overwrite times. 
+                        if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
+                            _SetTimes(OutputFile, false);
+                    }
                     return true;  // true == all done, caller will return 
                 }
                 return false;  // false == work to do by caller.
@@ -3570,12 +3648,12 @@ namespace Ionic.Zip
         }
 
 
+        
         private void _CheckRead(int nbytes)
         {
             if (nbytes == 0)
                 throw new BadReadException(String.Format("bad read of entry {0} from compressed archive.",
                              this.FileName));
-
         }
 
 
@@ -5030,22 +5108,20 @@ namespace Ionic.Zip
             }
             else
             {
-                byte[] Descriptor = null;
+                byte[] Descriptor = new byte[16 + (_OutputUsesZip64.Value?8:0)];
+                i = 0;
+                    
+                // signature
+                Array.Copy(BitConverter.GetBytes(ZipConstants.ZipEntryDataDescriptorSignature), 0, Descriptor, i, 4);
+                i += 4;
+
+                // CRC - the correct value now
+                Array.Copy(BitConverter.GetBytes(_Crc32), 0, Descriptor, i, 4);
+                i += 4;
 
                 // workitem 7917
                 if (_OutputUsesZip64.Value)
                 {
-                    Descriptor = new byte[24];
-                    i = 0;
-
-                    // signature
-                    Array.Copy(BitConverter.GetBytes(ZipConstants.ZipEntryDataDescriptorSignature), 0, Descriptor, i, 4);
-                    i += 4;
-
-                    // CRC - the correct value now
-                    Array.Copy(BitConverter.GetBytes(_Crc32), 0, Descriptor, i, 4);
-                    i += 4;
-
                     // CompressedSize - the correct value now
                     Array.Copy(BitConverter.GetBytes(_CompressedSize), 0, Descriptor, i, 8);
                     i += 8;
@@ -5056,28 +5132,13 @@ namespace Ionic.Zip
                 }
                 else
                 {
-                    Descriptor = new byte[16];
-                    i = 0;
-                    // signature
-                    int sig = ZipConstants.ZipEntryDataDescriptorSignature;
-                    Descriptor[i++] = (byte)(sig & 0x000000FF);
-                    Descriptor[i++] = (byte)((sig & 0x0000FF00) >> 8);
-                    Descriptor[i++] = (byte)((sig & 0x00FF0000) >> 16);
-                    Descriptor[i++] = (byte)((sig & 0xFF000000) >> 24);
-
-                    // CRC - the correct value now
-                    Descriptor[i++] = (byte)(_Crc32 & 0x000000FF);
-                    Descriptor[i++] = (byte)((_Crc32 & 0x0000FF00) >> 8);
-                    Descriptor[i++] = (byte)((_Crc32 & 0x00FF0000) >> 16);
-                    Descriptor[i++] = (byte)((_Crc32 & 0xFF000000) >> 24);
-
-                    // CompressedSize - the correct value now
+                    // CompressedSize - (lower 32 bits) the correct value now
                     Descriptor[i++] = (byte)(_CompressedSize & 0x000000FF);
                     Descriptor[i++] = (byte)((_CompressedSize & 0x0000FF00) >> 8);
                     Descriptor[i++] = (byte)((_CompressedSize & 0x00FF0000) >> 16);
                     Descriptor[i++] = (byte)((_CompressedSize & 0xFF000000) >> 24);
 
-                    // UncompressedSize - the correct value now
+                    // UncompressedSize - (lower 32 bits) the correct value now
                     Descriptor[i++] = (byte)(_UncompressedSize & 0x000000FF);
                     Descriptor[i++] = (byte)((_UncompressedSize & 0x0000FF00) >> 8);
                     Descriptor[i++] = (byte)((_UncompressedSize & 0x00FF0000) >> 16);
@@ -5192,16 +5253,40 @@ namespace Ionic.Zip
                 byte[] encryptionHeader = new byte[12];
                 rnd.NextBytes(encryptionHeader);
 
-                // Here, it is important to encrypt the random header, INCLUDING the
-                // final byte which is the high-order byte of the CRC32.  We must do
-                // this BEFORE we encrypt the file data.  This step changes the state of
-                // the cipher, or in the words of the PKZIP spec, it "further
-                // initializes" the cipher keys.
-                //
-                // No way around this: must read the stream to compute the actual CRC.
-                FigureCrc32();
-                encryptionHeader[11] = (byte)((this._Crc32 >> 24) & 0xff);
+                // workitem 8271
+                if ((this._BitField & 0x0008) == 0x0008)
+                {
+                    // In the case that bit 3 of the general purpose bit flag is set to
+                    // indicate the presence of a 'data
+                    // descriptor' (signature 0x08074b50), the last byte of the decrypted
+                    // header is sometimes compared with the high-order byte of the
+                    // lastmodified time, rather than the high-order byte of the CRC, to
+                    // verify the password.
+                    //
+                    // This is not documented in the PKWare Appnote.txt.  
+                    // This was discovered this by analysis of the Crypt.c source file in the InfoZip library
+                    // http://www.info-zip.org/pub/infozip/
 
+                    // Also, winzip insists on this!
+                    _TimeBlob = Ionic.Zip.SharedUtilities.DateTimeToPacked(LastModified);
+                    encryptionHeader[11] = (byte)((this._TimeBlob >> 8) & 0xff);
+                }
+                else
+                {
+                    // When bit 3 is not set, the CRC value is required before
+                    // encryption of the file data begins. In this case there is no way
+                    // around it: must read the stream in its entirety to compute the
+                    // actual CRC before proceeding.
+                    FigureCrc32();
+                    encryptionHeader[11] = (byte)((this._Crc32 >> 24) & 0xff);
+                }
+
+                // Encrypt the random header, INCLUDING the final byte which is either
+                // the high-order byte of the CRC32, or the high-order byte of the
+                // _TimeBlob.  Must do this BEFORE encrypting the file data.  This
+                // step changes the state of the cipher, or in the words of the PKZIP
+                // spec, it "further initializes" the cipher keys.
+                
                 byte[] cipherText = _zipCrypto.EncryptMessage(encryptionHeader, encryptionHeader.Length);
 
                 // Write the ciphered bonafide encryption header. 

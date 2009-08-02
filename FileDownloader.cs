@@ -317,7 +317,7 @@ namespace wyUpdate.Downloader
         /// <returns>String represenation of the transfer rate in bytes/sec, KB/sec, MB/sec, etc.</returns>
         private static string BpsToString(double bps)
         {
-            string[] m = new string[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
+            string[] m = new[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
             int i = 0;
             while (bps >= 0.9 * 1024)
             {

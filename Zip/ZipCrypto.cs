@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-29 17:35:37>
+// Time-stamp: <2009-July-30 22:35:47>
 //
 // ------------------------------------------------------------------
 //
@@ -90,10 +90,12 @@ namespace Ionic.Zip
             // is the highest-order byte in the CRC. We check it here. 
             if (DecryptedHeader[11] != (byte)((e._Crc32 >> 24) & 0xff))
             {
-                // In the case that bit 3 of the general purpose bit flag is set to indicate
-                // the presence of an 'Extended File Header', the last byte of the decrypted
-                // header is sometimes compared with the high-order byte of the lastmodified 
-                // time, and not the CRC, to verify the password. 
+                // In the case that bit 3 of the general purpose bit flag is set to
+                // indicate the presence of an 'Extended File Header' or a 'data
+                // descriptor' (signature 0x08074b50), the last byte of the decrypted
+                // header is sometimes compared with the high-order byte of the
+                // lastmodified time, rather than the high-order byte of the CRC, to
+                // verify the password.
                 //
                 // This is not documented in the PKWare Appnote.txt.  
                 // This was discovered this by analysis of the Crypt.c source file in the InfoZip library
