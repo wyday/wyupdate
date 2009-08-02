@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 14:07:51>
+// Time-stamp: <2009-July-29 15:55:07>
 //
 // ------------------------------------------------------------------
 //
@@ -227,9 +227,18 @@ namespace Ionic
         {
             set
             {
-                _MatchingFileSpec = value;
+                // workitem 8245
+                if (Directory.Exists(value))
+                {
+                    _MatchingFileSpec = value + "\\*.*";
+                }
+                else
+                {
+                    _MatchingFileSpec = value;
+                }
+                
                 _regexString = "^" +
-                Regex.Escape(value)
+                Regex.Escape(_MatchingFileSpec)
                 .Replace(@"\*\.\*", @"([^\.]+|.*\.[^\\\.]*)")
                 .Replace(@"\.\*", @"\.[^\\\.]*")
                 .Replace(@"\*", @".*")
@@ -940,6 +949,9 @@ namespace Ionic
             var list = new System.Collections.Generic.List<String>();
             try
             {
+                if (Directory.Exists(directory))
+                {
+
                 String[] filenames = System.IO.Directory.GetFiles(directory);
 
                 // add the files: 
@@ -958,9 +970,17 @@ namespace Ionic
                         list.AddRange(this.SelectFiles(dir, recurseDirectories));
                     }
                 }
+                    
+                }                
             }
-            // can get System.UnauthorizedAccessException here 
-            catch { }
+            // can get System.UnauthorizedAccessException here
+            catch
+            {
+            }
+//             catch (Exception ex1)
+//             {
+//                 Console.WriteLine("Exception: {0}", ex1);
+//             }
 
             return list;
         }

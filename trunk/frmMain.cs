@@ -368,10 +368,11 @@ namespace wyUpdate
                 if (commands["uninstall"] != null)
                     uninstalling = true;
 
-                /*
+
+                // wait mode - for automatic updates
                 if (commands["wait"] != null)
                 {
-                    updateHelper = new UpdateHelper(Handle);
+                    updateHelper = new UpdateHelper(this);
                     updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
                     updateHelper.RequestReceived += UpdateHelper_RequestReceived;
 
@@ -387,7 +388,7 @@ namespace wyUpdate
                     if (commands["tempdir"] != null)
                         dontDestroyTempFolder = true;
                 }
-                */
+                
 
                 // load the passed server argument
                 if (commands["server"] != null)

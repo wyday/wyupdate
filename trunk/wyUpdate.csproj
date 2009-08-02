@@ -138,13 +138,13 @@
     <Compile Include="SystemMenu.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="UpdateHelper\PipeServer.cs" />
     <Compile Include="UpdateHelper\UpdateHelper.cs" />
     <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails.cs" />
     <Compile Include="UpdateEngine.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.cs" />
     <Compile Include="Util\Arguments.cs" />
-    <Compile Include="UpdateHelper\CopyData.cs" />
     <Compile Include="VCDiff\AddressCache.cs" />
     <Compile Include="VCDiff\CodeTable.cs" />
     <Compile Include="VCDiff\Instruction.cs" />

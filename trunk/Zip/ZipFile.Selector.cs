@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 13:49:40>
+// Time-stamp: <2009-July-30 20:45:00>
 //
 // ------------------------------------------------------------------
 //
@@ -32,7 +32,7 @@
 
 
 using System;
-
+using System.IO;
 
 namespace Ionic.Zip
 {
@@ -410,10 +410,86 @@ namespace Ionic.Zip
                                      String directoryPathInArchive,
                                      bool recurseDirectories)
         {
-            if (String.IsNullOrEmpty(directoryOnDisk)) directoryOnDisk = ".";
-            if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...", selectionCriteria, directoryOnDisk);
+            _AddOrUpdateSelectedFiles(selectionCriteria,
+                                      directoryOnDisk,
+                                      directoryPathInArchive,
+                                      recurseDirectories,
+                                      false);
+        }
+
+        /// <summary>
+        /// Updates the ZipFile with a selection of files from the disk that conform to
+        /// the specified criteria.
+        /// </summary>
+        /// 
+        /// <remarks>
+        /// This method selects files from the specified disk directory that match the
+        /// specified selection criteria, and Updates the <c>ZipFile</c> with those
+        /// files, using the specified directory path in the archive. If
+        /// <c>recurseDirectories</c> is true, files are also selected from
+        /// subdirectories, and the directory structure in the filesystem is reproduced
+        /// in the zip archive, rooted at the directory specified by
+        /// <c>directoryOnDisk</c>.  For details on the syntax for the selectionCriteria
+        /// parameter, see <see cref="AddSelectedFiles(String)" />.
+        /// </remarks>
+        ///
+        /// <param name="selectionCriteria">The criteria for selection of files to Add</param>
+        ///
+        /// <param name="directoryOnDisk">
+        /// The name of the directory on the disk from which to select files.
+        /// </param>
+        /// 
+        /// <param name="directoryPathInArchive">
+        /// Specifies a directory path to use to override any path in the FileName.  This path may,
+        /// or may not, correspond to a real directory in the current filesystem.  If the files
+        /// within the zip are later extracted, this is the path used for the extracted file.
+        /// Passing null (nothing in VB) will use the path on the FileName, if any.  Passing the
+        /// empty string ("") will insert the item at the root path within the archive.
+        /// </param>
+        ///
+        /// <param name="recurseDirectories">
+        /// If true, the method also scans subdirectories for files matching the criteria.
+        /// </param>
+        ///
+        /// <seealso cref="AddSelectedFiles(String, String, String, bool)" />
+        public void UpdateSelectedFiles(String selectionCriteria,
+                                     String directoryOnDisk,
+                                     String directoryPathInArchive,
+                                     bool recurseDirectories)
+        {
+            _AddOrUpdateSelectedFiles(selectionCriteria,
+                                      directoryOnDisk,
+                                      directoryPathInArchive,
+                                      recurseDirectories,
+                                      true);
+        }
+
+        private void _AddOrUpdateSelectedFiles(String selectionCriteria,
+                                     String directoryOnDisk,
+                                     String directoryPathInArchive,
+                                               bool recurseDirectories,
+                                               bool wantUpdate)
+        {
+
+        //System.Collections.Generic.List<string> filesToAdd = null;
+            if (directoryOnDisk == null && (Directory.Exists(selectionCriteria)))
+            {
+                //if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...",
+                //selectionCriteria, directoryOnDisk);
+                //Ionic.FileSelector ff = new Ionic.FileSelector("*.*");
+                //filesToAdd = ff.SelectFiles(selectionCriteria, recurseDirectories);
+                directoryOnDisk = selectionCriteria;
+                selectionCriteria = "*.*";
+            }
+            else if (String.IsNullOrEmpty(directoryOnDisk))
+            {
+                directoryOnDisk = ".";
+            }
+            if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...",
+                                                               selectionCriteria, directoryOnDisk);
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
+                
             if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", filesToAdd.Count);
 
             OnAddStarted();
@@ -422,11 +498,19 @@ namespace Ionic.Zip
             {
                 if (directoryPathInArchive != null)
                 {
-                    string dirInArchive = System.IO.Path.GetDirectoryName(f).Replace(directoryOnDisk, directoryPathInArchive);
-                    this.AddFile(f, dirInArchive);
+                    string dirInArchive = Path.GetDirectoryName(f).Replace(directoryOnDisk, directoryPathInArchive);
+                    if (wantUpdate)
+                        this.UpdateFile(f, dirInArchive);
+                    else
+                        this.AddFile(f, dirInArchive);
                 }
                 else
-                    this.AddFile(f, null);
+                {
+                    if (wantUpdate)
+                        this.UpdateFile(f, null);
+                    else
+                        this.AddFile(f, null);
+                }
             }
 
             OnAddCompleted();
@@ -991,7 +1075,7 @@ namespace Ionic
     {
         internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
         {
-            System.IO.FileAttributes fileAttrs = entry.Attributes;
+            FileAttributes fileAttrs = entry.Attributes;
             return _Evaluate(fileAttrs);
         }
     }
@@ -1117,7 +1201,7 @@ namespace Ionic
 
             foreach (Ionic.Zip.ZipEntry e in zip)
             {
-                if (directoryPathInArchive == null || System.IO.Path.GetDirectoryName(e.FileName) == directoryPathInArchive)
+                if (directoryPathInArchive == null || Path.GetDirectoryName(e.FileName) == directoryPathInArchive)
                     if (this.Evaluate(e))
                         list.Add(e);
             }
