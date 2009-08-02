@@ -75,7 +75,7 @@ namespace wyUpdate.Downloader
         private static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             //allow all downloads regardless of SSL security errors
-            /*   This will 'fix' the self-signed SSL certificate problem
+            /* This will 'fix' the self-signed SSL certificate problem
                that's typical on most corporate intranets */
             return true;
         }
