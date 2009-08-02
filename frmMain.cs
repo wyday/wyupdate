@@ -108,7 +108,8 @@ namespace wyUpdate
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;
 
-            IsAdmin = Environment.OSVersion.Version.Major >= 5 ? VistaTools.IsUserAnAdmin() : true;
+            // check if user is an admin for windows 2000+, otherwise assume we are
+            IsAdmin = Environment.OSVersion.Version.Major > 4 ? VistaTools.IsUserAnAdmin() : true;
 
             InitializeComponent();
 
@@ -343,13 +344,10 @@ namespace wyUpdate
                 //set basedirectory as the location of the executable
                 baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
-                if (commands["basedir"] != null)
+                if (commands["basedir"] != null && Directory.Exists(commands["basedir"]))
                 {
                     //if the specified directory exists, then set as directory
-                    if (Directory.Exists(commands["basedir"]))
-                    {
-                        baseDirectory = commands["basedir"];
-                    }
+                    baseDirectory = commands["basedir"];
                 }
 
                 if (commands["tempdir"] != null && Directory.Exists(commands["tempdir"]))
@@ -441,7 +439,7 @@ namespace wyUpdate
                     {
                         Directory.Delete(tempDirectory, true);
                     }
-                    catch (Exception) { }
+                    catch { }
                 }
             }
 
