@@ -63,12 +63,7 @@ namespace wyUpdate
 
         //--Silent updating/uninstalling
         bool isSilent;
-        int returnCode;
-        public int ReturnCode
-        {
-            get { return returnCode; }
-            set { returnCode = value; }
-        }
+        public int ReturnCode { get; set; }
 
         // Wait Mode (aka API mode)
         UpdateHelper updateHelper;
@@ -91,6 +86,14 @@ namespace wyUpdate
         bool selfUpdateFromRC1;
         string newClientLocation; //self update from RC1
 
+        // handle hidden form
+        bool _isApplicationRun = true;
+        bool StartFormHidden;
+        
+        // start hidden, close if no update, show if update
+        bool QuickCheck;
+        bool QuickCheckNoErr;
+
         #region Threads
 
         delegate void ShowProgressDelegate(int percentDone, bool statusDone, string extraStatus, Exception ex);
@@ -105,6 +108,10 @@ namespace wyUpdate
 
         public frmMain(string[] args)
         {
+            updateHelper = new UpdateHelper(this);
+            updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
+            updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;
 
@@ -279,25 +286,38 @@ namespace wyUpdate
                 checkForUpdate = true;
         }
 
-        protected override void OnLoad(EventArgs e)
+        protected override void SetVisibleCore(bool value)
         {
-            if (uninstalling)
+            if (_isApplicationRun)
             {
-                ShowFrame(7);
-            }
-            else if (selfUpdateFromRC1)
-            {
-                //if the loaded file is from RC1, then update self and bail out
+                _isApplicationRun = false;
 
-                //Relaunch self
-                StartSelfElevated();
-            }
-            else if (checkForUpdate)
-                // begin check for updates
-                ShowFrame(1);
+                base.SetVisibleCore(StartFormHidden ? false : value);
 
-            base.OnLoad(e);
+
+                // run the OnLoad code
+
+                if (uninstalling)
+                {
+                    ShowFrame(7);
+                }
+                else if (selfUpdateFromRC1)
+                {
+                    //if the loaded file is from RC1, then update self and bail out
+
+                    //Relaunch self
+                    StartSelfElevated();
+                }
+                else if (checkForUpdate)
+                    // begin check for updates
+                    ShowFrame(1);
+
+                return;
+            }
+
+            base.SetVisibleCore(value);
         }
+
 
         private void ProcessArguments(Arguments commands)
         {
@@ -370,10 +390,6 @@ namespace wyUpdate
                 // wait mode - for automatic updates
                 if (commands["wait"] != null)
                 {
-                    updateHelper = new UpdateHelper(this);
-                    updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
-                    updateHelper.RequestReceived += UpdateHelper_RequestReceived;
-
                     sendGotPreInstallInfo = new System.Windows.Forms.Timer
                                                 {
                                                     Enabled = false, Interval = 1
@@ -387,6 +403,14 @@ namespace wyUpdate
                         dontDestroyTempFolder = true;
                 }
                 
+                if (commands["quickcheck"] != null)
+                {
+                    StartFormHidden = true;
+                    QuickCheck = true;
+
+                    if (commands["noerr"] != null)
+                        QuickCheckNoErr = true;
+                }
 
                 // load the passed server argument
                 if (commands["server"] != null)
@@ -740,37 +764,38 @@ namespace wyUpdate
         //downlaod regular update files
         private void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
         {
-            ShowProgressDelegate showProgressDel = ShowProgress;
+            if (downloader != null)
+            {
+                downloader.ProgressChanged -= ShowProgress;
+                downloader.ProgressChanged -= SelfUpdateProgress;
+            }
 
-            downloader = new FileDownloader(sites, tempDirectory, this, showProgressDel)
+            downloader = new FileDownloader(sites, tempDirectory)
                              {
                                  Adler32 = adler32,
                                  UseRelativeProgress = relativeProgress
                              };
 
-            Thread t = new Thread(downloader.Download)
-                           {
-                               IsBackground = true
-                           };
-            t.Start();
+            downloader.ProgressChanged += ShowProgress;
+            downloader.Download();
         }
 
         //download self update files (server file or update file)
         private void BeginSelfUpdateDownload(List<string> sites, long adler32)
         {
-            //not the different delegate
-            ShowProgressDelegate showProgressDel = SelfUpdateProgress;
+            if (downloader != null)
+            {
+                downloader.ProgressChanged -= ShowProgress;
+                downloader.ProgressChanged -= SelfUpdateProgress;
+            }
 
-            downloader = new FileDownloader(sites, tempDirectory, this, showProgressDel)
+            downloader = new FileDownloader(sites, tempDirectory)
                              {
                                  Adler32 = adler32
                              };
 
-            Thread t = new Thread(downloader.Download)
-                           {
-                               IsBackground = true
-                           };
-            t.Start();
+            downloader.ProgressChanged += SelfUpdateProgress;
+            downloader.Download();
         }
 
         //client server file downloaded
@@ -944,6 +969,16 @@ namespace wyUpdate
                     btnNext.Enabled = true;
                     btnNext.Text = clientLang.UpdateButton;
 
+                    if(QuickCheck)
+                    {
+                        // show the update window
+                        Visible = true;
+                        TopMost = true;
+                        TopMost = false;
+
+                        QuickCheck = false;
+                    }
+
                     break;
                 case 3: //Download and Install Updates
                     frameOn = 3;
@@ -1049,7 +1084,7 @@ namespace wyUpdate
                 case -1: //Display error screen
                     
                     //TODO: make the return codes error specific
-                    returnCode = 1;
+                    ReturnCode = 1;
 
                     frameOn = -1;
 
@@ -1080,6 +1115,21 @@ namespace wyUpdate
                 
                 //allow the user to exit by pressing ESC
                 CancelButton = btnNext;
+
+                //set the error return code (1) or success (0)
+                ReturnCode = frameNum == -1 ? 1 : 0;
+
+                if (QuickCheck)
+                {
+                    if (frameNum == -1 && !QuickCheckNoErr)
+                    {
+                        Visible = true;
+                        TopMost = true;
+                        TopMost = false;
+                    }
+                    else
+                        Close();
+                }
             }
 
             //if silent & if on one of the user interaction screens, then click next
@@ -1805,8 +1855,6 @@ namespace wyUpdate
         #endregion
 
         #region Logging off & Shutting Down
-
-
 
         [DllImport("user32.dll")]
         public extern static bool ShutdownBlockReasonCreate(IntPtr hWnd, [MarshalAs(UnmanagedType.LPWStr)] string pwszReason);
