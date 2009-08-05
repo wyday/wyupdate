@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Windows.Forms;
 using Ionic.Zlib;
-using wyUpdate.Common;
 
 namespace wyUpdate.Downloader
 {
@@ -18,9 +17,6 @@ namespace wyUpdate.Downloader
     {
         // Block size to download is by default 4K.
         private const int BufferSize = 4096;
-
-        // Determines whether the user has canceled or not.
-        private volatile bool canceled;
 
         private string downloadingTo;
 
@@ -40,11 +36,6 @@ namespace wyUpdate.Downloader
         private long sentSinceLastCalc;
         private string downloadSpeed = "";
 
-        // Usually a form or a winform control that implements "Invoke/BeginInvode"
-        ContainerControl m_sender;
-        // The delegate method (callback) on the sender to call
-        Delegate m_senderDelegate;
-
         //download site and destination
         string url;
         List<string> urlList = new List<string>();
@@ -58,38 +49,31 @@ namespace wyUpdate.Downloader
 
         public bool UseRelativeProgress;
 
-        public FileDownloader(List<string> urls, string downloadfolder, ContainerControl sender, Delegate senderDelegate)
+        readonly BackgroundWorker bw = new BackgroundWorker();
+
+        /// <summary>
+        /// Handles messages received from a server pipe
+        /// </summary>
+        public delegate void ProgressChangedHandler(int percentDone, bool done, string extraStatus, Exception ex);
+
+        /// <summary>
+        /// Event is called whenever a message is received from the server pipe
+        /// </summary>
+        public event ProgressChangedHandler ProgressChanged;
+
+        public FileDownloader(List<string> urls, string downloadfolder)
         {
             urlList = urls;
             destFolder = downloadfolder;
-            m_sender = sender;
-            m_senderDelegate = senderDelegate;
+
+            bw.WorkerReportsProgress = true;
+            bw.WorkerSupportsCancellation = true;
+            bw.DoWork += bw_DoWork;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
         }
 
-        public static void EnableLazySSL()
-        {
-            //Add a delegate that accepts all SSL's. Corrupt or not.
-            ServicePointManager.ServerCertificateValidationCallback += OnCheckSSLCert;
-        }
-
-        private static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            //allow all downloads regardless of SSL security errors
-            /* This will 'fix' the self-signed SSL certificate problem
-               that's typical on most corporate intranets */
-            return true;
-        }
-
-        public void Cancel()
-        {
-            canceled = true;
-        }
-
-        /// <summary>
-        /// Download a file from a list or URLs. If downloading
-        /// from one of the URLs fails, another URL is tried.
-        /// </summary>
-        public void Download()
+        void bw_DoWork(object sender, DoWorkEventArgs e)
         {
             // validate input
             if (urlList == null || urlList.Count == 0)
@@ -97,14 +81,14 @@ namespace wyUpdate.Downloader
                 if (string.IsNullOrEmpty(url))
                 {
                     //no sites specified, bail out
-                    if (!canceled)
-                        ThreadHelper.ReportError(m_sender, m_senderDelegate, string.Empty, new Exception("No download urls are specified."));
+                    if (!bw.CancellationPending)
+                        bw.ReportProgress(0, new object[] { -1, true, string.Empty, new Exception("No download urls are specified.") });
 
                     return;
                 }
 
                 //single site specified, add it to the list
-                urlList = new List<string> {url};
+                urlList = new List<string> { url };
             }
 
             // try each url in the list until one suceeds
@@ -120,16 +104,16 @@ namespace wyUpdate.Downloader
                     BeginDownload();
                     ValidateDownload();
                 }
-                catch (Exception e)
+                catch (Exception except)
                 {
-                    ex = e;
+                    ex = except;
 
                     if (!waitingForResponse)
                         allFailedWaitingForResponse = false;
                 }
 
                 // If we got through that without an exception, we found a good url
-                if (ex == null || canceled)
+                if (ex == null || bw.CancellationPending)
                 {
                     allFailedWaitingForResponse = false;
                     break;
@@ -156,25 +140,68 @@ namespace wyUpdate.Downloader
                         BeginDownload();
                         ValidateDownload();
                     }
-                    catch (Exception e)
+                    catch (Exception except)
                     {
-                        ex = e;
+                        ex = except;
                     }
 
                     // If we got through that without an exception, we found a good url
-                    if (ex == null || canceled)
+                    if (ex == null || bw.CancellationPending)
                         break;
                 }
             }
 
             //Process complete (either sucessfully or failed), report back
-            if (!canceled)
+            if (!bw.CancellationPending)
             {
                 if (ex != null)
-                    ThreadHelper.ReportError(m_sender, m_senderDelegate, string.Empty, ex);
+                    bw.ReportProgress(0, new object[] {-1, true, string.Empty, ex});
                 else
-                    ThreadHelper.ReportSuccess(m_sender, m_senderDelegate, string.Empty);
+                    bw.ReportProgress(0, new object[] { -1, true, string.Empty, null });
             }
+        }
+
+        void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            object[] arr = (object[])e.UserState;
+
+            if (ProgressChanged != null)
+                ProgressChanged((int) arr[0], (bool) arr[1], (string) arr[2], (Exception) arr[3]);
+        }
+
+        void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWork;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompleted;
+        }
+
+        public static void EnableLazySSL()
+        {
+            //Add a delegate that accepts all SSL's. Corrupt or not.
+            ServicePointManager.ServerCertificateValidationCallback += OnCheckSSLCert;
+        }
+
+        private static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            //allow all downloads regardless of SSL security errors
+            /* This will 'fix' the self-signed SSL certificate problem
+               that's typical on most corporate intranets */
+            return true;
+        }
+
+        public void Cancel()
+        {
+            bw.CancelAsync();
+        }
+
+        /// <summary>
+        /// Download a file from a list or URLs. If downloading
+        /// from one of the URLs fails, another URL is tried.
+        /// </summary>
+        public void Download()
+        {
+            bw.RunWorkerAsync();
         }
 
         // Begin downloading the file at the specified url, and save it to the given folder.
@@ -182,7 +209,6 @@ namespace wyUpdate.Downloader
         {
             DownloadData data = null;
             FileStream fs = null;
-            canceled = false;
 
             try
             {
@@ -226,10 +252,10 @@ namespace wyUpdate.Downloader
                 // update how many bytes have already been read
                 sentSinceLastCalc = data.StartPoint; //for BPS calculation
 
-                while ((int)(readCount = data.DownloadStream.Read(buffer, 0, BufferSize)) > 0)
+                while ((readCount = data.DownloadStream.Read(buffer, 0, BufferSize)) > 0)
                 {
                     // break on cancel
-                    if (canceled)
+                    if (bw.CancellationPending)
                     {
                         data.Close();
                         fs.Close();
@@ -250,17 +276,18 @@ namespace wyUpdate.Downloader
                     calculateBps(data.StartPoint);
 
                     // send progress info
-                    if (!canceled)
+                    if (!bw.CancellationPending)
                     {
-                        ThreadHelper.ReportProgress(m_sender, m_senderDelegate, downloadSpeed,
+                        bw.ReportProgress(0, new object[] {
                             //use the realtive progress or the raw progress
                             UseRelativeProgress ?
                                 InstallUpdate.GetRelativeProgess(0, data.PercentDone) :
-                                data.PercentDone);
+                                data.PercentDone,
+                                false, downloadSpeed, null });
                     }
 
                     // break on cancel
-                    if (canceled)
+                    if (bw.CancellationPending)
                     {
                         data.Close();
                         fs.Close();
@@ -331,7 +358,7 @@ namespace wyUpdate.Downloader
         private void ValidateDownload()
         {
             //if an Adler32 checksum is provided, check the file
-            if (!canceled && Adler32 != 0 && Adler32 != downloadedAdler32)
+            if (!bw.CancellationPending && Adler32 != 0 && Adler32 != downloadedAdler32)
             {
                 // file failed to vaildate, throw an error
                 throw new Exception("The downloaded file failed the Adler32 validation.");
@@ -353,7 +380,7 @@ namespace wyUpdate.Downloader
                     downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, sourceBytes);
 
                     // break on cancel
-                    if (canceled)
+                    if (bw.CancellationPending)
                         break;
 
                 } while (sourceBytes > 0);

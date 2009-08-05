@@ -56,7 +56,7 @@ namespace wyUpdate.Common
                     sender.BeginInvoke(del, new object[] { -1, true, text, null });
                     break;
                 }
-                catch { }
+                catch (Exception ex) { }
 
             } while (true);
         }

@@ -157,8 +157,10 @@
     <Compile Include="Zip\Crc32.cs" />
     <Compile Include="Zip\Deflate.cs" />
     <Compile Include="Zip\DeflateStream.cs" />
+    <Compile Include="Zip\EncryptionAlgorithm.cs" />
     <Compile Include="Zip\Events.cs" />
     <Compile Include="Zip\Exceptions.cs" />
+    <Compile Include="Zip\ExtractExistingFileAction.cs" />
     <Compile Include="Zip\FileSelector.cs" />
     <Compile Include="Zip\GZipStream.cs" />
     <Compile Include="Zip\Inflate.cs" />
@@ -170,8 +172,15 @@
     <Compile Include="Zip\ZipCrypto.cs" />
     <Compile Include="Zip\ZipDirEntry.cs" />
     <Compile Include="Zip\ZipEntry.cs" />
+    <Compile Include="Zip\ZipEntry.Extract.cs" />
+    <Compile Include="Zip\ZipEntry.Read.cs" />
+    <Compile Include="Zip\ZipEntry.Write.cs" />
+    <Compile Include="Zip\ZipFile.AddUpdate.cs" />
     <Compile Include="Zip\ZipFile.cs" />
     <Compile Include="Zip\ZipFile.Events.cs" />
+    <Compile Include="Zip\ZipFile.Extract.cs" />
+    <Compile Include="Zip\ZipFile.Read.cs" />
+    <Compile Include="Zip\ZipFile.Save.cs" />
     <Compile Include="Zip\ZipFile.Selector.cs" />
     <Compile Include="Zip\ZipFile.x-IEnumerable.cs" />
     <Compile Include="Zip\Zlib.cs" />

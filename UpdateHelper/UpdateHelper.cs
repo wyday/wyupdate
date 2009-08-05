@@ -33,8 +33,11 @@ namespace wyUpdate.Common
             pipeServer.MessageReceived += pipeServer_MessageReceived;
             pipeServer.ClientDisconnected += pipeServer_ClientDisconnected;
 
-            //TODO: needs to be a unique pipe name
-            pipeServer.Start("\\\\.\\pipe\\wyUpdate");
+            // get the unique pipe name (the last 246 chars of the complete path)
+            string pipeName = System.Reflection.Assembly.GetExecutingAssembly().Location.Replace("\\", "").ToLower();
+            int pipeNameL = pipeName.Length;
+
+            pipeServer.Start("\\\\.\\pipe\\" + pipeName.Substring(Math.Max(0, pipeNameL - 246), Math.Min(246, pipeNameL)));
         }
 
         void pipeServer_ClientDisconnected()

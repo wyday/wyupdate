@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-23 08:45:25>
+// Time-stamp: <2009-August-03 21:16:57>
 //
 // ------------------------------------------------------------------
 //
@@ -92,7 +92,9 @@ namespace Ionic.Zip
                 // EndOfCentralDirectorySignature.  When we get this is how we know
                 // we've reached the end of the central directory.
                 if (signature != ZipConstants.EndOfCentralDirectorySignature &&
-                    signature != ZipConstants.Zip64EndOfCentralDirectoryRecordSignature)
+                    signature != ZipConstants.Zip64EndOfCentralDirectoryRecordSignature &&
+                    signature != ZipConstants.ZipEntrySignature  // workitem 8299
+                    )
                 {
                     throw new BadReadException(String.Format("  ZipEntry::ReadDirEntry(): Bad signature (0x{0:X8}) at position 0x{1:X8}", signature, s.Position));
                 }
