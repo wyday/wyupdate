@@ -67,7 +67,6 @@ namespace wyUpdate
 
         // Wait Mode (aka API mode)
         UpdateHelper updateHelper;
-        System.Windows.Forms.Timer sendGotPreInstallInfo;
         bool isWaitMode;
         bool dontDestroyTempFolder; //custom temp directory to store downloaded updates
 
@@ -115,8 +114,8 @@ namespace wyUpdate
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;
 
-            // check if user is an admin for windows 2000+, otherwise assume we are
-            IsAdmin = Environment.OSVersion.Version.Major > 4 ? VistaTools.IsUserAnAdmin() : true;
+            // check if user is an admin for windows 2000+
+            IsAdmin = VistaTools.IsUserAnAdmin();
 
             InitializeComponent();
 
@@ -390,14 +389,9 @@ namespace wyUpdate
                 // wait mode - for automatic updates
                 if (commands["wait"] != null)
                 {
-                    sendGotPreInstallInfo = new System.Windows.Forms.Timer
-                                                {
-                                                    Enabled = false, Interval = 1
-                                                };
-
-                    sendGotPreInstallInfo.Tick += sendGotPreInstallInfo_Tick;
-
                     isWaitMode = true;
+
+                    //StartFormHidden = true;
 
                     if (commands["tempdir"] != null)
                         dontDestroyTempFolder = true;
@@ -978,6 +972,10 @@ namespace wyUpdate
 
                         QuickCheck = false;
                     }
+                    else if(isWaitMode)
+                    {
+                        updateHelper.SendSuccess(update.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
+                    }
 
                     break;
                 case 3: //Download and Install Updates
@@ -1374,7 +1372,7 @@ namespace wyUpdate
 
 
                     // send a success signal.
-                    sendGotPreInstallInfo.Start();
+                    updateHelper.SendSuccess();
 
 
                     break;
@@ -1397,15 +1395,8 @@ namespace wyUpdate
 
 
             // exit the client
-            if (!updateHelper.PreInstallInfoSent)
+            if (isWaitMode && !updateHelper.PreInstallInfoSent)
                 Close();
-        }
-
-        void sendGotPreInstallInfo_Tick(object sender, EventArgs e)
-        {
-            sendGotPreInstallInfo.Enabled = false;
-
-            updateHelper.SendSuccess();
         }
 
         #endregion UpdateHelper functions (API)
@@ -1447,9 +1438,10 @@ namespace wyUpdate
                     isCancelled = true;
                     if (IsDownloading())
                     {
-                        downloader.Cancel(); //cancel any downloads
+                        if (downloader != null)
+                            downloader.Cancel(); //cancel any downloads
 
-                        //TODO: I should give the 'downloader' a bit of time to clean up partial files
+                        //TODO: We should give the 'downloader' a bit of time to clean up partial files
 
                         //Bail out quickly. Don't hang around for servers to lazily respond.
                         isCancelled = true;

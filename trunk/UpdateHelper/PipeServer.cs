@@ -125,13 +125,17 @@ namespace wyUpdate
 
                 //could not create named pipe
                 if (clientHandle.IsInvalid)
-                    return;
+                    continue;
 
                 int success = ConnectNamedPipe(clientHandle, IntPtr.Zero);
 
                 //could not connect client
                 if (success == 0)
-                    return;
+                {
+                    // close the handle, and wait for the next client
+                    clientHandle.Close();
+                    continue;
+                }
 
                 Client client = new Client {handle = clientHandle};
 
@@ -171,7 +175,7 @@ namespace wyUpdate
 
                         do
                         {
-                            int numBytes = client.stream.Read(buffer, 0, BUFFER_SIZE);
+                            int numBytes = client.stream.Read(buffer, 0, Math.Min(totalSize - bytesRead, BUFFER_SIZE));
 
                             ms.Write(buffer, 0, numBytes);
 

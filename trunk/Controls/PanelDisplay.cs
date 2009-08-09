@@ -40,13 +40,8 @@ namespace wyUpdate
         private int m_Top;
 
         //Animation width
-        private int m_AnimationWidth;
 
-        public int AnimationWidth
-        {
-            get { return m_AnimationWidth; }
-            set { m_AnimationWidth = value; }
-        }
+        public int AnimationWidth { get; set; }
 
         public AnimationControl Animation
         {

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 13:06:24>
+// Time-stamp: <2009-August-05 13:22:20>
 //
 // ------------------------------------------------------------------
 //
@@ -1064,15 +1064,25 @@ namespace Ionic.Zip
 #else
                 if (isFile)
                 {
-                File.SetCreationTimeUtc(fileOrDirectory, _Ctime);
-                File.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
-                File.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                    // It's possible that the extract was cancelled, in which case,
+                    // the file does not exist.
+                    if (File.Exists(fileOrDirectory))
+                    {
+                        File.SetCreationTimeUtc(fileOrDirectory, _Ctime);
+                        File.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
+                        File.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                    }
                 }
                 else
                 {
-                Directory.SetCreationTimeUtc(fileOrDirectory, _Ctime);
-                Directory.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
-                Directory.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                    // It's possible that the extract was cancelled, in which case,
+                    // the directory does not exist.
+                    if (Directory.Exists(fileOrDirectory))
+                    {
+                        Directory.SetCreationTimeUtc(fileOrDirectory, _Ctime);
+                        Directory.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
+                        Directory.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                    }
                 }
 #endif
             }

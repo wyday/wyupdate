@@ -1,9 +1,9 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using System.ComponentModel;
 
 // For the latest version visit: http://wyday.com/linklabel2/
 
@@ -86,7 +86,14 @@ namespace wyDay.Controls
 
         public LinkLabel2()
         {
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.FixedHeight | ControlStyles.FixedWidth, true);
+            SetStyle(ControlStyles.AllPaintingInWmPaint
+                | ControlStyles.SupportsTransparentBackColor
+                | ControlStyles.OptimizedDoubleBuffer
+                | ControlStyles.ResizeRedraw
+                | ControlStyles.UserPaint
+                | ControlStyles.FixedHeight
+                | ControlStyles.FixedWidth, true);
+
             SetStyle(ControlStyles.StandardClick | ControlStyles.StandardDoubleClick, false);
 
             hoverFont = new Font(Font, FontStyle.Underline);
