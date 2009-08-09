@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using wyDay.Controls;
@@ -86,6 +87,12 @@ namespace wyUpdate.Common
                 if (data.ExtraData.Count >= 3)
                     UpdateFailArgs = data.ExtraData[2];
             }
+            else if (UpdateStep == UpdateStep.GetwyUpdateProcessID)
+            {
+                // send ProcessID
+                pipeServer.SendMessage(new UpdateHelperData(Response.Succeeded, UpdateStep){ProcessID = Process.GetCurrentProcess().Id}.GetByteArray());
+                return;
+            }
 
             if (RequestReceived != null)
                 RequestReceived(this, UpdateStep);
@@ -138,6 +145,7 @@ namespace wyUpdate.Common
         public int Progress = -1;
 
 
+        public int ProcessID;
 
 
         public UpdateHelperData() { }
@@ -202,17 +210,20 @@ namespace wyUpdate.Common
             {
                 foreach (RichTextBoxLink link in LinksData)
                 {
-                    WriteFiles.WriteInt(ms, 0x07, link.StartIndex);
-                    WriteFiles.WriteInt(ms, 0x08, link.Length);
-                    WriteFiles.WriteString(ms, 0x09, link.LinkTarget);
+                    WriteFiles.WriteInt(ms, 0x06, link.StartIndex);
+                    WriteFiles.WriteInt(ms, 0x07, link.Length);
+                    WriteFiles.WriteString(ms, 0x08, link.LinkTarget);
                 }
             }
 
+            if (ProcessID != 0)
+                WriteFiles.WriteInt(ms, 0x03, ProcessID);
+
             if (Progress > -1 && Progress <= 100)
-                WriteFiles.WriteInt(ms, 0x05, Progress);
+                WriteFiles.WriteInt(ms, 0x04, Progress);
 
             if (ResponseType != Response.Nothing)
-                WriteFiles.WriteInt(ms, 0x06, (int)ResponseType);
+                WriteFiles.WriteInt(ms, 0x05, (int)ResponseType);
 
             ms.WriteByte(0xFF);
 
@@ -251,14 +262,17 @@ namespace wyUpdate.Common
                             uhData.ExtraDataIsRTF.Add(false);
 
                         break;
-                    case 0x05:
+                    case 0x03:
+                        uhData.ProcessID = ReadFiles.ReadInt(ms);
+                        break;
+                    case 0x04:
                         uhData.Progress = ReadFiles.ReadInt(ms);
                         break;
-                    case 0x06:
+                    case 0x05:
                         uhData.ResponseType = (Response)ReadFiles.ReadInt(ms);
                         break;
 
-                    case 0x07:
+                    case 0x06:
 
                         if (uhData.LinksData == null)
                             uhData.LinksData = new List<RichTextBoxLink>();
@@ -266,10 +280,10 @@ namespace wyUpdate.Common
                         uhData.LinksData.Add(new RichTextBoxLink(ReadFiles.ReadInt(ms)));
 
                         break;
-                    case 0x08:
+                    case 0x07:
                         uhData.LinksData[uhData.LinksData.Count - 1].Length = ReadFiles.ReadInt(ms);
                         break;
-                    case 0x09:
+                    case 0x08:
                         uhData.LinksData[uhData.LinksData.Count - 1].LinkTarget = ReadFiles.ReadString(ms);
                         break;
 
@@ -288,7 +302,7 @@ namespace wyUpdate.Common
         }
     }
 
-    public enum UpdateStep { CheckForUpdate = 0, DownloadUpdate = 1, BeginExtraction = 2, PreInstallInfo = 3, Install = 4 }
+    public enum UpdateStep { CheckForUpdate = 0, DownloadUpdate = 1, BeginExtraction = 2, PreInstallInfo = 3, Install = 4, GetwyUpdateProcessID = 5 }
     public enum Response { Failed = -1, Nothing = 0, Succeeded = 1, Progress = 2 }
 
 

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 13:54:50>
+// Time-stamp: <2009-August-05 13:05:54>
 //
 // ------------------------------------------------------------------
 //
@@ -1126,17 +1126,18 @@ namespace Ionic.Zip
         private static uint VerifyBeginningOfZipFile(Stream s)
         {
             uint datum = (uint)Ionic.Zip.SharedUtilities.ReadInt(s);
-            if (datum != ZipConstants.PackedToRemovableMedia              // weird edge case #1
-                && datum != ZipConstants.ZipEntryDataDescriptorSignature  // weird edge case #2
-                && datum != ZipConstants.ZipDirEntrySignature             // weird edge case #3 - DynaZip
-                && datum != ZipConstants.ZipEntrySignature                // normal BOF marker
-                && datum != ZipConstants.EndOfCentralDirectorySignature   // for zip file with no entries
-                && (datum & 0x0000FFFF) != 0x00005A4D                     // PE/COFF BOF marker (for SFX)
-                )
-            {
-                //Console.WriteLine("WTF, datum = 0x{0:X8}", datum);
-                throw new BadReadException(String.Format("  ZipFile::Read(): Bad signature (0x{0:X8}) at start of file at position 0x{1:X8}", datum, s.Position));
-            }
+            // workitem 8337
+//             if (datum != ZipConstants.PackedToRemovableMedia              // weird edge case #1
+//                 && datum != ZipConstants.ZipEntryDataDescriptorSignature  // weird edge case #2
+//                 && datum != ZipConstants.ZipDirEntrySignature             // weird edge case #3 - DynaZip
+//                 && datum != ZipConstants.ZipEntrySignature                // normal BOF marker
+//                 && datum != ZipConstants.EndOfCentralDirectorySignature   // for zip file with no entries
+//                 && (datum & 0x0000FFFF) != 0x00005A4D                     // PE/COFF BOF marker (for SFX)
+//                 )
+//             {
+//                 //Console.WriteLine("WTF, datum = 0x{0:X8}", datum);
+//                 throw new BadReadException(String.Format("  ZipFile::Read(): Bad signature (0x{0:X8}) at start of file at position 0x{1:X8}", datum, s.Position));
+//             }
             return datum;
         }
 

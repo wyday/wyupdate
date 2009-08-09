@@ -35,9 +35,10 @@ namespace Ionic.Zip
     public partial class ZipEntry
     {
 
-
+        private int _readExtraDepth = 0;
         private void ReadExtraField()
         {
+            _readExtraDepth++;
             // workitem 8098: ok (restore)
             long posn = this.ArchiveStream.Position;
 
@@ -55,6 +56,7 @@ namespace Ionic.Zip
 
             // workitem 8098: ok (restore)
             this.ArchiveStream.Seek(posn, SeekOrigin.Begin);
+            _readExtraDepth--;
         }
 
 
@@ -512,7 +514,7 @@ namespace Ionic.Zip
                                 if (DataSize != 13 && DataSize != 5)
                                     throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for Extended Timestamp extra field at position 0x{1:X16}", DataSize, s.Position - additionalBytesRead));
 
-                                if (DataSize == 13)
+                                if (DataSize == 13 || _readExtraDepth > 1)
                                 {
                                     byte flag = Buffer[j++];
 
@@ -546,7 +548,7 @@ namespace Ionic.Zip
                                     _emitUnixTimes = true;
                                 }
                                 else
-                                    ReadExtraField();
+                                    ReadExtraField(); // will recurse
 
                             }
                             break;
