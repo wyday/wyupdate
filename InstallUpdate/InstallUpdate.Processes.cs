@@ -18,7 +18,7 @@ namespace wyUpdate
             RemoveSelfFromProcesses(files);
 
             //check for (and delete) a newer client if it exists
-            deleteClientInPath(ProgramDirectory, Path.Combine(TempDirectory, "base"));
+            DeleteClientInPath(ProgramDirectory, Path.Combine(TempDirectory, "base"));
 
             bool procNeedClosing = ProcessesNeedClosing(files);
 
@@ -46,10 +46,16 @@ namespace wyUpdate
 
         public static bool ProcessIsSelf(string processPath)
         {
-            string self = Assembly.GetExecutingAssembly().Location,
-                vhostFile = self.Substring(0, self.Length - 3) + "vshost.exe"; //for debugging
+            string self = Assembly.GetExecutingAssembly().Location;
 
-            if (processPath.ToLower() == self.ToLower() || processPath.ToLower() == vhostFile.ToLower())
+#if DEBUG
+            string vhostFile = self.Substring(0, self.Length - 3) + "vshost.exe"; //for debugging
+
+            if (processPath.ToLower() == vhostFile.ToLower())
+                return true;
+#endif
+
+            if (processPath.ToLower() == self.ToLower())
                 return true;
 
             return false;

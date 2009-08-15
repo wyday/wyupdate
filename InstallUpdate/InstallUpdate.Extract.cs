@@ -55,7 +55,7 @@ namespace wyUpdate
                     // remove update file (it's no longer needed)
                     File.Delete(Filename);
                 }
-                catch (Exception) { }
+                catch { }
 
 
                 // Try to load the update details file

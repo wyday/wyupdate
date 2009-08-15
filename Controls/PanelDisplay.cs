@@ -19,7 +19,7 @@ namespace wyUpdate
         Error = -1, Nothing = 0, Working = 1, Success = 2
     }
 
-    public class UpdateItem
+    internal class UpdateItem
     {
         static readonly Image ErrorImage = new Bitmap(typeof(UpdateItem), "cross.png");
         static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
@@ -165,7 +165,7 @@ namespace wyUpdate
         }
     }
 
-    public class PanelDisplay : ContainerControl
+    internal class PanelDisplay : ContainerControl
     {
         #region Private Variables
 

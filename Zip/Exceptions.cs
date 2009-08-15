@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 12:25:24>
+// Time-stamp: <2009-August-14 00:52:07>
 //
 // ------------------------------------------------------------------
 //
@@ -46,6 +46,7 @@ namespace Ionic.Zip
     /// with an incorrect password.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000B")]
     public class BadPasswordException : ZipException
     {
         /// <summary>
@@ -90,14 +91,13 @@ namespace Ionic.Zip
     /// received.  
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000A")]
     public class BadReadException : ZipException
     {
-#if NOTUSED
         /// <summary>
         /// Default ctor.
         /// </summary>
         public BadReadException() { }
-#endif
 
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
@@ -107,7 +107,6 @@ namespace Ionic.Zip
             : base(message)
         { }
 
-#if NOTUSED
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -117,8 +116,6 @@ namespace Ionic.Zip
             : base(message, innerException)
         {
         }
-#endif
-
 
 #if !NETCF
         /// <summary>
@@ -139,14 +136,13 @@ namespace Ionic.Zip
     /// Issued when an CRC check fails upon extracting an entry from a zip archive.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00009")]
     public class BadCrcException : ZipException
     {
-#if NOTUSED
         /// <summary>
         /// Default ctor.
         /// </summary>
         public BadCrcException() { }
-#endif
 
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
@@ -186,6 +182,7 @@ namespace Ionic.Zip
     /// Issued when errors occur saving a self-extracting archive.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00008")]
     public class SfxGenerationException : ZipException
     {
         /// <summary>
@@ -232,14 +229,13 @@ namespace Ionic.Zip
     /// which has no filename set, you can get this exception. 
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00007")]
     public class BadStateException : ZipException
     {
-#if NOTUSED
         /// <summary>
         /// Default ctor.
         /// </summary>
         public BadStateException() { }
-#endif
 
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
@@ -249,7 +245,6 @@ namespace Ionic.Zip
             : base(message)
         { }
 
-#if NOTUSED
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -258,7 +253,6 @@ namespace Ionic.Zip
         public BadStateException(String message, Exception innerException)
             : base(message, innerException)
         {}
-#endif
 
 #if !NETCF
         /// <summary>
@@ -277,6 +271,7 @@ namespace Ionic.Zip
     /// Base class for all exceptions defined by and throw by the Zip library.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00006")]
     public class ZipException : Exception
     {
         /// <summary>

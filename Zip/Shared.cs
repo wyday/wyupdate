@@ -124,22 +124,22 @@ namespace Ionic.Zip
             return StringToByteArray(value, ibm437);
         }
 
-        internal static byte[] Utf8StringToByteArray(string value)
+        //internal static byte[] Utf8StringToByteArray(string value)
+        //{
+        //    return StringToByteArray(value, utf8);
+        //}
+
+        //internal static string StringFromBuffer(byte[] buf, int maxlength)
+        //{
+        //    return StringFromBuffer(buf, maxlength, ibm437);
+        //}
+
+        internal static string Utf8StringFromBuffer(byte[] buf)
         {
-            return StringToByteArray(value, utf8);
+            return StringFromBuffer(buf, utf8);
         }
 
-        internal static string StringFromBuffer(byte[] buf, int maxlength)
-        {
-            return StringFromBuffer(buf, maxlength, ibm437);
-        }
-
-        internal static string Utf8StringFromBuffer(byte[] buf, int maxlength)
-        {
-            return StringFromBuffer(buf, maxlength, utf8);
-        }
-
-        internal static string StringFromBuffer(byte[] buf, int maxlength, System.Text.Encoding encoding)
+        internal static string StringFromBuffer(byte[] buf, System.Text.Encoding encoding)
         {
             // this form of the GetString() method is required for .NET CF compatibility
             string s = encoding.GetString(buf, 0, buf.Length);
@@ -153,7 +153,7 @@ namespace Ionic.Zip
             //return _ReadFourBytes(s, "Could not read signature - no data!  (position 0x{0:X8})");
             int x = 0;
             try { x = _ReadFourBytes(s, "nul"); }
-            catch { }
+            catch (BadReadException) { }
             return x;
         }
 
@@ -448,7 +448,7 @@ namespace Ionic.Zip
                         // The permission.Demand() failed. Therefore, we cannot call
                         // GetHRForException, and cannot do the subtle handling of
                         // ERROR_LOCK_VIOLATION.  Just bail.
-                        throw (ioexc1);
+                        throw;
                     }
 #endif
 
@@ -521,10 +521,10 @@ namespace Ionic.Zip
             get { return _bytesWritten; }
         }
 
-        public Int64 BytesRead
-        {
-            get { return _bytesRead; }
-        }
+        //public Int64 BytesRead
+        //{
+        //    get { return _bytesRead; }
+        //}
 
         public void Adjust(Int64 delta)
         {

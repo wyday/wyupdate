@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-16 08:34:59>
+// Time-stamp: <2009-August-12 15:35:30>
 //
 // ------------------------------------------------------------------
 //
@@ -28,6 +28,8 @@
 
 
 using System;
+using System.IO;
+
 namespace Ionic.Zlib
 {
     /// <summary>
@@ -38,10 +40,10 @@ namespace Ionic.Zlib
     /// <para>
     /// The GZipStream is a <see
     /// href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator</see> on a <see 
-    /// cref="System.IO.Stream"/>.  It adds GZIP compression or decompression to any stream.
+    /// cref="Stream"/>.  It adds GZIP compression or decompression to any stream.
     /// </para>
     ///
-    /// <para> Like the <c>System.IO.Compression.GZipStream</c> in the .NET Base
+    /// <para> Like the <c>Compression.GZipStream</c> in the .NET Base
     /// Class Library, the Ionic.Zlib.GZipStream can compress while writing, or decompress
     /// while reading, but not vice versa.  The compression method used is GZIP, which is
     /// documented in <see href="http://www.ietf.org/rfc/rfc1952.txt">IETF RFC 1952</see>,
@@ -108,6 +110,8 @@ namespace Ionic.Zlib
         // all optional fields get 0, except for the OS, which gets 255.
         // 
 
+
+        
         /// <summary>
         /// The Comment on the GZIP stream.
         /// </summary>
@@ -172,7 +176,7 @@ namespace Ionic.Zlib
                 if (_FileName.IndexOf("\\") != -1)
                 {
                     // trim any leading path
-                    _FileName = System.IO.Path.GetFileName(_FileName);
+                    _FileName = Path.GetFileName(_FileName);
                 }
             }
         }
@@ -256,9 +260,64 @@ namespace Ionic.Zlib
         /// End Using
         /// </code>
         /// </example>
+        ///
+        /// <example>
+        /// This example shows how to use a GZipStream to uncompress a file.
+        /// <code>
+        /// private void GunZipFile(string filename)
+        /// {
+        ///     if (!filename.EndsWith(".gz))
+        ///         throw new ArgumentException("filename");
+        ///     var DecompressedFile = filename.Substring(0,filename.Length-3);
+        ///     byte[] working = new byte[WORKING_BUFFER_SIZE];
+        ///     int n= 1;
+        ///     using (System.IO.Stream input = System.IO.File.OpenRead(filename))
+        ///     {
+        ///         using (Stream decompressor= new Ionic.Zlib.GZipStream(input, CompressionMode.Decompress, true))
+        ///         {
+        ///             using (var output = System.IO.File.Create(DecompressedFile))
+        ///             {
+        ///                 while (n !=0)
+        ///                 {
+        ///                     n= decompressor.Read(working, 0, working.Length);
+        ///                     if (n > 0) 
+        ///                     {
+        ///                         output.Write(working, 0, n);
+        ///                     }
+        ///                 }
+        ///             }
+        ///         }
+        ///     }
+        /// }
+        /// </code>
+        /// 
+        /// <code lang="VB">
+        /// Private Sub GunZipFile(ByVal filename as String)
+        ///     If Not (filename.EndsWith(".gz)) Then
+        ///         Throw New ArgumentException("filename")
+        ///     End If
+        ///     Dim DecompressedFile as String = filename.Substring(0,filename.Length-3)
+        ///     Dim working(WORKING_BUFFER_SIZE) as Byte
+        ///     Dim n As Integer = 1
+        ///     Using input As Stream = File.OpenRead(filename)
+        ///         Using decompressor As Stream = new Ionic.Zlib.GZipStream(input, CompressionMode.Decompress, True)
+        ///             Using output As Stream = File.Create(UncompressedFile)
+        ///                 Do
+        ///                     n= decompressor.Read(working, 0, working.Length)
+        ///                     If n > 0 Then
+        ///                         output.Write(working, 0, n)
+        ///                     End IF
+        ///                 Loop While (n  > 0)
+        ///             End Using
+        ///         End Using
+        ///     End Using
+        /// End Sub
+        /// </code>
+        /// </example>
+        ///
         /// <param name="stream">The stream which will be read or written.</param>
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
-        public GZipStream(System.IO.Stream stream, CompressionMode mode)
+        public GZipStream(Stream stream, CompressionMode mode)
             : this(stream, mode, CompressionLevel.Default, false)
         {
         }
@@ -318,32 +377,36 @@ namespace Ionic.Zlib
         /// <param name="stream">The stream to be read or written while deflating or inflating.</param>
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
-        public GZipStream(System.IO.Stream stream, CompressionMode mode, CompressionLevel level)
+        public GZipStream(Stream stream, CompressionMode mode, CompressionLevel level)
             : this(stream, mode, level, false)
         {
         }
 
         /// <summary>
-        /// Create a GZipStream using the specified CompressionMode, and explicitly specify whether
-        /// the stream should be left open after Deflation or Inflation.
+        /// Create a GZipStream using the specified CompressionMode, and explicitly
+        /// specify whether the stream should be left open after Deflation or Inflation.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// This constructor allows the application to request that the captive stream remain open after
-        /// the deflation or inflation occurs.  By default, after Close() is called on the stream, the 
-        /// captive stream is also closed. In some cases this is not desired, for example if the stream 
-        /// is a memory stream that will be re-read after compressed data has been written to it.  Specify true for the 
-        /// leaveOpen parameter to leave the stream open. 
+        /// This constructor allows the application to request that the captive stream
+        /// remain open after the deflation or inflation occurs.  By default, after
+        /// Close() is called on the stream, the captive stream is also closed. In some
+        /// cases this is not desired, for example if the stream is a memory stream that
+        /// will be re-read after compressed data has been written to it.  Specify true
+        /// for the leaveOpen parameter to leave the stream open.
+        /// </para>
+        /// 
+        /// <para>
+        /// The <see cref="CompressionMode"/> (Compress or Decompress) also establishes
+        /// the "direction" of the stream.  A GZipStream with
+        /// <c>CompressionMode.Compress</c> works only through <c>Write()</c>.  A <c>GZipStream</c>
+        /// with <c>CompressionMode.Decompress</c> works only through <c>Read()</c>.
         /// </para>
         /// <para>
-        /// As noted in the class documentation, 
-        /// the CompressionMode (Compress or Decompress) also establishes the "direction" of the stream.  
-        /// A GZipStream with CompressionMode.Compress works only through Write().  A GZipStream with 
-        /// CompressionMode.Decompress works only through Read().
-        /// </para>
-        /// <para>
-        /// The DeflateStream will use the default compression level.
+        /// The GZipStream will use the default compression level. If you want to
+        /// specify the compression level, see <see cref="GZipStream(Stream,
+        /// CompressionMode, CompressionLevel, bool)"/>.
         /// </para>
         /// <para>
         /// See the other overloads of this constructor for example code.
@@ -353,7 +416,7 @@ namespace Ionic.Zlib
         /// "captive" stream in other places in this documentation.</param>
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
         /// <param name="leaveOpen">true if the application would like the base stream to remain open after inflation/deflation.</param>
-        public GZipStream(System.IO.Stream stream, CompressionMode mode, bool leaveOpen)
+        public GZipStream(Stream stream, CompressionMode mode, bool leaveOpen)
             : this(stream, mode, CompressionLevel.Default, leaveOpen)
         {
         }
@@ -418,7 +481,7 @@ namespace Ionic.Zlib
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
         /// <param name="leaveOpen">true if the application would like the stream to remain open after inflation/deflation.</param>
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
-        public GZipStream(System.IO.Stream stream, CompressionMode mode, CompressionLevel level, bool leaveOpen)
+        public GZipStream(Stream stream, CompressionMode mode, CompressionLevel level, bool leaveOpen)
         {
             _baseStream = new ZlibBaseStream(stream, mode, level, ZlibStreamFlavor.GZIP, leaveOpen);
         }
@@ -491,7 +554,7 @@ namespace Ionic.Zlib
 
         #endregion
 
-        #region System.IO.Stream methods
+        #region Stream methods
         
         /// <summary>
         /// Dispose the stream.  
@@ -654,10 +717,10 @@ namespace Ionic.Zlib
         /// <summary>
         /// Calling this method always throws a <see cref="NotImplementedException"/>.
         /// </summary>
-        /// <param name="offset">this is irrelevant, since it will always throw!</param>
-        /// <param name="origin">this is irrelevant, since it will always throw!</param>
+        /// <param name="offset">irrelevant; it will always throw!</param>
+        /// <param name="origin">irrelevant; it will always throw!</param>
         /// <returns>irrelevant!</returns>
-        public override long Seek(long offset, System.IO.SeekOrigin origin)
+        public override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotImplementedException();
         }
@@ -665,7 +728,7 @@ namespace Ionic.Zlib
         /// <summary>
         /// Calling this method always throws a NotImplementedException.
         /// </summary>
-        /// <param name="value">this is irrelevant, since it will always throw!</param>
+        /// <param name="value">irrelevant; this method will always throw!</param>
         public override void SetLength(long value)
         {
             throw new NotImplementedException();
@@ -777,5 +840,120 @@ namespace Ionic.Zlib
 
             return header.Length; // bytes written
         }
+
+
+
+        /// <summary>
+        /// Compress a string into a byte array.
+        /// </summary>
+        /// <seealso cref="GZipStream.UncompressString(byte[])"/>
+        /// <param name="s">
+        /// A string to compress.  The string will first be encoded using UTF8, then compressed.
+        /// </param>
+        public static byte[] CompressString(String s)
+        {
+            // workitem 8460
+            var encoding = System.Text.Encoding.UTF8;
+            byte[] uncompressed = encoding.GetBytes(s);
+
+            using (var ms = new MemoryStream())
+            {
+                using (Stream compressor = new GZipStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression))
+                {
+                    compressor.Write(uncompressed, 0, uncompressed.Length);
+                }
+                return ms.ToArray();
+            }
+        }
+
+                    
+        /// <summary>
+        /// Compress a byte array into a new byte array.
+        /// </summary>
+        /// <remarks>
+        /// Uncompress it with <see cref="GZipStream.UncompressBuffer(byte[])"/>.
+        /// </remarks>
+        /// <seealso cref="GZipStream.CompressString(string)"/>
+        /// <seealso cref="GZipStream.UncompressBuffer(byte[])"/>
+        /// <param name="b">
+        /// A buffer to compress. 
+        /// </param>
+        public static byte[] CompressBuffer(byte[] b)
+        {
+            // workitem 8460
+            using (var ms = new MemoryStream())
+            {
+                using (Stream compressor = new GZipStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression))
+                {
+                    compressor.Write(b, 0, b.Length);
+                }
+                return ms.ToArray();
+            }
+        }
+
+
+
+        /// <summary>
+        /// Uncompress a byte array into a single string.
+        /// </summary>
+        /// <seealso cref="GZipStream.CompressString(String)"/>
+        /// <param name="compressed">
+        /// A buffer containing GZIP-compressed data.  
+        /// </param>
+        public static String UncompressString(byte[] compressed)
+        {
+            // workitem 8460
+            byte[] working = new byte[1024];
+            var encoding = System.Text.Encoding.UTF8;
+            using (var output = new MemoryStream())
+            {
+                using (var input = new MemoryStream(compressed))
+                {
+                    using (Stream decompressor = new GZipStream(input, CompressionMode.Decompress))
+                    {
+                        int n;
+                        while ((n= decompressor.Read(working, 0, working.Length)) !=0)
+                        {
+                            output.Write(working, 0, n);
+                        }
+                    }
+                    // reset to allow read from start
+                    output.Seek(0, SeekOrigin.Begin);
+                    var sr = new StreamReader(output, encoding);
+                    return sr.ReadToEnd();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Uncompress a byte array into a byte array.
+        /// </summary>
+        /// <seealso cref="GZipStream.CompressBuffer(byte[])"/>
+        /// <seealso cref="GZipStream.UncompressString(byte[])"/>
+        /// <param name="compressed">
+        /// A buffer containing ZLIB-compressed data.  
+        /// </param>
+        public static byte[] UncompressBuffer(byte[] compressed)
+        {
+            // workitem 8460
+            byte[] working = new byte[1024];
+            using (var output = new MemoryStream())
+            {
+                using (var input = new MemoryStream(compressed))
+                {
+                    using (Stream decompressor = new GZipStream(input, CompressionMode.Decompress))
+                    {
+                        int n;
+                        while ((n= decompressor.Read(working, 0, working.Length)) !=0)
+                        {
+                            output.Write(working, 0, n);
+                        }
+                    }
+                    return output.ToArray();
+                }
+            }
+        }
+        
+        
     }
 }

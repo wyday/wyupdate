@@ -555,6 +555,8 @@ namespace wyUpdate
                     }
                 }
 
+                updateHelper.SendFailed(error, errorDetails);
+
                 ShowFrame(-1);
             }
         }
@@ -850,7 +852,7 @@ namespace wyUpdate
                 if (isWaitMode)
                 {
                     // send reponse that there's no update available
-                    updateHelper.SendSuccess();
+                    updateHelper.SendSuccess(null, null, true, null);
 
                     // close this client
                     isCancelled = true;
@@ -919,11 +921,11 @@ namespace wyUpdate
 
         private void ShowFrame(int frameNum)
         {
+            frameOn = frameNum;
+
             switch (frameNum)
             {
                 case 1: //Update checking screen
-                    frameOn = 1;
-
                     panelDisplaying.ChangePanel(FrameType.Update,
                         clientLang.Checking.Title,
                         clientLang.Checking.SubTitle,
@@ -949,8 +951,6 @@ namespace wyUpdate
 
                     break;
                 case 2: //Update Info Screen
-                    frameOn = 2;
-
                     panelDisplaying.ChangePanel(FrameType.TextInfo,
                         clientLang.UpdateInfo.Title,
                         clientLang.UpdateInfo.SubTitle,
@@ -979,8 +979,6 @@ namespace wyUpdate
 
                     break;
                 case 3: //Download and Install Updates
-                    frameOn = 3;
-
                     panelDisplaying.ShowChecklist = true;
 
                     panelDisplaying.ChangePanel(FrameType.Update,
@@ -1015,8 +1013,6 @@ namespace wyUpdate
                     }
                     break;
                 case 4: //Display Congrats Window
-                    frameOn = 4;
-
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.SuccessUpdate.Title,
                         clientLang.SuccessUpdate.Content,
@@ -1029,8 +1025,6 @@ namespace wyUpdate
 
                     break;
                 case 5: //Your Product is already up to date screen
-                    frameOn = 5;
-
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.AlreadyLatest.Title,
                         clientLang.AlreadyLatest.Content,
@@ -1043,8 +1037,6 @@ namespace wyUpdate
 
                     break;
                 case 6: //No update to the latest version is available
-                    frameOn = 6;
-
                     if (!string.IsNullOrEmpty(update.NoUpdateToLatestLinkText))
                         panelDisplaying.SetNoUpdateAvailableLink(update.NoUpdateToLatestLinkText, update.NoUpdateToLatestLinkURL);
 
@@ -1060,8 +1052,6 @@ namespace wyUpdate
 
                     break;
                 case 7: //Uninstall screen
-                    frameOn = 7;
-
                     panelDisplaying.ShowChecklist = true;
 
                     panelDisplaying.ChangePanel(FrameType.Update,
@@ -1083,8 +1073,6 @@ namespace wyUpdate
                     
                     //TODO: make the return codes error specific
                     ReturnCode = 1;
-
-                    frameOn = -1;
 
                     // show details button to hide all the complex crap from users
                     panelDisplaying.ErrorDetails = errorDetails;
@@ -1126,14 +1114,18 @@ namespace wyUpdate
                         TopMost = false;
                     }
                     else
+                    {
                         Close();
+                        return;
+                    }
                 }
             }
 
             //if silent & if on one of the user interaction screens, then click next
             if (isSilent && (frameOn == 0 || frameOn == 2 || frameOn == 4 || frameOn == 5 || frameOn == 6 || frameOn == -1))
             {
-                btnNext_Click(null, new EventArgs());
+                btnNext_Click(null, EventArgs.Empty);
+                return;
             }
 
             //so the user doesn't accidentally cancel update.
@@ -1196,7 +1188,7 @@ namespace wyUpdate
 
                     asyncThread = new Thread(installUpdate.RunPreExecute);
                     break;
-                case UpdateOn.BackingUp:
+                case UpdateOn.BackUpInstalling:
                     SetStepStatus(1, clientLang.Files);
 
                     installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
@@ -1280,55 +1272,59 @@ namespace wyUpdate
         //update step completed, continue to next
         private void StepCompleted()
         {
-            if (frameOn == 3) // update screen
+            if (update.CurrentlyUpdating == UpdateOn.DeletingTemp)
             {
-                if (update.CurrentlyUpdating == UpdateOn.DeletingTemp)
+                //successfully deleted temporary files
+                panelDisplaying.UpdateItems[3].Status = UpdateItemStatus.Success;
+
+                //Successfully Updated
+                ShowFrame(4);
+
+                btnNext.Enabled = true;
+            }
+            else
+            {
+                //show check mark to completed
+                switch (update.CurrentlyUpdating)
                 {
-                    //successfully deleted temporary files
-                    panelDisplaying.UpdateItems[3].Status = UpdateItemStatus.Success;
-
-                    //Successfully Updated
-                    ShowFrame(4);
-
-                    btnNext.Enabled = true;
+                    case UpdateOn.DownloadingUpdate: //done downloading
+                        panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
+                        break;
+                    case UpdateOn.Extracting:
+                        //done extracting, load update details
+                        updtDetails = installUpdate.UpdtDetails;
+                        break;
+                    case UpdateOn.BackUpInstalling: //done backing up & installing files
+                        panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Success;
+                        break;
+                    case UpdateOn.ModifyReg: //done modifying registry
+                        panelDisplaying.UpdateItems[2].Status = UpdateItemStatus.Success;
+                        break;
                 }
-                else
-                {
-                    //show check mark to completed
-                    switch (update.CurrentlyUpdating)
-                    {
-                        case UpdateOn.DownloadingUpdate: //done downloading
-                            panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
-                            break;
-                        case UpdateOn.Extracting:
-                            //done extracting, load update details
-                            updtDetails = installUpdate.UpdtDetails;
-                            break;
-                        case UpdateOn.BackingUp: //done backing up & installing files
-                            panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Success;
-                            break;
-                        case UpdateOn.ModifyReg: //done modifying registry
-                            panelDisplaying.UpdateItems[2].Status = UpdateItemStatus.Success;
-                            break;
-                    }
 
-                    //Go to the next step
+                // if we're in wait mode, then don't continue to the next step
+                if (isWaitMode && (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.Extracting))
+                {
+                    updateHelper.SendSuccess();
+                    return;
+                }
+
+                //Go to the next step
+                update.CurrentlyUpdating += 1;
+
+                //if there isn't an updateDetails file
+                if (updtDetails == null &&
+                    (update.CurrentlyUpdating == UpdateOn.PreExecute ||
+                     update.CurrentlyUpdating == UpdateOn.OptimizeExecute ||
+                     update.CurrentlyUpdating == UpdateOn.ModifyReg))
+                {
                     update.CurrentlyUpdating += 1;
 
-                    //if there isn't an updateDetails file
-                    if (updtDetails == null &&
-                        (update.CurrentlyUpdating == UpdateOn.PreExecute ||
-                        update.CurrentlyUpdating == UpdateOn.OptimizeExecute ||
-                        update.CurrentlyUpdating == UpdateOn.ModifyReg))
-                    {
+                    if (update.CurrentlyUpdating == UpdateOn.ModifyReg)
                         update.CurrentlyUpdating += 1;
-
-                        if (update.CurrentlyUpdating == UpdateOn.ModifyReg)
-                            update.CurrentlyUpdating += 1;
-                    }
-
-                    InstallUpdates(update.CurrentlyUpdating);
                 }
+
+                InstallUpdates(update.CurrentlyUpdating);
             }
         }
 

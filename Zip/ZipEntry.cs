@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 15:33:50>
+// Time-stamp: <2009-August-14 09:53:46>
 //
 // ------------------------------------------------------------------
 //
@@ -28,14 +28,19 @@
 
 using System;
 using System.IO;
+using Interop=System.Runtime.InteropServices;
 
 namespace Ionic.Zip
 {
-
     /// <summary>
     /// Represents a single entry in a ZipFile. Typically, applications get a ZipEntry
     /// by enumerating the entries within a ZipFile, or by adding an entry to a ZipFile.
     /// </summary>
+
+    [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00004")]
+    [Interop.ComVisible(true)]
+    //[Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
     public partial class ZipEntry
     {
         /// <summary>
@@ -85,10 +90,10 @@ namespace Ionic.Zip
         /// modified time can optionally be stored as an 8-byte integer quantity expressed
         /// as the number of 1/10 milliseconds (in other words the number of 100 nanosecond
         /// units) since January 1, 1601 (UTC).  This is the so-called Win32 time.  This
-        /// time is accessible via the <c>Mtime</c> property.  Zip tools and libraries will
+        /// time is accessible via the <c>ModifiedTime</c> property.  Zip tools and libraries will
         /// always at least handle (read or write) the DOS time, and may also handle the
         /// Win32 time. When reading ZIP files, The DotNetZip library reads the Win32 time,
-        /// if it is stored in the entry, and sets both <c>LastModified</c> and <c>Mtime</c>
+        /// if it is stored in the entry, and sets both <c>LastModified</c> and <c>ModifiedTime</c>
         /// to that value. When writing ZIP files, the DotNetZip library will write both
         /// time quantities.</para>
         ///
@@ -200,7 +205,7 @@ namespace Ionic.Zip
         /// access</em>, and <em>file creation</em> times of a particular file. These
         /// metadata are not actually specific to NTFS. They are tracked for each file by
         /// NTFS, but they are also tracked by other filesystems. DotNetZip represents this
-        /// with the <c>Mtime</c>, <c>Atime</c> and <c>Ctime</c> properties on a
+        /// with the <c>ModifiedTime</c>, <c>AccessedTime</c> and <c>CreationTime</c> properties on a
         /// <c>ZipEntry</c>.</para>
         ///
         /// <para> Inside a zip file, these three distinct timestamps are stored in the same
@@ -218,34 +223,34 @@ namespace Ionic.Zip
         /// guaranteed to be present, though it sometimes unset. </para>
         ///
         /// <para> Ok, getting back to the question about how the <c>LastModified</c>
-        /// property relates to this <c>Mtime</c> property... <c>LastModified</c> is always
-        /// set, while <c>Mtime</c> is not. (The other times stored in the <em>NTFS times
-        /// extension</em>, <c>Ctime</c> and <c>Atime</c> also may not be set on an entry
+        /// property relates to this <c>ModifiedTime</c> property... <c>LastModified</c> is always
+        /// set, while <c>ModifiedTime</c> is not. (The other times stored in the <em>NTFS times
+        /// extension</em>, <c>CreationTime</c> and <c>AccessedTime</c> also may not be set on an entry
         /// that is read from an existing zip file.) When reading a zip file, then
         /// <c>LastModified</c> takes the DOS time that is stored with the file. If the DOS time
         /// has been stored as zero in the zipfile, then this library will use
         /// <c>DateTime.Now</c> for the <c>LastModified</c> value.  If the ZIP file was
         /// created by an evolved tool, then there will also be NTFS times in the zip file.
         /// In that case, this library will read those times, and set <c>LastModified</c>
-        /// and <c>Mtime</c> to the same value, the one corresponding to the last write time
+        /// and <c>ModifiedTime</c> to the same value, the one corresponding to the last write time
         /// of the file.  If there are no "NTFS times" stored for the entry, then
-        /// <c>Mtime</c> remains unset (likewise <c>Atime</c> and <c>Ctime</c>), and
+        /// <c>ModifiedTime</c> remains unset (likewise <c>AccessedTime</c> and <c>CreationTime</c>), and
         /// <c>LastModified</c> keeps its DOS time. </para>
         ///
         /// <para> When creating zip files with this library, then the NTFS time properties
-        /// (<c>Mtime</c>, <c>Atime</c>, and <c>Ctime</c>) are always set on the ZipEntry
+        /// (<c>ModifiedTime</c>, <c>AccessedTime</c>, and <c>CreationTime</c>) are always set on the ZipEntry
         /// instance, and these data are always stored in the zip archive for each entry. If
         /// you add an entry from an actual filesystem file, then the entry gets the actual
         /// NTFS times for that file.  If you add an entry from a stream, or a string, then
         /// the times get the value <c>DateTime.Now</c>.  In this case <c>LastModified</c>
-        /// and <c>Mtime</c> will be identical, to 2 seconds of precision.  You can
-        /// explicitly set the <c>Ctime</c>, <c>Atime</c>, and <c>Mtime</c> of an entry
+        /// and <c>ModifiedTime</c> will be identical, to 2 seconds of precision.  You can
+        /// explicitly set the <c>CreationTime</c>, <c>AccessedTime</c>, and <c>ModifiedTime</c> of an entry
         /// using <see cref="SetNtfsTimes(DateTime, DateTime, DateTime)"/>. Those changes
         /// are not made permanent in the zip file until you call <see
         /// cref="ZipFile.Save()"/> or one of its cousins.  </para>
         ///
         /// <para>
-        /// And that is why <c>Mtime</c> may or may not be meaningful, and it may or may not agree 
+        /// And that is why <c>ModifiedTime</c> may or may not be meaningful, and it may or may not agree 
         /// exactly with the <c>LastModified</c> time on the <c>ZipEntry</c>.
         /// </para>
         ///
@@ -257,8 +262,10 @@ namespace Ionic.Zip
         /// </para>
         /// </remarks>
         ///
+        /// <seealso cref="AccessedTime"/>
+        /// <seealso cref="CreationTime"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.LastModified"/>
-        public DateTime Mtime { get { return _Mtime; } }
+        public DateTime ModifiedTime { get { return _Mtime; } }
 
         /// <summary>
         /// Last Access time for the file represented by the entry.
@@ -266,19 +273,25 @@ namespace Ionic.Zip
         /// <remarks>
         /// This value may or may not be meaningful.  If the <c>ZipEntry</c> was read from an existing
         /// Zip archive, this information may not be available. For an explanation of why, see
-        /// <see cref="Mtime"/>.
+        /// <see cref="ModifiedTime"/>.
         /// </remarks>
-        public DateTime Atime { get { return _Atime; } }
+        /// <seealso cref="ModifiedTime"/>
+        /// <seealso cref="CreationTime"/>
+        public DateTime AccessedTime { get { return _Atime; } }
 
         /// <summary>
         /// The file creation time for the file represented by the entry.
         /// </summary>
         ///
-        /// <remarks> This value may or may not be meaningful.  If the <c>ZipEntry</c> was read
+        /// <remarks>
+        /// This value may or may not be meaningful.  If the <c>ZipEntry</c> was read
         /// from an existing zip archive, and the creation time was not set on the entry
         /// when the zip file was created, then this property may be meaningless. For an
-        /// explanation of why, see <see cref="Mtime"/>.  </remarks>
-        public DateTime Ctime { get { return _Ctime; } }
+        /// explanation of why, see <see cref="ModifiedTime"/>.
+        /// </remarks>
+        /// <seealso cref="ModifiedTime"/>
+        /// <seealso cref="AccessedTime"/>
+        public DateTime CreationTime { get { return _Ctime; } }
 
         /// <summary>
         /// Sets the NTFS Creation, Access, and Modified times for the given entry.
@@ -296,8 +309,8 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// The values you set here will be retrievable with the <see cref="Mtime"/>,
-        /// <see cref="Ctime"/> and <see cref="Atime"/> read-only properties.
+        /// The values you set here will be retrievable with the <see cref="ModifiedTime"/>,
+        /// <see cref="CreationTime"/> and <see cref="AccessedTime"/> read-only properties.
         /// </para>
         ///
         /// <para>
@@ -315,9 +328,9 @@ namespace Ionic.Zip
         ///
         /// <seealso cref="EmitTimesInWindowsFormatWhenSaving" />
         /// <seealso cref="EmitTimesInUnixFormatWhenSaving" />
-        /// <seealso cref="Atime"/>
-        /// <seealso cref="Ctime"/>
-        /// <seealso cref="Mtime"/>
+        /// <seealso cref="AccessedTime"/>
+        /// <seealso cref="CreationTime"/>
+        /// <seealso cref="ModifiedTime"/>
         public void SetEntryTimes(DateTime created, DateTime accessed, DateTime modified)
         {
             _ntfsTimesAreSet = true;
@@ -354,8 +367,8 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// When adding an entry from a file or directory, the Creation (<see
-        /// cref="Ctime"/>), Access (<see cref="Atime"/>), and Modified (<see
-        /// cref="Mtime"/>) times for the given entry are automatically set from the
+        /// cref="CreationTime"/>), Access (<see cref="AccessedTime"/>), and Modified (<see
+        /// cref="ModifiedTime"/>) times for the given entry are automatically set from the
         /// filesystem values. When adding an entry from a stream or string, all three
         /// values are implicitly set to DateTime.Now.  Applications can also explicitly
         /// set those times by calling <see cref="SetNtfsTimes(DateTime, DateTime,
@@ -382,8 +395,8 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// The times stored are taken from <see cref="Mtime"/>, <see
-        /// cref="Atime"/>, and <see cref="Ctime"/>.
+        /// The times stored are taken from <see cref="ModifiedTime"/>, <see
+        /// cref="AccessedTime"/>, and <see cref="CreationTime"/>.
         /// </para>
         ///
         /// <para>
@@ -404,9 +417,9 @@ namespace Ionic.Zip
         ///
         /// <seealso cref="SetEntryTimes(DateTime, DateTime, DateTime)"/>
         /// <seealso cref="EmitTimesInUnixFormatWhenSaving"/>
-        /// <seealso cref="Ctime"/>
-        /// <seealso cref="Atime"/>
-        /// <seealso cref="Mtime"/>
+        /// <seealso cref="CreationTime"/>
+        /// <seealso cref="AccessedTime"/>
+        /// <seealso cref="ModifiedTime"/>
         public bool EmitTimesInWindowsFormatWhenSaving
         {
             get
@@ -435,8 +448,8 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// When adding an entry from a file or directory, the Creation (<see
-        /// cref="Ctime"/>), Access (<see cref="Atime"/>), and Modified (<see
-        /// cref="Mtime"/>) times for the given entry are automatically set from the
+        /// cref="CreationTime"/>), Access (<see cref="AccessedTime"/>), and Modified (<see
+        /// cref="ModifiedTime"/>) times for the given entry are automatically set from the
         /// filesystem values. When adding an entry from a stream or string, all three
         /// values are implicitly set to DateTime.Now.  Applications can also explicitly
         /// set those times by calling <see cref="SetNtfsTimes(DateTime, DateTime,
@@ -463,8 +476,8 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// The times stored are taken from <see cref="Mtime"/>, <see
-        /// cref="Atime"/>, and <see cref="Ctime"/>.
+        /// The times stored are taken from <see cref="ModifiedTime"/>, <see
+        /// cref="AccessedTime"/>, and <see cref="CreationTime"/>.
         /// </para>
         ///
         /// <para>
@@ -483,9 +496,9 @@ namespace Ionic.Zip
         /// <seealso cref="SetEntryTimes(DateTime, DateTime, DateTime)"/>
         /// <seealso cref="EmitTimesInWindowsFormatWhenSaving"/>
         /// <seealso cref="ZipFile.EmitTimesInUnixFormatWhenSaving"/>
-        /// <seealso cref="Ctime"/>
-        /// <seealso cref="Atime"/>
-        /// <seealso cref="Mtime"/>
+        /// <seealso cref="CreationTime"/>
+        /// <seealso cref="AccessedTime"/>
+        /// <seealso cref="ModifiedTime"/>
         public bool EmitTimesInUnixFormatWhenSaving
         {
             get
@@ -705,7 +718,7 @@ namespace Ionic.Zip
             set
             {
                 // rename the entry!
-                if (value == null || value == "") throw new ZipException("The FileName must be non empty and non-null.");
+                if (String.IsNullOrEmpty(value)) throw new ZipException("The FileName must be non empty and non-null.");
 
                 var filename = ZipEntry.NameInArchive(value, null);
                 // workitem 8180
@@ -1264,7 +1277,7 @@ namespace Ionic.Zip
 
                 // If the source is a zip archive and there was encryption on the 
                 // entry, changing the compression method is not supported. 
-                if (this._Source == ZipEntrySource.Zipfile && _sourceIsEncrypted)
+                if (this._Source == ZipEntrySource.ZipFile && _sourceIsEncrypted)
                     throw new InvalidOperationException("Cannot change compression method on encrypted entries read from archives.");
 
                 _CompressionMethod = value;
@@ -1359,7 +1372,7 @@ namespace Ionic.Zip
         /// of this property reflects the stored CRC for the entry.  </para>
         ///
         /// </remarks>
-        public Int32 Crc32
+        public Int32 Crc
         {
             get { return _Crc32; }
         }
@@ -1547,7 +1560,7 @@ namespace Ionic.Zip
 
                 // If the source is a zip archive and there was encryption
                 // on the entry, this will not work. 
-                if (this._Source == ZipEntrySource.Zipfile && _sourceIsEncrypted)
+                if (this._Source == ZipEntrySource.ZipFile && _sourceIsEncrypted)
                     throw new InvalidOperationException("You cannot change the encryption method on encrypted entries read from archives.");
 
                 _Encryption = value;
@@ -1717,7 +1730,7 @@ namespace Ionic.Zip
 
                     // If the source is a zip archive and there was previously no encryption
                     // on the entry, then we must re-stream the entry in order to encrypt it.
-                    if (this._Source == ZipEntrySource.Zipfile && !_sourceIsEncrypted)
+                    if (this._Source == ZipEntrySource.ZipFile && !_sourceIsEncrypted)
                         _restreamRequiredOnSave = true;
 
                     if (Encryption == EncryptionAlgorithm.None)
@@ -2048,7 +2061,7 @@ namespace Ionic.Zip
                 // adding a directory by name.  We test existence when necessary:
                 // when saving the ZipFile, or when getting the attributes, and so on. 
 
-                entry._Source = ZipEntrySource.Filesystem;
+                entry._Source = ZipEntrySource.FileSystem;
 
 #if NETCF
                 // workitem 6878
@@ -2062,8 +2075,11 @@ namespace Ionic.Zip
                 if (File.Exists(filename) || Directory.Exists(filename))
                     entry._ExternalFileAttrs = (int)NetCfFile.GetAttributes(filename);
                 
+            entry._ntfsTimesAreSet = true;
 #else
-                // workitem 6878
+                //try
+                //{
+                // workitem 6878??
                 // Ionic.Zip.SharedUtilities.AdjustTime_Win32ToDotNet
                 entry._Mtime = File.GetLastWriteTimeUtc(filename);
                 entry._Ctime = File.GetCreationTimeUtc(filename);
@@ -2075,10 +2091,16 @@ namespace Ionic.Zip
                     entry._ExternalFileAttrs = (int)File.GetAttributes(filename);
                 // else ??
 
+                entry._ntfsTimesAreSet = true;
+                
+                //}
+                //catch
+                //{
+                //    entry._ntfsTimesAreSet = false;
+                //    entry._Mtime = System.DateTime.Now;
+                //}
 #endif
             }
-
-            entry._ntfsTimesAreSet = true;
 
             entry._LastModified = entry._Mtime;
             entry._LocalFileName = filename; // may include a path
@@ -2182,14 +2204,13 @@ namespace Ionic.Zip
                 // change for workitem 8098
                 //this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
                 this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
-
             }
-            catch (System.Exception exc1)
+            catch (System.IO.IOException exc1)
             {
                 string description = String.Format("Exception seeking  entry({0}) offset(0x{1:X8}) len(0x{2:X8})",
                                                    this.FileName, this._RelativeOffsetOfLocalHeader,
                                                    this.ArchiveStream.Length);
-                throw new Exception(description, exc1);
+                throw new BadStateException(description, exc1);
             }
 
             byte[] block = new byte[30];
@@ -2288,7 +2309,7 @@ namespace Ionic.Zip
         internal Int64 _CompressedFileDataSize; // CompressedSize less 12 bytes for the encryption header, if any
         internal Int64 _UncompressedSize;
         internal Int32 _TimeBlob;
-        private bool _crcCalculated = false;
+        private bool _crcCalculated;
         internal Int32 _Crc32;
         internal byte[] _Extra;
         private bool _metadataChanged;
@@ -2298,7 +2319,7 @@ namespace Ionic.Zip
 
         private static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
-        private System.Text.Encoding _actualEncoding = null;
+        private System.Text.Encoding _actualEncoding;
 
         internal ZipFile _zipfile;
         internal long __FileDataPosition = -1;
@@ -2318,7 +2339,6 @@ namespace Ionic.Zip
         private Stream _sourceStream;
         private Nullable<Int64> _sourceStreamOriginalPosition;
         private bool _sourceWasJitProvided;
-        private object LOCK = new object();
         private bool _ioOperationCanceled;
         private bool _presumeZip64;
         private Nullable<bool> _entryRequiresZip64;
@@ -2351,18 +2371,18 @@ namespace Ionic.Zip
         /// The entry was instantiated by calling AddFile() or another method that 
         /// added an entry from the filesystem.
         /// </summary>
-        Filesystem,
+        FileSystem,
 
         /// <summary>
-        /// The entry was instantiated via <see cref="ZipFile.AddEntry(string,string,string)"/> or
-        /// <see cref="ZipFile.AddEntry(string,string,System.IO.Stream)"/> .
+        /// The entry was instantiated via <see cref="Ionic.Zip.ZipFile.AddEntry(string,string,string)"/> or
+        /// <see cref="Ionic.Zip.ZipFile.AddEntry(string,string,System.IO.Stream)"/> .
         /// </summary>
         Stream,
 
         /// <summary>
         /// The ZipEntry was instantiated by reading a zipfile.
         /// </summary>
-        Zipfile,
+        ZipFile,
     }
 
 
@@ -2421,7 +2441,7 @@ namespace Ionic.Zip
             {
                 // workitem 7944: don't throw on failure to set file times
                 // throw new ZipException("CreateFileCE Failed");
-                return System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                return Interop.Marshal.GetLastWin32Error();
             }
                         
             SetFileTime(hFile, 
@@ -2448,8 +2468,8 @@ namespace Ionic.Zip
             {
                 // workitem 7944: don't throw on failure to set file time
                 // throw new ZipException(String.Format("CreateFileCE Failed ({0})",
-                //                                      System.Runtime.InteropServices.Marshal.GetLastWin32Error()));
-                return System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                //                                      Interop.Marshal.GetLastWin32Error()));
+                return Interop.Marshal.GetLastWin32Error();
             }
                         
             SetFileTime(hFile, null, null, 
@@ -2460,7 +2480,7 @@ namespace Ionic.Zip
         }
 
 
-        [System.Runtime.InteropServices.DllImport("coredll.dll", EntryPoint="CreateFile", SetLastError=true)]
+        [Interop.DllImport("coredll.dll", EntryPoint="CreateFile", SetLastError=true)]
         internal static extern int CreateFileCE(string lpFileName,
                                                 uint dwDesiredAccess,
                                                 uint dwShareMode,
@@ -2470,16 +2490,16 @@ namespace Ionic.Zip
                                                 int hTemplateFile);
 
 
-        [System.Runtime.InteropServices.DllImport("coredll", EntryPoint="GetFileAttributes", SetLastError=true)]
+        [Interop.DllImport("coredll", EntryPoint="GetFileAttributes", SetLastError=true)]
         internal static extern uint GetAttributes(string lpFileName);
 
-        [System.Runtime.InteropServices.DllImport("coredll", EntryPoint="SetFileAttributes", SetLastError=true)]
+        [Interop.DllImport("coredll", EntryPoint="SetFileAttributes", SetLastError=true)]
         internal static extern bool SetAttributes(string lpFileName, uint dwFileAttributes);
 
-        [System.Runtime.InteropServices.DllImport("coredll", EntryPoint="SetFileTime", SetLastError=true)]
+        [Interop.DllImport("coredll", EntryPoint="SetFileTime", SetLastError=true)]
         internal static extern bool SetFileTime(IntPtr hFile, byte[] lpCreationTime, byte[] lpLastAccessTime, byte[] lpLastWriteTime); 
 
-        [System.Runtime.InteropServices.DllImport("coredll.dll", SetLastError=true)]
+        [Interop.DllImport("coredll.dll", SetLastError=true)]
         internal static extern bool CloseHandle(IntPtr hObject);
 
     }

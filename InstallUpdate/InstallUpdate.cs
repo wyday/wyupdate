@@ -216,7 +216,7 @@ namespace wyUpdate
                         Directory.CreateDirectory(backupFolders[i]);
 
                         //delete "newer" client, if it will overwrite this client
-                        deleteClientInPath(destFolders[i], origFolders[i]);
+                        DeleteClientInPath(destFolders[i], origFolders[i]);
 
                         //count the total files
                         totalFiles += CountFiles(origFolders[i]);
@@ -842,7 +842,7 @@ namespace wyUpdate
              [In] uint dwAttrTo
         );
 
-        private void deleteClientInPath(string destPath, string origPath)
+        private static void DeleteClientInPath(string destPath, string origPath)
         {
             string tempClientLoc = ClientInTempBase(destPath, origPath);
 

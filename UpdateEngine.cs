@@ -72,7 +72,7 @@ namespace wyUpdate.Common
     { 
         DownloadingClientUpdt = 0, SelfUpdating = 1,
         DownloadingUpdate = 2, Extracting = 3, ClosingProcesses = 4, 
-        PreExecute = 5, BackingUp = 6, ModifyReg = 7, 
+        PreExecute = 5, BackUpInstalling = 6, ModifyReg = 7, 
         OptimizeExecute = 8, WriteClientFile = 9, DeletingTemp = 10, Uninstalling = 11
     }
 

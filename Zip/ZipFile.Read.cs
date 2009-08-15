@@ -1355,13 +1355,13 @@ namespace Ionic.Zip
             this.ReadStream.Seek(position + _originPosition, SeekOrigin.Begin);
         }
 
-        internal long Origin
-        {
-            get
-            {
-                return _originPosition;
-            }
-        }
+        //internal long Origin
+        //{
+        //    get
+        //    {
+        //        return _originPosition;
+        //    }
+        //}
 
         internal long RelativeOffset
         {
@@ -1438,7 +1438,7 @@ namespace Ionic.Zip
                     result = IsZipFile(s, testExtract);
                 }
             }
-            catch (Exception) { }
+            catch { }
             return result;
         }
 
@@ -1504,7 +1504,7 @@ namespace Ionic.Zip
                 }
                 result = true;
             }
-            catch (Exception) { }
+            catch { }
             return result;
         }
 

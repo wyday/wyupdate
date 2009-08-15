@@ -648,7 +648,7 @@ namespace Ionic
 
 
 
-        private SelectionCriterion _ParseCriterion(String s)
+        private static SelectionCriterion _ParseCriterion(String s)
         {
             if (s == null) return null;
 
@@ -730,7 +730,7 @@ namespace Ionic
                         {
                             t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd-HH:mm:ss", null);
                         }
-                        catch
+                        catch (FormatException)
                         {
                             t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd", null);
                         }
@@ -862,7 +862,7 @@ namespace Ionic
 
                             state = stateStack.Pop();
                             if (state != ParseState.CriterionDone)
-                                throw new ArgumentException();
+                                throw new ArgumentException("??");
                         }
                     }
                     else stateStack.Push(ParseState.CriterionDone);  // not sure?
@@ -941,7 +941,7 @@ namespace Ionic
         /// An collection of strings containing fully-qualified pathnames of files
         /// that match the criteria specified in the FileSelector instance.
         /// </returns>
-        public System.Collections.Generic.List<String> SelectFiles(String directory, bool recurseDirectories)
+        public System.Collections.ObjectModel.ReadOnlyCollection<String> SelectFiles(String directory, bool recurseDirectories)
         {
             if (_Criterion == null)
                 throw new ArgumentException("SelectionCriteria has not been set");
@@ -974,18 +974,16 @@ namespace Ionic
                 }                
             }
             // can get System.UnauthorizedAccessException here
-            catch
+            catch (System.UnauthorizedAccessException)
             {
             }
-//             catch (Exception ex1)
-//             {
-//                 Console.WriteLine("Exception: {0}", ex1);
-//             }
+            catch (System.IO.IOException)
+            {
+            }
 
-            return list;
+            return list.AsReadOnly();
         }
     }
-
 
 
 
@@ -994,6 +992,7 @@ namespace Ionic
     /// </summary>
     internal sealed class EnumUtil
     {
+        private EnumUtil() { }
         /// <summary>
         /// Returns the value of the DescriptionAttribute if the specified Enum value has one.
         /// If not, returns the ToString() representation of the Enum value.
@@ -1154,8 +1153,6 @@ namespace Ionic
 
 #endif
  
-
-
 
 
 
