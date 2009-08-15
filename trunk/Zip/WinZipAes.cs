@@ -50,20 +50,14 @@ namespace Ionic.Zip
         internal byte[] _providedPv;
         internal byte[] _generatedPv;
         internal int _KeyStrengthInBits;
-        //internal int _KeyStrengthInBytes;
-        //internal Int16 Method;
-
         private byte[] _MacInitializationVector;
         private byte[] _StoredMac;
         private byte[] _keyBytes;
         private Int16 PasswordVerificationStored;
         private Int16 PasswordVerificationGenerated;
         private int Rfc2898KeygenIterations = 1000;
-        private string _Password;
-        //private ZipEntry _cachedEntry;
-
-
-        private bool _cryptoGenerated = false;
+        private string _Password;   
+        private bool _cryptoGenerated ;
 
         private WinZipAesCrypto(string password, int KeyStrengthInBits)
         {
@@ -113,12 +107,8 @@ namespace Ionic.Zip
             c._Salt = new byte[saltSizeInBytes];
             c._providedPv = new byte[2];
 
-            int n = s.Read(c._Salt, 0, c._Salt.Length);
-            n = s.Read(c._providedPv, 0, c._providedPv.Length);
-
-            //Console.WriteLine(" salt: {0}", Util.FormatByteArray(c._Salt));
-            //Console.WriteLine(" pv:   {0}", Util.FormatByteArray(c._providedPv));
-            //Console.WriteLine(" size of encryption metadata (bytes): {0}", c.SizeOfEncryptionMetadata);
+            s.Read(c._Salt, 0, c._Salt.Length);
+            s.Read(c._providedPv, 0, c._providedPv.Length);
 
             c.PasswordVerificationStored = (Int16)(c._providedPv[0] + c._providedPv[1] * 256);
             if (password != null)
@@ -177,7 +167,7 @@ namespace Ionic.Zip
                 {
                     PasswordVerificationGenerated = (Int16)(GeneratedPV[0] + GeneratedPV[1] * 256);
                     if (PasswordVerificationGenerated != PasswordVerificationStored)
-                        throw new Exception("bad password");
+                        throw new Ionic.Zip.BadPasswordException();
                 }
             }
         }
@@ -217,13 +207,13 @@ namespace Ionic.Zip
             }
         }
 
-        public byte[] StoredMac
-        {
-            get
-            {
-                return _StoredMac;
-            }
-        }
+        //public byte[] StoredMac
+        //{
+        //    get
+        //    {
+        //        return _StoredMac;
+        //    }
+        //}
 
         public byte[] CalculatedMac;
 
@@ -232,13 +222,10 @@ namespace Ionic.Zip
         {
             bool invalid = false;
 
-            long PositionOfMac = s.Position;
-            //Console.WriteLine("posn before reading MAC: {0} (0x{0:X2})", PositionOfMac);
-
             // read integrityCheckVector.
             // caller must ensure that the file pointer is in the right spot! 
             _StoredMac = new byte[10];  // aka "authentication code"
-            int n = s.Read(_StoredMac, 0, _StoredMac.Length);
+            s.Read(_StoredMac, 0, _StoredMac.Length);
 
             if (_StoredMac.Length != CalculatedMac.Length)
                 invalid = true;
@@ -252,20 +239,9 @@ namespace Ionic.Zip
                 }
             }
 
-#if DEBUG
             if (invalid)
-                throw new Exception("The MAC does not match.");
-            //throw new Exception(String.Format("The MAC does not match '{0}' != '{1}'",
-            //              Util.FormatByteArray(_StoredMac),
-            //              Util.FormatByteArray(CalculatedMac)));
-#else
-            if (invalid)
-                throw new Exception("The MAC does not match");
-#endif
-
+                throw new Ionic.Zip.BadStateException("The MAC does not match.");
         }
-
-
 
     }
 
@@ -340,8 +316,8 @@ namespace Ionic.Zip
         private System.IO.Stream _s;
         private CryptoMode _mode;
         private int _nonce;
-        private bool _finalBlock = false;
-        private bool _NextXformWillBeFinal = false;
+        private bool _finalBlock;
+        private bool _NextXformWillBeFinal;
 
         internal HMACSHA1 _mac;
 
@@ -372,11 +348,11 @@ namespace Ionic.Zip
         // read request goes beyond the stop, we truncate it. 
 
         private long _length;
-        private long _totalBytesXferred = 0;
+        private long _totalBytesXferred;
 
 
         private byte[] _PendingWriteBuffer;
-        private int _pendingCount = 0;
+        private int _pendingCount;
 
         /// <summary>
         /// The constructor.
@@ -415,7 +391,7 @@ namespace Ionic.Zip
 
             int keySizeInBits = _params.KeyBytes.Length * 8;
             if (keySizeInBits != 256 && keySizeInBits != 128 && keySizeInBits != 192)
-                throw new Exception("Invalid key size");
+                throw new ArgumentException("keysize");
 
             _mac = new HMACSHA1(_params.MacIv);
 
@@ -452,7 +428,7 @@ namespace Ionic.Zip
         private int ProcessOneBlockWriting(byte[] buffer, int offset, int last)
         {
             if (_finalBlock)
-                throw new Exception("The final block has already been transformed.");
+                throw new InvalidOperationException("The final block has already been transformed.");
 
             int bytesRemaining = last - offset;
             int bytesToRead = (bytesRemaining > BLOCK_SIZE_IN_BYTES)
@@ -732,7 +708,7 @@ namespace Ionic.Zip
                 {
                     // special-case zero-byte files
                     if ( _totalBytesXferred != 0)
-                        throw new Exception("The final hash has not been computed.");
+                        throw new BadStateException("The final hash has not been computed.");
 
                     // Must call ComputeHash on an empty byte array when no data
                     // has run through the MAC.

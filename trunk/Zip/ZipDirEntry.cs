@@ -108,7 +108,7 @@ namespace Ionic.Zip
 
             int i = 0;
             ZipEntry zde = new ZipEntry();
-            zde._Source = ZipEntrySource.Zipfile;
+            zde._Source = ZipEntrySource.ZipFile;
             zde._archiveStream = s;
             zde._zipfile = zf;
             //zde._cdrPosition = cdrPosition;
@@ -149,11 +149,11 @@ namespace Ionic.Zip
             if ((zde._BitField & 0x0800) == 0x0800)
             {
                 // UTF-8 is in use
-                zde._LocalFileName = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block, block.Length);
+                zde._LocalFileName = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block);
             }
             else
             {
-                zde._LocalFileName = Ionic.Zip.SharedUtilities.StringFromBuffer(block, block.Length, expectedEncoding);
+                zde._LocalFileName = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
             }
 
 
@@ -225,14 +225,14 @@ namespace Ionic.Zip
                 if ((zde._BitField & 0x0800) == 0x0800)
                 {
                     // UTF-8 is in use
-                    zde._Comment = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block, block.Length);
+                    zde._Comment = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block);
                 }
                 else
                 {
-                    zde._Comment = Ionic.Zip.SharedUtilities.StringFromBuffer(block, block.Length, expectedEncoding);
+                    zde._Comment = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
                 }
             }
-            zde._LengthOfDirEntry = bytesRead;
+            //zde._LengthOfDirEntry = bytesRead;
             return zde;
         }
 
@@ -252,7 +252,7 @@ namespace Ionic.Zip
         private Int16 _InternalFileAttrs;
         private Int32 _ExternalFileAttrs;
 
-        private Int32 _LengthOfDirEntry;
+        //private Int32 _LengthOfDirEntry;
         private Int16 _filenameLength;
         private Int16 _extraFieldLength;
         private Int16 _commentLength;

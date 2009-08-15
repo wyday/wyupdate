@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-05 13:22:20>
+// Time-stamp: <2009-August-13 22:44:05>
 //
 // ------------------------------------------------------------------
 //
@@ -119,10 +119,14 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// 
-        /// <para> For example, the caller could specify <c>Console.Out</c>, or a
-        /// <c>MemoryStream</c>, or ASP.NET's <c>Response.OutputStream</c>.  The content
-        /// will be decrypted and decompressed as necessary. If the entry is encrypted and
-        /// no password is provided, this method will throw.  </para>
+        /// <para>
+        /// The caller can specify any write-able stream, for example <see
+        /// cref="System.Console.OpenStandardOutput()"/>, a <see
+        /// cref="System.IO.FileStream"/>, a <see cref="System.IO.MemoryStream"/>, or
+        /// ASP.NET's <c>Response.OutputStream</c>.
+        /// The content will be decrypted and decompressed as necessary. If the entry is
+        /// encrypted and no password is provided, this method will throw.
+        /// </para>
         /// 
         /// </remarks>
         /// 
@@ -187,7 +191,7 @@ namespace Ionic.Zip
             InternalExtract(baseDirectory, null, null);
         }
 
-        
+
         /// <summary>
         /// Extract the entry to the filesystem, starting at the specified base directory, 
         /// and potentially overwriting existing files in the filesystem. 
@@ -485,9 +489,9 @@ namespace Ionic.Zip
         /// <para>
         /// CrcCalculatorStream adds one additional feature: it keeps a CRC32 checksum
         /// on the bytes of the stream as it is read.  The CRC value is available in the
-        /// <see cref="Ionic.Zlib.CrcCalculatorStream.Crc32"/> property on the
+        /// <see cref="Ionic.Zlib.CrcCalculatorStream.Crc"/> property on the
         /// <c>CrcCalculatorStream</c>.  When the read is complete, this CRC
-        /// <em>should</em> be checked against the <see cref="ZipEntry.Crc32"/> property
+        /// <em>should</em> be checked against the <see cref="ZipEntry.Crc"/> property
         /// on the <c>ZipEntry</c> to validate the content of the ZipEntry.  You don't
         /// have to validate the entry using the CRC, but you should. Check the example
         /// for how to do this.
@@ -591,7 +595,7 @@ namespace Ionic.Zip
             SetupCrypto(password);
 
             // workitem 7958
-            if (this._Source != ZipEntrySource.Zipfile)
+            if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling OpenReader.");
 
             Stream input = this.ArchiveStream;
@@ -641,7 +645,7 @@ namespace Ionic.Zip
             _ioOperationCanceled = _zipfile.OnExtractBlock(this, bytesWritten, totalBytesToWrite);
         }
 
-        
+
         private void OnBeforeExtract(string path)
         {
             // When in the context of a ZipFile.ExtractAll, the events are generated from 
@@ -674,7 +678,7 @@ namespace Ionic.Zip
             _ioOperationCanceled = _zipfile.OnSaveBlock(this, bytesXferred, totalBytesToXfer);
         }
 
-        private void ReallyDelete(string fileName)
+        private static void ReallyDelete(string fileName)
         {
             // workitem 7881
             // reset ReadOnly bit if necessary
@@ -698,7 +702,7 @@ namespace Ionic.Zip
                 throw new BadStateException("This ZipEntry is an orphan.");
 
             _zipfile.Reset();
-            if (this._Source != ZipEntrySource.Zipfile)
+            if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling any Extract method.");
 
             OnBeforeExtract(baseDir);
@@ -752,47 +756,8 @@ namespace Ionic.Zip
                     if (File.Exists(TargetFile))
                     {
                         fileExistsBeforeExtraction = true;
-                        switch (ExtractExistingFile)
-                        {
-                            case ExtractExistingFileAction.Throw:
-                                throw new ZipException(String.Format("The file {0} already exists.", TargetFile));
-                            case ExtractExistingFileAction.OverwriteSilently:
-                                {
-                                    if (_zipfile.Verbose)
-                                        _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", TargetFile);
-
-                                    //File.Delete(TargetFile);
-                                    ReallyDelete(TargetFile);
-                                }
-                                break;
-                            case ExtractExistingFileAction.DontOverwrite:
-                                if (_zipfile.Verbose)
-                                    _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
-                                OnAfterExtract(baseDir);
-                                return;
-                            case ExtractExistingFileAction.InvokeExtractProgressEvent:
-                                OnExtractExisting(baseDir);
-                                // Check the ExtractExistingFile property again, it may have been reset.
-                                if (ExtractExistingFile == ExtractExistingFileAction.Throw)
-                                    throw new ZipException("The file already exists.");
-                                else if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
-                                //File.Delete(TargetFile);
-                                {
-                                    if (_zipfile.Verbose)
-                                        _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", FileName);
-                                    //File.Delete(TargetFile);
-                                    ReallyDelete(TargetFile);
-                                }
-                                else if (ExtractExistingFile == ExtractExistingFileAction.DontOverwrite)
-                                {
-                                    if (_zipfile.Verbose)
-                                        _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
-                                    OnAfterExtract(baseDir);
-                                    return;
-                                }
-                                else throw new ZipException("The file already exists.");
-                                break;
-                        }
+                        if (CheckExtractExistingFile(baseDir, TargetFile))
+                            return;
                     }
                     output = new FileStream(TargetFile, FileMode.CreateNew);
                 }
@@ -800,59 +765,29 @@ namespace Ionic.Zip
                 {
                     if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("extract entry {0} to stream...", FileName);
                     output = outstream;
-
                 }
 
 
                 if (_ioOperationCanceled)
-                {
-                    try
-                    {
-                        if (TargetFile != null)
-                        {
-                            if (output != null) output.Close();
-                            // attempt to remove the target file if an exception has occurred:
-                            if (File.Exists(TargetFile))
-                                File.Delete(TargetFile);
-                        }
-                    }
-                    finally { }
-
-                }
+                    goto ExitTry;
 
                 Int32 ActualCrc32 = _ExtractOne(output);
 
                 if (_ioOperationCanceled)
-                {
-                    try
-                    {
-                        if (TargetFile != null)
-                        {
-                            if (output != null) output.Close();
-                            // attempt to remove the target file if an exception has occurred:
-                            if (File.Exists(TargetFile))
-                                File.Delete(TargetFile);
-                        }
-                    }
-                    finally { }
-                }
-
+                    goto ExitTry;
+                            
+#if AESCRYPTO
                 // After extracting, Validate the CRC32
                 if (ActualCrc32 != _Crc32)
                 {
-#if AESCRYPTO
                     // CRC is not meaningful with WinZipAES and AES method 2 (AE-2)
                     if ((Encryption != EncryptionAlgorithm.WinZipAes128 &&
                          Encryption != EncryptionAlgorithm.WinZipAes256)
                         || _WinZipAesMethod != 0x02)
-#endif
-
                         throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
                                                   String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
                 }
 
-
-#if AESCRYPTO
                 // Read the MAC if appropriate
                 if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
                     Encryption == EncryptionAlgorithm.WinZipAes256)
@@ -860,6 +795,10 @@ namespace Ionic.Zip
                     _aesCrypto.ReadAndVerifyMac(this.ArchiveStream); // throws if MAC is bad
                     // side effect: advances file position.
                 }
+#else
+                if (ActualCrc32 != _Crc32)
+                    throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
+                                              String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
 #endif
 
 
@@ -873,12 +812,18 @@ namespace Ionic.Zip
                     // workitem 8264
                     if (checkLaterForResetDirTimes)
                     {
+                        // This is sort of a hack.  What I do here is set the time on the parent
+                        // directory, every time a file is extracted into it.  If there is a
+                        // directory with 1000 files, then I set the time on the dir, 1000
+                        // times. This allows the directory to have times that reflect the
+                        // actual time on the entry in the zip archive. 
+
                         // String.Contains is not available on .NET CF 2.0
                         if (this.FileName.IndexOf('/') != -1)
                         {
                             string dirname = Path.GetDirectoryName(this.FileName);
                             //Console.WriteLine("Checking for dir '{0}'", dirname);
-                            if (this._zipfile[dirname]==null)
+                            if (this._zipfile[dirname] == null)
                             {
                                 //Console.WriteLine("found no dir '{0}', setting times", dirname);
                                 _SetTimes(Path.GetDirectoryName(TargetFile), false);
@@ -899,43 +844,103 @@ namespace Ionic.Zip
                     // workitem 7926 - version made by OS can be zero (FAT) or 10 (NTFS)
                     if ((_VersionMadeBy & 0xFF00) == 0x0a00 || (_VersionMadeBy & 0xFF00) == 0x0000)
                         File.SetAttributes(TargetFile, (FileAttributes)_ExternalFileAttrs);
-
 #endif
                 }
 
                 OnAfterExtract(baseDir);
+                
+                ExitTry: ;
             }
             catch (Exception ex1)
             {
-                try
-                {
-                    if (ex1 != null)
-                        if (TargetFile != null)
-                        {
-                            if (output != null) output.Close();
-                            // An exception has occurred.
-                            // if the file exists, check to see if it existed before we tried extracting.
-                            // if it did not, or if we were overwriting the file, attempt to remove the target file.
-                            if (File.Exists(TargetFile))
-                            {
-                                if (!fileExistsBeforeExtraction || (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently))
-                                    File.Delete(TargetFile);
-                            }
-                        }
-                }
-                finally { }
-
+                _ioOperationCanceled = true;
                 if (ex1 as Ionic.Zip.ZipException == null)
                     // wrap the original exception and throw
                     throw new ZipException("Cannot extract", ex1);
                 else
                     throw;
             }
+            finally
+            {
+                if (_ioOperationCanceled)
+                {
+                    if (TargetFile != null)
+                    {
+                        try
+                        {
+                            if (output != null) output.Close();
+                            // An exception has occurred.
+                            // If the file exists, check to see if it existed before we tried extracting.
+                            // If it did not, or if we were overwriting the file, attempt to remove the target file.
+                            if (File.Exists(TargetFile))
+                            {
+                                if (!fileExistsBeforeExtraction || (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently))
+                                    File.Delete(TargetFile);
+                            }
+                        }
+                        finally { }
+                    }
+                }
+            }
+        }
+
+
+        
+        
+        private bool CheckExtractExistingFile(string baseDir, string TargetFile)
+        {
+            bool nothingMore = false;
+            switch (ExtractExistingFile)
+            {
+                case ExtractExistingFileAction.Throw:
+                    throw new ZipException(String.Format("The file {0} already exists.", TargetFile));
+                    
+                case ExtractExistingFileAction.OverwriteSilently:
+                    {
+                        if (_zipfile.Verbose)
+                            _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", TargetFile);
+
+                        //File.Delete(TargetFile);
+                        ReallyDelete(TargetFile);
+                    }
+                    break;
+
+                case ExtractExistingFileAction.DoNotOverwrite:
+                    if (_zipfile.Verbose)
+                        _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
+                    OnAfterExtract(baseDir);
+                    nothingMore = true;
+                    break;
+
+                case ExtractExistingFileAction.InvokeExtractProgressEvent:
+                    OnExtractExisting(baseDir);
+                    // Check the ExtractExistingFile property again, it may have been reset.
+                    if (ExtractExistingFile == ExtractExistingFileAction.Throw)
+                        throw new ZipException("The file already exists.");
+                    else if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
+                    //File.Delete(TargetFile);
+                    {
+                        if (_zipfile.Verbose)
+                            _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", FileName);
+                        //File.Delete(TargetFile);
+                        ReallyDelete(TargetFile);
+                    }
+                    else if (ExtractExistingFile == ExtractExistingFileAction.DoNotOverwrite)
+                    {
+                        if (_zipfile.Verbose)
+                            _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
+                        OnAfterExtract(baseDir);
+                        nothingMore = true;
+                    }
+                    else throw new ZipException("The file already exists.");
+                    break;
+            }
+            return nothingMore;
         }
 
 
 
-        
+
         private void _CheckRead(int nbytes)
         {
             if (nbytes == 0)
@@ -1021,7 +1026,7 @@ namespace Ionic.Zip
                     }
                 }
 
-                CrcResult = s1.Crc32;
+                CrcResult = s1.Crc;
 
 
 #if AESCRYPTO
@@ -1040,15 +1045,15 @@ namespace Ionic.Zip
 
 
 
-        
+
         internal void _SetTimes(string fileOrDirectory, bool isFile)
         {
-            
-//             Console.WriteLine("_SetTimeS({0}): m({1}) a({2}) c({3})",
-//                               fileOrDirectory,
-//                               Mtime.ToString("yyyy/MM/dd HH:mm:ss"),
-//                               Atime.ToString("yyyy/MM/dd HH:mm:ss"),
-//                               Ctime.ToString("yyyy/MM/dd HH:mm:ss"));
+
+            //             Console.WriteLine("_SetTimeS({0}): m({1}) a({2}) c({3})",
+            //                               fileOrDirectory,
+            //                               Mtime.ToString("yyyy/MM/dd HH:mm:ss"),
+            //                               Atime.ToString("yyyy/MM/dd HH:mm:ss"),
+            //                               Ctime.ToString("yyyy/MM/dd HH:mm:ss"));
 
             if (_ntfsTimesAreSet)
             {
@@ -1166,6 +1171,43 @@ namespace Ionic.Zip
             }
         }
 
+        // workitem 7968
+        private string UnsupportedCompressionMethod
+        {
+            get
+            {
+                string meth = String.Empty;
+                switch (_CompressionMethod)
+                {
+                    case 0:
+                        meth = "Store";
+                        break;
+                    case 1:
+                        meth = "Shrink";
+                        break;
+                    case 8:
+                        meth = "DEFLATE";
+                        break;
+                    case 9:
+                        meth = "Deflate64";
+                        break;
+                    case 14:
+                        meth = "LZMA";
+                        break;
+                    case 19:
+                        meth = "LZ77";
+                        break;
+                    case 98:
+                        meth = "PPMd";
+                        break;
+                    default:
+                        meth = String.Format("Unknown (0x{0:X4})", _CompressionMethod);
+                        break;
+                }
+                return meth;
+            }
+        }
+
 
         private void ValidateEncryption()
         {
@@ -1190,8 +1232,8 @@ namespace Ionic.Zip
         private void ValidateCompression()
         {
             if ((CompressionMethod != 0) && (CompressionMethod != 0x08))  // deflate
-                throw new ArgumentException(String.Format("Entry {0} uses an unsupported Compression method (0x{1:X2})",
-                                                          FileName, CompressionMethod));
+                throw new ZipException(String.Format("Entry {0} uses an unsupported compression method (0x{1:X2}, {2})",
+                                                          FileName, CompressionMethod, UnsupportedCompressionMethod));
         }
 
 
@@ -1251,7 +1293,7 @@ namespace Ionic.Zip
                     if (!Directory.Exists(OutputFile))
                     {
                         Directory.CreateDirectory(OutputFile);
-                        
+
                         _SetTimes(OutputFile, false);
                     }
                     else
@@ -1276,11 +1318,11 @@ namespace Ionic.Zip
                 return false;
             }
 
-            throw new ZipException("Cannot extract.", new ArgumentException("Invalid input.", "outstream | basedir"));
+            throw new ZipException("Cannot extract.", new ArgumentException("Invalid input.", "outstream"));
         }
 
-        
+
         #endregion
-        
+
     }
 }

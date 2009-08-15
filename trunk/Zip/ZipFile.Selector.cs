@@ -1056,15 +1056,15 @@ namespace Ionic
             switch (Which)
             {
                 case WhichTime.atime:
-                    x = entry.Atime;
+                    x = entry.AccessedTime;
                     break;
                 case WhichTime.mtime:
-                    x = entry.Mtime;
+                    x = entry.ModifiedTime;
                     break;
                 case WhichTime.ctime:
-                    x = entry.Ctime;
+                    x = entry.CreationTime;
                     break;
-                default: throw new Exception("??time");
+                default: throw new ArgumentException("??time");
             }
             return _Evaluate(x);
         }

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 13:00:18>
+// Time-stamp: <2009-August-13 21:35:35>
 //
 // ------------------------------------------------------------------
 //
@@ -542,14 +542,14 @@ namespace Ionic.Zip
 
         private bool WantReadAgain()
         {
-            if (_UncompressedSize < 10) return false;
+            if (_UncompressedSize < 0x10) return false;
             if (_CompressionMethod == 0x00) return false;
             if (_CompressedSize < _UncompressedSize) return false;
             if (ForceNoCompression) return false;
             if (this._Source == ZipEntrySource.Stream && !this._sourceStream.CanSeek) return false;
 
 #if AESCRYPTO
-            if (_aesCrypto != null && (CompressedSize - _aesCrypto.SizeOfEncryptionMetadata) <= UncompressedSize) return false;
+            if (_aesCrypto != null && (CompressedSize - _aesCrypto.SizeOfEncryptionMetadata) <= UncompressedSize + 0x10) return false;
 #endif
 
             if (_zipCrypto != null && (CompressedSize - 12) <= UncompressedSize) return false;
@@ -1036,7 +1036,7 @@ namespace Ionic.Zip
                     //if (this._sourceStream.CanSeek)
                     // Try to get the length, no big deal if not available.
                     try { fileLength = this._sourceStream.Length; }
-                    catch { }
+                    catch (NotSupportedException) { }
                 }
                 else
                 {
@@ -1149,7 +1149,7 @@ namespace Ionic.Zip
             _UncompressedSize = input1.TotalBytesSlurped;
             _CompressedFileDataSize = outputCounter.BytesWritten;
             _CompressedSize = _CompressedFileDataSize; // may be adjusted
-            _Crc32 = input1.Crc32;
+            _Crc32 = input1.Crc;
 
             if (_Password != null)
             {
@@ -1376,7 +1376,7 @@ namespace Ionic.Zip
 
         internal void Write(Stream s)
         {
-            if (_Source == ZipEntrySource.Zipfile && !_restreamRequiredOnSave)
+            if (_Source == ZipEntrySource.ZipFile && !_restreamRequiredOnSave)
             {
                 CopyThroughOneEntry(s);
                 return;
@@ -1510,6 +1510,7 @@ namespace Ionic.Zip
 
                 // Write the ciphered bonafide encryption header. 
                 outstream.Write(cipherText, 0, cipherText.Length);
+                _LengthOfHeader+= cipherText.Length;
             }
 
 #if AESCRYPTO
@@ -1523,7 +1524,8 @@ namespace Ionic.Zip
                 _aesCrypto = WinZipAesCrypto.Generate(_Password, _KeyStrengthInBits);
                 outstream.Write(_aesCrypto.Salt, 0, _aesCrypto._Salt.Length);
                 outstream.Write(_aesCrypto.GeneratedPV, 0, _aesCrypto.GeneratedPV.Length);
-            }
+                _LengthOfHeader+= _aesCrypto._Salt.Length + _aesCrypto.GeneratedPV.Length;
+    }
 #endif
 
         }
@@ -1531,173 +1533,67 @@ namespace Ionic.Zip
 
         private void CopyThroughOneEntry(Stream outstream)
         {
+            // Just read the entry from the existing input zipfile and write to the output.
+            // But, if metadata has changed (like file times or attributes), or if the ZIP64
+            // option has changed, we can re-stream the entry data but must recompute the 
+            // metadata. 
+            if (this.LengthOfHeader == 0)
+                    throw new BadStateException("Bad header length.");
+
+            var input1 = new Ionic.Zlib.CrcCalculatorStream(this.ArchiveStream);
+
+            // is it necessaty to re-streammetadata for this entry? 
+            bool needRecompute = _metadataChanged ||
+                (_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Never) ||
+                (!_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Always);
+            
+            if (needRecompute)
+                CopyThroughWithRecompute(outstream, input1);
+            else
+                CopyThroughWithNoChange(outstream, input1);
+
+            // zip64 housekeeping
+            _entryRequiresZip64 = new Nullable<bool>
+                (_CompressedSize >= 0xFFFFFFFF || _UncompressedSize >= 0xFFFFFFFF ||
+                _RelativeOffsetOfLocalHeader >= 0xFFFFFFFF
+                );
+
+            _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
+
+        }
+
+        private void CopyThroughWithRecompute(Stream outstream, Ionic.Zlib.CrcCalculatorStream input1)
+        {
             int n;
             byte[] bytes = new byte[BufferSize];
-
-            // just read from the existing input zipfile and write to the output
             Stream input = this.ArchiveStream;
-            var input1 = new Ionic.Zlib.CrcCalculatorStream(input);
 
-            // must re-compute metadata if it changed, or if the Zip64 option changed.
-            if (_metadataChanged ||
-        (_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Never) ||
-                (!_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Always))
+            long origRelativeOffsetOfHeader = _RelativeOffsetOfLocalHeader;
+
+            // The header length may change due to rename of file, add a comment, etc.
+            // We need to retain the original. 
+            int origLengthOfHeader = LengthOfHeader; // including crypto bytes!
+
+            // WriteHeader() has the side effect of changing _RelativeOffsetOfLocalHeader 
+            // and setting _LengthOfHeader.  While ReadHeader() reads the crypto header if
+            // present, WriteHeader() does not write the crypto header.
+            WriteHeader(outstream, 0);
+
+            if (!this.FileName.EndsWith("/"))
             {
-                long origRelativeOffsetOfHeader = _RelativeOffsetOfLocalHeader;
-                if (this.LengthOfHeader == 0)
-                    throw new ZipException("Bad header length.");
+                // not a directory, we have file data
+                // seek to the beginning of the entry data in the input stream
+                long pos = origRelativeOffsetOfHeader + origLengthOfHeader;
+                pos -= LengthOfCryptoHeaderBytes; // want to keep the crypto header
+                _LengthOfHeader += LengthOfCryptoHeaderBytes;
 
-                // The header length may change due to rename of file, add a comment, etc.
-                // We need to retain the original. 
-                int origLengthOfHeader = LengthOfHeader; // including crypto bytes!
-
-                // WriteHeader() has the side effect of changing _RelativeOffsetOfLocalHeader 
-                // and setting _LengthOfHeader.  While ReadHeader() reads the crypto header if
-                // present, WriteHeader() does not write the crypto header.
-                WriteHeader(outstream, 0);
-
-                if (!this.FileName.EndsWith("/"))
-                {
-                    // not a directory, we have file data
-                    // seek to the beginning of the entry data in the input stream
-                    long pos = origRelativeOffsetOfHeader + origLengthOfHeader;
-                    pos -= LengthOfCryptoHeaderBytes; // want to keep the crypto header
-                    _LengthOfHeader += LengthOfCryptoHeaderBytes;
-
-                    // change for workitem 8098
-                    //input.Seek(pos, SeekOrigin.Begin);
-                    this._zipfile.SeekFromOrigin(pos);
-
-                    // copy through everything after the header to the output stream
-                    long remaining = this._CompressedSize;
-
-                    while (remaining > 0)
-                    {
-                        int len = (remaining > bytes.Length) ? bytes.Length : (int)remaining;
-
-                        // read
-                        n = input1.Read(bytes, 0, len);
-                        //_CheckRead(n);
-
-                        // write
-                        outstream.Write(bytes, 0, n);
-                        remaining -= n;
-                        OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
-                        if (_ioOperationCanceled)
-                            break;
-                    }
-
-                    // bit 3 descriptor
-                    if ((this._BitField & 0x0008) == 0x0008)
-                    {
-                        int size = 16;
-                        if (_InputUsesZip64) size += 8;
-                        byte[] Descriptor = new byte[size];
-                        input.Read(Descriptor, 0, size);
-
-                        if (_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Never)
-                        {
-                            // original descriptor was 24 bytes, now we need 16.
-                            // Must check for underflow here.
-                            // signature + CRC.
-                            outstream.Write(Descriptor, 0, 8);
-
-                            // Compressed
-                            if (_CompressedSize > 0xFFFFFFFF)
-                                throw new InvalidOperationException("ZIP64 is required");
-                            outstream.Write(Descriptor, 8, 4);
-
-                            // UnCompressed
-                            if (_UncompressedSize > 0xFFFFFFFF)
-                                throw new InvalidOperationException("ZIP64 is required");
-                            outstream.Write(Descriptor, 16, 4);
-                            _LengthOfTrailer -= 8;
-                        }
-                        else if (!_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Always)
-                        {
-                            // original descriptor was 16 bytes, now we need 24
-                            // signature + CRC
-                            byte[] pad = new byte[4];
-                            outstream.Write(Descriptor, 0, 8);
-                            // Compressed
-                            outstream.Write(Descriptor, 8, 4);
-                            outstream.Write(pad, 0, 4);
-                            // UnCompressed
-                            outstream.Write(Descriptor, 12, 4);
-                            outstream.Write(pad, 0, 4);
-                            _LengthOfTrailer += 8;
-                        }
-                        else
-                        {
-                            // same descriptor on input and output. Copy it through.
-                            outstream.Write(Descriptor, 0, size);
-                            //_LengthOfTrailer += size;
-                        }
-                    }
-                }
-
-                _TotalEntrySize = _LengthOfHeader + _CompressedFileDataSize + _LengthOfTrailer;
-
-            }
-            else
-            {
-                if (this.LengthOfHeader == 0)
-                    throw new ZipException("Bad header length.");
-
-                //long origRelativeOffsetOfHeader = _RelativeOffsetOfLocalHeader;
-
-                // seek to the beginning of the entry data (header + file data) in the input stream
-                //input.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
-
-                // Here, we need to grab the header and fill it with real data. Some of
-                // the fields may take marker values - eg, the CRC may be all zero and
-                // the Uncomp and Comp sizes may be 0xFFFFFFFF.  Those are all "fake"
-                // values, but we need to set the real ones into the header.  We don't
-                // write the header here; instead we're just copying through.  But the
-                // _EntryHeader array is used later when writing the Central Directory
-                // Structure, and the header data must be correct at that point.
-
-                // ?? that is a doomed approach !! 
-
-                //_EntryHeader = new byte[this._LengthOfHeader];
-                //n = input.Read(_EntryHeader, 0, _EntryHeader.Length);
-                //_CheckRead(n);
-
-                // once again, seek to the beginning of the entry data in the input stream
                 // change for workitem 8098
-                //input.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
-                this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+                //input.Seek(pos, SeekOrigin.Begin);
+                this._zipfile.SeekFromOrigin(pos);
 
-                if (this._TotalEntrySize == 0)
-                {
-                    // We've never set the length of the entry.  
-                    // Set it here.
-                    this._TotalEntrySize = this._LengthOfHeader + this._CompressedFileDataSize + _LengthOfTrailer;
+                // copy through everything after the header to the output stream
+                long remaining = this._CompressedSize;
 
-                    // The CompressedSize includes all the leading metadata associated
-                    // to encryption, if any, as well as the compressed data, or
-                    // compressed-then-encrypted data, and the trailer in case of AES.
-
-                    // The CompressedFileData size is the same, less the encryption
-                    // framing data (12 bytes header for PKZip; 10/18 bytes header and
-                    // 10 byte trailer for AES).
-
-                    // The _LengthOfHeader includes all the zip entry header plus the
-                    // crypto header, if any.  The _LengthOfTrailer includes the
-                    // 10-byte MAC for AES, where appropriate, and the bit-3
-                    // Descriptor, where applicable.
-                }
-
-
-                // workitem 5616
-                // remember the offset, within the output stream, of this particular entry header.
-                // This may have changed if any of the other entries changed (eg, if a different
-                // entry was removed or added.)
-                var counter = outstream as CountingStream;
-                _RelativeOffsetOfLocalHeader = (counter != null) ? counter.BytesWritten : outstream.Position;
-
-                // copy through the header, filedata, trailer, everything...
-                long remaining = this._TotalEntrySize;
                 while (remaining > 0)
                 {
                     int len = (remaining > bytes.Length) ? bytes.Length : (int)remaining;
@@ -1709,23 +1605,138 @@ namespace Ionic.Zip
                     // write
                     outstream.Write(bytes, 0, n);
                     remaining -= n;
-                    //OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
-                    OnWriteBlock(input1.TotalBytesSlurped, this._TotalEntrySize);
+                    OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
                     if (_ioOperationCanceled)
                         break;
                 }
 
+                // bit 3 descriptor
+                if ((this._BitField & 0x0008) == 0x0008)
+                {
+                    int size = 16;
+                    if (_InputUsesZip64) size += 8;
+                    byte[] Descriptor = new byte[size];
+                    input.Read(Descriptor, 0, size);
+
+                    if (_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Never)
+                    {
+                        // original descriptor was 24 bytes, now we need 16.
+                        // Must check for underflow here.
+                        // signature + CRC.
+                        outstream.Write(Descriptor, 0, 8);
+
+                        // Compressed
+                        if (_CompressedSize > 0xFFFFFFFF)
+                            throw new InvalidOperationException("ZIP64 is required");
+                        outstream.Write(Descriptor, 8, 4);
+
+                        // UnCompressed
+                        if (_UncompressedSize > 0xFFFFFFFF)
+                            throw new InvalidOperationException("ZIP64 is required");
+                        outstream.Write(Descriptor, 16, 4);
+                        _LengthOfTrailer -= 8;
+                    }
+                    else if (!_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Always)
+                    {
+                        // original descriptor was 16 bytes, now we need 24
+                        // signature + CRC
+                        byte[] pad = new byte[4];
+                        outstream.Write(Descriptor, 0, 8);
+                        // Compressed
+                        outstream.Write(Descriptor, 8, 4);
+                        outstream.Write(pad, 0, 4);
+                        // UnCompressed
+                        outstream.Write(Descriptor, 12, 4);
+                        outstream.Write(pad, 0, 4);
+                        _LengthOfTrailer += 8;
+                    }
+                    else
+                    {
+                        // same descriptor on input and output. Copy it through.
+                        outstream.Write(Descriptor, 0, size);
+                        //_LengthOfTrailer += size;
+                    }
+                }
             }
 
-            // zip64 housekeeping
-            _entryRequiresZip64 = new Nullable<bool>
-                (_CompressedSize >= 0xFFFFFFFF ||
-         _UncompressedSize >= 0xFFFFFFFF ||
-         _RelativeOffsetOfLocalHeader >= 0xFFFFFFFF
-                );
+            _TotalEntrySize = _LengthOfHeader + _CompressedFileDataSize + _LengthOfTrailer;
+        }
 
-            _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
+        private void CopyThroughWithNoChange(Stream outstream, Ionic.Zlib.CrcCalculatorStream input1)
+        {
+            int n;
+            byte[] bytes = new byte[BufferSize];
 
+            //long origRelativeOffsetOfHeader = _RelativeOffsetOfLocalHeader;
+
+            // seek to the beginning of the entry data (header + file data) in the input stream
+            //input.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+
+            // Here, we need to grab the header and fill it with real data. Some of
+            // the fields may take marker values - eg, the CRC may be all zero and
+            // the Uncomp and Comp sizes may be 0xFFFFFFFF.  Those are all "fake"
+            // values, but we need to set the real ones into the header.  We don't
+            // write the header here; instead we're just copying through.  But the
+            // _EntryHeader array is used later when writing the Central Directory
+            // Structure, and the header data must be correct at that point.
+
+            // ?? that is a doomed approach !! 
+
+            //_EntryHeader = new byte[this._LengthOfHeader];
+            //n = input.Read(_EntryHeader, 0, _EntryHeader.Length);
+            //_CheckRead(n);
+
+            // once again, seek to the beginning of the entry data in the input stream
+            // change for workitem 8098
+            //input.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+            this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+
+            if (this._TotalEntrySize == 0)
+            {
+                // We've never set the length of the entry.  
+                // Set it here.
+                this._TotalEntrySize = this._LengthOfHeader + this._CompressedFileDataSize + _LengthOfTrailer;
+
+                // The CompressedSize includes all the leading metadata associated
+                // to encryption, if any, as well as the compressed data, or
+                // compressed-then-encrypted data, and the trailer in case of AES.
+
+                // The CompressedFileData size is the same, less the encryption
+                // framing data (12 bytes header for PKZip; 10/18 bytes header and
+                // 10 byte trailer for AES).
+
+                // The _LengthOfHeader includes all the zip entry header plus the
+                // crypto header, if any.  The _LengthOfTrailer includes the
+                // 10-byte MAC for AES, where appropriate, and the bit-3
+                // Descriptor, where applicable.
+            }
+
+
+            // workitem 5616
+            // remember the offset, within the output stream, of this particular entry header.
+            // This may have changed if any of the other entries changed (eg, if a different
+            // entry was removed or added.)
+            var counter = outstream as CountingStream;
+            _RelativeOffsetOfLocalHeader = (counter != null) ? counter.BytesWritten : outstream.Position;
+
+            // copy through the header, filedata, trailer, everything...
+            long remaining = this._TotalEntrySize;
+            while (remaining > 0)
+            {
+                int len = (remaining > bytes.Length) ? bytes.Length : (int)remaining;
+
+                // read
+                n = input1.Read(bytes, 0, len);
+                //_CheckRead(n);
+
+                // write
+                outstream.Write(bytes, 0, n);
+                remaining -= n;
+                //OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
+                OnWriteBlock(input1.TotalBytesSlurped, this._TotalEntrySize);
+                if (_ioOperationCanceled)
+                    break;
+            }
         }
 
 

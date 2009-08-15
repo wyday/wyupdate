@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-01 07:55:25>
+// Time-stamp: <2009-August-12 18:02:22>
 //
 // ------------------------------------------------------------------
 //
@@ -35,7 +35,7 @@ namespace Ionic.Zip
     /// reads of the file stream. This callback is called only when the initial 
     /// compression operation inflates the size of the file data. 
     /// </summary>
-    public delegate bool ReReadApprovalCallback(Int64 uncompressedSize, Int64 compressedSize, string filename);
+    public delegate bool ReReadApprovalCallback(Int64 uncompressedSize, Int64 compressedSize, string fileName);
 
     /// <summary>
     /// Delegate for the callback by which the application tells the libraary whether
@@ -51,7 +51,7 @@ namespace Ionic.Zip
     /// </remarks>
     /// <seealso cref="Ionic.Zip.ZipFile.WantCompression"/>
 
-    public delegate bool WantCompressionCallback(string localFilename, string filenameInArchive);
+    public delegate bool WantCompressionCallback(string localFileName, string fileNameInArchive);
 
 
     /// <summary>

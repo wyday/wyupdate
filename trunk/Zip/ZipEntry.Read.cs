@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 13:04:14>
+// Time-stamp: <2009-August-12 17:50:45>
 //
 // ------------------------------------------------------------------
 //
@@ -31,11 +31,9 @@ using System.IO;
 
 namespace Ionic.Zip
 {
-
     public partial class ZipEntry
     {
-
-        private int _readExtraDepth = 0;
+        private int _readExtraDepth;
         private void ReadExtraField()
         {
             _readExtraDepth++;
@@ -44,7 +42,7 @@ namespace Ionic.Zip
 
             this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
             byte[] block = new byte[30];
-            int n = this.ArchiveStream.Read(block, 0, block.Length);
+            this.ArchiveStream.Read(block, 0, block.Length);
             int i = 26;
             Int16 filenameLength = (short)(block[i++] + block[i++] * 256);
             Int16 extraFieldLength = (short)(block[i++] + block[i++] * 256);
@@ -335,7 +333,7 @@ namespace Ionic.Zip
 
             System.Text.Encoding defaultEncoding = zf.ProvisionalAlternateEncoding;
             ZipEntry entry = new ZipEntry();
-            entry._Source = ZipEntrySource.Zipfile;
+            entry._Source = ZipEntrySource.ZipFile;
             entry._zipfile = zf;
             entry._archiveStream = s;
             zf.OnReadEntry(true, null);
@@ -432,7 +430,7 @@ namespace Ionic.Zip
             {
                 byte[] Buffer = this._Extra = new byte[extraFieldLength];
                 additionalBytesRead = s.Read(Buffer, 0, Buffer.Length);
-
+                long posn = s.Position - additionalBytesRead;
                 int j = 0;
                 while (j < Buffer.Length)
                 {
@@ -446,264 +444,34 @@ namespace Ionic.Zip
                     switch (HeaderId)
                     {
                         case 0x000a:  // NTFS ctime, atime, mtime
-                            // The NTFS filetimes are 64-bit unsigned integers, stored in Intel
-                            // (least significant byte first) byte order. They are expressed as the
-                            // number of 1.0E-07 seconds (1/10th microseconds!) past WinNT "epoch",
-                            // which is "01-Jan-1601 00:00:00 UTC".
-                            //
-                            // HeaderId   2 bytes    0x000a == NTFS stuff
-                            // Datasize   2 bytes    ?? (usually 32)
-                            // reserved   4 bytes    ?? 
-                            // timetag    2 bytes    0x0001 == time
-                            // size       2 bytes    24 == 8 bytes each for ctime, mtime, atime
-                            // mtime      8 bytes    win32 ticks since win32epoch
-                            // atime      8 bytes    win32 ticks since win32epoch
-                            // ctime      8 bytes    win32 ticks since win32epoch
-                            {
-                                if (DataSize != 32)
-                                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for NTFS times extra field at position 0x{1:X16}", DataSize, s.Position - additionalBytesRead));
-
-                                j += 4;  // reserved
-                                Int16 timetag = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
-                                Int16 addlsize = (Int16)(Buffer[j + 2] + Buffer[j + 3] * 256);
-                                j += 4;  // tag and size
-
-                                if (timetag == 0x0001 && addlsize == 24)
-                                {
-                                    Int64 z = BitConverter.ToInt64(Buffer, j);
-                                    this._Mtime = DateTime.FromFileTimeUtc(z);
-                                    j += 8;
-
-                                    // At this point the library *could* set the
-                                    // LastModified value to coincide with the Mtime
-                                    // value.  In theory, they refer to the same
-                                    // property of the file, and should be the same
-                                    // anyway, allowing for differences in precision.
-                                    // But they are independent quantities in the zip
-                                    // archive, and this library will keep them separate
-                                    // in the object model. There is no ill effect from
-                                    // this, because as files are extracted, the
-                                    // higher-precision value (Mtime) is used if it is
-                                    // present.  Apps may wish to compare the Mtime
-                                    // versus LastModified values, but any difference
-                                    // when both are present is not germaine to the
-                                    // correctness of the library. but note: when
-                                    // explicitly setting either value, both are
-                                    // set. See the setter for LastModified or
-                                    // the SetNtfsTimes() method.
-
-                                    z = BitConverter.ToInt64(Buffer, j);
-                                    this._Atime = DateTime.FromFileTimeUtc(z);
-                                    j += 8;
-
-                                    z = BitConverter.ToInt64(Buffer, j);
-                                    this._Ctime = DateTime.FromFileTimeUtc(z);
-                                    j += 8;
-
-                                    _ntfsTimesAreSet = true;
-                                    _timestamp |= ZipEntryTimestamp.Windows;
-                                    _emitNtfsTimes = true;
-                                }
-                            }
+                            j = ProcessExtraFieldWindowsTimes(Buffer, j, DataSize, posn);
                             break;
 
                         case 0x5455:  // Unix ctime, atime, mtime
-                            // The Unix filetimes are 32-bit unsigned integers,
-                            // storing seconds since Unix epoch.
-                            {
-                                if (DataSize != 13 && DataSize != 5)
-                                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for Extended Timestamp extra field at position 0x{1:X16}", DataSize, s.Position - additionalBytesRead));
-
-                                if (DataSize == 13 || _readExtraDepth > 1)
-                                {
-                                    byte flag = Buffer[j++];
-
-                                    if ((flag & 0x0001) != 0)
-                                    {
-                                        Int32 timet = BitConverter.ToInt32(Buffer, j);
-                                        this._Mtime = _unixEpoch.AddSeconds(timet);
-                                        j += 4;
-                                    }
-
-                                    if ((flag & 0x0002) != 0)
-                                    {
-                                        Int32 timet = BitConverter.ToInt32(Buffer, j);
-                                        this._Atime = _unixEpoch.AddSeconds(timet);
-                                        j += 4;
-                                    }
-                                    else
-                                        this._Atime = DateTime.UtcNow;
-
-                                    if ((flag & 0x0004) != 0)
-                                    {
-                                        Int32 timet = BitConverter.ToInt32(Buffer, j);
-                                        this._Ctime = _unixEpoch.AddSeconds(timet);
-                                        j += 4;
-                                    }
-                                    else
-                                        this._Ctime = DateTime.UtcNow;
-
-                                    _timestamp |= ZipEntryTimestamp.Unix;
-                                    _ntfsTimesAreSet = true;
-                                    _emitUnixTimes = true;
-                                }
-                                else
-                                    ReadExtraField(); // will recurse
-
-                            }
+                            j = ProcessExtraFieldUnixTimes(Buffer, j, DataSize, posn);
                             break;
 
 
                         case 0x5855:  // Info-zip Extra field (outdated)
                             // This is outdated, so the field is supported on
                             // read only. 
-                            {
-                                if (DataSize != 12 && DataSize != 8)
-                                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for InfoZip v1 extra field at position 0x{1:X16}", DataSize, s.Position - additionalBytesRead));
-
-                                Int32 timet = BitConverter.ToInt32(Buffer, j);
-                                this._Mtime = _unixEpoch.AddSeconds(timet);
-                                j += 4;
-
-                                timet = BitConverter.ToInt32(Buffer, j);
-                                this._Atime = _unixEpoch.AddSeconds(timet);
-                                j += 4;
-
-                                this._Ctime = DateTime.UtcNow;
-
-                                _ntfsTimesAreSet = true;
-                                _timestamp |= ZipEntryTimestamp.InfoZip1;
-                            }
-
+                            j = ProcessExtraFieldInfoZipTimes(Buffer, j, DataSize, posn);
                             break;
 
 
                         case 0x0001: // ZIP64
-                            {
-                                // The PKWare spec says that any of {UncompressedSize, CompressedSize,
-                                // RelativeOffset} exceeding 0xFFFFFFFF can lead to the ZIP64 header,
-                                // and the ZIP64 header may contain one or more of those.  If the
-                                // values are present, they will be found in the prescribed order.
-                                // There may also be a 4-byte "disk start number."
-                                // This means that the DataSize must be 28 bytes or less.  
-
-                                this._InputUsesZip64 = true;
-
-                                // workitem 7941: check datasize before reading.
-                                if (DataSize > 28)
-                                    throw new BadReadException(String.Format("  Inconsistent datasize (0x{0:X4}) for ZIP64 extra field at position 0x{1:X16}",
-                                                                             DataSize, s.Position - additionalBytesRead));
-                                int remainingData = DataSize;
-                                
-                                if (this._UncompressedSize == 0xFFFFFFFF)
-                                {
-                                    if (remainingData < 8)
-                                        throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Uncompressed Size) at position 0x{1:X16}",
-                                                                                 s.Position - additionalBytesRead));
-
-                                    this._UncompressedSize = BitConverter.ToInt64(Buffer, j);
-                                    j += 8;
-                                    remainingData -= 8;
-                                }
-                                if (this._CompressedSize == 0xFFFFFFFF)
-                                {
-                                    if (remainingData < 8)
-                                        throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Compressed Size) at position 0x{1:X16}",
-                                                                                 s.Position - additionalBytesRead));
-
-                                    this._CompressedSize = BitConverter.ToInt64(Buffer, j);
-                                    j += 8;
-                                    remainingData -= 8;
-                                }
-                                if (this._RelativeOffsetOfLocalHeader == 0xFFFFFFFF)
-                                {
-                                    if (remainingData < 8)
-                                        throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Relative Offset) at position 0x{1:X16}",
-                                                                                 s.Position - additionalBytesRead));
-
-                                    this._RelativeOffsetOfLocalHeader = BitConverter.ToInt64(Buffer, j);
-                                    j += 8;
-                                    remainingData -= 8;
-                                }
-
-                                // Ignore anything else. Potentially there are 4 more bytes for the
-                                // disk start number.  DotNetZip currently doesn't handle multi-disk
-                                // archives.
-                            }
+                            j = ProcessExtraFieldZip64(Buffer, j, DataSize, posn);
                             break;
 
 #if AESCRYPTO
                         case 0x9901: // WinZip AES encryption is in use.  (workitem 6834)
                             // we will handle this extra field only  if compressionmethod is 0x63
                             //Console.WriteLine("Found WinZip AES Encryption header (compression:0x{0:X2})", this._CompressionMethod);
-                            if (this._CompressionMethod == 0x0063)
-                            {
-                                if ((this._BitField & 0x01) != 0x01)
-                                    throw new BadReadException(String.Format("  Inconsistent metadata at position 0x{0:X16}", s.Position - additionalBytesRead));
-
-
-                                this._sourceIsEncrypted = true;
-
-                                //this._aesCrypto = new WinZipAesCrypto(this);
-                                // see spec at http://www.winzip.com/aes_info.htm
-                                if (DataSize != 7)
-                                    throw new BadReadException(String.Format("  Inconsistent WinZip AES datasize (0x{0:X4}) at position 0x{1:X16}", DataSize, s.Position - additionalBytesRead));
-
-                                this._WinZipAesMethod = BitConverter.ToInt16(Buffer, j);
-                                j += 2;
-                                if (this._WinZipAesMethod != 0x01 && this._WinZipAesMethod != 0x02)
-                                    throw new BadReadException(String.Format("  Unexpected vendor version number (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}",
-                                        this._WinZipAesMethod, s.Position - additionalBytesRead));
-
-                                Int16 vendorId = BitConverter.ToInt16(Buffer, j);
-                                j += 2;
-                                if (vendorId != 0x4541)
-                                    throw new BadReadException(String.Format("  Unexpected vendor ID (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}", vendorId, s.Position - additionalBytesRead));
-
-                                this._KeyStrengthInBits = -1;
-                                if (Buffer[j] == 1) _KeyStrengthInBits = 128;
-                                if (Buffer[j] == 3) _KeyStrengthInBits = 256;
-
-                                if (this._KeyStrengthInBits < 0)
-                                    throw new Exception(String.Format("Invalid key strength ({0})", this._KeyStrengthInBits));
-
-                                this._Encryption = (this._KeyStrengthInBits == 128)
-                                    ? EncryptionAlgorithm.WinZipAes128
-                                    : EncryptionAlgorithm.WinZipAes256;
-
-                                j++;
-
-                                // set the actual compression method
-                                this._CompressionMethod = BitConverter.ToInt16(Buffer, j);
-                                j += 2; // for the next segment of the extra field 
-                            }
+                            j = ProcessExtraFieldWinZipAes(Buffer, j, DataSize, posn);
                             break;
 #endif
                         case 0x0017: // workitem 7968: handle PKWare Strong encryption header
-                            //           Value     Size     Description
-                            //           -----     ----     -----------
-                            //           0x0017    2 bytes  Tag for this "extra" block type
-                            //           TSize     2 bytes  Size of data that follows
-                            //           Format    2 bytes  Format definition for this record
-                            //           AlgID     2 bytes  Encryption algorithm identifier
-                            //           Bitlen    2 bytes  Bit length of encryption key
-                            //           Flags     2 bytes  Processing flags
-                            //           CertData  TSize-8  Certificate decryption extra field data
-                            //                              (refer to the explanation for CertData
-                            //                               in the section describing the 
-                            //                               Certificate Processing Method under 
-                            //                               the Strong Encryption Specification)
-                            {
-                                Int16 format = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
-                                j += 2;
-                                _UnsupportedAlgorithmId = (UInt16)(Buffer[j] + Buffer[j + 1] * 256);
-                                j += 2;
-                                _Encryption = EncryptionAlgorithm.Unsupported;
-
-                                // DotNetZip doesn't support this algorithm, but we don't need to throw here.
-                                // we might just be reading the archive, which is fine.  We'll need to
-                                // throw if Extract() is called.
-                            }
+                            j = ProcessExtraFieldPkwareStrongEncryption(Buffer, j);
                             break;
                     }
 
@@ -712,6 +480,277 @@ namespace Ionic.Zip
                 }
             }
             return additionalBytesRead;
+        }
+
+        private int ProcessExtraFieldPkwareStrongEncryption(byte[] Buffer, int j)
+        {
+            //           Value     Size     Description
+            //           -----     ----     -----------
+            //           0x0017    2 bytes  Tag for this "extra" block type
+            //           TSize     2 bytes  Size of data that follows
+            //           Format    2 bytes  Format definition for this record
+            //           AlgID     2 bytes  Encryption algorithm identifier
+            //           Bitlen    2 bytes  Bit length of encryption key
+            //           Flags     2 bytes  Processing flags
+            //           CertData  TSize-8  Certificate decryption extra field data
+            //                              (refer to the explanation for CertData
+            //                               in the section describing the 
+            //                               Certificate Processing Method under 
+            //                               the Strong Encryption Specification)
+            {
+                //Int16 format = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
+                j += 2;
+                _UnsupportedAlgorithmId = (UInt16)(Buffer[j] + Buffer[j + 1] * 256);
+                j += 2;
+                _Encryption = EncryptionAlgorithm.Unsupported;
+
+                // DotNetZip doesn't support this algorithm, but we don't need to throw here.
+                // we might just be reading the archive, which is fine.  We'll need to
+                // throw if Extract() is called.
+            }
+            return j;
+        }
+
+#if AESCRYPTO
+        private int ProcessExtraFieldWinZipAes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        {
+            if (this._CompressionMethod == 0x0063)
+            {
+                if ((this._BitField & 0x01) != 0x01)
+                    throw new BadReadException(String.Format("  Inconsistent metadata at position 0x{0:X16}", posn));
+
+
+                this._sourceIsEncrypted = true;
+
+                //this._aesCrypto = new WinZipAesCrypto(this);
+                // see spec at http://www.winzip.com/aes_info.htm
+                if (DataSize != 7)
+                    throw new BadReadException(String.Format("  Inconsistent WinZip AES datasize (0x{0:X4}) at position 0x{1:X16}", DataSize, posn));
+
+                this._WinZipAesMethod = BitConverter.ToInt16(Buffer, j);
+                j += 2;
+                if (this._WinZipAesMethod != 0x01 && this._WinZipAesMethod != 0x02)
+                    throw new BadReadException(String.Format("  Unexpected vendor version number (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}",
+                        this._WinZipAesMethod, posn));
+
+                Int16 vendorId = BitConverter.ToInt16(Buffer, j);
+                j += 2;
+                if (vendorId != 0x4541)
+                    throw new BadReadException(String.Format("  Unexpected vendor ID (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}", vendorId, posn));
+
+                this._KeyStrengthInBits = -1;
+                if (Buffer[j] == 1) _KeyStrengthInBits = 128;
+                if (Buffer[j] == 3) _KeyStrengthInBits = 256;
+
+                if (this._KeyStrengthInBits < 0)
+                    throw new BadReadException(String.Format("Invalid key strength ({0})", this._KeyStrengthInBits));
+
+                this._Encryption = (this._KeyStrengthInBits == 128)
+                    ? EncryptionAlgorithm.WinZipAes128
+                    : EncryptionAlgorithm.WinZipAes256;
+
+                j++;
+
+                // set the actual compression method
+                this._CompressionMethod = BitConverter.ToInt16(Buffer, j);
+                j += 2; // for the next segment of the extra field 
+            }
+            return j;
+        }
+
+#endif
+
+        private int ProcessExtraFieldZip64(byte[] Buffer, int j, Int16 DataSize, long posn)
+        {
+            // The PKWare spec says that any of {UncompressedSize, CompressedSize,
+            // RelativeOffset} exceeding 0xFFFFFFFF can lead to the ZIP64 header,
+            // and the ZIP64 header may contain one or more of those.  If the
+            // values are present, they will be found in the prescribed order.
+            // There may also be a 4-byte "disk start number."
+            // This means that the DataSize must be 28 bytes or less.  
+
+            this._InputUsesZip64 = true;
+
+            // workitem 7941: check datasize before reading.
+            if (DataSize > 28)
+                throw new BadReadException(String.Format("  Inconsistent datasize (0x{0:X4}) for ZIP64 extra field at position 0x{1:X16}",
+                                                         DataSize, posn));
+            int remainingData = DataSize;
+
+            if (this._UncompressedSize == 0xFFFFFFFF)
+            {
+                if (remainingData < 8)
+                    throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Uncompressed Size) at position 0x{1:X16}",
+                                                             posn));
+
+                this._UncompressedSize = BitConverter.ToInt64(Buffer, j);
+                j += 8;
+                remainingData -= 8;
+            }
+            if (this._CompressedSize == 0xFFFFFFFF)
+            {
+                if (remainingData < 8)
+                    throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Compressed Size) at position 0x{1:X16}",
+                                                             posn));
+
+                this._CompressedSize = BitConverter.ToInt64(Buffer, j);
+                j += 8;
+                remainingData -= 8;
+            }
+            if (this._RelativeOffsetOfLocalHeader == 0xFFFFFFFF)
+            {
+                if (remainingData < 8)
+                    throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Relative Offset) at position 0x{1:X16}",
+                                                             posn));
+
+                this._RelativeOffsetOfLocalHeader = BitConverter.ToInt64(Buffer, j);
+                j += 8;
+                remainingData -= 8;
+            }
+
+            // Ignore anything else. Potentially there are 4 more bytes for the
+            // disk start number.  DotNetZip currently doesn't handle multi-disk
+            // archives.
+            return j;
+        }
+
+        
+        private int ProcessExtraFieldInfoZipTimes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        {
+            if (DataSize != 12 && DataSize != 8)
+                throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for InfoZip v1 extra field at position 0x{1:X16}", DataSize, posn));
+
+            Int32 timet = BitConverter.ToInt32(Buffer, j);
+            this._Mtime = _unixEpoch.AddSeconds(timet);
+            j += 4;
+
+            timet = BitConverter.ToInt32(Buffer, j);
+            this._Atime = _unixEpoch.AddSeconds(timet);
+            j += 4;
+
+            this._Ctime = DateTime.UtcNow;
+
+            _ntfsTimesAreSet = true;
+            _timestamp |= ZipEntryTimestamp.InfoZip1; return j;
+        }
+
+
+        
+        private int ProcessExtraFieldUnixTimes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        {
+            // The Unix filetimes are 32-bit unsigned integers,
+            // storing seconds since Unix epoch.
+            {
+                if (DataSize != 13 && DataSize != 9 && DataSize != 5)
+                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for Extended Timestamp extra field at position 0x{1:X16}", DataSize, posn));
+
+                int remainingData = DataSize;
+
+                if (DataSize == 13 || _readExtraDepth > 1)
+                {
+                    byte flag = Buffer[j++];
+                    remainingData--;
+                    if ((flag & 0x0001) != 0 && remainingData >= 4)
+                    {
+                        Int32 timet = BitConverter.ToInt32(Buffer, j);
+                        this._Mtime = _unixEpoch.AddSeconds(timet);
+                        j += 4;
+                        remainingData -= 4;
+                    }
+
+                    if ((flag & 0x0002) != 0 && remainingData >= 4)
+                    {
+                        Int32 timet = BitConverter.ToInt32(Buffer, j);
+                        this._Atime = _unixEpoch.AddSeconds(timet);
+                        j += 4;
+                        remainingData -= 4;
+                    }
+                    else
+                        this._Atime = DateTime.UtcNow;
+
+                    if ((flag & 0x0004) != 0 && remainingData >= 4)
+                    {
+                        Int32 timet = BitConverter.ToInt32(Buffer, j);
+                        this._Ctime = _unixEpoch.AddSeconds(timet);
+                        j += 4;
+                        remainingData -= 4;
+                    }
+                    else
+                        this._Ctime = DateTime.UtcNow;
+
+                    _timestamp |= ZipEntryTimestamp.Unix;
+                    _ntfsTimesAreSet = true;
+                    _emitUnixTimes = true;
+                }
+                else
+                    ReadExtraField(); // will recurse
+
+            }
+            return j;
+        }
+
+        private int ProcessExtraFieldWindowsTimes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        {
+            // The NTFS filetimes are 64-bit unsigned integers, stored in Intel
+            // (least significant byte first) byte order. They are expressed as the
+            // number of 1.0E-07 seconds (1/10th microseconds!) past WinNT "epoch",
+            // which is "01-Jan-1601 00:00:00 UTC".
+            //
+            // HeaderId   2 bytes    0x000a == NTFS stuff
+            // Datasize   2 bytes    ?? (usually 32)
+            // reserved   4 bytes    ?? 
+            // timetag    2 bytes    0x0001 == time
+            // size       2 bytes    24 == 8 bytes each for ctime, mtime, atime
+            // mtime      8 bytes    win32 ticks since win32epoch
+            // atime      8 bytes    win32 ticks since win32epoch
+            // ctime      8 bytes    win32 ticks since win32epoch
+            {
+                if (DataSize != 32)
+                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for NTFS times extra field at position 0x{1:X16}", DataSize, posn));
+
+                j += 4;  // reserved
+                Int16 timetag = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
+                Int16 addlsize = (Int16)(Buffer[j + 2] + Buffer[j + 3] * 256);
+                j += 4;  // tag and size
+
+                if (timetag == 0x0001 && addlsize == 24)
+                {
+                    Int64 z = BitConverter.ToInt64(Buffer, j);
+                    this._Mtime = DateTime.FromFileTimeUtc(z);
+                    j += 8;
+
+                    // At this point the library *could* set the
+                    // LastModified value to coincide with the Mtime
+                    // value.  In theory, they refer to the same
+                    // property of the file, and should be the same
+                    // anyway, allowing for differences in precision.
+                    // But they are independent quantities in the zip
+                    // archive, and this library will keep them separate
+                    // in the object model. There is no ill effect from
+                    // this, because as files are extracted, the
+                    // higher-precision value (Mtime) is used if it is
+                    // present.  Apps may wish to compare the Mtime
+                    // versus LastModified values, but any difference
+                    // when both are present is not germaine to the
+                    // correctness of the library. but note: when
+                    // explicitly setting either value, both are
+                    // set. See the setter for LastModified or
+                    // the SetNtfsTimes() method.
+
+                    z = BitConverter.ToInt64(Buffer, j);
+                    this._Atime = DateTime.FromFileTimeUtc(z);
+                    j += 8;
+
+                    z = BitConverter.ToInt64(Buffer, j);
+                    this._Ctime = DateTime.FromFileTimeUtc(z);
+                    j += 8;
+
+                    _ntfsTimesAreSet = true;
+                    _timestamp |= ZipEntryTimestamp.Windows;
+                    _emitNtfsTimes = true;
+                }
+            }
+            return j;
         }
 
 

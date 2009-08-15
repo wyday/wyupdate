@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-27 13:15:53>
+// Time-stamp: <2009-August-14 09:51:43>
 //
 // ------------------------------------------------------------------
 //
@@ -65,6 +65,8 @@
 
 
 using System;
+using Interop=System.Runtime.InteropServices;
+
 namespace Ionic.Zlib
 {
 
@@ -206,6 +208,7 @@ namespace Ionic.Zlib
     /// <summary>
     /// A general purpose exception class for exceptions in the Zlib library.
     /// </summary>
+    [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000E")]
     public class ZlibException : System.Exception
     {
         /// <summary>

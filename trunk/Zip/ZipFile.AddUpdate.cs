@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 15:33:58>
+// Time-stamp: <2009-August-14 10:29:32>
 //
 // ------------------------------------------------------------------
 //
@@ -32,10 +32,8 @@ using System.Collections.Generic;
 
 namespace Ionic.Zip
 {
-
     public partial class ZipFile
     {
-
         /// <summary>
         /// Adds an item, either a file or a directory, to a zip file archive.  
         /// </summary>
@@ -1041,6 +1039,176 @@ namespace Ionic.Zip
         }
 
 
+    
+        /// <summary>
+        /// Create an entry in the <c>ZipFile</c> using the given Stream as input.  The
+        /// entry will have the given filename and given directory path.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// This method has been deprecated. Please use <see cref="AddEntry(string,
+        /// string, System.IO.Stream)"/>.  This method will be removed in a future
+        /// version of this library.
+        /// </remarks>
+        ///
+        [Obsolete("Please use method AddEntry(string, string, System.IO.Stream))")]
+        public ZipEntry AddFileFromStream(string fileName,
+                                          string directoryPathInArchive,
+                                          Stream stream)
+        {
+            return AddEntry(fileName, directoryPathInArchive, stream);
+        }
+        
+
+
+        /// <summary>
+        /// Uses the given stream as input to create an entry in the <c>ZipFile</c>,
+        /// with the given filename and given directory path.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// This method has been deprecated. Please use <see cref="AddEntry(string,
+        /// string, System.IO.Stream)"/>.  This method will be removed in a future
+        /// version of this library.
+        /// </remarks>
+        [Obsolete("Please use method AddEntry(string, string, System.IO.Stream))")]
+        public ZipEntry AddFileStream(string fileName,
+                                      string directoryPathInArchive,
+                                      Stream stream)
+        {
+            return AddEntry(fileName, directoryPathInArchive, stream);
+        }
+
+
+        /// <summary>
+        /// Adds a named entry into the zip archive, taking content for the entry
+        /// from a string.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// Calling this method creates an entry using the given fileName and directory
+        /// path within the archive.  There is no need for a file by the given name to
+        /// exist in the filesystem; the name is used within the zip archive only. The
+        /// content for the entry is encoded using the default text encoding (<see
+        /// cref="System.Text.Encoding.Default"/>).
+        /// </remarks>
+        ///
+        /// <param name="content">The content of the file, should it be extracted from
+        /// the zip.</param>
+        ///
+        /// <param name="fileName">The filename to use within the archive.</param>
+        ///
+        /// <param name="directoryPathInArchive">
+        /// Specifies a directory path to use to override any path in the fileName.
+        /// This path need not correspond to a real directory in the current filesystem
+        /// when creating the zip file.  If the files within the zip are later
+        /// extracted, this is the path used for the extracted file.  Passing
+        /// <c>null</c> (<c>Nothing</c> in VB) will use the path on the fileName, if
+        /// any.  Passing the empty string ("") will insert the item at the root path
+        /// within the archive.
+        /// </param>
+        ///
+        /// <returns>The <c>ZipEntry</c> added.</returns>
+        /// 
+        /// <example>
+        ///
+        /// This example shows how to add an entry to the zipfile, using a string as
+        /// content for that entry.
+        ///
+        /// <code lang="C#">
+        /// string Content = "This string will be the content of the Readme.txt file in the zip archive.";
+        /// using (ZipFile zip1 = new ZipFile())
+        /// {
+        ///   zip1.AddFile("MyDocuments\\Resume.doc", "files");
+        ///   zip1.AddEntry("Readme.txt", "", Content); 
+        ///   zip1.Comment = "This zip file was created at " + System.DateTime.Now.ToString("G");
+        ///   zip1.Save("Content.zip");
+        /// }
+        /// 
+        /// </code>
+        /// <code lang="VB">
+        /// Public Sub Run()
+        ///   Dim Content As String = "This string will be the content of the Readme.txt file in the zip archive."
+        ///   Using zip1 As ZipFile = New ZipFile
+        ///     zip1.AddEntry("Readme.txt", "", Content)
+        ///     zip1.AddFile("MyDocuments\Resume.doc", "files")
+        ///     zip1.Comment = ("This zip file was created at " &amp; DateTime.Now.ToString("G"))
+        ///     zip1.Save("Content.zip")
+        ///   End Using
+        /// End Sub
+        /// </code>
+        /// </example>
+        public ZipEntry AddEntry(string fileName, string directoryPathInArchive, string content)
+        {
+            return AddEntry(fileName, directoryPathInArchive, content,
+                                     System.Text.Encoding.Default);
+        }
+
+
+
+        /// <summary>
+        /// Adds a named entry into the zip archive, taking content for the entry
+        /// from a string.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///
+        /// <para>Calling this method creates an entry using the given fileName and
+        /// directory path within the archive.  There is no need for a file by the given
+        /// name to exist in the filesystem; the name is used within the zip archive
+        /// only. </para>
+        /// 
+        /// <para> The content for the entry is encoded using the given text
+        /// encoding. No Byte-order-mark (BOM) is emitted into the file. </para>
+        ///
+        /// <para>If you wish to create within a zip file a file entry with
+        /// Unicode-encoded content that includes a byte-order-mark, you can convert
+        /// your string to a byte array using the appropriate <see
+        /// cref="System.Text.Encoding.GetBytes(String)"/> method, then prepend to that byte
+        /// array the output of <see cref="System.Text.Encoding.GetPreamble()"/>, and use the
+        /// <c>AddEntry(string,string,byte[])</c> method, to add the entry.
+        /// </para>
+        ///
+        /// </remarks>
+        ///
+        /// <param name="fileName">The filename to use within the archive.</param>
+        ///
+        /// <param name="directoryPathInArchive">
+        /// Specifies a directory path to use to override any path in the <c>fileName</c>.
+        /// This path need not correspond to a real directory in the current filesystem when
+        /// creating the zip file.  If the files within the zip are later extracted, this is
+        /// the path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in VB)
+        /// will use the path on the <c>fileName</c>, if any.  Passing the empty string ("")
+        /// will insert the item at the root path within the archive.
+        /// </param>
+        ///
+        /// <param name="content">The content of the file, should it be extracted from
+        /// the zip.</param>
+        ///
+        /// <param name="encoding">
+        /// The text encoding to use when encoding the string. Be aware: This is
+        /// distinct from the text encoding used to encode the fileName, as specified in <see
+        /// cref="ProvisionalAlternateEncoding" />.
+        /// </param>
+        ///
+        /// <returns>The <c>ZipEntry</c> added.</returns>
+        /// 
+        public ZipEntry AddEntry(string fileName, string directoryPathInArchive, string content,
+            System.Text.Encoding encoding)
+        {
+            var ms = new MemoryStream();
+            var sw = new StreamWriter(ms, encoding);
+
+            sw.Write(content);
+            sw.Flush();
+
+            // reset to allow reading later
+            ms.Seek(0, SeekOrigin.Begin);
+
+            return AddEntry(fileName, directoryPathInArchive, ms);
+        }
+
+
         /// <summary>
         /// Create an entry in the <c>ZipFile</c> using the given Stream as input.  The
         /// entry will have the given filename and given directory path.
@@ -1153,112 +1321,7 @@ namespace Ionic.Zip
             return ze;
         }
 
-
-    
-        /// <summary>
-        /// Create an entry in the <c>ZipFile</c> using the given Stream as input.  The
-        /// entry will have the given filename and given directory path.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// This method has been deprecated. Please use <see cref="AddEntry(string,
-        /// string, System.IO.Stream)"/>.  This method will be removed in a future
-        /// version of this library.
-        /// </remarks>
-        ///
-        [Obsolete("Please use method AddEntry(string, string, System.IO.Stream))")]
-        public ZipEntry AddFileFromStream(string fileName,
-                                          string directoryPathInArchive,
-                                          Stream stream)
-        {
-            return AddEntry(fileName, directoryPathInArchive, stream);
-        }
         
-
-
-        /// <summary>
-        /// Uses the given stream as input to create an entry in the <c>ZipFile</c>,
-        /// with the given filename and given directory path.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// This method has been deprecated. Please use <see cref="AddEntry(string,
-        /// string, System.IO.Stream)"/>.  This method will be removed in a future
-        /// version of this library.
-        /// </remarks>
-        [Obsolete("Please use method AddEntry(string, string, System.IO.Stream))")]
-        public ZipEntry AddFileStream(string fileName,
-                                      string directoryPathInArchive,
-                                      Stream stream)
-        {
-            return AddEntry(fileName, directoryPathInArchive, stream);
-        }
-
-
-        /// <summary>
-        /// Adds a named entry into the zip archive, taking content for the entry
-        /// from a string.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// Calling this method creates an entry using the given fileName and directory
-        /// path within the archive.  There is no need for a file by the given name to
-        /// exist in the filesystem; the name is used within the zip archive only. The
-        /// content for the entry is encoded using the default text encoding (<see
-        /// cref="System.Text.Encoding.Default"/>).
-        /// </remarks>
-        ///
-        /// <param name="stringContent">The content of the file, should it be extracted from
-        /// the zip.</param>
-        ///
-        /// <param name="fileName">The filename to use within the archive.</param>
-        ///
-        /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the fileName.
-        /// This path need not correspond to a real directory in the current filesystem
-        /// when creating the zip file.  If the files within the zip are later
-        /// extracted, this is the path used for the extracted file.  Passing
-        /// <c>null</c> (<c>Nothing</c> in VB) will use the path on the fileName, if
-        /// any.  Passing the empty string ("") will insert the item at the root path
-        /// within the archive.
-        /// </param>
-        ///
-        /// <returns>The <c>ZipEntry</c> added.</returns>
-        /// 
-        /// <example>
-        ///
-        /// This example shows how to add an entry to the zipfile, using a string as
-        /// content for that entry.
-        ///
-        /// <code lang="C#">
-        /// string Content = "This string will be the content of the Readme.txt file in the zip archive.";
-        /// using (ZipFile zip1 = new ZipFile())
-        /// {
-        ///   zip1.AddFile("MyDocuments\\Resume.doc", "files");
-        ///   zip1.AddEntry("Readme.txt", "", Content); 
-        ///   zip1.Comment = "This zip file was created at " + System.DateTime.Now.ToString("G");
-        ///   zip1.Save("Content.zip");
-        /// }
-        /// 
-        /// </code>
-        /// <code lang="VB">
-        /// Public Sub Run()
-        ///   Dim Content As String = "This string will be the content of the Readme.txt file in the zip archive."
-        ///   Using zip1 As ZipFile = New ZipFile
-        ///     zip1.AddEntry("Readme.txt", "", Content)
-        ///     zip1.AddFile("MyDocuments\Resume.doc", "files")
-        ///     zip1.Comment = ("This zip file was created at " &amp; DateTime.Now.ToString("G"))
-        ///     zip1.Save("Content.zip")
-        ///   End Using
-        /// End Sub
-        /// </code>
-        /// </example>
-        public ZipEntry AddEntry(string fileName, string directoryPathInArchive, string stringContent)
-        {
-            return AddEntry(fileName, directoryPathInArchive, stringContent,
-                                     System.Text.Encoding.Default);
-        }
-
         
         /// <summary>
         /// Adds a named entry into the zip archive, taking content for the entry
@@ -1275,70 +1338,6 @@ namespace Ionic.Zip
             return AddEntry(fileName, directoryPathInArchive, content,
                                      System.Text.Encoding.Default);
         }
-
-
-        /// <summary>
-        /// Adds a named entry into the zip archive, taking content for the entry
-        /// from a string.
-        /// </summary>
-        ///
-        /// <remarks>
-        ///
-        /// <para>Calling this method creates an entry using the given fileName and
-        /// directory path within the archive.  There is no need for a file by the given
-        /// name to exist in the filesystem; the name is used within the zip archive
-        /// only. </para>
-        /// 
-        /// <para> The content for the entry is encoded using the given text
-        /// encoding. No Byte-order-mark (BOM) is emitted into the file. </para>
-        ///
-        /// <para>If you wish to create within a zip file a file entry with
-        /// Unicode-encoded content that includes a byte-order-mark, you can convert
-        /// your string to a byte array using the appropriate <see
-        /// cref="System.Text.Encoding.GetBytes(String)"/> method, then prepend to that byte
-        /// array the output of <see cref="System.Text.Encoding.GetPreamble()"/>, and use the
-        /// <c>AddEntry(string,string,byte[])</c> method, to add the entry.
-        /// </para>
-        ///
-        /// </remarks>
-        ///
-        /// <param name="fileName">The filename to use within the archive.</param>
-        ///
-        /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the <c>fileName</c>.
-        /// This path need not correspond to a real directory in the current filesystem when
-        /// creating the zip file.  If the files within the zip are later extracted, this is
-        /// the path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in VB)
-        /// will use the path on the <c>fileName</c>, if any.  Passing the empty string ("")
-        /// will insert the item at the root path within the archive.
-        /// </param>
-        ///
-        /// <param name="stringContent">The content of the file, should it be extracted from
-        /// the zip.</param>
-        ///
-        /// <param name="encoding">
-        /// The text encoding to use when encoding the string. Be aware: This is
-        /// distinct from the text encoding used to encode the fileName, as specified in <see
-        /// cref="ProvisionalAlternateEncoding" />.
-        /// </param>
-        ///
-        /// <returns>The <c>ZipEntry</c> added.</returns>
-        /// 
-        public ZipEntry AddEntry(string fileName, string directoryPathInArchive, string stringContent,
-            System.Text.Encoding encoding)
-        {
-            var ms = new MemoryStream();
-            var sw = new StreamWriter(ms, encoding);
-
-            sw.Write(stringContent);
-            sw.Flush();
-
-            // reset to allow reading later
-            ms.Seek(0, SeekOrigin.Begin);
-
-            return AddEntry(fileName, directoryPathInArchive, ms);
-        }
-
 
 
         /// <summary>
@@ -1402,7 +1401,7 @@ namespace Ionic.Zip
         /// within the archive.
         /// </param>
         ///
-        /// <param name="stringContent">
+        /// <param name="content">
         /// The content of the file, should it be extracted from the zip.
         /// </param>
         ///
@@ -1415,14 +1414,14 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         /// 
         public ZipEntry UpdateEntry(string fileName, string directoryPathInArchive,
-                                    string stringContent,
+                                    string content,
                                     System.Text.Encoding encoding)
         {
             var key = ZipEntry.NameInArchive(fileName, directoryPathInArchive);
             if (this[key] != null)
                 this.RemoveEntry(key);
 
-            return AddEntry(fileName, directoryPathInArchive, stringContent, encoding);
+            return AddEntry(fileName, directoryPathInArchive, content, encoding);
         }
 
 
@@ -1514,7 +1513,7 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddEntry(string fileName, string directoryPathInArchive, byte[] byteContent)
         {
-            if (byteContent == null) throw new ArgumentException("byteContent");
+            if (byteContent == null) throw new ArgumentException("bad argument", "byteContent");
             var ms = new MemoryStream(byteContent);
             return AddEntry(fileName, directoryPathInArchive, ms);
         }
