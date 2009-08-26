@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-13 21:35:35>
+// Time-stamp: <2009-August-25 12:45:57>
 //
 // ------------------------------------------------------------------
 //
@@ -1373,71 +1373,138 @@ namespace Ionic.Zip
 
 
 
+        private void OnZipErrorWhileSaving(Exception e)
+        {
+            _ioOperationCanceled = _zipfile.OnZipErrorSaving(this, e); 
+        }
+
+
 
         internal void Write(Stream s)
         {
-            if (_Source == ZipEntrySource.ZipFile && !_restreamRequiredOnSave)
-            {
-                CopyThroughOneEntry(s);
-                return;
-            }
-
-            // Ok, the source for this entry is not a previously created zip file, or
-            // the settings whave changed in important ways and therefore we will need to
-            // process the bytestream (compute crc, maybe compress, maybe encrypt) in
-            // order to create the zip.
-            //
-            // We do this in potentially 2 passes: The first time we do it as requested, maybe
-            // with compression and maybe encryption.  If that causes the bytestream to inflate
-            // in size, and if compression was on, then we turn off compression and do it again.
-
-            bool readAgain = true;
-            int nCycles = 0;
+            bool done = false;
             do
             {
-                nCycles++;
-
-                WriteHeader(s, nCycles);
-
-                if (IsDirectory)
+                if (_Source == ZipEntrySource.ZipFile && !_restreamRequiredOnSave)
                 {
-                    // nothing more to write, but we need to do some housekeeping.
-                    _entryRequiresZip64 = new Nullable<bool>(_RelativeOffsetOfLocalHeader >= 0xFFFFFFFF);
-                    _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
+                    CopyThroughOneEntry(s);
                     return;
                 }
 
-                // now, write the actual file data. (incl the encrypted header)
-                _EmitOne(s);
 
-                // The file data has now been written to the stream, and 
-                // the file pointer is positioned directly after file data.
+                // Ok, the source for this entry is not a previously created zip file, or
+                // the settings whave changed in important ways and therefore we will need to
+                // process the bytestream (compute crc, maybe compress, maybe encrypt) in
+                // order to create the zip.
+                //
+                // We do this in potentially 2 passes: The first time we do it as requested, maybe
+                // with compression and maybe encryption.  If that causes the bytestream to inflate
+                // in size, and if compression was on, then we turn off compression and do it again.
 
-                if (nCycles > 1) readAgain = false;
-                else if (!s.CanSeek) readAgain = false;
-                else readAgain = WantReadAgain();
-
-                if (readAgain)
+                try 
                 {
-                    // Seek back in the raw output stream, to the beginning of the file
-                    // data for this entry.
+                    if (IsDirectory)
+                    {
+                        WriteHeader(s, 1);
+                        // nothing more to write
+                        _entryRequiresZip64 = new Nullable<bool>(_RelativeOffsetOfLocalHeader >= 0xFFFFFFFF);
+                        _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
+                        return;
+                    }
 
-                    // workitem 8098: ok (output).
-                    s.Seek(_RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
 
-                    // If the last entry expands, we read again; but here, we must
-                    // truncate the stream to prevent garbage data after the
-                    // end-of-central-directory.
+                    bool readAgain = true;
+                    int nCycles = 0;
+                    do
+                    {
+                        nCycles++;
 
-                    // workitem 8098: ok (output).
-                    s.SetLength(s.Position);
+                        WriteHeader(s, nCycles);
 
-                    // Adjust the count on the CountingStream as necessary.
-                    var s1 = s as CountingStream;
-                    if (s1 != null) s1.Adjust(_TotalEntrySize);
+                        // now, write the actual file data. (incl the encrypted header)
+                        _EmitOne(s);
+
+                        // The file data has now been written to the stream, and 
+                        // the file pointer is positioned directly after file data.
+
+                        if (nCycles > 1) readAgain = false;
+                        else if (!s.CanSeek) readAgain = false;
+                        else readAgain = WantReadAgain();
+
+                        if (readAgain)
+                        {
+                            // Seek back in the raw output stream, to the beginning of the file
+                            // data for this entry.
+
+                            // workitem 8098: ok (output).
+                            s.Seek(_RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+
+                            // If the last entry expands, we read again; but here, we must
+                            // truncate the stream to prevent garbage data after the
+                            // end-of-central-directory.
+
+                            // workitem 8098: ok (output).
+                            s.SetLength(s.Position);
+
+                            // Adjust the count on the CountingStream as necessary.
+                            var s1 = s as CountingStream;
+                            if (s1 != null) s1.Adjust(_TotalEntrySize);
+                        }
+                    } 
+                    while (readAgain);
+                    _skippedDuringSave= false;
+                    done = true;
                 }
-            }
-            while (readAgain);
+                catch (System.Exception exc1)
+                {
+                    ZipErrorAction orig = this.ZipErrorAction;
+                    int loop = 0;
+                    do
+                    {
+                        if (ZipErrorAction == ZipErrorAction.Throw)
+                            throw;
+                
+                        if (ZipErrorAction == ZipErrorAction.Skip ||
+                            ZipErrorAction == ZipErrorAction.Retry)
+                        {
+                            // must reset file pointer here.
+                            if (!s.CanSeek) throw;
+                            long p1 = s.Position;
+                            s.Seek(_RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+                            long p2 = s.Position;
+                            s.SetLength(s.Position);  // to prevent garbage if this is the last entry
+                            var s1 = s as CountingStream;
+                            if (s1 != null) s1.Adjust(p1-p2);
+                            if (ZipErrorAction == ZipErrorAction.Skip)
+                            {
+                                if (_zipfile.StatusMessageTextWriter!= null)
+                                    _zipfile.StatusMessageTextWriter.WriteLine("Skipping file {0} (exception: {1})", LocalFileName, exc1.ToString());
+                                
+                                _skippedDuringSave= true;
+                                done = true;
+                            }
+                            else
+                                this.ZipErrorAction = orig;
+                            break;
+                        }
+
+                        if (loop>0) throw;
+                    
+                        if (ZipErrorAction == ZipErrorAction.InvokeErrorEvent)
+                        {
+                            OnZipErrorWhileSaving(exc1);
+                            if (_ioOperationCanceled)
+                            {
+                                done = true;
+                                break;
+                            }
+                        }
+                        loop++;
+                    }
+                    while (true);
+                } 
+            } 
+            while (!done);
         }
 
 

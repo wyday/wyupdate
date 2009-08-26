@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-14 09:53:46>
+// Time-stamp: <2009-August-25 10:23:37>
 //
 // ------------------------------------------------------------------
 //
@@ -39,8 +39,9 @@ namespace Ionic.Zip
 
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00004")]
     [Interop.ComVisible(true)]
-    //[Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+#if !NETCF
     [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+#endif    
     public partial class ZipEntry
     {
         /// <summary>
@@ -646,7 +647,7 @@ namespace Ionic.Zip
         /// 
         /// </remarks>
         /// <seealso cref="FileName"/>
-        private string LocalFileName
+        internal string LocalFileName
         {
             get { return _LocalFileName; }
         }
@@ -711,7 +712,7 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
-        /// <seealso cref="LocalFileName" />
+
         public string FileName
         {
             get { return _FileNameInArchive; }
@@ -1777,20 +1778,58 @@ namespace Ionic.Zip
         /// <summary>
         /// The action the library should take when extracting a file that already exists.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This property affects the behavior of the Extract methods (one of the <c>Extract()</c>
-        /// or <c>ExtractWithPassword()</c> overloads), when extraction would would overwrite an
-        /// existing filesystem file. If you do not set this property, the library throws an
-        /// exception when extracting an entry would overwrite an existing file.
-        /// </para>
         ///
-        /// <para>
-        /// This property has no effect when extracting to a stream, or when the file to be
-        /// extracted does not already exist. 
-        /// </para>
+        /// <remarks>
+        ///   <para>
+        ///     This property affects the behavior of the Extract methods (one of the
+        ///     <c>Extract()</c> or <c>ExtractWithPassword()</c> overloads), when
+        ///     extraction would would overwrite an existing filesystem file. If you do
+        ///     not set this property, the library throws an exception when extracting
+        ///     an entry would overwrite an existing file.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     This property has no effect when extracting to a stream, or when the file to be
+        ///     extracted does not already exist. 
+        ///   </para>
+        ///
         /// </remarks>
         /// <seealso cref="Ionic.Zip.ZipFile.ExtractExistingFile"/>
+        ///
+        /// <example>
+        /// This example shows how to set the ExtractExistingFile property in an
+        /// ExtractProgress event, in response to user input. The ExtractProgress event
+        /// is invoked if and only if the ExtractExistingFile property was previously
+        /// set to <c>ExtractExistingFileAction.InvokeExtractProgressEvent</c>.
+        /// <code lang="C#">
+        /// public static void ExtractProgress(object sender, ExtractProgressEventArgs e)
+        /// {
+        ///     if (e.EventType == ZipProgressEventType.Extracting_BeforeExtractEntry)
+        ///         Console.WriteLine("extract {0} ", e.CurrentEntry.FileName);
+        ///     
+        ///     else if (e.EventType == ZipProgressEventType.Extracting_ExtractEntryWouldOverwrite)
+        ///     {
+        ///         ZipEntry entry = e.CurrentEntry;
+        ///         string response = null;
+        ///         // Ask the user if he wants overwrite the file 
+        ///         do
+        ///         {
+        ///             Console.Write("Overwrite {0} in {1} ? (y/n/C) ", entry.FileName, e.ExtractLocation);
+        ///             response = Console.ReadLine();
+        ///             Console.WriteLine();
+        ///             
+        ///         } while (response != null &amp;&amp; response[0]!='Y' &amp;&amp; response[0]!='N' &amp;&amp; response[0]!='C');
+        ///
+        ///         if  (response[0]=='C')
+        ///             e.Cancel = true;
+        ///         else if (response[0]=='Y')
+        ///             entry.ExtractExistingFile = ExtractExistingFileAction.OverwriteSilently;
+        ///         else
+        ///             entry.ExtractExistingFile= ExtractExistingFileAction.DoNotOverwrite;
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
         public ExtractExistingFileAction ExtractExistingFile
         {
             get;
@@ -1798,6 +1837,53 @@ namespace Ionic.Zip
         }
 
 
+        /// <summary>
+        ///   The action the library should take when an error is encountered while
+        ///   opening or reading files as they are added to a zip archive. 
+        /// </summary>
+        ///
+        /// <remarks>
+        ///  <para>
+        ///     In some cases an error will occur when DotNetZip tries to open a file to be
+        ///     added to the zip archive.  In other cases, an error might occur after the
+        ///     file has been successfully opened, while DotNetZip is reading the file.
+        ///  </para>
+        /// 
+        ///  <para>
+        ///    The first problem might occur when calling Adddirectory() on a directory
+        ///    that contains a Clipper .dbf file; the file is locked by Clipper and
+        ///    cannot be opened bby another process. An example of the second problem is
+        ///    the ERROR_LOCK_VIOLATION that results when a file is opened by another
+        ///    process, but not locked, and a range lock has been taken on the file.
+        ///    Microsoft Outlook takes range locks on .PST files.
+        ///  </para>
+        ///
+        /// </remarks>
+        /// <seealso cref="Ionic.Zip.ZipFile.ZipErrorAction"/>
+        public ZipErrorAction ZipErrorAction
+        {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        /// Indicates whether the entry was included in the most recent save.
+        /// </summary>
+        /// <remarks>
+        /// An entry can be excluded or skipped from a save if there is an error
+        /// opening or reading the entry.
+        /// </remarks>
+        /// <seealso cref="ZipErrorAction"/>
+        public bool IncludedInMostRecentSave
+        {
+            get 
+            {
+                return !_skippedDuringSave;
+            }
+        }
+
+        
         /// <summary>
         /// A callback that allows the application to specify whether multiple reads of the
         /// stream should be performed, in the case that a compression operation actually
@@ -2315,7 +2401,7 @@ namespace Ionic.Zip
         private bool _metadataChanged;
         private bool _restreamRequiredOnSave;
         private bool _sourceIsEncrypted;
-        //private long _cdrPosition;
+        private bool _skippedDuringSave;
 
         private static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");

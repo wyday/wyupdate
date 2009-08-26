@@ -34,7 +34,7 @@ namespace wyUpdate
                 switch (bType)
                 {
                     case 0x01://file path
-                        tempUFI.Path = ReadFiles.ReadString(fs);
+                        tempUFI.Path = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02://delete the file?
                         tempUFI.DeleteFile = ReadFiles.ReadBool(fs);
@@ -66,7 +66,7 @@ namespace wyUpdate
             fs.WriteByte(0x8A);
 
             //path to the file
-            WriteFiles.WriteString(fs, 0x01, Path);
+            WriteFiles.WriteDeprecatedString(fs, 0x01, Path);
 
             //delete the file?
             if (DeleteFile)
@@ -306,14 +306,14 @@ namespace wyUpdate
                 if (fileFolder.isFolder)
                 {
                     if (fileFolder.deleteFolder)
-                        WriteFiles.WriteString(fs, 0x04, fileFolder.Path);
+                        WriteFiles.WriteDeprecatedString(fs, 0x04, fileFolder.Path);
                     else
                         //folder to create on rollback
-                        WriteFiles.WriteString(fs, 0x06, fileFolder.Path);
+                        WriteFiles.WriteDeprecatedString(fs, 0x06, fileFolder.Path);
                 }
                 else
                 {
-                    WriteFiles.WriteString(fs, 0x02, fileFolder.Path);
+                    WriteFiles.WriteDeprecatedString(fs, 0x02, fileFolder.Path);
                 }
                 
             }
@@ -356,14 +356,14 @@ namespace wyUpdate
                 switch (bType)
                 {
                     case 0x02: // file to delete
-                        rollbackFiles.Add(ReadFiles.ReadString(fs));
+                        rollbackFiles.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x04: // folder to delete
-                        rollbackFolders.Add(ReadFiles.ReadString(fs));
+                        rollbackFolders.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x06: //folder to create
                         if (createFolders != null)
-                            createFolders.Add(ReadFiles.ReadString(fs));
+                            createFolders.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -477,7 +477,7 @@ namespace wyUpdate
 
                 //write folders to delete
                 foreach (string folder in foldersToDelete)
-                    WriteFiles.WriteString(fs, 0x10, folder);
+                    WriteFiles.WriteDeprecatedString(fs, 0x10, folder);
 
                 //write registry changes
                 foreach (RegChange reg in registryToDelete)
@@ -548,7 +548,7 @@ namespace wyUpdate
                         uninstallFiles.Add(UninstallFileInfo.Read(fs));
                         break;
                     case 0x10://folder to delete
-                        uninstallFolders.Add(ReadFiles.ReadString(fs));
+                        uninstallFolders.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x8E://regChanges to execute
                         uninstallRegistry.Add(RegChange.ReadFromStream(fs));
@@ -590,7 +590,7 @@ namespace wyUpdate
                         uninstallFiles.Add(UninstallFileInfo.Read(ms));
                         break;
                     case 0x10://folder to delete
-                        uninstallFolders.Add(ReadFiles.ReadString(ms));
+                        uninstallFolders.Add(ReadFiles.ReadDeprecatedString(ms));
                         break;
                     case 0x8E://regChanges to execute
                         uninstallRegistry.Add(RegChange.ReadFromStream(ms));

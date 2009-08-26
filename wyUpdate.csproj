@@ -63,6 +63,7 @@
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing">
       <Private>False</Private>
     </Reference>
@@ -140,6 +141,7 @@
     </Compile>
     <Compile Include="UpdateHelper\PipeServer.cs" />
     <Compile Include="UpdateHelper\UpdateHelper.cs" />
+    <Compile Include="UpdateHelper\UpdateHelperData.cs" />
     <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails.cs" />
     <Compile Include="UpdateEngine.cs" />
@@ -175,6 +177,7 @@
     <Compile Include="Zip\ZipEntry.Extract.cs" />
     <Compile Include="Zip\ZipEntry.Read.cs" />
     <Compile Include="Zip\ZipEntry.Write.cs" />
+    <Compile Include="Zip\ZipErrorAction.cs" />
     <Compile Include="Zip\ZipFile.AddUpdate.cs" />
     <Compile Include="Zip\ZipFile.cs" />
     <Compile Include="Zip\ZipFile.Events.cs" />

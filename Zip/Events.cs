@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-12 18:02:22>
+// Time-stamp: <2009-August-25 13:35:37>
 //
 // ------------------------------------------------------------------
 //
@@ -183,6 +183,14 @@ namespace Ionic.Zip
         /// Indicates that an ExtractAll operation has completed.
         /// </summary>
         Extracting_AfterExtractAll,
+
+        /// <summary>
+        /// Indicates that an error has occurred while saving a zip file. 
+        /// This generally means the file cannot be opened, because it has been
+        /// removed, or because it is locked by another process.  It can also 
+        /// mean that the file cannot be Read, because of a range lock conflict. 
+        /// </summary>
+        Error_Saving,
     }
 
 
@@ -541,5 +549,44 @@ namespace Ionic.Zip
         }
 
     }
+
+
+
+    /// <summary>
+    /// Provides information about the an error that occurred while zipping. 
+    /// </summary>
+    public class ZipErrorEventArgs : ZipProgressEventArgs
+    {
+        private Exception _exc;
+        private ZipErrorEventArgs() { }
+        internal static ZipErrorEventArgs Saving(string archiveName, ZipEntry entry, Exception exception)
+        {
+            var x = new ZipErrorEventArgs
+                {
+                    EventType = ZipProgressEventType.Error_Saving,
+                    ArchiveName = archiveName,
+                    CurrentEntry = entry,
+                    _exc = exception
+                };
+            return x;
+        }
+        
+        /// <summary>
+        /// Returns the exception that occurred, if any.
+        /// </summary>
+        public Exception @Exception
+        {
+            get { return _exc; }
+        }
+        
+        /// <summary>
+        /// Returns the name of the file that caused the exception, if any.
+        /// </summary>
+        public String FileName
+        {
+            get { return CurrentEntry.LocalFileName; }
+        }
+    }
+
 
 }

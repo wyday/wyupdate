@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-14 11:30:52>
+// Time-stamp: <2009-August-19 18:39:59>
 //
 // ------------------------------------------------------------------
 //
@@ -1075,12 +1075,13 @@ namespace Ionic.Zlib
                 throw new ZlibException("Cannot Read after Writing.");
 
             if (count == 0) return 0;
+            if (nomoreinput && _wantCompress) return 0;  // workitem 8557
             if (buffer == null) throw new ArgumentNullException("buffer");
             if (count < 0) throw new ArgumentOutOfRangeException("count");
             if (offset < buffer.GetLowerBound(0)) throw new ArgumentOutOfRangeException("offset");
             if ((offset + count) > buffer.GetLength(0)) throw new ArgumentOutOfRangeException("count");
 
-            int rc;
+            int rc= 0;
 
             // set up the output of the deflate/inflate codec:
             _z.OutputBuffer = buffer;
@@ -1104,10 +1105,10 @@ namespace Ionic.Zlib
                         nomoreinput = true;
 
                 }
-                // we have data in InputBuffer; now compress or decompress as appropriate
-                rc = (_wantCompress)
-                    ? _z.Deflate(_flushMode)
-                    : _z.Inflate(_flushMode);
+                    // we have data in InputBuffer; now compress or decompress as appropriate
+                    rc = (_wantCompress)
+                        ? _z.Deflate(_flushMode)
+                        : _z.Inflate(_flushMode);
 
                 if (nomoreinput && (rc == ZlibConstants.Z_BUF_ERROR))
                     return 0;
@@ -1118,15 +1119,41 @@ namespace Ionic.Zlib
                 if ((nomoreinput || rc == ZlibConstants.Z_STREAM_END) && (_z.AvailableBytesOut == count))
                     break; // nothing more to read
             }
-            while (_z.AvailableBytesOut == count && rc == ZlibConstants.Z_OK);
+            //while (_z.AvailableBytesOut == count && rc == ZlibConstants.Z_OK);
+            while (_z.AvailableBytesOut > 0 && !nomoreinput && rc == ZlibConstants.Z_OK);
 
+
+            // workitem 8557
+            // is there more room in output? 
+            if (_z.AvailableBytesOut > 0)
+            {
+                if (rc == ZlibConstants.Z_OK && _z.AvailableBytesIn == 0)
+                {
+                    // deferred
+                }
+                
+                // are we completely done reading?
+                if (nomoreinput)
+                {
+                    // and in compression?
+                    if (_wantCompress)
+                    {
+                        // no more input data available; therefore we flush to
+                        // try to complete the read
+                        rc = _z.Deflate(FlushType.Finish);
+
+                        if (rc != ZlibConstants.Z_OK && rc != ZlibConstants.Z_STREAM_END)
+                            throw new ZlibException(String.Format("Deflating:  rc={0}  msg={1}", rc, _z.Message));
+                    }
+                } 
+            }
+
+            
             rc = (count - _z.AvailableBytesOut);
 
             // calculate CRC after reading
             if (crc != null)
-            {
                 crc.SlurpBlock(buffer, offset, rc);
-            }
 
             return rc;
         }

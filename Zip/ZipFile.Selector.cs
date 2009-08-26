@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-30 20:45:00>
+// Time-stamp: <2009-August-19 20:09:03>
 //
 // ------------------------------------------------------------------
 //
@@ -33,6 +33,7 @@
 
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace Ionic.Zip
 {
@@ -471,7 +472,7 @@ namespace Ionic.Zip
                                                bool wantUpdate)
         {
 
-        //System.Collections.Generic.List<string> filesToAdd = null;
+        //List<string> filesToAdd = null;
             if (directoryOnDisk == null && (Directory.Exists(selectionCriteria)))
             {
                 //if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...",
@@ -575,7 +576,7 @@ namespace Ionic.Zip
         /// </example>
         /// <param name="selectionCriteria">the string that specifies which entries to select</param>
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
-        public System.Collections.Generic.ICollection<ZipEntry> SelectEntries(String selectionCriteria)
+        public ICollection<ZipEntry> SelectEntries(String selectionCriteria)
         {
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             return ff.SelectEntries(this);
@@ -647,7 +648,7 @@ namespace Ionic.Zip
         /// </param>
         /// 
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
-        public System.Collections.Generic.ICollection<ZipEntry> SelectEntries(String selectionCriteria, string directoryPathInArchive)
+        public ICollection<ZipEntry> SelectEntries(String selectionCriteria, string directoryPathInArchive)
         {
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
             return ff.SelectEntries(this, directoryPathInArchive);
@@ -1142,9 +1143,9 @@ namespace Ionic
         /// <param name="zip">The ZipFile from which to retrieve entries.</param>
         ///
         /// <returns>a collection of ZipEntry objects that conform to the criteria.</returns>
-        public System.Collections.Generic.ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip)
+        public ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip)
         {
-            var list = new System.Collections.Generic.List<Ionic.Zip.ZipEntry>();
+            var list = new List<Ionic.Zip.ZipEntry>();
 
             foreach (Ionic.Zip.ZipEntry e in zip)
             {
@@ -1195,13 +1196,15 @@ namespace Ionic
         /// </param>
         /// 
         /// <returns>a collection of ZipEntry objects that conform to the criteria.</returns>
-        public System.Collections.Generic.ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip, string directoryPathInArchive)
+        public ICollection<Ionic.Zip.ZipEntry> SelectEntries(Ionic.Zip.ZipFile zip, string directoryPathInArchive)
         {
-            var list = new System.Collections.Generic.List<Ionic.Zip.ZipEntry>();
-
+            var list = new List<Ionic.Zip.ZipEntry>();
+            // workitem 8559
+            string slashSwapped = (directoryPathInArchive==null) ? null : directoryPathInArchive.Replace("/","\\");
             foreach (Ionic.Zip.ZipEntry e in zip)
             {
-                if (directoryPathInArchive == null || Path.GetDirectoryName(e.FileName) == directoryPathInArchive)
+                if (directoryPathInArchive == null || (Path.GetDirectoryName(e.FileName) == directoryPathInArchive)
+                    || (Path.GetDirectoryName(e.FileName) == slashSwapped)) // workitem 8559
                     if (this.Evaluate(e))
                         list.Add(e);
             }

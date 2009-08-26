@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-04 12:34:57>
+// Time-stamp: <2009-August-25 12:06:53>
 //
 // ------------------------------------------------------------------
 //
@@ -105,7 +105,6 @@ namespace Ionic.Zip
                 if (_entries.Count >= 0xFFFF && _zip64 == Zip64Option.Never)
                     throw new ZipException("The number of entries is 65535 or greater. Consider setting the UseZip64WhenSaving property on the ZipFile instance.");
 
-
                 {
                     // write an entry in the zip for each file
                     int n = 0;
@@ -113,15 +112,17 @@ namespace Ionic.Zip
                     {
                         OnSaveEntry(n, e, true);
                         e.Write(WriteStream);
+                        if (_saveOperationCanceled)
+                            break;
                         e._zipfile = this;
                         n++;
                         OnSaveEntry(n, e, false);
                         if (_saveOperationCanceled)
                             break;
 
-                        thisSaveUsedZip64 |= e.OutputUsedZip64.Value;
+                        if (e.IncludedInMostRecentSave)
+                            thisSaveUsedZip64 |= e.OutputUsedZip64.Value;
                     }
-
                 }
 
 
@@ -396,7 +397,8 @@ namespace Ionic.Zip
 
             foreach (ZipEntry e in _entries)
             {
-                e.WriteCentralDirectoryEntry(s);  // this writes a ZipDirEntry corresponding to the ZipEntry
+                if (e.IncludedInMostRecentSave)
+                    e.WriteCentralDirectoryEntry(s);  // this writes a ZipDirEntry corresponding to the ZipEntry
             }
 
             long Finish = (output != null) ? output.BytesWritten : s.Position;
@@ -405,7 +407,7 @@ namespace Ionic.Zip
 
             _NeedZip64CentralDirectory =
         _zip64 == Zip64Option.Always ||
-        _entries.Count >= 0xFFFF ||
+        CountEntries() >= 0xFFFF ||
         SizeOfCentralDirectory > 0xFFFFFFFF ||
         Start > 0xFFFFFFFF;
 
@@ -424,7 +426,17 @@ namespace Ionic.Zip
 
 
 
+        private int CountEntries()
+        {
+            // cannot just emit _entries.Count, because some of the entries
+            // may have been skipped.
+            int count = 0;
+            foreach (var entry in _entries)
+                if (entry.IncludedInMostRecentSave) count++;
+            return count;
+        }
 
+        
         private void WriteZip64EndOfCentralDirectory(Stream s,
                                                      long StartOfCentralDirectory,
                                                      long EndOfCentralDirectory)
@@ -459,7 +471,7 @@ namespace Ionic.Zip
             for (int j = 0; j < 8; j++)
                 bytes[i++] = 0x00;
 
-            long numberOfEntries = _entries.Count;
+            long numberOfEntries = CountEntries();
             Array.Copy(BitConverter.GetBytes(numberOfEntries), 0, bytes, i, 8);
             i += 8;
             Array.Copy(BitConverter.GetBytes(numberOfEntries), 0, bytes, i, 8);
@@ -530,7 +542,7 @@ namespace Ionic.Zip
             bytes[i++] = 0;
 
             // handle ZIP64 extensions for the end-of-central-directory 
-            if (_entries.Count >= 0xFFFF || _zip64 == Zip64Option.Always)
+            if (CountEntries() >= 0xFFFF || _zip64 == Zip64Option.Always)
             {
                 // the ZIP64 version.
                 for (j = 0; j < 4; j++)
@@ -538,14 +550,15 @@ namespace Ionic.Zip
             }
             else
             {
+                int c = CountEntries();
                 // the standard version.
                 // total number of entries in the central dir on this disk
-                bytes[i++] = (byte)(_entries.Count & 0x00FF);
-                bytes[i++] = (byte)((_entries.Count & 0xFF00) >> 8);
+                bytes[i++] = (byte)(c & 0x00FF);
+                bytes[i++] = (byte)((c & 0xFF00) >> 8);
 
                 // total number of entries in the central directory
-                bytes[i++] = (byte)(_entries.Count & 0x00FF);
-                bytes[i++] = (byte)((_entries.Count & 0xFF00) >> 8);
+                bytes[i++] = (byte)(c & 0x00FF);
+                bytes[i++] = (byte)((c & 0xFF00) >> 8);
             }
 
             // size of the central directory

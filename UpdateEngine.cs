@@ -291,24 +291,24 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01://Read Company Name
-                        companyName = ReadFiles.ReadString(fs);
+                        companyName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02://Product Name
-                        productName = ReadFiles.ReadString(fs);
+                        productName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03://Read Installed Version
-                        installedVersion = ReadFiles.ReadString(fs);
+                        installedVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueSite(ReadFiles.ReadString(fs), serverFileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serverFileSites);
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueSite(ReadFiles.ReadString(fs), clientServerSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), clientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
                         {
-                            m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadString(fs));
+                            m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(fs));
                         }
                         catch { }
                         break;
@@ -316,7 +316,7 @@ namespace wyUpdate.Common
                         m_HeaderTextIndent = ReadFiles.ReadInt(fs);
                         break;
                     case 0x13://Header text color
-                        m_HeaderTextColorName = ReadFiles.ReadString(fs);
+                        m_HeaderTextColorName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://top Image
                         m_TopImage = ReadFiles.ReadImage(fs);
@@ -361,24 +361,24 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01://Read Company Name
-                        companyName = ReadFiles.ReadString(ms);
+                        companyName = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x02://Product Name
-                        productName = ReadFiles.ReadString(ms);
+                        productName = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x03://Read Installed Version
-                        installedVersion = ReadFiles.ReadString(ms);
+                        installedVersion = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueSite(ReadFiles.ReadString(ms), serverFileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), serverFileSites);
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueSite(ReadFiles.ReadString(ms), clientServerSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), clientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
                         {
-                            m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadString(ms));
+                            m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(ms));
                         }
                         catch { }
                         break;
@@ -386,26 +386,26 @@ namespace wyUpdate.Common
                         m_HeaderTextIndent = ReadFiles.ReadInt(ms);
                         break;
                     case 0x13://Header text color
-                        m_HeaderTextColorName = ReadFiles.ReadString(ms);
+                        m_HeaderTextColorName = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x14: //header image filename
-                        m_TopImageFilename = ReadFiles.ReadString(ms);
+                        m_TopImageFilename = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x15: //side image filename
-                        m_SideImageFilename = ReadFiles.ReadString(ms);
+                        m_SideImageFilename = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x18: // language culture
 
-                        lastLanguage = new LanguageCulture(ReadFiles.ReadString(ms));
+                        lastLanguage = new LanguageCulture(ReadFiles.ReadDeprecatedString(ms));
 
                         Languages.Add(lastLanguage.Culture, lastLanguage);
                         break;
                     case 0x16: //language filename
 
                         if (lastLanguage != null)
-                            lastLanguage.Filename = ReadFiles.ReadString(ms);
+                            lastLanguage.Filename = ReadFiles.ReadDeprecatedString(ms);
                         else
-                            Languages.Add(string.Empty, new LanguageCulture(null) { Filename = ReadFiles.ReadString(ms) });
+                            Languages.Add(string.Empty, new LanguageCulture(null) { Filename = ReadFiles.ReadDeprecatedString(ms) });
 
                         break;
                     case 0x17: //hide the header divider
@@ -570,54 +570,54 @@ namespace wyUpdate.Common
             ms.Write(Encoding.UTF8.GetBytes("IUCDFV2"), 0, 7);
 
             //Company Name
-            WriteFiles.WriteString(ms, 0x01, companyName);
+            WriteFiles.WriteDeprecatedString(ms, 0x01, companyName);
 
             //Product Name
-            WriteFiles.WriteString(ms, 0x02, productName);
+            WriteFiles.WriteDeprecatedString(ms, 0x02, productName);
 
             //Installed Version
-            WriteFiles.WriteString(ms, 0x03, installedVersion);
+            WriteFiles.WriteDeprecatedString(ms, 0x03, installedVersion);
 
             foreach (string site in serverFileSites)
             {
                 //Server File Site
-                WriteFiles.WriteString(ms, 0x04, site);
+                WriteFiles.WriteDeprecatedString(ms, 0x04, site);
             }
 
             foreach (string site in clientServerSites)
             {
                 //Client Server File Site
-                WriteFiles.WriteString(ms, 0x09, site);
+                WriteFiles.WriteDeprecatedString(ms, 0x09, site);
             }
 
             //Header image alignment
-            WriteFiles.WriteString(ms, 0x11, m_HeaderImageAlign.ToString());
+            WriteFiles.WriteDeprecatedString(ms, 0x11, m_HeaderImageAlign.ToString());
 
             //Header text indent
             WriteFiles.WriteInt(ms, 0x12, m_HeaderTextIndent);
 
             //Header text color
             if (!string.IsNullOrEmpty(m_HeaderTextColorName))
-                WriteFiles.WriteString(ms, 0x13, m_HeaderTextColorName);
+                WriteFiles.WriteDeprecatedString(ms, 0x13, m_HeaderTextColorName);
 
             //Top image filename
             if (!string.IsNullOrEmpty(m_TopImageFilename))
-                WriteFiles.WriteString(ms, 0x14, m_TopImageFilename);
+                WriteFiles.WriteDeprecatedString(ms, 0x14, m_TopImageFilename);
 
             //Side image filename
             if (!string.IsNullOrEmpty(m_SideImageFilename))
-                WriteFiles.WriteString(ms, 0x15, m_SideImageFilename);
+                WriteFiles.WriteDeprecatedString(ms, 0x15, m_SideImageFilename);
 
             foreach (DictionaryEntry dLang in Languages)
             {
                 LanguageCulture lang = (LanguageCulture)dLang.Value;
 
                 //Language culture
-                WriteFiles.WriteString(ms, 0x18, lang.Culture);
+                WriteFiles.WriteDeprecatedString(ms, 0x18, lang.Culture);
                 
                 //Language filename
                 if (!string.IsNullOrEmpty(lang.Filename))
-                    WriteFiles.WriteString(ms, 0x16, lang.Filename);
+                    WriteFiles.WriteDeprecatedString(ms, 0x16, lang.Filename);
             }
 
 
@@ -645,16 +645,16 @@ namespace wyUpdate.Common
             fs.Write(Encoding.UTF8.GetBytes("IUSDFV2"), 0, 7);
 
             //Current Version
-            WriteFiles.WriteString(fs, 0x01, newVersion);
+            WriteFiles.WriteDeprecatedString(fs, 0x01, newVersion);
 
             foreach (string site in serverFileSites)
             {
                 //Server File Site
-                WriteFiles.WriteString(fs, 0x02, site);
+                WriteFiles.WriteDeprecatedString(fs, 0x02, site);
             }
 
             //Minimum client version needed to install update
-            WriteFiles.WriteString(fs, 0x07, m_MinClientVersion);
+            WriteFiles.WriteDeprecatedString(fs, 0x07, m_MinClientVersion);
 
             
             MemoryStream ms = new MemoryStream();
@@ -664,12 +664,12 @@ namespace wyUpdate.Common
             for (int i = 0; i < VersionChoices.Count - 1; i++)
             {
                 //Version to update from
-                WriteFiles.WriteString(ms, 0x0B, VersionChoices[i].Version);
+                WriteFiles.WriteDeprecatedString(ms, 0x0B, VersionChoices[i].Version);
 
                 foreach (string site in VersionChoices[i].FileSites)
                 {
                     //Update File Site
-                    WriteFiles.WriteString(ms, 0x03, site);
+                    WriteFiles.WriteDeprecatedString(ms, 0x03, site);
                 }
 
                 // put the marker for RTF text data
@@ -677,7 +677,7 @@ namespace wyUpdate.Common
                     ms.WriteByte(0x80);
 
                 //Changes
-                WriteFiles.WriteString(ms, 0x04, VersionChoices[i].Changes);
+                WriteFiles.WriteDeprecatedString(ms, 0x04, VersionChoices[i].Changes);
 
                 //Filesize for the update file
                 WriteFiles.WriteLong(ms, 0x09, VersionChoices[i].FileSize);
@@ -713,12 +713,12 @@ namespace wyUpdate.Common
             // write out the last VersionChoice
 
             //Version to update from
-            WriteFiles.WriteString(fs, 0x0B, VersionChoices[VersionChoices.Count - 1].Version);
+            WriteFiles.WriteDeprecatedString(fs, 0x0B, VersionChoices[VersionChoices.Count - 1].Version);
 
             foreach (string site in VersionChoices[VersionChoices.Count - 1].FileSites)
             {
                 //Update File Site
-                WriteFiles.WriteString(fs, 0x03, site);
+                WriteFiles.WriteDeprecatedString(fs, 0x03, site);
             }
 
             // put the marker for RTF text data
@@ -726,7 +726,7 @@ namespace wyUpdate.Common
                 fs.WriteByte(0x80);
 
             //Changes
-            WriteFiles.WriteString(fs, 0x04, VersionChoices[VersionChoices.Count - 1].Changes);
+            WriteFiles.WriteDeprecatedString(fs, 0x04, VersionChoices[VersionChoices.Count - 1].Changes);
 
             //Filesize for the update file
             WriteFiles.WriteLong(fs, 0x09, VersionChoices[VersionChoices.Count - 1].FileSize);
@@ -758,16 +758,16 @@ namespace wyUpdate.Common
             foreach (string site in clientServerSites)
             {
                 //Client server site
-                WriteFiles.WriteString(fs, 0x13, site);
+                WriteFiles.WriteDeprecatedString(fs, 0x13, site);
             }
 
             // link to show when there is no update patch available
 
             if (!string.IsNullOrEmpty(m_NoUpdateToLatestLinkText))
-                WriteFiles.WriteString(fs, 0x20, m_NoUpdateToLatestLinkText);
+                WriteFiles.WriteDeprecatedString(fs, 0x20, m_NoUpdateToLatestLinkText);
 
             if (!string.IsNullOrEmpty(m_NoUpdateToLatestLinkURL))
-                WriteFiles.WriteString(fs, 0x21, m_NoUpdateToLatestLinkURL);
+                WriteFiles.WriteDeprecatedString(fs, 0x21, m_NoUpdateToLatestLinkURL);
 
             fs.WriteByte(0xFF);
 
@@ -837,28 +837,28 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01://Read New Version
-                        newVersion = ReadFiles.ReadString(fs);
+                        newVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02://Add server file site
-                        AddUniqueSite(ReadFiles.ReadString(fs), serverFileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serverFileSites);
                         break;
                     case 0x07: //Min Client version
-                        m_MinClientVersion = ReadFiles.ReadString(fs);
+                        m_MinClientVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x0B: //The version to update from
                         if (VersionChoices.Count > 1 || VersionChoices[0].Version != null)
                             VersionChoices.Add(new VersionChoice());
 
-                        VersionChoices[VersionChoices.Count - 1].Version = ReadFiles.ReadString(fs);
+                        VersionChoices[VersionChoices.Count - 1].Version = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03://Add update file site
-                        AddUniqueSite(ReadFiles.ReadString(fs), VersionChoices[VersionChoices.Count - 1].FileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), VersionChoices[VersionChoices.Count - 1].FileSites);
                         break;
                     case 0x80: //the changes text is in RTF format
                         VersionChoices[VersionChoices.Count - 1].RTFChanges = true;
                         break;
                     case 0x04://Read Changes
-                         VersionChoices[VersionChoices.Count - 1].Changes = ReadFiles.ReadString(fs);
+                         VersionChoices[VersionChoices.Count - 1].Changes = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x09://update's filesize
                         VersionChoices[VersionChoices.Count - 1].FileSize = ReadFiles.ReadLong(fs);
@@ -876,13 +876,13 @@ namespace wyUpdate.Common
                         VersionChoices[VersionChoices.Count - 1].RegChanges.Add(RegChange.ReadFromStream(fs));
                         break;
                     case 0x13://add client server sites
-                        AddUniqueSite(ReadFiles.ReadString(fs), clientServerSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), clientServerSites);
                         break;
                     case 0x20:
-                        m_NoUpdateToLatestLinkText = ReadFiles.ReadString(fs);
+                        m_NoUpdateToLatestLinkText = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x21:
-                        m_NoUpdateToLatestLinkURL = ReadFiles.ReadString(fs);
+                        m_NoUpdateToLatestLinkURL = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x0F:
                         //skip over the integer (4 bytes) length

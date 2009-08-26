@@ -53,8 +53,9 @@ namespace Ionic.Zip
     /// </summary>
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00005")]
     [Interop.ComVisible(true)]
-    //[Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+#if !NETCF    
     [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+#endif
     public partial class ZipFile :
     System.Collections.IEnumerable,
     System.Collections.Generic.IEnumerable<ZipEntry>,
@@ -189,7 +190,17 @@ namespace Ionic.Zip
             set;
         }
 
+        /// <summary>
+        /// Indicates whether extracted files should keep their paths as
+        /// stored in the zip archive. 
+        /// </summary>
+        public bool FlattenFoldersOnExtract
+        {
+            get;
+            set;
+        }
 
+    
         /// <summary>
         /// The compression strategy to use for all entries.
         /// </summary>
@@ -1220,17 +1231,17 @@ namespace Ionic.Zip
         /// <para>
         /// When writing a zip archive, this password is applied to the entries, not to
         /// the zip archive itself. It applies to any ZipEntry subsequently added to the
-        /// <c>ZipFile</c>, using one of the AddFile, AddDirectory, or AddItem methods.
-        /// When reading a zip archive, this property applies to any entry subsequently
-        /// extracted from the <c>ZipFile</c> using one of the Extract methods on the
-        /// <c>ZipFile</c> class.
+        /// <c>ZipFile</c>, using one of the <c>AddFile</c>, <c>AddDirectory</c>,
+        /// <c>AddEntry</c>, or <c>AddItem</c> methods, etc.  When reading a zip
+        /// archive, this property applies to any entry subsequently extracted from the
+        /// <c>ZipFile</c> using one of the Extract methods on the <c>ZipFile</c> class.
         /// </para>
         /// 
         /// <para>
         /// When writing a zip archive, keep this in mind: though the password is set on the
         /// ZipFile object, according to the Zip spec, the "directory" of the archive - in
         /// other words the list of entries contained in the archive - is not encrypted with
-        /// the password, or protected in any way.  IF you set the Password property, the
+        /// the password, or protected in any way.  if you set the Password property, the
         /// password actually applies to individual entries that are added to the archive,
         /// subsequent to the setting of this property.  The list of filenames in the
         /// archive that is eventually created will appear in clear text, but the contents
@@ -1238,12 +1249,14 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        /// If you set the password on the zip archive, and then add a set of files to
-        /// the archive, then each entry is encrypted with that password.  You may also
-        /// want to change the password between adding different entries. If you set the
-        /// password, add an entry, then set the password to <c>null</c> (<c>Nothing</c>
-        /// in VB), and add another entry, the first entry is encrypted and the second
-        /// is not.
+        /// If you set the password on the zip archive, and then add a set of files to the
+        /// archive, then each entry is encrypted with that password.  You may also want to
+        /// change the password between adding different entries. If you set the password,
+        /// add an entry, then set the password to <c>null</c> (<c>Nothing</c> in VB), and
+        /// add another entry, the first entry is encrypted and the second is not.  If you
+        /// call <c>AddFile()</c>, then set the <c>Password</c> property, then call
+        /// <c>ZipFile.Save</c>, the file added will not be password-protected, and no
+        /// warning will be generated.
         /// </para>
         /// 
         /// <para>
@@ -1377,6 +1390,36 @@ namespace Ionic.Zip
         /// </remarks>
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
         public ExtractExistingFileAction ExtractExistingFile
+        {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        ///   The action the library should take when an error is encountered while
+        ///   opening or reading files as they are added to a zip archive. 
+        /// </summary>
+        ///
+        /// <remarks>
+        ///  <para>
+        ///     In some cases an error will occur when DotNetZip tries to open a file to be
+        ///     added to the zip archive.  In other cases, an error might occur after the
+        ///     file has been successfully opened, while DotNetZip is reading the file.
+        ///  </para>
+        /// 
+        ///  <para>
+        ///    The first problem might occur when calling Adddirectory() on a directory
+        ///    that contains a Clipper .dbf file; the file is locked by Clipper and
+        ///    cannot be opened bby another process. An example of the second problem is
+        ///    the ERROR_LOCK_VIOLATION that results when a file is opened by another
+        ///    process, but not locked, and a range lock has been taken on the file.
+        ///    Microsoft Outlook takes range locks on .PST files.
+        ///  </para>
+        ///
+        /// </remarks>
+        /// <seealso cref="Ionic.Zip.ZipEntry.ZipErrorAction"/>
+        public ZipErrorAction ZipErrorAction
         {
             get;
             set;

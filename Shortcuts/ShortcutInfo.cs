@@ -80,25 +80,25 @@ namespace wyUpdate.Common
             fs.WriteByte(0x8D);
 
             if (!string.IsNullOrEmpty(m_Path))
-                WriteFiles.WriteString(fs, 0x01, m_Path);
+                WriteFiles.WriteDeprecatedString(fs, 0x01, m_Path);
 
             if (!string.IsNullOrEmpty(m_WorkingDirectory))
-                WriteFiles.WriteString(fs, 0x02, m_WorkingDirectory);
+                WriteFiles.WriteDeprecatedString(fs, 0x02, m_WorkingDirectory);
 
             if (!string.IsNullOrEmpty(m_Arguments))
-                WriteFiles.WriteString(fs, 0x03, m_Arguments);
+                WriteFiles.WriteDeprecatedString(fs, 0x03, m_Arguments);
 
             if (!string.IsNullOrEmpty(m_Description))
-                WriteFiles.WriteString(fs, 0x04, m_Description);
+                WriteFiles.WriteDeprecatedString(fs, 0x04, m_Description);
 
             if (!string.IsNullOrEmpty(m_IconPath))
-                WriteFiles.WriteString(fs, 0x05, m_IconPath);
+                WriteFiles.WriteDeprecatedString(fs, 0x05, m_IconPath);
 
             WriteFiles.WriteInt(fs, 0x06, m_IconIndex);
             WriteFiles.WriteInt(fs, 0x07, (int)m_WindowStyle);
 
             if (saveRelativePath)
-                WriteFiles.WriteString(fs, 0x08, m_RelativeOuputPath);
+                WriteFiles.WriteDeprecatedString(fs, 0x08, m_RelativeOuputPath);
 
             fs.WriteByte(0x9A);
         }
@@ -113,19 +113,19 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01:
-                        tempInfo.m_Path = ReadFiles.ReadString(fs);
+                        tempInfo.m_Path = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02:
-                        tempInfo.m_WorkingDirectory = ReadFiles.ReadString(fs);
+                        tempInfo.m_WorkingDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03:
-                        tempInfo.m_Arguments = ReadFiles.ReadString(fs);
+                        tempInfo.m_Arguments = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x04:
-                        tempInfo.m_Description = ReadFiles.ReadString(fs);
+                        tempInfo.m_Description = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x05:
-                        tempInfo.m_IconPath = ReadFiles.ReadString(fs);
+                        tempInfo.m_IconPath = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06:
                         tempInfo.m_IconIndex = ReadFiles.ReadInt(fs);
@@ -134,7 +134,7 @@ namespace wyUpdate.Common
                         tempInfo.m_WindowStyle = (WindowStyle)ReadFiles.ReadInt(fs);
                         break;
                     case 0x08:
-                        tempInfo.m_RelativeOuputPath = ReadFiles.ReadString(fs);
+                        tempInfo.m_RelativeOuputPath = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);

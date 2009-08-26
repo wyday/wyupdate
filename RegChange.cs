@@ -425,10 +425,10 @@ namespace wyUpdate.Common
             WriteFiles.WriteInt(fs, 0x03, (int)RegValueKind);
 
             //Save SubKey
-            WriteFiles.WriteString(fs, 0x04, SubKey);
+            WriteFiles.WriteDeprecatedString(fs, 0x04, SubKey);
 
             //Value Name
-            WriteFiles.WriteString(fs, 0x05, ValueName);
+            WriteFiles.WriteDeprecatedString(fs, 0x05, ValueName);
 
 
             bool isBinaryString = !embedBinaryData
@@ -446,7 +446,7 @@ namespace wyUpdate.Common
 
                     if (isBinaryString)
                         //just saving the string pointing to a file on the disk
-                        WriteFiles.WriteString(fs, 0x07, (string)ValueData);
+                        WriteFiles.WriteDeprecatedString(fs, 0x07, (string)ValueData);
                     else if (embedBinaryData
                             && RegValueKind == RegistryValueKind.Binary
                             && ValueData.GetType() == typeof(string))
@@ -466,11 +466,11 @@ namespace wyUpdate.Common
                     WriteFiles.WriteLong(fs, 0x07, (long)ValueData);
                     break;
                 case RegistryValueKind.MultiString:
-                    WriteFiles.WriteString(fs, 0x07, MultiStringToString(ValueData));
+                    WriteFiles.WriteDeprecatedString(fs, 0x07, MultiStringToString(ValueData));
                     break;
                 case RegistryValueKind.ExpandString:
                 case RegistryValueKind.String:
-                    WriteFiles.WriteString(fs, 0x07, (string)ValueData);
+                    WriteFiles.WriteDeprecatedString(fs, 0x07, (string)ValueData);
                     break;
             }
 
@@ -564,10 +564,10 @@ namespace wyUpdate.Common
                         tempReg.RegValueKind = (RegistryValueKind)ReadFiles.ReadInt(fs);
                         break;
                     case 0x04://subkey
-                        tempReg.SubKey = ReadFiles.ReadString(fs);
+                        tempReg.SubKey = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x05://value name
-                        tempReg.ValueName = ReadFiles.ReadString(fs);
+                        tempReg.ValueName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06: //Depreciated: Use 0x07. All 0x06 will be converted to a string "ValueKind"
                         if (tempReg.RegValueKind != RegistryValueKind.ExpandString
@@ -577,7 +577,7 @@ namespace wyUpdate.Common
                             tempReg.RegValueKind = RegistryValueKind.String;
                         }
 
-                        tempReg.ValueData = ReadFiles.ReadString(fs);
+                        tempReg.ValueData = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x80:
                         isBinaryString = true;
@@ -588,7 +588,7 @@ namespace wyUpdate.Common
                             case RegistryValueKind.Binary:
 
                                 if (isBinaryString)
-                                    tempReg.ValueData = ReadFiles.ReadString(fs);
+                                    tempReg.ValueData = ReadFiles.ReadDeprecatedString(fs);
                                 else
                                     tempReg.ValueData = ReadFiles.ReadByteArray(fs);
 
@@ -602,7 +602,7 @@ namespace wyUpdate.Common
                             case RegistryValueKind.ExpandString:
                             case RegistryValueKind.MultiString:
                             case RegistryValueKind.String:
-                                tempReg.ValueData = ReadFiles.ReadString(fs);
+                                tempReg.ValueData = ReadFiles.ReadDeprecatedString(fs);
                                 break;
                         }
                         break;
