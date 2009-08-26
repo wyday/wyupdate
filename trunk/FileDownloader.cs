@@ -18,18 +18,13 @@ namespace wyUpdate.Downloader
         // Block size to download is by default 4K.
         private const int BufferSize = 4096;
 
-        private string downloadingTo;
-
         /// <summary>
         /// This is the name of the file we get back from the server when we
         /// try to download the provided url. It will only contain a non-null
         /// string when we've successfully contacted the server and it has started
         /// sending us a file.
         /// </summary>
-        public string DownloadingTo
-        {
-            get { return downloadingTo; }
-        }
+        public string DownloadingTo { get; private set; }
 
         //used to measure download speed
         private readonly Stopwatch sw = new Stopwatch();
@@ -51,14 +46,7 @@ namespace wyUpdate.Downloader
 
         readonly BackgroundWorker bw = new BackgroundWorker();
 
-        /// <summary>
-        /// Handles messages received from a server pipe
-        /// </summary>
         public delegate void ProgressChangedHandler(int percentDone, bool done, string extraStatus, Exception ex);
-
-        /// <summary>
-        /// Event is called whenever a message is received from the server pipe
-        /// </summary>
         public event ProgressChangedHandler ProgressChanged;
 
         public FileDownloader(List<string> urls, string downloadfolder)
@@ -227,21 +215,21 @@ namespace wyUpdate.Downloader
                 // The place we're downloading to (not from) must not be a URI,
                 // because Path and File don't handle them...
                 destFolder = destFolder.Replace("file:///", "").Replace("file://", "");
-                downloadingTo = Path.Combine(destFolder, destFileName);
+                DownloadingTo = Path.Combine(destFolder, destFileName);
 
-                if (!File.Exists(downloadingTo))
+                if (!File.Exists(DownloadingTo))
                 {
                     // create the file
-                    fs = File.Open(downloadingTo, FileMode.Create, FileAccess.Write);
+                    fs = File.Open(DownloadingTo, FileMode.Create, FileAccess.Write);
                 }
                 else
                 {
                     // read in the existing data to calculate the adler32
                     if (Adler32 != 0)
-                        GetAdler32(downloadingTo);
+                        GetAdler32(DownloadingTo);
 
                     // apend to an existing file (resume)
-                    fs = File.Open(downloadingTo, FileMode.Append, FileAccess.Write);
+                    fs = File.Open(DownloadingTo, FileMode.Append, FileAccess.Write);
                 }
 
                 // create the download buffer
@@ -302,10 +290,10 @@ namespace wyUpdate.Downloader
             }
             catch (Exception e)
             {
-                if(string.IsNullOrEmpty(downloadingTo))
+                if(string.IsNullOrEmpty(DownloadingTo))
                     throw new Exception(String.Format("Error trying to save file: {0}", e.Message), e);
                 else
-                    throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", downloadingTo, e.Message), e);
+                    throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", DownloadingTo, e.Message), e);
             }
             finally
             {

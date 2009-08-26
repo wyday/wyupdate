@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-14 02:43:37>
+// Time-stamp: <2009-August-18 21:04:21>
 //
 // ------------------------------------------------------------------
 //
@@ -35,6 +35,8 @@
 
 
 using System;
+using Interop=System.Runtime.InteropServices;
+
 
 namespace Ionic.Zlib
 {
@@ -45,9 +47,11 @@ namespace Ionic.Zlib
     /// files.
     /// </summary>
 
-    [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000C")]
-    [System.Runtime.InteropServices.ComVisible(true)]
-    [System.Runtime.InteropServices.ClassInterface(System.Runtime.InteropServices.ClassInterfaceType.AutoDual)]
+    [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000C")]
+    [Interop.ComVisible(true)]
+#if !NETCF
+    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+#endif
     public class CRC32
     {
         /// <summary>

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-13 22:44:05>
+// Time-stamp: <2009-August-25 12:15:01>
 //
 // ------------------------------------------------------------------
 //
@@ -756,8 +756,9 @@ namespace Ionic.Zip
                     if (File.Exists(TargetFile))
                     {
                         fileExistsBeforeExtraction = true;
-                        if (CheckExtractExistingFile(baseDir, TargetFile))
-                            return;
+                        int rc = CheckExtractExistingFile(baseDir, TargetFile);
+                        if (rc == 2) goto ExitTry; // cancel
+                        if (rc == 1) return;
                     }
                     output = new FileStream(TargetFile, FileMode.CreateNew);
                 }
@@ -887,55 +888,45 @@ namespace Ionic.Zip
 
         
         
-        private bool CheckExtractExistingFile(string baseDir, string TargetFile)
+        private int CheckExtractExistingFile(string baseDir, string TargetFile)
         {
-            bool nothingMore = false;
-            switch (ExtractExistingFile)
+            int loop = 0;
+            // returns: 0 == extract, 1 = don't, 2 = cancel
+            do
             {
-                case ExtractExistingFileAction.Throw:
-                    throw new ZipException(String.Format("The file {0} already exists.", TargetFile));
-                    
-                case ExtractExistingFileAction.OverwriteSilently:
-                    {
-                        if (_zipfile.Verbose)
-                            _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", TargetFile);
+                switch (ExtractExistingFile)
+                {
+                    case ExtractExistingFileAction.OverwriteSilently:
+                            if (_zipfile.Verbose)
+                                _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", TargetFile);
 
-                        //File.Delete(TargetFile);
-                        ReallyDelete(TargetFile);
-                    }
-                    break;
+                            //File.Delete(TargetFile);
+                            ReallyDelete(TargetFile);
+                            return 0;
 
-                case ExtractExistingFileAction.DoNotOverwrite:
-                    if (_zipfile.Verbose)
-                        _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
-                    OnAfterExtract(baseDir);
-                    nothingMore = true;
-                    break;
-
-                case ExtractExistingFileAction.InvokeExtractProgressEvent:
-                    OnExtractExisting(baseDir);
-                    // Check the ExtractExistingFile property again, it may have been reset.
-                    if (ExtractExistingFile == ExtractExistingFileAction.Throw)
-                        throw new ZipException("The file already exists.");
-                    else if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
-                    //File.Delete(TargetFile);
-                    {
-                        if (_zipfile.Verbose)
-                            _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", FileName);
-                        //File.Delete(TargetFile);
-                        ReallyDelete(TargetFile);
-                    }
-                    else if (ExtractExistingFile == ExtractExistingFileAction.DoNotOverwrite)
-                    {
+                    case ExtractExistingFileAction.DoNotOverwrite:
                         if (_zipfile.Verbose)
                             _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
                         OnAfterExtract(baseDir);
-                        nothingMore = true;
-                    }
-                    else throw new ZipException("The file already exists.");
-                    break;
+                        return 1;
+
+                    case ExtractExistingFileAction.InvokeExtractProgressEvent:
+                        if (loop>0)
+                            throw new ZipException(String.Format("The file {0} already exists.", TargetFile));
+                        OnExtractExisting(baseDir);
+                        if (_ioOperationCanceled)
+                            return 2;
+
+                        // loop around
+                        break;
+                    
+                    case ExtractExistingFileAction.Throw:
+                    default:
+                        throw new ZipException(String.Format("The file {0} already exists.", TargetFile));
+                }
+                loop++;
             }
-            return nothingMore;
+            while (true);
         }
 
 
@@ -1275,7 +1266,13 @@ namespace Ionic.Zip
         }
 
 
-
+        /// <summary>
+        /// Validates that the args are consistent.  
+        /// </summary>
+        /// <remarks>
+        /// Only one of {baseDir, outStream} can be non-null.
+        /// If baseDir is non-null, then the outputFile is created.
+        /// </remarks>
         private bool ValidateOutput(string basedir, Stream outstream, out string OutputFile)
         {
             if (basedir != null)
@@ -1283,9 +1280,18 @@ namespace Ionic.Zip
                 // Sometimes the name on the entry starts with a slash.
                 // Rather than unpack to the root of the volume, we're going to 
                 // drop the slash and unpack to the specified base directory. 
-                OutputFile = (this.FileName.StartsWith("/"))
-            ? Path.Combine(basedir, this.FileName.Substring(1))
-            : Path.Combine(basedir, this.FileName);
+                string f = this.FileName;
+                if (f.StartsWith("/"))
+                    f= this.FileName.Substring(1);
+
+                // String.Contains is not available on .NET CF 2.0
+
+                if (_zipfile.FlattenFoldersOnExtract)
+                    OutputFile = Path.Combine(basedir,
+                                              (f.IndexOf('/') != -1) ? Path.GetFileName(f) : f);
+                else 
+                    OutputFile = Path.Combine(basedir, f);
+
 
                 // check if it is a directory
                 if ((IsDirectory) || (FileName.EndsWith("/")))

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-14 10:29:32>
+// Time-stamp: <2009-August-25 10:07:26>
 //
 // ------------------------------------------------------------------
 //
@@ -63,6 +63,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>,
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -114,7 +115,7 @@ namespace Ionic.Zip
         /// <para>
         /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
         /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
-        /// <see cref="ExtractExistingFile"/>, and <see
+        /// <see cref="ExtractExistingFile"/>, <see cref="ZipErrorAction"/>, and <see
         /// cref="ForceNoCompression"/>, their respective values at the time of this call will be
         /// applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -227,6 +228,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -316,7 +318,7 @@ namespace Ionic.Zip
         /// <para>
         /// For ZipFile properties including <see cref="Encryption"/>, <see cref="Password"/>,
         /// <see cref="WantCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
-        /// <see cref="ExtractExistingFile"/>, and <see
+        /// <see cref="ExtractExistingFile"/>, <see cref="ZipErrorAction"/>, and <see
         /// cref="ForceNoCompression"/>, their respective values at the time of this call will be
         /// applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -399,6 +401,7 @@ namespace Ionic.Zip
             //ze.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
             ze.ForceNoCompression = ForceNoCompression;
             ze.ExtractExistingFile = ExtractExistingFile;
+            ze.ZipErrorAction = this.ZipErrorAction;
             ze.WillReadTwiceOnInflation = WillReadTwiceOnInflation;
             ze.WantCompression = WantCompression;
             ze.ProvisionalAlternateEncoding = ProvisionalAlternateEncoding;
@@ -476,6 +479,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>
@@ -534,6 +538,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>
@@ -566,6 +571,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>
@@ -614,6 +620,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>
@@ -683,6 +690,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>
@@ -736,6 +744,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -828,6 +837,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -966,6 +976,7 @@ namespace Ionic.Zip
         /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -1007,6 +1018,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -1245,6 +1257,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -1305,6 +1318,7 @@ namespace Ionic.Zip
             //ze.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
             ze.ForceNoCompression = ForceNoCompression;
             ze.ExtractExistingFile = ExtractExistingFile;
+            ze.ZipErrorAction = this.ZipErrorAction;
             ze.WillReadTwiceOnInflation = WillReadTwiceOnInflation;
             ze.WantCompression = WantCompression;
             ze.ProvisionalAlternateEncoding = ProvisionalAlternateEncoding;
@@ -1448,6 +1462,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to the <c>ZipEntry</c> added.
         /// </para>
@@ -1595,6 +1610,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>
@@ -1638,6 +1654,7 @@ namespace Ionic.Zip
         /// For ZipFile properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, 
         /// and <see cref="ForceNoCompression"/>, their respective values at the time of
         /// this call will be applied to each ZipEntry added.
         /// </para>

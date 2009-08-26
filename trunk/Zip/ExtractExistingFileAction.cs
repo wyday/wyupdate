@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-14 09:25:16>
+// Time-stamp: <2009-August-25 08:44:37>
 //
 // ------------------------------------------------------------------
 //
@@ -31,14 +31,16 @@ namespace Ionic.Zip
     /// <summary>
     /// An enum for the options when extracting an entry would overwrite an existing file. 
     /// </summary>
+    /// 
     /// <remarks>
-    /// <para>
-    /// This enum describes the actions that the library can take when an
-    /// <c>Extract()</c> or <c>ExtractWithPassword()</c> method is called to extract an
-    /// entry to a filesystem, and the extraction would overwrite an existing filesystem
-    /// file.
-    /// </para>
+    ///   <para>
+    ///     This enum describes the actions that the library can take when an
+    ///     <c>Extract()</c> or <c>ExtractWithPassword()</c> method is called to extract an
+    ///     entry to a filesystem, and the extraction would overwrite an existing filesystem
+    ///     file.
+    ///   </para>
     /// </remarks>
+    ///
     public enum ExtractExistingFileAction
     {
         /// <summary>
@@ -66,7 +68,16 @@ namespace Ionic.Zip
         /// cref="ZipProgressEventType.Extracting_ExtractEntryWouldOverwrite"/>.  In
         /// this way, the application can decide, just-in-time, whether to overwrite the
         /// file. For example, a GUI application may wish to pop up a dialog to allow
-        /// the user to choose.  (For COM clients, this is a 3.)
+        /// the user to choose. You may want to examine the <see
+        /// cref="ExtractProgressEventArgs.ExtractLocation"/> property before making
+        /// the decision. If, after your processing in the Extract progress event, you
+        /// want to NOT extract the file, set <see cref="ZipEntry.ExtractExistingFile"/>
+        /// on the <c>ZipProgressEventArgs.CurrentEntry</c> to <c>DoNotOverwrite</c>.
+        /// If you do want to extract the file, set <c>ZipEntry.ExtractExistingFile</c>
+        /// to <c>OverwriteSilently</c>.  If you want to cancel the Extraction, set
+        /// <c>ZipProgressEventArgs.Cancel</c> to true.  Cancelling differs from using
+        /// DoNotOverwrite in that a cancel will not extract any further entries, if
+        /// there are any.  (For COM clients, the value of this enum is a 3.)
         /// </summary>
         InvokeExtractProgressEvent,
     }

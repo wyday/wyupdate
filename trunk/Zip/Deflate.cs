@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-16 06:48:40>
+// Time-stamp: <2009-August-19 18:25:04>
 //
 // ------------------------------------------------------------------
 //
@@ -1787,8 +1787,16 @@ namespace Ionic.Zlib
                      (int) flush <= old_flush && 
                      flush != FlushType.Finish)
             {
-                _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
-                throw new ZlibException("AvailableBytesOut == 0 && flush<=old_flush && flush != FlushType.Finish");
+                // workitem 8557
+                // Not sure why this needs to be an error.
+                // pendingCount == 0, which means there's nothing to deflate.
+                // And the caller has not asked for a FlushType.Finish, but...
+                // that seems very non-fatal.  We can just say "OK" and do nthing.
+                
+                // _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
+                // throw new ZlibException("AvailableBytesIn == 0 && flush<=old_flush && flush != FlushType.Finish");
+
+                return ZlibConstants.Z_OK;
             }
 
             // User must not provide more input after the first FINISH:

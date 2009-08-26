@@ -115,7 +115,7 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01:
-                        m_PostUpdateCommands = ReadFiles.ReadString(fs);
+                        m_PostUpdateCommands = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x20://num reg changes
                         m_RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
@@ -127,13 +127,13 @@ namespace wyUpdate.Common
                         m_RegistryModifications.Add(RegChange.ReadFromStream(fs));
                         break;
                     case 0x30:
-                        m_PreviousDesktopShortcuts.Add(ReadFiles.ReadString(fs));
+                        m_PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x31:
-                        m_PreviousSMenuShortcuts.Add(ReadFiles.ReadString(fs));
+                        m_PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x40:
-                        tempUpdateFile.RelativePath = ReadFiles.ReadString(fs);
+                        tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x41:
                         tempUpdateFile.Execute = ReadFiles.ReadBool(fs);
@@ -142,7 +142,7 @@ namespace wyUpdate.Common
                         tempUpdateFile.ExBeforeUpdate = ReadFiles.ReadBool(fs);
                         break;
                     case 0x43:
-                        tempUpdateFile.CommandLineArgs = ReadFiles.ReadString(fs);
+                        tempUpdateFile.CommandLineArgs = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x44:
                         tempUpdateFile.IsNETAssembly = ReadFiles.ReadBool(fs);
@@ -154,7 +154,7 @@ namespace wyUpdate.Common
                         tempUpdateFile.DeleteFile = ReadFiles.ReadBool(fs);
                         break;
                     case 0x47:
-                        tempUpdateFile.DeltaPatchRelativePath = ReadFiles.ReadString(fs);
+                        tempUpdateFile.DeltaPatchRelativePath = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x48:
                         tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
@@ -167,7 +167,7 @@ namespace wyUpdate.Common
                         m_ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
                         break;
                     case 0x60:
-                        m_FoldersToDelete.Add(ReadFiles.ReadString(fs));
+                        m_FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -189,7 +189,7 @@ namespace wyUpdate.Common
 
             //Write post-update commands
             if (!string.IsNullOrEmpty(m_PostUpdateCommands))
-                WriteFiles.WriteString(ms, 0x01, m_PostUpdateCommands);
+                WriteFiles.WriteDeprecatedString(ms, 0x01, m_PostUpdateCommands);
 
             //number of registry changes
             WriteFiles.WriteInt(ms, 0x20, m_RegistryModifications.Count);
@@ -206,10 +206,10 @@ namespace wyUpdate.Common
 
             //Previous shortcuts that needs to be installed in order to install new shortcuts
             foreach (string shortcut in m_PreviousDesktopShortcuts)
-                WriteFiles.WriteString(ms, 0x30, shortcut);
+                WriteFiles.WriteDeprecatedString(ms, 0x30, shortcut);
 
             foreach (string shortcut in m_PreviousSMenuShortcuts)
-                WriteFiles.WriteString(ms, 0x31, shortcut);
+                WriteFiles.WriteDeprecatedString(ms, 0x31, shortcut);
 
             //number of file infos
             WriteFiles.WriteInt(ms, 0x21, CountFileInfos());
@@ -222,7 +222,7 @@ namespace wyUpdate.Common
                     ms.WriteByte(0x8B);//Beginning of the file information
 
                     //relative path to file
-                    WriteFiles.WriteString(ms, 0x40, file.RelativePath);
+                    WriteFiles.WriteDeprecatedString(ms, 0x40, file.RelativePath);
 
                     //execution of files
                     if (file.Execute)
@@ -237,7 +237,7 @@ namespace wyUpdate.Common
 
                         //commandline arguments
                         if (!string.IsNullOrEmpty(file.CommandLineArgs))
-                            WriteFiles.WriteString(ms, 0x43, file.CommandLineArgs);
+                            WriteFiles.WriteDeprecatedString(ms, 0x43, file.CommandLineArgs);
                     }
 
                     //is it a .NET assembly?
@@ -250,7 +250,7 @@ namespace wyUpdate.Common
                         WriteFiles.WriteBool(ms, 0x46, true);
                     else if (file.DeltaPatchRelativePath != null)
                     {
-                        WriteFiles.WriteString(ms, 0x47, file.DeltaPatchRelativePath);
+                        WriteFiles.WriteDeprecatedString(ms, 0x47, file.DeltaPatchRelativePath);
 
                         if (file.NewFileAdler32 != 0)
                             WriteFiles.WriteLong(ms, 0x48, file.NewFileAdler32);
@@ -261,7 +261,7 @@ namespace wyUpdate.Common
             }
 
             foreach (string folder in m_FoldersToDelete)
-                WriteFiles.WriteString(ms, 0x60, folder);
+                WriteFiles.WriteDeprecatedString(ms, 0x60, folder);
 
             //end of file
             ms.WriteByte(0xFF);

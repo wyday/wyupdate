@@ -88,9 +88,11 @@ namespace wyUpdate
         /// </summary>
         public bool Running { get; private set; }
 
+
         /// <summary>
-        /// Starts the pipe server
+        /// Starts the pipe server on a particular name.
         /// </summary>
+        /// <param name="pipename">The name of the pipe.</param>
         public void Start(string pipename)
         {
             PipeName = pipename;
@@ -213,9 +215,9 @@ namespace wyUpdate
         }
 
         /// <summary>
-        /// Sends a message to all connected clients
+        /// Sends a message to all connected clients.
         /// </summary>
-        /// <param name="message">The message to send</param>
+        /// <param name="message">The message to send.</param>
         public void SendMessage(byte[] message)
         {
             lock (clients)

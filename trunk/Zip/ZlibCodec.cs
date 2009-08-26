@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-14 09:50:08>
+// Time-stamp: <2009-August-18 21:02:55>
 //
 // ------------------------------------------------------------------
 //
@@ -81,7 +81,9 @@ namespace Ionic.Zlib
     /// </remarks>
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000D")]
     [Interop.ComVisible(true)]
-    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDual)]
+#if !NETCF    
+    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+#endif
     sealed public class ZlibCodec
     {
         /// <summary>

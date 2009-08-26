@@ -65,10 +65,10 @@ namespace wyUpdate
         bool isSilent;
         public int ReturnCode { get; set; }
 
-        // Wait Mode (aka API mode)
+        // Automatic Update Mode (aka API mode)
         UpdateHelper updateHelper;
-        bool isWaitMode;
-        bool dontDestroyTempFolder; //custom temp directory to store downloaded updates
+        bool isAutoUpdateMode;
+        string autoUpdateStateFile;
 
         //-- Self update
         public bool SelfUpdating;
@@ -107,10 +107,6 @@ namespace wyUpdate
 
         public frmMain(string[] args)
         {
-            updateHelper = new UpdateHelper(this);
-            updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
-            updateHelper.RequestReceived += UpdateHelper_RequestReceived;
-
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;
 
@@ -216,7 +212,22 @@ namespace wyUpdate
             panelDisplaying.TopImage = update.TopImage;
             panelDisplaying.SideImage = update.SideImage;
 
-            if (SelfUpdating)
+            if (isAutoUpdateMode)
+            {
+                //TODO: create the temp folder wher we'll
+
+                tempDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), update.ProductName);
+
+                Directory.CreateDirectory(tempDirectory);
+
+                //TODO: load the previous auto update state from "autoup.dat"
+                
+                
+                //TODO: sometimes we'll be on a completely different step
+                checkForUpdate = true;
+
+            }
+            else if (SelfUpdating)
             {
                 try
                 {
@@ -327,6 +338,27 @@ namespace wyUpdate
             }
             else
             {
+                // wait mode - for automatic updates
+                if (commands["autoupdate"] != null)
+                {
+                    isAutoUpdateMode = true;
+
+                    updateHelper = new UpdateHelper(this);
+                    updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
+                    updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+
+                    //StartFormHidden = true;
+                }
+
+                if (commands["quickcheck"] != null)
+                {
+                    StartFormHidden = true;
+                    QuickCheck = true;
+
+                    if (commands["noerr"] != null)
+                        QuickCheckNoErr = true;
+                }
+
                 //client data file
                 if (commands["cdata"] != null)
                 {
@@ -374,7 +406,7 @@ namespace wyUpdate
                     //set the temp directory
                     tempDirectory = commands["tempdir"];
                 }
-                else //if the tempDir hasn't been created
+                else if (!isAutoUpdateMode) //if the tempDir hasn't been created (and not isAutoUpdateMode)
                 {
                     //create my own "random" temp dir.
                     tempDirectory = Path.Combine(Path.GetTempPath(), @"wyup" + DateTime.Now.ToString("ddMMssfff"));
@@ -385,26 +417,6 @@ namespace wyUpdate
                 if (commands["uninstall"] != null)
                     uninstalling = true;
 
-
-                // wait mode - for automatic updates
-                if (commands["wait"] != null)
-                {
-                    isWaitMode = true;
-
-                    //StartFormHidden = true;
-
-                    if (commands["tempdir"] != null)
-                        dontDestroyTempFolder = true;
-                }
-                
-                if (commands["quickcheck"] != null)
-                {
-                    StartFormHidden = true;
-                    QuickCheck = true;
-
-                    if (commands["noerr"] != null)
-                        QuickCheckNoErr = true;
-                }
 
                 // load the passed server argument
                 if (commands["server"] != null)
@@ -427,7 +439,7 @@ namespace wyUpdate
         {
             //only warn if after the welcome page
             //and not self updating/elevating
-            if (needElevation || willSelfUpdate || SelfUpdating || isSilent ||
+            if (needElevation || willSelfUpdate || SelfUpdating || isSilent || isAutoUpdateMode ||
                 isCancelled || panelDisplaying.TypeofFrame == FrameType.WelcomeFinish)
             {
                 //close the form
@@ -448,7 +460,7 @@ namespace wyUpdate
         protected override void OnClosed(EventArgs e)
         {
             //if not self updating, then delete temp files.
-            if (!(needElevation || willSelfUpdate || SelfUpdating || dontDestroyTempFolder))
+            if (!(needElevation || willSelfUpdate || SelfUpdating || isAutoUpdateMode))
             {
                 //if the temp directory exists, remove it
                 if (Directory.Exists(tempDirectory))
@@ -849,7 +861,7 @@ namespace wyUpdate
             // if no update is needed...
             if (VersionTools.Compare(update.InstalledVersion, update.NewVersion) > -1)
             {
-                if (isWaitMode)
+                if (isAutoUpdateMode)
                 {
                     // send reponse that there's no update available
                     updateHelper.SendSuccess(null, null, true, null);
@@ -864,6 +876,32 @@ namespace wyUpdate
                 // Show "All Finished" page
                 ShowFrame(5);
                 return;
+            }
+
+            if (isAutoUpdateMode)
+            {
+                //TODO: create a new folder to store the downloaded & extracted folder
+                try
+                {
+                    //TODO: delete existing update folders
+
+
+                    tempDirectory = Path.Combine(tempDirectory, update.NewVersion);
+
+                    // create a new upate folder
+                    Directory.CreateDirectory(tempDirectory);
+
+                    string newServerFileLoc = Path.Combine(tempDirectory, Path.GetFileName(serverFileLoc));
+
+                    if (File.Exists(newServerFileLoc))
+                        File.Delete(newServerFileLoc);
+
+                    // move the server file to the new update folder
+                    File.Move(serverFileLoc, newServerFileLoc);
+
+                    serverFileLoc = newServerFileLoc;
+                }
+                catch { }
             }
 
             int i;
@@ -934,7 +972,7 @@ namespace wyUpdate
 
                     btnNext.Enabled = false;
 
-                    if (!isWaitMode)
+                    if (!isAutoUpdateMode)
                     {
                         if(!string.IsNullOrEmpty(serverOverwrite))
                         {
@@ -972,7 +1010,7 @@ namespace wyUpdate
 
                         QuickCheck = false;
                     }
-                    else if(isWaitMode)
+                    else if(isAutoUpdateMode)
                     {
                         updateHelper.SendSuccess(update.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
                     }
@@ -1118,6 +1156,11 @@ namespace wyUpdate
                         Close();
                         return;
                     }
+                }
+                else if(isAutoUpdateMode)
+                {
+                    Close();
+                    return;
                 }
             }
 
@@ -1303,7 +1346,7 @@ namespace wyUpdate
                 }
 
                 // if we're in wait mode, then don't continue to the next step
-                if (isWaitMode && (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.Extracting))
+                if (isAutoUpdateMode && (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.Extracting))
                 {
                     updateHelper.SendSuccess();
                     return;
@@ -1330,7 +1373,7 @@ namespace wyUpdate
 
         #endregion Updating methods (synchronous)
 
-        #region UpdateHelper functions (API)
+        #region AutomaticUpdate functions (API)
 
         void UpdateHelper_RequestReceived(object sender, UpdateStep e)
         {
@@ -1391,11 +1434,82 @@ namespace wyUpdate
 
 
             // exit the client
-            if (isWaitMode && !updateHelper.PreInstallInfoSent)
+            if (isAutoUpdateMode && !updateHelper.PreInstallInfoSent)
                 Close();
         }
 
-        #endregion UpdateHelper functions (API)
+
+
+        private void SaveAutoUpdateData(string fileName)
+        {
+
+            FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
+
+            // Write any file-identification data you want to here
+            fs.Write(System.Text.Encoding.UTF8.GetBytes("IUAUFV1"), 0, 7);
+
+            // Version checked for / downloaded / or extracted
+            WriteFiles.WriteString(fs, 0x01, update.NewVersion);
+
+            // Step on {Checked = 0, Downloaded = 1, Extracted = 2}
+            WriteFiles.WriteString(fs, 0x02, serverFileLoc);
+
+            // DateTime when the last step was taken.
+            WriteFiles.WriteLong(fs, 0x03, DateTime.Now.ToBinary());
+
+
+
+            fs.WriteByte(0xFF);
+            fs.Close();
+        }
+
+        private void LoadAutoUpdateData(string fileName)
+        {
+            byte[] fileIDBytes = new byte[7];
+
+            FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+
+            // Read back the file identification data, if any
+            fs.Read(fileIDBytes, 0, 7);
+            string fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
+            if (fileID != "IUAUFV1")
+            {
+                //free up the file so it can be deleted
+                fs.Close();
+                throw new Exception("Auto update state file ID is wrong: " + fileID);
+            }
+
+            byte bType = (byte)fs.ReadByte();
+            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+            {
+                switch (bType)
+                {
+                    case 0x01: // Version checked for / downloaded / or extracted
+
+
+                        break;
+                    case 0x02: //Read Server data file location
+                        
+
+                        break;
+                    case 0x03: //Client server file location
+                        
+
+                        break;
+
+
+                    default:
+                        ReadFiles.SkipField(fs, bType);
+                        break;
+                }
+
+                bType = (byte)fs.ReadByte();
+            }
+
+            fs.Close();
+        }
+
+        #endregion AutomaticUpdate functions (API)
 
 
         #region Next, Back, Cancel, Options
@@ -1522,22 +1636,22 @@ namespace wyUpdate
             fs.Write(System.Text.Encoding.UTF8.GetBytes("IUSUFV2"), 0, 7);
 
             //Client data file location
-            WriteFiles.WriteString(fs, 0x01, clientFileLoc);
+            WriteFiles.WriteDeprecatedString(fs, 0x01, clientFileLoc);
 
             //Server data file location
-            WriteFiles.WriteString(fs, 0x02, serverFileLoc);
+            WriteFiles.WriteDeprecatedString(fs, 0x02, serverFileLoc);
 
             //Client server file
-            WriteFiles.WriteString(fs, 0x03, clientSFLoc);
+            WriteFiles.WriteDeprecatedString(fs, 0x03, clientSFLoc);
 
             //Base Directory
-            WriteFiles.WriteString(fs, 0x04, baseDirectory);
+            WriteFiles.WriteDeprecatedString(fs, 0x04, baseDirectory);
 
             //Temporary directory
-            WriteFiles.WriteString(fs, 0x05, tempDirectory);
+            WriteFiles.WriteDeprecatedString(fs, 0x05, tempDirectory);
 
             //Old client file location (self)
-            WriteFiles.WriteString(fs, 0x06, System.Reflection.Assembly.GetExecutingAssembly().Location);
+            WriteFiles.WriteDeprecatedString(fs, 0x06, System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             //self update needed
             WriteFiles.WriteBool(fs, 0x07, willSelfUpdate);
@@ -1546,7 +1660,7 @@ namespace wyUpdate
             WriteFiles.WriteBool(fs, 0x08, needElevation);
 
             if (!string.IsNullOrEmpty(serverOverwrite))
-                WriteFiles.WriteString(fs, 0x09, serverOverwrite);
+                WriteFiles.WriteDeprecatedString(fs, 0x09, serverOverwrite);
 
             fs.WriteByte(0xFF);
             fs.Close();
@@ -1581,7 +1695,7 @@ namespace wyUpdate
                 switch (bType)
                 {
                     case 0x01://Read Client data file location
-                        clientFileLoc = ReadFiles.ReadString(fs);
+                        clientFileLoc = ReadFiles.ReadDeprecatedString(fs);
 
                         //TODO: Remove this hackish behavior to cope with pre-RC2 client data files
                         if (clientFileLoc.EndsWith("iuc", StringComparison.InvariantCultureIgnoreCase))
@@ -1593,19 +1707,19 @@ namespace wyUpdate
 
                         break;
                     case 0x02: //Read Server data file location
-                        serverFileLoc = ReadFiles.ReadString(fs);
+                        serverFileLoc = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03: //Client server file location
-                        clientSFLoc = ReadFiles.ReadString(fs);
+                        clientSFLoc = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x04://Read Base Directory
-                        baseDirectory = ReadFiles.ReadString(fs);
+                        baseDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x05://Read Temporary directory
-                        tempDirectory = ReadFiles.ReadString(fs);
+                        tempDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://Read Old client file location
-                        oldClientLocation = ReadFiles.ReadString(fs);
+                        oldClientLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x07: //true=Self Update, false=Continue update
                        
@@ -1619,7 +1733,7 @@ namespace wyUpdate
                         needElevation = ReadFiles.ReadBool(fs);
                         break;
                     case 0x09:
-                        serverOverwrite = ReadFiles.ReadString(fs);
+                        serverOverwrite = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -1647,22 +1761,22 @@ namespace wyUpdate
                 switch (bType)
                 {
                     case 0x01://Read Client data file location
-                        clientFileLoc = ReadFiles.ReadString(fs);
+                        clientFileLoc = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02: //Read Server data file location
-                        serverFileLoc = ReadFiles.ReadString(fs);
+                        serverFileLoc = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03://Read Base Directory
-                        baseDirectory = ReadFiles.ReadString(fs);
+                        baseDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x04://Read Temporary directory
-                        tempDirectory = ReadFiles.ReadString(fs);
+                        tempDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x05://Read Old client file location
-                        oldClientLocation = ReadFiles.ReadString(fs);
+                        oldClientLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://Read New client file location
-                        newClientLocation = ReadFiles.ReadString(fs);
+                        newClientLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x07:
                         SelfUpdating = ReadFiles.ReadBool(fs);
@@ -1871,7 +1985,11 @@ namespace wyUpdate
             //WM_QUERYENDSESSION = 0x0011
             //WM_ENDSESSION = 0x0016
             if (logOffBlocked && (aMessage.Msg == 0x0011 || aMessage.Msg == 0x0016))
+            {
+                //TODO: show window, bring to front
                 return;
+            }
+                
 
             base.WndProc(ref aMessage);
         }

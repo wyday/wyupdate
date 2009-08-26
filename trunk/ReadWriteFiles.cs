@@ -20,14 +20,7 @@ namespace wyUpdate.Common
 
         public static void WriteBool(Stream fs, byte flag, bool val)
         {
-            if (val)
-            {
-                WriteInt(fs, flag, 1);
-            }
-            else
-            {
-                WriteInt(fs, flag, 0);
-            }
+            WriteInt(fs, flag, val ? 1 : 0);
         }
 
         public static void WriteLong(Stream fs, byte flag, long val)
@@ -73,6 +66,24 @@ namespace wyUpdate.Common
 
             //the string data to be written
             byte[] tempBytes = Encoding.UTF8.GetBytes(text);
+
+            //write the flag (e.g. 0x01, 0xFF, etc.)
+            fs.WriteByte(flag);
+
+            //the byte-length of the string. 
+            fs.Write(BitConverter.GetBytes(tempBytes.Length), 0, 4);
+
+            //write the string data
+            fs.Write(tempBytes, 0, tempBytes.Length);
+        }
+
+        public static void WriteDeprecatedString(Stream fs, byte flag, string text)
+        {
+            if (text == null)
+                text = String.Empty;//fill with an empty string
+
+            //the string data to be written
+            byte[] tempBytes = Encoding.UTF8.GetBytes(text);
             
             //the byte-length of the string. 
             //(Previously I used the string-length, this caused problems for non-bytelong characters)
@@ -84,7 +95,7 @@ namespace wyUpdate.Common
             //FIX: I'm storing both the size of the bytes *Twice*. It's stupid.
 
             //write the size of the data
-            fs.Write(BitConverter.GetBytes(tempBytes.Length + tempLength.Length), 0, 4);
+            fs.Write(BitConverter.GetBytes(tempBytes.Length + 4), 0, 4);
 
             //write the string data
             fs.Write(tempLength, 0, 4);
@@ -144,11 +155,18 @@ namespace wyUpdate.Common
         {
             byte[] tempLength = new byte[4];
 
-            //skip the "length of data" int value
-            fs.Position += 4;
-
             ReadWholeArray(fs, tempLength);
             byte[] tempBytes = new byte[BitConverter.ToInt32(tempLength, 0)];
+            ReadWholeArray(fs, tempBytes);
+
+            return Encoding.UTF8.GetString(tempBytes);
+        }
+
+        public static string ReadDeprecatedString(Stream fs)
+        {
+            int length = ReadInt(fs);
+
+            byte[] tempBytes = new byte[length];
             ReadWholeArray(fs, tempBytes);
             
             return Encoding.UTF8.GetString(tempBytes);
