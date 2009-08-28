@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 12:06:53>
+// Time-stamp: <2009-August-28 16:25:27>
 //
 // ------------------------------------------------------------------
 //
@@ -88,6 +88,7 @@ namespace Ionic.Zip
             {
                 bool thisSaveUsedZip64 = false;
                 _saveOperationCanceled = false;
+                _numberOfSegmentsForMostRecentSave = 0;
                 OnSaveStarted();
 
                 if (WriteStream == null)
@@ -129,6 +130,12 @@ namespace Ionic.Zip
                 if (_saveOperationCanceled)
                     return;
 
+                var zss = WriteStream as ZipSegmentedStream;
+
+                _numberOfSegmentsForMostRecentSave = (zss!=null)
+                    ? zss.CurrentSegment
+                    : 1;
+                    
                 WriteCentralDirectoryStructure(WriteStream);
 
                 OnSaveEvent(ZipProgressEventType.Saving_AfterSaveTempArchive);
@@ -139,8 +146,10 @@ namespace Ionic.Zip
                 thisSaveUsedZip64 |= _NeedZip64CentralDirectory;
                 _OutputUsesZip64 = new Nullable<bool>(thisSaveUsedZip64);
 
+
                 // do the rename as necessary
-                if (_temporaryFileName != null && _name != null)
+                if (_name != null &&  
+                    (_temporaryFileName!=null || zss != null))
                 {
                     // _temporaryFileName may remain null if we are writing to a stream.
                     // only close the stream if there is a file behind it. 
@@ -148,11 +157,9 @@ namespace Ionic.Zip
 #if !NETCF20
                     WriteStream.Dispose();
 #endif
-                    WriteStream = null;
-
                     if (_saveOperationCanceled)
                         return;
-
+                    
                     if ((_fileAlreadyExists) && (this._readstream != null))
                     {
                         // This means we opened and read a zip file. 
@@ -180,19 +187,17 @@ namespace Ionic.Zip
                         //
                         // Better to just keep it simple. 
                         File.Delete(_name);
-                        OnSaveEvent(ZipProgressEventType.Saving_BeforeRenameTempArchive);
-                        File.Move(_temporaryFileName, _name);
-                        OnSaveEvent(ZipProgressEventType.Saving_AfterRenameTempArchive);
                     }
-                    else
-                        File.Move(_temporaryFileName, _name);
+                    
+                    OnSaveEvent(ZipProgressEventType.Saving_BeforeRenameTempArchive);
+                    File.Move((zss != null) ? zss.CurrentName : _temporaryFileName, _name);
+                    OnSaveEvent(ZipProgressEventType.Saving_AfterRenameTempArchive);
 
                     _fileAlreadyExists = true;
                 }
 
                 OnSaveCompleted();
                 _JustSaved = true;
-
             }
 
             // workitem 5043
@@ -204,6 +209,7 @@ namespace Ionic.Zip
             return;
         }
 
+        
 
 
         private void RemoveTempFile()
@@ -225,13 +231,13 @@ namespace Ionic.Zip
 
         private void CleanupAfterSaveOperation()
         {
-            if ((_temporaryFileName != null) && (_name != null))
+            if (_name != null)
             {
-                // only close the stream if there is a file behind it. 
+                // close the stream if there is a file behind it. 
                 if (_writestream != null)
                 {
-                    try { _writestream.Close(); }
-                    catch { }
+                    //try { _writestream.Close(); }
+                    //catch { }
                     try
                     {
                         // workitem 7704
@@ -244,8 +250,12 @@ namespace Ionic.Zip
                     catch { }
                 }
                 _writestream = null;
-                RemoveTempFile();
-                _temporaryFileName = null;
+                
+                if (_temporaryFileName != null)
+                {
+                    RemoveTempFile();
+                    _temporaryFileName = null;
+                }
             }
         }
 
@@ -382,27 +392,49 @@ namespace Ionic.Zip
 
 
 
-
         private void WriteCentralDirectoryStructure(Stream s)
         {
-            // We need to keep track of the start and
-            // Finish of the Central Directory Structure.
+            var zss = s as ZipSegmentedStream;
+            if (zss != null)
+                zss.ContiguousWrite = true;
 
-            // Cannot always use WriteStream.Length or Position; some streams do not 
-            // support these. (eg, ASP.NET Response.OutputStream)
-            // In those cases we have a CountingStream.
-
-            var output = s as CountingStream;
-            long Start = (output != null) ? output.BytesWritten : s.Position;
-
+            // write to a memory stream in order to keep the
+            // CDR contiguous
+            var ms = new MemoryStream();
+            
             foreach (ZipEntry e in _entries)
             {
                 if (e.IncludedInMostRecentSave)
-                    e.WriteCentralDirectoryEntry(s);  // this writes a ZipDirEntry corresponding to the ZipEntry
+                    e.WriteCentralDirectoryEntry(ms);  // this writes a ZipDirEntry corresponding to the ZipEntry
             }
+            var a = ms.ToArray();
+            s.Write(a, 0, a.Length);
 
+            // We need to keep track of the start and
+            // Finish of the Central Directory Structure.
+
+            // Cannot always use WriteStream.Length or Position; some streams do
+            // not support these. (eg, ASP.NET Response.OutputStream) In those
+            // cases we have a CountingStream.
+
+            // Also, we cannot just set Start as s.Position bfore the write, and Finish
+            // as s.Position after the write.  In a split zip, the write may actually
+            // flip to the next segment.  In that case, Start will be zero.  But we
+            // don't know that til after we know the size of the thing to write.  So the
+            // answer is to compute the directory, then ask the ZipSegmentedStream which
+            // segment that directory would fall in, it it were written.  Then, include
+            // that data into the directory, and finally, write the directory to the
+            // output stream.
+
+            var output = s as CountingStream;
             long Finish = (output != null) ? output.BytesWritten : s.Position;
-
+            long Start = Finish - a.Length;
+            
+            // need to know which segment the EOCD record starts in
+            UInt32 startSegment = (zss != null)
+                ? zss.CurrentSegment
+                : 0;
+            
             Int64 SizeOfCentralDirectory = Finish - Start;
 
             _NeedZip64CentralDirectory =
@@ -411,17 +443,66 @@ namespace Ionic.Zip
         SizeOfCentralDirectory > 0xFFFFFFFF ||
         Start > 0xFFFFFFFF;
 
+            byte[] a2 = null;
+            
             // emit ZIP64 extensions as required
             if (_NeedZip64CentralDirectory)
             {
                 if (_zip64 == Zip64Option.Never)
                     throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the UseZip64WhenSaving property.");
 
-                WriteZip64EndOfCentralDirectory(s, Start, Finish);
+                a = GenZip64EndOfCentralDirectory(Start, Finish);
+                a2 = GenCentralDirectoryFooter(Start, Finish);
+                if (startSegment != 0)
+                {
+                    UInt32 thisSegment = zss.ComputeSegment(a.Length + a2.Length);
+                    int i = 16;
+                    // number of this disk
+                    Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
+                    i += 4;
+                    // number of the disk with the start of the central directory
+                    //Array.Copy(BitConverter.GetBytes(startSegment), 0, a, i, 4);
+                    Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
+                    
+                    i = 60;
+                    // offset 60
+                    // number of the disk with the start of the zip64 eocd
+                    Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
+                    i += 4;
+                    i += 8;
+                    
+                    // offset 72
+                    // total number of disks
+                    Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
+                }
+                s.Write(a, 0, a.Length);
+            }
+            else 
+                 a2 = GenCentralDirectoryFooter(Start, Finish);
+
+
+            // now, the regular footer
+            if (startSegment != 0)
+            {
+                // The assumption is the central directory is never split across
+                // segment boundaries.
+                
+                UInt16 thisSegment = (UInt16) zss.ComputeSegment(a2.Length);
+                int i = 4;
+                // number of this disk
+                Array.Copy(BitConverter.GetBytes(thisSegment), 0, a2, i, 2);
+                i += 2;
+                // number of the disk with the start of the central directory
+                //Array.Copy(BitConverter.GetBytes((UInt16)startSegment), 0, a2, i, 2);
+                Array.Copy(BitConverter.GetBytes(thisSegment), 0, a2, i, 2);
+                i += 2;
             }
 
-            // now, the footer
-            WriteCentralDirectoryFooter(s, Start, Finish);
+            s.Write(a2, 0, a2.Length);
+
+            // reset the contiguous write property if necessary
+            if (zss != null)
+                zss.ContiguousWrite = false;
         }
 
 
@@ -437,8 +518,7 @@ namespace Ionic.Zip
         }
 
         
-        private void WriteZip64EndOfCentralDirectory(Stream s,
-                                                     long StartOfCentralDirectory,
+        private byte[] GenZip64EndOfCentralDirectory(long StartOfCentralDirectory,
                                                      long EndOfCentralDirectory)
         {
             const int bufferLength = 12 + 44 + 20;
@@ -459,6 +539,7 @@ namespace Ionic.Zip
             Array.Copy(BitConverter.GetBytes(DataSize), 0, bytes, i, 8);
             i += 8;
 
+            // offset 12
             // VersionMadeBy = 45;
             bytes[i++] = 45;
             bytes[i++] = 0x00;
@@ -467,52 +548,57 @@ namespace Ionic.Zip
             bytes[i++] = 45;
             bytes[i++] = 0x00;
 
-            // number of the disk, and the disk with the start of the central dir.  Always zero.
+            // offset 16
+            // number of the disk, and the disk with the start of the central dir.
+            // (this may change later)
             for (int j = 0; j < 8; j++)
                 bytes[i++] = 0x00;
 
+            // offset 24
             long numberOfEntries = CountEntries();
             Array.Copy(BitConverter.GetBytes(numberOfEntries), 0, bytes, i, 8);
             i += 8;
             Array.Copy(BitConverter.GetBytes(numberOfEntries), 0, bytes, i, 8);
             i += 8;
 
+            // offset 40
             Int64 SizeofCentraldirectory = EndOfCentralDirectory - StartOfCentralDirectory;
             Array.Copy(BitConverter.GetBytes(SizeofCentraldirectory), 0, bytes, i, 8);
             i += 8;
             Array.Copy(BitConverter.GetBytes(StartOfCentralDirectory), 0, bytes, i, 8);
             i += 8;
 
+            // offset 56
             // now, the locator
             // signature
             sig = BitConverter.GetBytes(ZipConstants.Zip64EndOfCentralDirectoryLocatorSignature);
             Array.Copy(sig, 0, bytes, i, 4);
             i+=4;
             
-            // number of the disk with the zip64 eocd
-            bytes[i++] = 0x00;
-            bytes[i++] = 0x00;
-            bytes[i++] = 0x00;
-            bytes[i++] = 0x00;
+            // offset 60
+            // number of the disk with the start of the zip64 eocd
+            // (this will change later)
+            Array.Copy(BitConverter.GetBytes(_numberOfSegmentsForMostRecentSave-1), 0, bytes, i, 4);
+            i+=4;
 
+            // offset 64
             // relative offset of the zip64 eocd
             Array.Copy(BitConverter.GetBytes(EndOfCentralDirectory), 0, bytes, i, 8);
             i += 8;
 
+            // offset 72
             // total number of disks
-            bytes[i++] = 0x01;
-            bytes[i++] = 0x00;
-            bytes[i++] = 0x00;
-            bytes[i++] = 0x00;
+            // (this will change later)
+            Array.Copy(BitConverter.GetBytes(_numberOfSegmentsForMostRecentSave-1), 0, bytes, i, 4);
+            i+=4;
 
-            s.Write(bytes, 0, i);
+            return bytes;
         }
 
 
 
 
-        private void WriteCentralDirectoryFooter(Stream s,
-                                                 long StartOfCentralDirectory,
+        private byte[] GenCentralDirectoryFooter(long StartOfCentralDirectory,
                                                  long EndOfCentralDirectory)
         {
             int j = 0;
@@ -534,10 +620,12 @@ namespace Ionic.Zip
             i+=4;
             
             // number of this disk
+            // (this number may change later)
             bytes[i++] = 0;
             bytes[i++] = 0;
 
             // number of the disk with the start of the central directory
+            // (this number may change later)
             bytes[i++] = 0;
             bytes[i++] = 0;
 
@@ -611,7 +699,8 @@ namespace Ionic.Zip
                 }
             }
 
-            s.Write(bytes, 0, i);
+            //   s.Write(bytes, 0, i);
+            return bytes;
         }
 
     }

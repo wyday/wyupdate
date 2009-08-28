@@ -257,8 +257,6 @@ namespace wyUpdate.Common
         //Open Pre-RC2  client files
         public void OpenObsoleteClientFile(string fileName)
         {
-            byte[] fileIDBytes = new byte[7];
-
             FileStream fs = null;
 
             try
@@ -275,9 +273,7 @@ namespace wyUpdate.Common
             
 
             // Read back the file identification data, if any
-            fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IUCDFV2")
+            if (!ReadFiles.IsHeaderValid(fs, "IUCDFV2"))
             {
                 //free up the file so it can be deleted
                 fs.Close();
@@ -338,14 +334,10 @@ namespace wyUpdate.Common
 
         private void LoadClientData(Stream ms)
         {
-            byte[] fileIDBytes = new byte[7];
-
             ms.Position = 0;
 
             // Read back the file identification data, if any
-            ms.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IUCDFV2")
+            if (!ReadFiles.IsHeaderValid(ms, "IUCDFV2"))
             {
                 //free up the file so it can be deleted
                 ms.Close();
@@ -567,7 +559,7 @@ namespace wyUpdate.Common
             MemoryStream ms = new MemoryStream();
 
             // file-identification data
-            ms.Write(Encoding.UTF8.GetBytes("IUCDFV2"), 0, 7);
+            WriteFiles.WriteHeader(ms, "IUCDFV2");
 
             //Company Name
             WriteFiles.WriteDeprecatedString(ms, 0x01, companyName);

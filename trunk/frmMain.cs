@@ -214,13 +214,13 @@ namespace wyUpdate
 
             if (isAutoUpdateMode)
             {
-                //TODO: create the temp folder wher we'll
+                //TODO: create the temp folder where we'll
 
                 tempDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), update.ProductName);
 
                 Directory.CreateDirectory(tempDirectory);
 
-                //TODO: load the previous auto update state from "autoup.dat"
+                //TODO: load the previous auto update state from "autoupdate"
                 
                 
                 //TODO: sometimes we'll be on a completely different step
@@ -341,13 +341,7 @@ namespace wyUpdate
                 // wait mode - for automatic updates
                 if (commands["autoupdate"] != null)
                 {
-                    isAutoUpdateMode = true;
-
-                    updateHelper = new UpdateHelper(this);
-                    updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
-                    updateHelper.RequestReceived += UpdateHelper_RequestReceived;
-
-                    //StartFormHidden = true;
+                    SetupAutoupdateMode();
                 }
 
                 if (commands["quickcheck"] != null)
@@ -716,6 +710,12 @@ namespace wyUpdate
             {
                 if (files != null)//if there are some files needing closing
                 {
+                    // show myself, make topmost
+                    Show();
+                    TopMost = true;
+                    TopMost = false;
+
+                    // start the close processes form
                     Form proc = new frmProcesses(files, clientLang);
                     DialogResult result = proc.ShowDialog();
 
@@ -1159,6 +1159,21 @@ namespace wyUpdate
                 }
                 else if(isAutoUpdateMode)
                 {
+                    if ((frameNum == 4 || frameNum == -1) && 
+                        updateHelper.FileToExecuteAfterUpdate != null && File.Exists(updateHelper.FileToExecuteAfterUpdate))
+                    {
+                        Process start = new Process
+                        {
+                            StartInfo =
+                            {
+                                FileName = updateHelper.FileToExecuteAfterUpdate,
+                                Arguments = frameNum == 4 ? updateHelper.UpdateSuccessArgs : updateHelper.UpdateFailArgs
+                            }
+                        };
+
+                        start.Start();
+                    }
+
                     Close();
                     return;
                 }
@@ -1375,9 +1390,24 @@ namespace wyUpdate
 
         #region AutomaticUpdate functions (API)
 
-        void UpdateHelper_RequestReceived(object sender, UpdateStep e)
+        void SetupAutoupdateMode()
         {
-            switch (e)
+            isAutoUpdateMode = true;
+
+            updateHelper = new UpdateHelper(this);
+            updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
+            updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+        }
+
+        void UpdateHelper_RequestReceived(object sender, Action a, UpdateStep s)
+        {
+            if(a == Action.Cancel)
+            {
+                CancelUpdate(true);
+                return;
+            }
+
+            switch (s)
             {
                 case UpdateStep.CheckForUpdate:
 
@@ -1405,14 +1435,10 @@ namespace wyUpdate
                     InstallUpdates(update.CurrentlyUpdating);
 
                     break;
-                case UpdateStep.PreInstallInfo:
-
-                    //TODO: make a note of the pre-install info
-
+                case UpdateStep.RestartInfo:
 
                     // send a success signal.
                     updateHelper.SendSuccess();
-
 
                     break;
                 case UpdateStep.Install:
@@ -1430,32 +1456,40 @@ namespace wyUpdate
 
         void UpdateHelper_SenderProcessClosed(object sender, EventArgs e)
         {
-            //TODO: cleanup what currently doing (cancel any process)
-
-
-            // exit the client
-            if (isAutoUpdateMode && !updateHelper.PreInstallInfoSent)
-                Close();
+            // close wyUpdate if we're not installing an update
+            if (isAutoUpdateMode && !updateHelper.Installing)
+                CancelUpdate(true);
         }
 
 
 
         private void SaveAutoUpdateData(string fileName)
         {
-
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
 
             // Write any file-identification data you want to here
-            fs.Write(System.Text.Encoding.UTF8.GetBytes("IUAUFV1"), 0, 7);
+            WriteFiles.WriteHeader(fs, "IUAUFV1");
 
             // Version checked for / downloaded / or extracted
             WriteFiles.WriteString(fs, 0x01, update.NewVersion);
 
-            // Step on {Checked = 0, Downloaded = 1, Extracted = 2}
+            //TODO: Step on {Checked = 0, Downloaded = 1, Extracted = 2}
             WriteFiles.WriteString(fs, 0x02, serverFileLoc);
 
             // DateTime when the last step was taken.
             WriteFiles.WriteLong(fs, 0x03, DateTime.Now.ToBinary());
+
+            // file to execute
+            if (updateHelper.FileToExecuteAfterUpdate != null)
+                WriteFiles.WriteString(fs, 0x04, updateHelper.FileToExecuteAfterUpdate);
+
+            // success args
+            if (updateHelper.UpdateSuccessArgs != null)
+                WriteFiles.WriteString(fs, 0x05, updateHelper.UpdateSuccessArgs);
+
+            // fail args
+            if (updateHelper.UpdateFailArgs != null)
+                WriteFiles.WriteString(fs, 0x06, updateHelper.UpdateFailArgs);
 
 
 
@@ -1465,18 +1499,13 @@ namespace wyUpdate
 
         private void LoadAutoUpdateData(string fileName)
         {
-            byte[] fileIDBytes = new byte[7];
-
             FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
 
-            // Read back the file identification data, if any
-            fs.Read(fileIDBytes, 0, 7);
-            string fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IUAUFV1")
+            if(!ReadFiles.IsHeaderValid(fs, "IUAUFV1"))
             {
                 //free up the file so it can be deleted
                 fs.Close();
-                throw new Exception("Auto update state file ID is wrong: " + fileID);
+                throw new Exception("Auto update state file ID is wrong.");
             }
 
             byte bType = (byte)fs.ReadByte();
@@ -1488,13 +1517,21 @@ namespace wyUpdate
 
 
                         break;
-                    case 0x02: //Read Server data file location
+                    case 0x02:
                         
 
                         break;
-                    case 0x03: //Client server file location
+                    case 0x03:
                         
-
+                        break;
+                    case 0x04: // file to execute
+                        updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x05: // success args
+                        updateHelper.UpdateSuccessArgs = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x06: // fail args
+                        updateHelper.UpdateFailArgs = ReadFiles.ReadString(fs);
                         break;
 
 
@@ -1651,7 +1688,7 @@ namespace wyUpdate
             WriteFiles.WriteDeprecatedString(fs, 0x05, tempDirectory);
 
             //Old client file location (self)
-            WriteFiles.WriteDeprecatedString(fs, 0x06, System.Reflection.Assembly.GetExecutingAssembly().Location);
+            WriteFiles.WriteDeprecatedString(fs, 0x06, Application.ExecutablePath);
 
             //self update needed
             WriteFiles.WriteBool(fs, 0x07, willSelfUpdate);
@@ -1810,11 +1847,11 @@ namespace wyUpdate
             if (willSelfUpdate)
             {
                 //create the filename for the newly copied client
-                psi.FileName = Path.Combine(tempDirectory, 
-                        Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                psi.FileName = Path.Combine(tempDirectory,
+                        Path.GetFileName(Application.ExecutablePath));
 
                 //copy self to the temp folder
-                File.Copy(System.Reflection.Assembly.GetExecutingAssembly().Location, psi.FileName, true);
+                File.Copy(Application.ExecutablePath, psi.FileName, true);
             }
             else if (SelfUpdating)
             {
@@ -1822,7 +1859,7 @@ namespace wyUpdate
                 psi.FileName = oldClientLocation;
             }
             else
-                psi.FileName = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                psi.FileName = Application.ExecutablePath;
 
             if (needElevation)
                 psi.Verb = "runas"; //elevate to administrator
@@ -1897,7 +1934,7 @@ namespace wyUpdate
                 return false;
 
             //when self-updating, if this client is'nt in the userprofile folder
-            if ((willSelfUpdate || SelfUpdating) && !IsFileInDirectory(userProfileFolder, System.Reflection.Assembly.GetExecutingAssembly().Location))
+            if ((willSelfUpdate || SelfUpdating) && !IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
                 return false;
 
             //it's not changing anything outside the user profile folder

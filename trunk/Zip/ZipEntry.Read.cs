@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-12 17:50:45>
+// Time-stamp: <2009-August-28 15:28:47>
 //
 // ------------------------------------------------------------------
 //
@@ -39,8 +39,9 @@ namespace Ionic.Zip
             _readExtraDepth++;
             // workitem 8098: ok (restore)
             long posn = this.ArchiveStream.Position;
-
-            this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+            this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+            //this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+            
             byte[] block = new byte[30];
             this.ArchiveStream.Read(block, 0, block.Length);
             int i = 26;
@@ -50,7 +51,7 @@ namespace Ionic.Zip
             // workitem 8098: ok (relative)
             this.ArchiveStream.Seek(filenameLength, SeekOrigin.Current);
 
-            ProcessExtraField(extraFieldLength);
+            ProcessExtraField(this.ArchiveStream, extraFieldLength);
 
             // workitem 8098: ok (restore)
             this.ArchiveStream.Seek(posn, SeekOrigin.Begin);
@@ -63,8 +64,8 @@ namespace Ionic.Zip
             int bytesRead = 0;
 
             // change for workitem 8098
-            // ze._RelativeOffsetOfLocalHeader = ze.ArchiveStream.Position;
-            ze._RelativeOffsetOfLocalHeader = ze._zipfile.RelativeOffset;
+            ze._RelativeOffsetOfLocalHeader = ze.ArchiveStream.Position;
+            //ze._RelativeOffsetOfLocalHeader = ze._zipfile.RelativeOffset;
 
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(ze.ArchiveStream);
             bytesRead += 4;
@@ -139,7 +140,7 @@ namespace Ionic.Zip
             // workitem 6898
             if (ze._LocalFileName.EndsWith("/")) ze.MarkAsDirectory();
 
-            bytesRead += ze.ProcessExtraField(extraFieldLength);
+            bytesRead += ze.ProcessExtraField(ze.ArchiveStream, extraFieldLength);
 
             ze._LengthOfTrailer = 0;
 
@@ -345,8 +346,8 @@ namespace Ionic.Zip
 
             // Store the position in the stream for this entry
             // change for workitem 8098
-            //entry.__FileDataPosition = entry.ArchiveStream.Position;
-            entry.__FileDataPosition = entry._zipfile.RelativeOffset;
+            entry.__FileDataPosition = entry.ArchiveStream.Position;
+            //entry.__FileDataPosition = entry._zipfile.RelativeOffset;
 
             // seek past the data without reading it. We will read on Extract()            
             s.Seek(entry._CompressedFileDataSize + entry._LengthOfTrailer, SeekOrigin.Current);
@@ -420,11 +421,11 @@ namespace Ionic.Zip
         // and set the properties on the ZipEntry instance appropriately. 
         // This can be called when processing the Extra field in the Central Directory, 
         // or in the local header.
-        internal int ProcessExtraField(Int16 extraFieldLength)
+        internal int ProcessExtraField(Stream s, Int16 extraFieldLength)
         {
             int additionalBytesRead = 0;
 
-            Stream s = ArchiveStream;
+            //Stream s = ArchiveStream;
 
             if (extraFieldLength > 0)
             {
@@ -466,7 +467,6 @@ namespace Ionic.Zip
 #if AESCRYPTO
                         case 0x9901: // WinZip AES encryption is in use.  (workitem 6834)
                             // we will handle this extra field only  if compressionmethod is 0x63
-                            //Console.WriteLine("Found WinZip AES Encryption header (compression:0x{0:X2})", this._CompressionMethod);
                             j = ProcessExtraFieldWinZipAes(Buffer, j, DataSize, posn);
                             break;
 #endif
@@ -560,6 +560,7 @@ namespace Ionic.Zip
 
 #endif
 
+        
         private int ProcessExtraFieldZip64(byte[] Buffer, int j, Int16 DataSize, long posn)
         {
             // The PKWare spec says that any of {UncompressedSize, CompressedSize,

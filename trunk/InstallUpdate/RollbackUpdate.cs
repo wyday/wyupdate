@@ -222,7 +222,7 @@ namespace wyUpdate
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
 
             // file-identification data
-            fs.Write(Encoding.UTF8.GetBytes("IURURV1"), 0, 7);
+            WriteFiles.WriteHeader(fs, "IURURV1");
 
             WriteFiles.WriteInt(fs, 0x01, rollbackRegistry.Count);
 
@@ -237,8 +237,6 @@ namespace wyUpdate
 
         public static void ReadRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
         {
-            byte[] fileIDBytes = new byte[7];
-
             FileStream fs = null;
 
             try
@@ -254,9 +252,7 @@ namespace wyUpdate
             }
 
             // Read back the file identification data, if any
-            fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IURURV1")
+            if (!ReadFiles.IsHeaderValid(fs, "IURURV1"))
             {
                 //free up the file so it can be deleted
                 fs.Close();
@@ -324,8 +320,6 @@ namespace wyUpdate
 
         public static void ReadRollbackFiles(string fileName, List<string> rollbackFiles, List<string> rollbackFolders, List<string> createFolders)
         {
-            byte[] fileIDBytes = new byte[7];
-
             FileStream fs = null;
 
             try
@@ -341,9 +335,7 @@ namespace wyUpdate
             }
 
             // Read back the file identification data, if any
-            fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IURUFV1")
+            if (!ReadFiles.IsHeaderValid(fs, "IURUFV1"))
             {
                 //free up the file so it can be deleted
                 fs.Close();
@@ -469,7 +461,7 @@ namespace wyUpdate
                 FileStream fs = new FileStream(uninstallDataFile, FileMode.Create, FileAccess.Write);
 
                 // Write any file-identification data you want to here
-                fs.Write(Encoding.UTF8.GetBytes("IUUFRV1"), 0, 7);
+                WriteFiles.WriteHeader(fs, "IUUFRV1");
 
                 //write files to delete
                 foreach (UninstallFileInfo file in filesToUninstall)
@@ -526,17 +518,13 @@ namespace wyUpdate
                 throw;
             }
 
-            byte[] fileIDBytes = new byte[7];
-
-            // Read back the file identification data, if any
-            fs.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IUUFRV1")
+            if (!ReadFiles.IsHeaderValid(fs, "IUUFRV1"))
             {
                 //free up the file so it can be deleted
                 fs.Close();
 
                 throw new Exception("The uninstall file does not have the correct identifier - this is usually caused by file corruption.");
+
             }
 
             byte bType = (byte)fs.ReadByte();
@@ -566,14 +554,10 @@ namespace wyUpdate
 
         private static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
-            byte[] fileIDBytes = new byte[7];
-
             ms.Position = 0;
 
             // Read back the file identification data, if any
-            ms.Read(fileIDBytes, 0, 7);
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IUUFRV1")
+            if (!ReadFiles.IsHeaderValid(ms, "IUUFRV1"))
             {
                 //free up the file so it can be deleted
                 ms.Close();

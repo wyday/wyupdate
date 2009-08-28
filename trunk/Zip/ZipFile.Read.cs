@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-05 13:05:54>
+// Time-stamp: <2009-August-28 16:11:41>
 //
 // ------------------------------------------------------------------
 //
@@ -861,7 +861,9 @@ namespace Ionic.Zip
             if (readProgress != null)
                 zf.ReadProgress += readProgress;
             zf._StatusMessageTextWriter = statusMessageWriter;
-            zf._readstream = zipStream;
+            zf._readstream = (zipStream.Position == 0L)
+                ? zipStream
+                : new OffsetStream(zipStream);
             zf._ReadStreamIsOurs = false;
             if (zf.Verbose) zf._StatusMessageTextWriter.WriteLine("reading from stream...");
 
@@ -996,7 +998,7 @@ namespace Ionic.Zip
                 zf.OnReadStarted();
 
                 // change for workitem 8098
-                zf._originPosition = s.Position;
+                //zf._originPosition = s.Position;
 
                 // Try reading the central directory, rather than scanning the file. 
 
@@ -1041,9 +1043,17 @@ namespace Ionic.Zip
                     zf._locEndOfCDS = s.Position - 4;
                     byte[] block = new byte[16];
                     zf.ReadStream.Read(block, 0, block.Length);
+
+                    zf._diskNumberWithCd = BitConverter.ToUInt16(block, 2);
+                    
+                    if (zf._diskNumberWithCd == 0xFFFF)
+                        throw new ZipException("Spanned archives with more than 65534 segments are not supported at this time.");
+
+                    zf._diskNumberWithCd++; // I think the number in the file differs from reality by 1
+                    
                     int i = 12;
 
-                    uint offset32 = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
+                    uint offset32 = (uint) BitConverter.ToUInt32(block, i);
                     if (offset32 == 0xFFFFFFFF)
                     {
                         Zip64SeekToCentralDirectory(zf);
@@ -1051,8 +1061,7 @@ namespace Ionic.Zip
                     else
                     {
                         // change for workitem 8098
-                        //s.Seek(Offset32, SeekOrigin.Begin);
-                        zf.SeekFromOrigin(offset32);
+                        s.Seek(offset32, SeekOrigin.Begin);
                     }
 
                     ReadCentralDirectory(zf);
@@ -1062,7 +1071,8 @@ namespace Ionic.Zip
                     // Could not find the central directory.
                     // Fallback to the old method.
                     // workitem 8098: ok
-                    s.Seek(zf._originPosition, SeekOrigin.Begin);
+                    //s.Seek(zf._originPosition, SeekOrigin.Begin);
+                    s.Seek(0L, SeekOrigin.Begin);
                     ReadIntoInstance_Orig(zf);
                 }
             }
@@ -1103,8 +1113,8 @@ namespace Ionic.Zip
 
             Int64 Offset64 = BitConverter.ToInt64(block, 8);
             // change for workitem 8098
-            //s.Seek(Offset64, SeekOrigin.Begin);
-            zf.SeekFromOrigin(Offset64);
+            s.Seek(Offset64, SeekOrigin.Begin);
+            //zf.SeekFromOrigin(Offset64);
 
             uint datum = (uint)Ionic.Zip.SharedUtilities.ReadInt(s);
             if (datum != ZipConstants.Zip64EndOfCentralDirectoryRecordSignature)
@@ -1118,8 +1128,8 @@ namespace Ionic.Zip
 
             Offset64 = BitConverter.ToInt64(block, 36);
             // change for workitem 8098
-            //s.Seek(Offset64, SeekOrigin.Begin);
-            zf.SeekFromOrigin(Offset64);
+            s.Seek(Offset64, SeekOrigin.Begin);
+            //zf.SeekFromOrigin(Offset64);
         }
 
 
@@ -1145,6 +1155,13 @@ namespace Ionic.Zip
 
         private static void ReadCentralDirectory(ZipFile zf)
         {
+            // We must have the central directory footer record, in order to properly
+            // read zip dir entries from the central directory.  This because the logic
+            // knows when to open a spanned file when the volume number for the central
+            // directory differs from the volume number for the zip entry.  The
+            // _diskNumberWithCd was set when originally finding the offset for the
+            // start f the Central Directory.
+            
             ZipEntry de;
             while ((de = ZipEntry.ReadDirEntry(zf)) != null)
             {
@@ -1159,7 +1176,10 @@ namespace Ionic.Zip
 
             // workitem 8299
             if (zf._locEndOfCDS > 0)
-                zf.SeekFromOrigin(zf._locEndOfCDS);
+            {
+                zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
+                //zf.SeekFromOrigin(zf._locEndOfCDS);
+            }
             ReadCentralDirectoryFooter(zf);
 
             if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
@@ -1173,6 +1193,7 @@ namespace Ionic.Zip
             zf.OnReadCompleted();
         }
 
+        
         // build the TOC by reading each entry in the file.
         private static void ReadIntoInstance_Orig(ZipFile zf)
         {
@@ -1221,7 +1242,11 @@ namespace Ionic.Zip
 
             // workitem 8299
             if (zf._locEndOfCDS > 0)
-                zf.SeekFromOrigin(zf._locEndOfCDS);
+            {
+                zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);                
+                //zf.SeekFromOrigin(zf._locEndOfCDS);
+            }
+
 
             ReadCentralDirectoryFooter(zf);
 
@@ -1244,7 +1269,7 @@ namespace Ionic.Zip
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(s);
 
             byte[] block = null;
-
+            int j = 0;
             if (signature == ZipConstants.Zip64EndOfCentralDirectoryRecordSignature)
             {
                 // We have a ZIP64 EOCD
@@ -1270,6 +1295,16 @@ namespace Ionic.Zip
                 if (DataSize < 44)
                     throw new ZipException("Bad DataSize in the ZIP64 Central Directory.");
 
+                zf._versionMadeBy = BitConverter.ToUInt16(block, j);
+                j += 2;
+                zf._versionNeededToExtract = BitConverter.ToUInt16(block, j);
+                j += 2;
+                zf._diskNumberWithCd = BitConverter.ToUInt32(block, j);
+                j += 2;
+                
+                //zf._diskNumberWithCd++; // hack!!
+                    
+                // read the extended block
                 block = new byte[DataSize - 44];
                 s.Read(block, 0, block.Length);
                 // discard the result
@@ -1294,10 +1329,28 @@ namespace Ionic.Zip
                                                          signature, s.Position));
             }
 
-            // read a bunch of metadata for supporting multi-disk archives, which this library does not do.
+            // read the End-of-Central-Directory-Record
             block = new byte[16];
-            zf.ReadStream.Read(block, 0, block.Length); // discard result
+            zf.ReadStream.Read(block, 0, block.Length); 
 
+            // off sz  data
+            // -------------------------------------------------------
+            //  0   4  end of central dir signature (0x06054b50)
+            //  4   2  number of this disk 
+            //  6   2  number of the disk with start of the central directory
+            //  8   2  total number of entries in the  central directory on this disk 
+            // 10   2  total number of entries in  the central directory 
+            // 12   4  size of the central directory 
+            // 16   4  offset of start of central directory with respect to the starting disk number 
+            // 20   2  ZIP file comment length 
+            // 22  ??  ZIP file comment 
+
+            if (zf._diskNumberWithCd == 0)
+            {
+                zf._diskNumberWithCd = BitConverter.ToUInt16(block, 2);
+                //zf._diskNumberWithCd++; // hack!!
+            }
+         
             // read the comment here
             ReadZipFileComment(zf);
         }
@@ -1349,11 +1402,13 @@ namespace Ionic.Zip
         }
 
 
+        
+
         // workitem 8098
-        internal void SeekFromOrigin(long position)
-        {
-            this.ReadStream.Seek(position + _originPosition, SeekOrigin.Begin);
-        }
+//         internal void SeekFromOrigin(long position)
+//         {
+//             this.ReadStream.Seek(position + _originPosition, SeekOrigin.Begin);
+//         }
 
         //internal long Origin
         //{
@@ -1363,13 +1418,13 @@ namespace Ionic.Zip
         //    }
         //}
 
-        internal long RelativeOffset
-        {
-            get
-            {
-                return this.ReadStream.Position - _originPosition;
-            }
-        }
+//         internal long RelativeOffset
+//         {
+//             get
+//             {
+//                 return this.ReadStream.Position - _originPosition;
+//             }
+//         }
 
 
 

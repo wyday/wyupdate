@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 10:12:17>
+// Time-stamp: <2009-August-25 14:43:37>
 //
 // ------------------------------------------------------------------
 //
@@ -71,8 +71,9 @@ namespace Ionic.Zip
         
         /// <summary>
         /// When an error occurs during zipping, for example a file cannot be opened,
-        /// retry the operation that caused the error. 
-        /// (For COM clients, this is a 2.)
+        /// retry the operation that caused the error. Be careful with this option. If
+        /// the error is not temporary, the library will retry forever.  (For COM
+        /// clients, this is a 2.)
         /// </summary>
         Retry,
 

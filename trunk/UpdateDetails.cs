@@ -95,11 +95,7 @@ namespace wyUpdate.Common
             }
 
             // Read back the file identification data, if any
-            byte[] fileIDBytes = new byte[7];
-            fs.Read(fileIDBytes, 0, 7);
-
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-            if (fileID != "IUUDFV2")
+            if (!ReadFiles.IsHeaderValid(fs, "IUUDFV2"))
             {
                 //free up the file so it can be deleted
                 fs.Close();
@@ -185,7 +181,7 @@ namespace wyUpdate.Common
             MemoryStream ms = new MemoryStream();
 
             // Write any file-identification data you want to here
-            ms.Write(Encoding.UTF8.GetBytes("IUUDFV2"), 0, 7);
+            WriteFiles.WriteHeader(ms, "IUUDFV2");
 
             //Write post-update commands
             if (!string.IsNullOrEmpty(m_PostUpdateCommands))

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 12:45:57>
+// Time-stamp: <2009-August-28 15:28:33>
 //
 // ------------------------------------------------------------------
 //
@@ -151,8 +151,8 @@ namespace Ionic.Zip
             bytes[i++] = (byte)((commentLength & 0xFF00) >> 8);
 
             // Disk number start
-            bytes[i++] = 0;
-            bytes[i++] = 0;
+            bytes[i++] = (byte)(_diskNumber & 0x00FF);
+            bytes[i++] = (byte)((_diskNumber & 0xFF00) >> 8);
 
             // internal file attrs
             // workitem 7801
@@ -474,9 +474,6 @@ namespace Ionic.Zip
                      && ((SlashFixed[0] == '/') && (SlashFixed[1] == '/')))
             {
                 int n = SlashFixed.IndexOf('/', 2);
-                //System.Console.WriteLine("input Path '{0}'", FileName);
-                //System.Console.WriteLine("xformed: '{0}'", SlashFixed);
-                //System.Console.WriteLine("third slash: {0}\n", n);
                 if (n == -1)
                     throw new ArgumentException("The path for that entry appears to be badly formatted");
                 s1 = SlashFixed.Substring(n + 1);
@@ -632,13 +629,13 @@ namespace Ionic.Zip
                 else
                 {
                     // special case zero-length files
-                    FileInfo fi = new FileInfo(LocalFileName);
-                    long fileLength = fi.Length;
-                    if (fileLength == 0)
+                    // workitem 8423
+                    if (SharedUtilities.GetFileLength(LocalFileName) == 0L)
                     {
                         _CompressionMethod = 0x00;
                         return;
                     }
+                    
                 }
 
                 if (_ForceNoCompression)
@@ -661,7 +658,6 @@ namespace Ionic.Zip
                 // if there is no callback set, we use the default behavior.
                 _CompressionMethod = (short)(DefaultWantCompression()
                                              ? 0x08 : 0x00);
-                //Console.WriteLine("DefaultWantCompression: {0}", _CompressionMethod);
                 return;
             }
         }
@@ -671,28 +667,58 @@ namespace Ionic.Zip
         // write the header info for an entry
         private void WriteHeader(Stream s, int cycle)
         {
-            int j = 0;
-
-            // remember the offset, within the output stream, of this particular entry header
+            // Must remember the offset, within the output stream, of this particular
+            // entry header.
+            // 
+            // This is for 2 reasons:
+            //
+            //  1. so we can determine the RelativeOffsetOfLocalHeader (ROLH) for use in the
+            //     central directory.
+            //  2. so we can seek backward in case there is an error opening or reading
+            //     the file, and the application decides to skip the file. In this case,
+            //     we need to seek backward in the output stream to allow the next entry
+            //     to be added to the zipfile output stream.
+            //
+            // Normally you would just store the offset before writing to the output
+            // stream and be done with it.  But the possibility to use split archives
+            // makes this approach ineffective.  The reason is this: in Split archives,
+            // each file or segment is bound to a max size limit.  Also, in a split
+            // archive, a local file header must not span a segment boundary; it must be
+            // written contiguously.  If it will fit in the current segment, then the
+            // ROLH is just the current Position in the output stream.  If it won't fit,
+            // then we need a new file (segment) and the ROLH is zero.
+            //
+            // But we only can know if it is possible to write a header contiguously
+            // after we know the size of the local header, a size that varies with
+            // things like filename length, comments, and extra fields.  We have to
+            // compute the header fully before knowing whether it will fit.
+            //
+            // That takes care of item #1 above.  Now, regarding #2.  If an error occurs
+            // while computing the local header, we want to just seek backward. The
+            // exception handling logic (in the caller of WriteHeader) uses ROLH to
+            // scroll back.
+            // 
+            // All this means we have to preserve the starting offset before computing
+            // the header, and also we have to cmopute the offset later, to handle the
+            // case of split archives.
+            
             var counter = s as CountingStream;
+
             // workitem 8098: ok (output)
+            // this may change later, for split archives
             _RelativeOffsetOfLocalHeader = (counter != null)
                 ? counter.BytesWritten
                 : s.Position;
-
+            
+            int j = 0;
+            int i = 0;
             byte[] bytes = new byte[512];  // large enough for looooong filenames (MAX_PATH == 260)
 
-            int i = 0;
             // signature
             bytes[i++] = (byte)(ZipConstants.ZipEntrySignature & 0x000000FF);
             bytes[i++] = (byte)((ZipConstants.ZipEntrySignature & 0x0000FF00) >> 8);
             bytes[i++] = (byte)((ZipConstants.ZipEntrySignature & 0x00FF0000) >> 16);
             bytes[i++] = (byte)((ZipConstants.ZipEntrySignature & 0xFF000000) >> 24);
-
-            // validate the ZIP64 usage
-            if (_zipfile._zip64 == Zip64Option.Never && (uint)_RelativeOffsetOfLocalHeader >= 0xFFFFFFFF)
-                throw new ZipException("Offset within the zip archive exceeds 0xFFFFFFFF. Consider setting the UseZip64WhenSaving property on the ZipFile instance.");
-
 
             // Design notes for ZIP64:
 
@@ -904,8 +930,32 @@ namespace Ionic.Zip
 
             _LengthOfHeader = i;
 
+            // handle split archives
+            var zss= s as ZipSegmentedStream;
+            if (zss != null)
+            {
+                zss.ContiguousWrite = true;
+                UInt32 requiredSegment = zss.ComputeSegment(i);
+                if (requiredSegment != zss.CurrentSegment)
+                    _RelativeOffsetOfLocalHeader = 0; // rollover!
+                else
+                    _RelativeOffsetOfLocalHeader = zss.Position;
+
+                _diskNumber = requiredSegment;
+            }
+            
+            // validate the ZIP64 usage
+            if (_zipfile._zip64 == Zip64Option.Never && (uint)_RelativeOffsetOfLocalHeader >= 0xFFFFFFFF)
+                throw new ZipException("Offset within the zip archive exceeds 0xFFFFFFFF. Consider setting the UseZip64WhenSaving property on the ZipFile instance.");
+
+
+            
             // finally, write the header to the stream
             s.Write(bytes, 0, i);
+
+            // now that the header is written, we can turn off the contiguous write restriction.
+            if (zss != null)
+                zss.ContiguousWrite = false; 
 
             // preserve this header data, we'll use it again later.
             // ..when seeking backward, to write again, after we have the Crc, compressed
@@ -1047,10 +1097,12 @@ namespace Ionic.Zip
                     // FileShare.Delete is not defined for the Compact Framework
                     fs |= FileShare.Delete;
 #endif
-                    FileInfo fi = new FileInfo(LocalFileName);
-                    fileLength = fi.Length;
+                    //FileInfo fi = new FileInfo(LocalFileName);
+                    //fileLength = fi.Length;
 
+                    // workitem 8423
                     input = File.Open(LocalFileName, FileMode.Open, FileAccess.Read, fs);
+                    fileLength = input.Length;
                 }
 
 
@@ -1130,6 +1182,7 @@ namespace Ionic.Zip
                     _LengthOfTrailer += 10;
                 }
 #endif
+
             }
             finally
             {
@@ -1268,7 +1321,7 @@ namespace Ionic.Zip
 
 
 #if AESCRYPTO
-
+            
             if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
                 Encryption == EncryptionAlgorithm.WinZipAes256)
             {
@@ -1298,7 +1351,6 @@ namespace Ionic.Zip
                         _EntryHeader[i++] = (byte)(_CompressionMethod & 0xFF00);
                     }
                 } while (i < (extraFieldLength - 30 - filenameLength));
-
             }
 #endif
 
@@ -1310,20 +1362,35 @@ namespace Ionic.Zip
 
             if ((_BitField & 0x0008) != 0x0008)
             {
-                // seek in the raw output stream, to the beginning of the header for
-                // this entry.
-                // workitem 8098: ok (output)
-                s.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+                // seek back and rewrite the entry header
+                var zss = s as ZipSegmentedStream;
+                if (zss!=null && _diskNumber != zss.CurrentSegment)
+                {
+                    // in this case the entry header is in a different file
+                    using (Stream firstSeg = ZipSegmentedStream.ForUpdate(this._zipfile.Name, _diskNumber))
+                    {
+                        firstSeg.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+                        // write the updated header to the output stream
+                        firstSeg.Write(_EntryHeader, 0, _EntryHeader.Length);
+                    }
+                }
+                else
+                {
+                    // seek in the raw output stream, to the beginning of the header for
+                    // this entry.
+                    // workitem 8098: ok (output)
+                    s.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
 
-                // write the updated header to the output stream
-                s.Write(_EntryHeader, 0, _EntryHeader.Length);
+                    // write the updated header to the output stream
+                    s.Write(_EntryHeader, 0, _EntryHeader.Length);
 
-                // adjust the count on the CountingStream as necessary
-                var s1 = s as CountingStream;
-                if (s1 != null) s1.Adjust(_EntryHeader.Length);
+                    // adjust the count on the CountingStream as necessary
+                    var s1 = s as CountingStream;
+                    if (s1 != null) s1.Adjust(_EntryHeader.Length);
 
-                // seek in the raw output stream, to the end of the file data for this entry
-                s.Seek(_CompressedSize, SeekOrigin.Current);
+                    // seek in the raw output stream, to the end of the file data for this entry
+                    s.Seek(_CompressedSize, SeekOrigin.Current);
+                }
             }
             else
             {
@@ -1391,7 +1458,6 @@ namespace Ionic.Zip
                     return;
                 }
 
-
                 // Ok, the source for this entry is not a previously created zip file, or
                 // the settings whave changed in important ways and therefore we will need to
                 // process the bytestream (compute crc, maybe compress, maybe encrypt) in
@@ -1409,6 +1475,11 @@ namespace Ionic.Zip
                         // nothing more to write
                         _entryRequiresZip64 = new Nullable<bool>(_RelativeOffsetOfLocalHeader >= 0xFFFFFFFF);
                         _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
+                        // handle case for split archives
+                        var zss = s as ZipSegmentedStream;
+                        if (zss!=null)
+                            _diskNumber = zss.CurrentSegment;
+
                         return;
                     }
 
@@ -1525,7 +1596,6 @@ namespace Ionic.Zip
 
         private void _WriteSecurityMetadata(Stream outstream)
         {
-            //Console.WriteLine("_WriteSecurityMetadata({0})", FileName);
             if (_Password == null) return;
             if (Encryption == EncryptionAlgorithm.PkzipWeak)
             {
@@ -1607,7 +1677,7 @@ namespace Ionic.Zip
             if (this.LengthOfHeader == 0)
                     throw new BadStateException("Bad header length.");
 
-            var input1 = new Ionic.Zlib.CrcCalculatorStream(this.ArchiveStream);
+            //var input1 = new Ionic.Zlib.CrcCalculatorStream(this.ArchiveStream);
 
             // is it necessaty to re-streammetadata for this entry? 
             bool needRecompute = _metadataChanged ||
@@ -1615,9 +1685,9 @@ namespace Ionic.Zip
                 (!_InputUsesZip64 && _zipfile.UseZip64WhenSaving == Zip64Option.Always);
             
             if (needRecompute)
-                CopyThroughWithRecompute(outstream, input1);
+                CopyThroughWithRecompute(outstream);
             else
-                CopyThroughWithNoChange(outstream, input1);
+                CopyThroughWithNoChange(outstream);
 
             // zip64 housekeeping
             _entryRequiresZip64 = new Nullable<bool>
@@ -1626,14 +1696,14 @@ namespace Ionic.Zip
                 );
 
             _OutputUsesZip64 = new Nullable<bool>(_zipfile._zip64 == Zip64Option.Always || _entryRequiresZip64.Value);
-
         }
 
-        private void CopyThroughWithRecompute(Stream outstream, Ionic.Zlib.CrcCalculatorStream input1)
+        
+        private void CopyThroughWithRecompute(Stream outstream)
         {
             int n;
             byte[] bytes = new byte[BufferSize];
-            Stream input = this.ArchiveStream;
+            var input = new CountingStream(this.ArchiveStream);
 
             long origRelativeOffsetOfHeader = _RelativeOffsetOfLocalHeader;
 
@@ -1655,8 +1725,8 @@ namespace Ionic.Zip
                 _LengthOfHeader += LengthOfCryptoHeaderBytes;
 
                 // change for workitem 8098
-                //input.Seek(pos, SeekOrigin.Begin);
-                this._zipfile.SeekFromOrigin(pos);
+                input.Seek(pos, SeekOrigin.Begin);
+                //this._zipfile.SeekFromOrigin(pos);
 
                 // copy through everything after the header to the output stream
                 long remaining = this._CompressedSize;
@@ -1666,13 +1736,13 @@ namespace Ionic.Zip
                     int len = (remaining > bytes.Length) ? bytes.Length : (int)remaining;
 
                     // read
-                    n = input1.Read(bytes, 0, len);
+                    n = input.Read(bytes, 0, len);
                     //_CheckRead(n);
 
                     // write
                     outstream.Write(bytes, 0, n);
                     remaining -= n;
-                    OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
+                    OnWriteBlock(input.BytesRead, this._CompressedSize);
                     if (_ioOperationCanceled)
                         break;
                 }
@@ -1729,10 +1799,12 @@ namespace Ionic.Zip
             _TotalEntrySize = _LengthOfHeader + _CompressedFileDataSize + _LengthOfTrailer;
         }
 
-        private void CopyThroughWithNoChange(Stream outstream, Ionic.Zlib.CrcCalculatorStream input1)
+        
+        private void CopyThroughWithNoChange(Stream outstream)
         {
             int n;
             byte[] bytes = new byte[BufferSize];
+            var input = new CountingStream(this.ArchiveStream);
 
             //long origRelativeOffsetOfHeader = _RelativeOffsetOfLocalHeader;
 
@@ -1755,8 +1827,8 @@ namespace Ionic.Zip
 
             // once again, seek to the beginning of the entry data in the input stream
             // change for workitem 8098
-            //input.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
-            this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+            input.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+            //this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
 
             if (this._TotalEntrySize == 0)
             {
@@ -1793,20 +1865,18 @@ namespace Ionic.Zip
                 int len = (remaining > bytes.Length) ? bytes.Length : (int)remaining;
 
                 // read
-                n = input1.Read(bytes, 0, len);
+                n = input.Read(bytes, 0, len);
                 //_CheckRead(n);
 
                 // write
                 outstream.Write(bytes, 0, n);
                 remaining -= n;
                 //OnWriteBlock(input1.TotalBytesSlurped, this._CompressedSize);
-                OnWriteBlock(input1.TotalBytesSlurped, this._TotalEntrySize);
+                OnWriteBlock(input.BytesRead, this._TotalEntrySize);
                 if (_ioOperationCanceled)
                     break;
             }
         }
-
-
        
     }
 }
