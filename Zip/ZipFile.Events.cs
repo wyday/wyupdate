@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 09:28:38>
+// Time-stamp: <2009-August-25 15:27:07>
 //
 // ------------------------------------------------------------------
 //
@@ -658,12 +658,9 @@ namespace Ionic.Zip
             {
                 if (_lengthOfReadStream == -99)
                 {
-                    if (_ReadStreamIsOurs)
-                    {
-                        System.IO.FileInfo fi = new System.IO.FileInfo(_name);
-                        _lengthOfReadStream = fi.Length;
-                    }
-                    else _lengthOfReadStream = -1;
+                    _lengthOfReadStream = (_ReadStreamIsOurs)
+                        ? SharedUtilities.GetFileLength(_name)
+                        : -1L;
                 }
                 return _lengthOfReadStream;
             }

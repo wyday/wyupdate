@@ -167,6 +167,7 @@
     <Compile Include="Zip\GZipStream.cs" />
     <Compile Include="Zip\Inflate.cs" />
     <Compile Include="Zip\InfTree.cs" />
+    <Compile Include="Zip\OffsetStream.cs" />
     <Compile Include="Zip\Shared.cs" />
     <Compile Include="Zip\Tree.cs" />
     <Compile Include="Zip\WinZipAes.cs" />
@@ -186,6 +187,7 @@
     <Compile Include="Zip\ZipFile.Save.cs" />
     <Compile Include="Zip\ZipFile.Selector.cs" />
     <Compile Include="Zip\ZipFile.x-IEnumerable.cs" />
+    <Compile Include="Zip\ZipSegmentedStream.cs" />
     <Compile Include="Zip\Zlib.cs" />
     <Compile Include="Zip\ZlibCodec.cs" />
     <Compile Include="Zip\ZlibConstants.cs" />

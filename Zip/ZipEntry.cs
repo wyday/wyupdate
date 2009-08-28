@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 10:23:37>
+// Time-stamp: <2009-August-28 15:29:47>
 //
 // ------------------------------------------------------------------
 //
@@ -2279,6 +2279,20 @@ namespace Ionic.Zip
         }
 
 
+        internal Stream ArchiveStream
+        {
+            get
+            {
+                if (_archiveStream == null)
+                {
+                    _zipfile.Reset();
+                    _archiveStream = _zipfile.StreamForDiskNumber(_diskNumber);
+                }
+                return _archiveStream;
+            }
+        }
+
+        
         private void SetFdpLoh()
         {
             // The value for FileDataPosition has not yet been set. 
@@ -2287,9 +2301,12 @@ namespace Ionic.Zip
             long origPosition = this.ArchiveStream.Position;
             try
             {
+                // Console.WriteLine("SetFdpLoh...\n  pos  0x{0:X8} ({0})", this.ArchiveStream.Position);
+                // Console.WriteLine("  seek 0x{0:X8} ({0})", this._RelativeOffsetOfLocalHeader);
+                // Console.WriteLine("  stream: {0}", this.ArchiveStream.ToString());
                 // change for workitem 8098
-                //this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
-                this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+                this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+                //this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
             }
             catch (System.IO.IOException exc1)
             {
@@ -2309,12 +2326,18 @@ namespace Ionic.Zip
             Int16 filenameLength = (short)(block[26] + block[27] * 256);
             Int16 extraFieldLength = (short)(block[28] + block[29] * 256);
 
+            // Console.WriteLine("  pos  0x{0:X8} ({0})", this.ArchiveStream.Position);
+            // Console.WriteLine("  seek 0x{0:X8} ({0})", filenameLength + extraFieldLength);
+            
             this.ArchiveStream.Seek(filenameLength + extraFieldLength, SeekOrigin.Current);
             this._LengthOfHeader = 30 + extraFieldLength + filenameLength +
                 LengthOfCryptoHeaderBytes;
 
+            // Console.WriteLine("  ROLH  0x{0:X8} ({0})", _RelativeOffsetOfLocalHeader);
+            // Console.WriteLine("  LOH   0x{0:X8} ({0})", _LengthOfHeader);
             // workitem 8098: ok (arithmetic)
             this.__FileDataPosition = _RelativeOffsetOfLocalHeader + _LengthOfHeader;
+            // Console.WriteLine("  FDP   0x{0:X8} ({0})", __FileDataPosition);
 
             // restore file position:
             // workitem 8098: ok (restore)
@@ -2402,7 +2425,8 @@ namespace Ionic.Zip
         private bool _restreamRequiredOnSave;
         private bool _sourceIsEncrypted;
         private bool _skippedDuringSave;
-
+        private UInt32 _diskNumber;
+        
         private static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _actualEncoding;

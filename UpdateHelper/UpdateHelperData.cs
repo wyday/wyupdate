@@ -25,23 +25,29 @@ namespace wyUpdate.Common
 
         public UpdateHelperData() { }
 
+
+        public UpdateHelperData(Action action)
+        {
+            Action = action;
+        }
+
         public UpdateHelperData(UpdateStep step)
         {
+            Action = Action.UpdateStep;
             UpdateStep = step;
         }
 
         public UpdateHelperData(UpdateStep step, string extraData)
+            : this(step)
         {
-            UpdateStep = step;
-
             ExtraData.Add(extraData);
             ExtraDataIsRTF.Add(false);
         }
 
         public UpdateHelperData(Response responseType, UpdateStep step)
+            : this(step)
         {
             ResponseType = responseType;
-            UpdateStep = step;
         }
 
         public UpdateHelperData(Response responseType, UpdateStep step, int progress)
@@ -183,6 +189,6 @@ namespace wyUpdate.Common
     }
 
     internal enum Action { UpdateStep = 0, GetwyUpdateProcessID = 1, Cancel = 2 }
-    internal enum UpdateStep { CheckForUpdate = 0, DownloadUpdate = 1, BeginExtraction = 2, PreInstallInfo = 3, Install = 4, GetwyUpdateProcessID = 5 }
+    internal enum UpdateStep { CheckForUpdate = 0, DownloadUpdate = 1, BeginExtraction = 2, RestartInfo = 3, Install = 4 }
     internal enum Response { Failed = -1, Nothing = 0, Succeeded = 1, Progress = 2 }
 }

@@ -154,13 +154,14 @@ namespace wyUpdate.Common
                 BackupCreateKeyTree(rollbackRegistry);
 
             //set the new registry value
-            RegistryKey regValue = ReturnCreateKey();
-
-            regValue.SetValue(m_ValueName,
-                m_RegValueKind == RegistryValueKind.MultiString ? StringToMultiString(m_ValueData)  : m_ValueData, 
-                m_RegValueKind);
-            
-            regValue.Close();
+            using(RegistryKey regValue = ReturnCreateKey())
+            {
+                regValue.SetValue(m_ValueName,
+                    m_RegValueKind == RegistryValueKind.MultiString 
+                        ? StringToMultiString(m_ValueData)  
+                        : m_ValueData,
+                    m_RegValueKind);
+            }
         }
 
         private static object StringToMultiString(object str)
@@ -168,7 +169,7 @@ namespace wyUpdate.Common
             if (typeof(string[]) == str.GetType())
                 return str;
             
-            return ((string)str).Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            return ((string)str).Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         private void DeleteRegistryValue(List<RegChange> rollbackRegistry)
@@ -182,7 +183,7 @@ namespace wyUpdate.Common
             {
                 regValue = reg.GetValue(m_ValueName, null);
             }
-            catch (Exception) { }
+            catch { }
 
             if (regValue != null)
             {
@@ -211,13 +212,11 @@ namespace wyUpdate.Common
                     return Registry.ClassesRoot.CreateSubKey(m_SubKey);
                 case RegBasekeys.HKEY_CURRENT_CONFIG:
                     return Registry.CurrentConfig.CreateSubKey(m_SubKey);
-                case RegBasekeys.HKEY_CURRENT_USER:
-                    return Registry.CurrentUser.CreateSubKey(m_SubKey);
                 case RegBasekeys.HKEY_LOCAL_MACHINE:
                     return Registry.LocalMachine.CreateSubKey(m_SubKey);
                 case RegBasekeys.HKEY_USERS:
                     return Registry.Users.CreateSubKey(m_SubKey);
-                default:
+                default: // HKEY_CURRENT_USER
                     return Registry.CurrentUser.CreateSubKey(m_SubKey);
             }
         }
@@ -230,13 +229,11 @@ namespace wyUpdate.Common
                     return Registry.ClassesRoot.OpenSubKey(subkey);
                 case RegBasekeys.HKEY_CURRENT_CONFIG:
                     return Registry.CurrentConfig.OpenSubKey(subkey);
-                case RegBasekeys.HKEY_CURRENT_USER:
-                    return Registry.CurrentUser.OpenSubKey(subkey);
                 case RegBasekeys.HKEY_LOCAL_MACHINE:
                     return Registry.LocalMachine.OpenSubKey(subkey);
                 case RegBasekeys.HKEY_USERS:
                     return Registry.Users.OpenSubKey(subkey);
-                default:
+                default: //HKEY_CURRENT_USER
                     return Registry.CurrentUser.OpenSubKey(subkey);
             }
         }
@@ -250,25 +247,9 @@ namespace wyUpdate.Common
             if (rollbackRegistry != null)
                 BackupCreateKeyTree(rollbackRegistry);
 
-            switch (m_RegBasekey)
-            {
-                case RegBasekeys.HKEY_CLASSES_ROOT:
-                    Registry.ClassesRoot.CreateSubKey(m_SubKey);
-                    break;
-                case RegBasekeys.HKEY_CURRENT_CONFIG:
-                    Registry.CurrentConfig.CreateSubKey(m_SubKey);
-                    break;
-                case RegBasekeys.HKEY_LOCAL_MACHINE:
-                    Registry.LocalMachine.CreateSubKey(m_SubKey);
-                    break;
-                case RegBasekeys.HKEY_USERS:
-                    Registry.Users.CreateSubKey(m_SubKey);
-                    break;
-
-                default:
-                    Registry.CurrentUser.CreateSubKey(m_SubKey);
-                    break;
-            }
+            // create the key
+            RegistryKey key = ReturnCreateKey();
+            key.Close();
         }
 
         private void BackupCreateKeyTree(List<RegChange> rollbackRegistry)
@@ -331,7 +312,7 @@ namespace wyUpdate.Common
                             break;
                     }
                 }
-                catch (Exception) { }
+                catch { }
             }
         }
 
@@ -398,7 +379,7 @@ namespace wyUpdate.Common
                 else
                     retStr.Append("\"(Default)\" in ");
 
-            retStr.Append(m_RegBasekey.ToString() + "\\" + m_SubKey);
+            retStr.Append(m_RegBasekey + "\\" + m_SubKey);
 
             return retStr.ToString();
         }
@@ -501,7 +482,7 @@ namespace wyUpdate.Common
             {
                 binfs = new FileStream(filename, FileMode.Open, FileAccess.Read);
 
-                int sourceBytes = 0;
+                int sourceBytes;
 
                 do
                 {

@@ -311,7 +311,7 @@ namespace wyUpdate.Common
         /// <returns>The version of the currently executing assembly.</returns>
         public static string FromExecutingAssembly()
         {
-            return FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).FileVersion;
+            return FileVersionInfo.GetVersionInfo(System.Windows.Forms.Application.ExecutablePath).FileVersion;
         }
     }
 }

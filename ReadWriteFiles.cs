@@ -113,6 +113,12 @@ namespace wyUpdate.Common
             fs.Write(tempLength, 0, 4);
             fs.Write(arr, 0, arr.Length);
         }
+
+        public static void WriteHeader(Stream fs, string Header)
+        {
+            byte[] arr = Encoding.UTF8.GetBytes(Header);
+            fs.Write(arr, 0, arr.Length);
+        }
     }
 
     public static partial class ReadFiles
@@ -209,6 +215,21 @@ namespace wyUpdate.Common
 
             ReadWholeArray(fs, tempBytes);
             return BitConverter.ToInt64(tempBytes, 0);
+        }
+
+        public static bool IsHeaderValid(Stream fs, string HeaderShouldBe)
+        {
+            // NOTE: this assumes that 1 byte = 1 character.
+            // This is only true for alphanumeic characters.
+            // I.e. don't use this function if you don't know what I'm talking about.
+
+            byte[] fileIDBytes = new byte[HeaderShouldBe.Length];
+
+            // Read back the file identification data, if any
+            fs.Read(fileIDBytes, 0, fileIDBytes.Length);
+            string fileID = Encoding.UTF8.GetString(fileIDBytes);
+
+            return fileID == HeaderShouldBe;
         }
 
 

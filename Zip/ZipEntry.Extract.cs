@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 12:15:01>
+// Time-stamp: <2009-August-28 10:50:04>
 //
 // ------------------------------------------------------------------
 //
@@ -601,8 +601,8 @@ namespace Ionic.Zip
             Stream input = this.ArchiveStream;
 
             // change for workitem 8098
-            // this.ArchiveStream.Seek(this.FileDataPosition, SeekOrigin.Begin);
-            this._zipfile.SeekFromOrigin(this.FileDataPosition);
+             this.ArchiveStream.Seek(this.FileDataPosition, SeekOrigin.Begin);
+            //this._zipfile.SeekFromOrigin(this.FileDataPosition);
 
             // get a stream that either decrypts or not.
             Stream input2 = input;
@@ -622,22 +622,6 @@ namespace Ionic.Zip
                                                       _UncompressedSize);
         }
 
-
-        internal Stream ArchiveStream
-        {
-            get
-            {
-                if (_archiveStream == null)
-                {
-                    if (_zipfile != null)
-                    {
-                        _zipfile.Reset();
-                        _archiveStream = _zipfile.ReadStream;
-                    }
-                }
-                return _archiveStream;
-            }
-        }
 
 
         private void OnExtractProgress(Int64 bytesWritten, Int64 totalBytesToWrite)
@@ -946,8 +930,8 @@ namespace Ionic.Zip
             Stream input = this.ArchiveStream;
 
             // change for workitem 8098
-            //input.Seek(this.FileDataPosition, SeekOrigin.Begin);
-            this._zipfile.SeekFromOrigin(this.FileDataPosition);
+            input.Seek(this.FileDataPosition, SeekOrigin.Begin);
+            //this._zipfile.SeekFromOrigin(this.FileDataPosition);
 
             // to validate the CRC. 
             Int32 CrcResult = 0;
@@ -994,7 +978,6 @@ namespace Ionic.Zip
                 while (LeftToRead > 0)
                 {
                     //Console.WriteLine("ExtractOne: LeftToRead {0}", LeftToRead);
-
 
                     // Casting LeftToRead down to an int is ok here in the else clause,
                     // because that only happens when it is less than bytes.Length,
@@ -1236,8 +1219,8 @@ namespace Ionic.Zip
             if (Encryption == EncryptionAlgorithm.PkzipWeak)
             {
                 // change for workitem 8098
-                //this.ArchiveStream.Seek(this.FileDataPosition - 12, SeekOrigin.Begin);
-                this._zipfile.SeekFromOrigin(this.FileDataPosition - 12);
+                this.ArchiveStream.Seek(this.FileDataPosition - 12, SeekOrigin.Begin);
+                //this._zipfile.SeekFromOrigin(this.FileDataPosition - 12);
                 _zipCrypto = ZipCrypto.ForRead(password, this);
             }
 
@@ -1255,8 +1238,8 @@ namespace Ionic.Zip
                 {
                     int sizeOfSaltAndPv = LengthOfCryptoHeaderBytes;
                     // change for workitem 8098
-                    //this.ArchiveStream.Seek(this.FileDataPosition - sizeOfSaltAndPv, SeekOrigin.Begin);
-                    this._zipfile.SeekFromOrigin(this.FileDataPosition - sizeOfSaltAndPv);
+                    this.ArchiveStream.Seek(this.FileDataPosition - sizeOfSaltAndPv, SeekOrigin.Begin);
+                    //this._zipfile.SeekFromOrigin(this.FileDataPosition - sizeOfSaltAndPv);
                     _aesCrypto = WinZipAesCrypto.ReadFromStream(password, _KeyStrengthInBits, this.ArchiveStream);
 
                 }

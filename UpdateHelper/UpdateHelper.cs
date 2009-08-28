@@ -12,8 +12,7 @@ namespace wyUpdate.Common
 
         public UpdateStep UpdateStep;
 
-
-        public bool PreInstallInfoSent;
+        public bool Installing;
 
         public string FileToExecuteAfterUpdate;
         public string UpdateSuccessArgs;
@@ -34,7 +33,7 @@ namespace wyUpdate.Common
             pipeServer.ClientDisconnected += pipeServer_ClientDisconnected;
 
             // get the unique pipe name (the last 246 chars of the complete path)
-            string pipeName = System.Reflection.Assembly.GetExecutingAssembly().Location.Replace("\\", "").ToLower();
+            string pipeName = Application.ExecutablePath.Replace("\\", "").ToLower();
             int pipeNameL = pipeName.Length;
 
             pipeServer.Start("\\\\.\\pipe\\" + pipeName.Substring(Math.Max(0, pipeNameL - 246), Math.Min(246, pipeNameL)));
@@ -71,11 +70,16 @@ namespace wyUpdate.Common
             UpdateHelperData data = UpdateHelperData.FromByteArray(message);
 
             UpdateStep = data.UpdateStep;
-
-            if (UpdateStep == UpdateStep.PreInstallInfo)
+            
+            if (data.Action == Action.GetwyUpdateProcessID)
             {
-                PreInstallInfoSent = true;
+                // send ProcessID
+                pipeServer.SendMessage(new UpdateHelperData(Action.GetwyUpdateProcessID){ProcessID = Process.GetCurrentProcess().Id}.GetByteArray());
+                return;
+            }
 
+            if (UpdateStep == UpdateStep.RestartInfo)
+            {
                 // load the pre-install info
                 if (data.ExtraData.Count >= 1)
                     FileToExecuteAfterUpdate = data.ExtraData[0];
@@ -86,15 +90,11 @@ namespace wyUpdate.Common
                 if (data.ExtraData.Count >= 3)
                     UpdateFailArgs = data.ExtraData[2];
             }
-            else if (UpdateStep == UpdateStep.GetwyUpdateProcessID)
-            {
-                // send ProcessID
-                pipeServer.SendMessage(new UpdateHelperData(Response.Succeeded, UpdateStep){ProcessID = Process.GetCurrentProcess().Id}.GetByteArray());
-                return;
-            }
+            else if (UpdateStep == UpdateStep.Install)
+                Installing = true;
 
             if (RequestReceived != null)
-                RequestReceived(this, UpdateStep);
+                RequestReceived(this, data.Action, UpdateStep);
         }
 
         public void SendProgress(int progress)
@@ -126,5 +126,5 @@ namespace wyUpdate.Common
         }
     }
 
-    internal delegate void RequestHandler(object sender, UpdateStep e);
+    internal delegate void RequestHandler(object sender, Action a, UpdateStep s);
 }

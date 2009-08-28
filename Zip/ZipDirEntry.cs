@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-03 21:16:57>
+// Time-stamp: <2009-August-28 12:39:38>
 //
 // ------------------------------------------------------------------
 //
@@ -66,6 +66,35 @@ namespace Ionic.Zip
 #endif
 
         /// <summary>
+        /// Provides a human-readable string with information about the ZipEntry. 
+        /// </summary>
+        public string Info
+        {
+            get
+            {
+                var builder = new System.Text.StringBuilder();
+                builder.Append(string.Format("ZipEntry: {0}\n", this.FileName))
+                    .Append(string.Format("  Compressed: 0x{0:X}\n", this.CompressedSize))
+                    .Append(string.Format("  Uncompressed: 0x{0:X}\n", this.UncompressedSize))
+                    .Append(string.Format("  Disk Number: {0}\n", this._diskNumber))
+                    .Append(string.Format("  Relative Offset: 0x{0:X}\n", this._RelativeOffsetOfLocalHeader))
+                    .Append(string.Format("  Bit Field: 0x{0:X4}\n", this._BitField))
+                    .Append(string.Format("  Encrypted?: {0}\n", this._sourceIsEncrypted))
+                    .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
+                    .Append(string.Format("  Is Text?: {0}\n", this._IsText))
+                    .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64));
+                if (!string.IsNullOrEmpty(this._Comment))
+                {
+                    builder.Append(string.Format("  Comment: {0}\n", this._Comment));
+                }
+                return builder.ToString();
+            }
+        }
+
+
+
+
+        /// <summary>
         /// Reads one entry from the zip directory structure in the zip file. 
         /// </summary>
         /// <param name="zf">
@@ -109,7 +138,7 @@ namespace Ionic.Zip
             int i = 0;
             ZipEntry zde = new ZipEntry();
             zde._Source = ZipEntrySource.ZipFile;
-            zde._archiveStream = s;
+            //zde._archiveStream = s;
             zde._zipfile = zf;
             //zde._cdrPosition = cdrPosition;
 
@@ -132,8 +161,7 @@ namespace Ionic.Zip
             zde._filenameLength = (short)(block[i++] + block[i++] * 256);
             zde._extraFieldLength = (short)(block[i++] + block[i++] * 256);
             zde._commentLength = (short)(block[i++] + block[i++] * 256);
-            //Int16 diskNumber = (short)(block[i++] + block[i++] * 256);
-            i += 2;
+            zde._diskNumber = (UInt32)(block[i++] + block[i++] * 256);
 
             zde._InternalFileAttrs = (short)(block[i++] + block[i++] * 256);
             zde._ExternalFileAttrs = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
@@ -187,7 +215,7 @@ namespace Ionic.Zip
 
                 // Console.WriteLine("  Input uses Z64?:      {0}", zde._InputUsesZip64);
 
-                bytesRead += zde.ProcessExtraField(zde._extraFieldLength);
+                bytesRead += zde.ProcessExtraField(s, zde._extraFieldLength);
                 zde._CompressedFileDataSize = zde._CompressedSize;
             }
 
