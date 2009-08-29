@@ -106,9 +106,10 @@ namespace wyUpdate
                 if (canceled)
                     break;
 
+                int unweightedProgress = (totalDone * 100) / totalFiles;
                 ThreadHelper.ReportProgress(Sender, SenderDelegate, 
                     "Updating " + tempFiles[i].Name,
-                    GetRelativeProgess(4, (totalDone * 100) / totalFiles));
+                    GetRelativeProgess(4, unweightedProgress), unweightedProgress);
 
                 if (File.Exists(Path.Combine(progDir, tempFiles[i].Name)))
                 {
@@ -621,7 +622,7 @@ namespace wyUpdate
             Thread.CurrentThread.IsBackground = true; //make them a daemon
 
             // simply update the progress bar to show the 3rd step is entirely complete
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(3, 0));
+            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(3, 0), 0);
 
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
@@ -656,7 +657,7 @@ namespace wyUpdate
             Thread.CurrentThread.IsBackground = true; //make them a daemon
 
             // simply update the progress bar to show the 6th step is entirely complete
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0));
+            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0), 0);
 
             //optimize everything but "temp" files
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
@@ -676,7 +677,7 @@ namespace wyUpdate
                 }
             }
 
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50));
+            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
 
             //execute files
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
@@ -707,7 +708,7 @@ namespace wyUpdate
                 }
             }
 
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 100));
+            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 100), 100);
 
             //TODO: Make command processing more versatile
             //Process text commands like $refreshicons()

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 10:50:04>
+// Time-stamp: <2009-August-29 00:18:40>
 //
 // ------------------------------------------------------------------
 //
@@ -69,31 +69,6 @@ namespace Ionic.Zip
             InternalExtract(".", null, null);
         }
 
-        /// <summary>
-        /// Extract the entry to a file in the filesystem, potentially overwriting
-        /// any existing file. This method is Obsolete.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This method is Obsolete, please don't use it.  Please use method <see
-        /// cref="Extract(ExtractExistingFileAction)"/> instead.
-        /// </para>
-        /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
-        /// about how the last modified time of the created file is set after extraction.
-        /// </para>
-        /// </remarks>
-        /// <param name="overwrite">
-        /// true if the caller wants to overwrite an existing bfile 
-        /// by the same name in the filesystem.
-        /// </param>
-        /// <seealso cref="Extract(ExtractExistingFileAction)"/>
-        [Obsolete("Please use method Extract(ExtractExistingFileAction)")]
-        public void Extract(bool overwrite)
-        {
-            OverwriteOnExtract = overwrite;
-            InternalExtract(".", null, null);
-        }
 
         /// <summary>
         /// Extract the entry to a file in the filesystem, using the specified behavior 
@@ -145,7 +120,6 @@ namespace Ionic.Zip
         /// 
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.Extract(string, ExtractExistingFileAction)"/>
-        /// <seealso cref="Ionic.Zip.ZipFile.Extract(string)"/>
         /// 
         /// <example>
         /// This example extracts only the entries in a zip file that are .txt files, 
@@ -192,29 +166,7 @@ namespace Ionic.Zip
         }
 
 
-        /// <summary>
-        /// Extract the entry to the filesystem, starting at the specified base directory, 
-        /// and potentially overwriting existing files in the filesystem. 
-        /// </summary>
-        /// 
-        /// <remarks>
-        /// <para>
-        /// See the remarks on the LastModified property, for some details 
-        /// about how the last modified time of the created file is set.
-        /// </para>
-        /// </remarks>
-        /// 
-        /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// <param name="overwrite">If true, overwrite any existing files if necessary
-        /// upon extraction.</param>
-        ///
-        /// <seealso cref="Extract(String,ExtractExistingFileAction)"/>
-        [Obsolete("Please use method Extract(String,ExtractExistingFileAction)")]
-        public void Extract(string baseDirectory, bool overwrite)
-        {
-            OverwriteOnExtract = overwrite;
-            InternalExtract(baseDirectory, null, null);
-        }
+
 
 
         /// <summary>
@@ -356,28 +308,7 @@ namespace Ionic.Zip
             InternalExtract(baseDirectory, null, password);
         }
 
-        /// <summary>
-        /// Extract the entry to a file in the filesystem, potentially overwriting
-        /// any existing file.
-        /// </summary>
-        /// 
-        /// <remarks>
-        /// <para>
-        /// See the remarks on the LastModified property, for some details 
-        /// about how the last modified time of the created file is set.
-        /// </para>
-        /// </remarks>
-        /// 
-        /// <param name="overwrite">true if the caller wants to overwrite an existing 
-        /// file by the same name in the filesystem.</param>
-        /// <param name="password">The Password to use for decrypting the entry.</param>
-        /// <seealso cref="ExtractWithPassword(ExtractExistingFileAction,String)"/>
-        [Obsolete("Please use method ExtractWithPassword(ExtractExistingFileAction,String)")]
-        public void ExtractWithPassword(bool overwrite, string password)
-        {
-            OverwriteOnExtract = overwrite;
-            InternalExtract(".", null, password);
-        }
+
 
 
         /// <summary>
@@ -403,30 +334,7 @@ namespace Ionic.Zip
             InternalExtract(".", null, password);
         }
 
-        /// <summary>
-        /// Extract the entry to the filesystem, starting at the specified base directory, 
-        /// and potentially overwriting existing files in the filesystem. 
-        /// </summary>
-        /// 
-        /// <remarks>
-        /// See the remarks on the LastModified property, for some details 
-        /// about how the last modified time of the created file is set.
-        /// </remarks>
-        ///
-        /// <param name="baseDirectory">the pathname of the base directory</param>
-        ///
-        /// <param name="overwrite">If true, overwrite any existing files if necessary
-        /// upon extraction.</param>
-        ///
-        /// <param name="password">The Password to use for decrypting the entry.</param>
-        ///
-        /// <seealso cref="ExtractWithPassword(String,ExtractExistingFileAction,String)"/>
-        [Obsolete("Please use method ExtractWithPassword(String,ExtractExistingFileAction,String)")]
-        public void ExtractWithPassword(string baseDirectory, bool overwrite, string password)
-        {
-            OverwriteOnExtract = overwrite;
-            InternalExtract(baseDirectory, null, password);
-        }
+
 
         /// <summary>
         /// Extract the entry to the filesystem, starting at the specified base directory, and

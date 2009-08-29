@@ -12,7 +12,7 @@ namespace wyUpdate
         {
             int i = 0;
 
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(5, 0));
+            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(5, 0), 0);
 
             foreach (RegChange change in UpdtDetails.RegistryModifications)
             {
@@ -20,10 +20,11 @@ namespace wyUpdate
                     break;
 
                 i++;
+                int unweightedProgress =  (i * 100) / UpdtDetails.RegistryModifications.Count;
 
                 ThreadHelper.ReportProgress(Sender, SenderDelegate,
                     change.ToString(),
-                    GetRelativeProgess(5, (i * 100) / UpdtDetails.RegistryModifications.Count));
+                    GetRelativeProgess(5, unweightedProgress), unweightedProgress);
 
                 //execute the regChange, while storing the opposite operation
                 change.ExecuteOperation(rollbackRegistry);

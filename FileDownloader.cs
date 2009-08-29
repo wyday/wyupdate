@@ -46,7 +46,7 @@ namespace wyUpdate.Downloader
 
         readonly BackgroundWorker bw = new BackgroundWorker();
 
-        public delegate void ProgressChangedHandler(int percentDone, bool done, string extraStatus, Exception ex);
+        public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex);
         public event ProgressChangedHandler ProgressChanged;
 
         public FileDownloader(List<string> urls, string downloadfolder)
@@ -70,7 +70,7 @@ namespace wyUpdate.Downloader
                 {
                     //no sites specified, bail out
                     if (!bw.CancellationPending)
-                        bw.ReportProgress(0, new object[] { -1, true, string.Empty, new Exception("No download urls are specified.") });
+                        bw.ReportProgress(0, new object[] { -1, -1, true, string.Empty, new Exception("No download urls are specified.") });
 
                     return;
                 }
@@ -143,9 +143,9 @@ namespace wyUpdate.Downloader
             if (!bw.CancellationPending)
             {
                 if (ex != null)
-                    bw.ReportProgress(0, new object[] {-1, true, string.Empty, ex});
+                    bw.ReportProgress(0, new object[] {-1, -1, true, string.Empty, ex});
                 else
-                    bw.ReportProgress(0, new object[] { -1, true, string.Empty, null });
+                    bw.ReportProgress(0, new object[] { -1, -1, true, string.Empty, null });
             }
         }
 
@@ -154,7 +154,7 @@ namespace wyUpdate.Downloader
             object[] arr = (object[])e.UserState;
 
             if (ProgressChanged != null)
-                ProgressChanged((int) arr[0], (bool) arr[1], (string) arr[2], (Exception) arr[3]);
+                ProgressChanged((int)arr[0], (int)arr[1], (bool)arr[2], (string)arr[3], (Exception)arr[4]);
         }
 
         void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -271,7 +271,10 @@ namespace wyUpdate.Downloader
                             UseRelativeProgress ?
                                 InstallUpdate.GetRelativeProgess(0, data.PercentDone) :
                                 data.PercentDone,
-                                false, downloadSpeed, null });
+
+                            // unweighted percent
+                            data.PercentDone,
+                            false, downloadSpeed, null });
                     }
 
                     // break on cancel
@@ -485,7 +488,7 @@ namespace wyUpdate.Downloader
                 {
                     size = response.ContentLength;
                 }
-                catch (Exception) 
+                catch
                 {
                     //file size couldn't be determined
                     size = -1;

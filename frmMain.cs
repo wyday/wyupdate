@@ -95,7 +95,7 @@ namespace wyUpdate
 
         #region Threads
 
-        delegate void ShowProgressDelegate(int percentDone, bool statusDone, string extraStatus, Exception ex);
+        delegate void ShowProgressDelegate(int weightedPercentDone, int percentDone, bool statusDone, string extraStatus, Exception ex);
         delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
         delegate void CheckProcessesDel(List<FileInfo> files, bool statusDone);
 
@@ -473,11 +473,17 @@ namespace wyUpdate
         #region Downloading, updating, and checking processes (async)
 
         // update the label & progress bar when downloading/updating
-        private void ShowProgress(int percentDone, bool done, string extraStatus, Exception ex)
+        private void ShowProgress(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex)
         {
-            //update progress bar
-            if (percentDone >= 0 && percentDone <= 100)
+            //update progress bar when between 0 and 100
+            if (percentDone > -1 && percentDone < 101)
+            {
                 panelDisplaying.Progress = percentDone;
+
+                // send the progress to the AutoUpdate control
+                if(isAutoUpdateMode && updateHelper.UpdateStep != UpdateStep.Install)
+                    updateHelper.SendProgress(unweightedPercent);
+            }
 
             //update bottom status
             if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != "")
@@ -567,7 +573,7 @@ namespace wyUpdate
             }
         }
 
-        private void SelfUpdateProgress(int percentDone, bool done, string extraStatus, Exception ex)
+        private void SelfUpdateProgress(int percentDone, int unweightedProgress, bool done, string extraStatus, Exception ex)
         {
             //update progress bar
             panelDisplaying.Progress = percentDone;
@@ -1159,6 +1165,8 @@ namespace wyUpdate
                 }
                 else if(isAutoUpdateMode)
                 {
+                    //TODO: use updateHelper.AutoUpdateID to write Update AutoUpdater\[indetifier].autoupdate whether the update succeeded or failed
+
                     if ((frameNum == 4 || frameNum == -1) && 
                         updateHelper.FileToExecuteAfterUpdate != null && File.Exists(updateHelper.FileToExecuteAfterUpdate))
                     {
@@ -1166,8 +1174,7 @@ namespace wyUpdate
                         {
                             StartInfo =
                             {
-                                FileName = updateHelper.FileToExecuteAfterUpdate,
-                                Arguments = frameNum == 4 ? updateHelper.UpdateSuccessArgs : updateHelper.UpdateFailArgs
+                                FileName = updateHelper.FileToExecuteAfterUpdate
                             }
                         };
 
@@ -1483,15 +1490,8 @@ namespace wyUpdate
             if (updateHelper.FileToExecuteAfterUpdate != null)
                 WriteFiles.WriteString(fs, 0x04, updateHelper.FileToExecuteAfterUpdate);
 
-            // success args
-            if (updateHelper.UpdateSuccessArgs != null)
-                WriteFiles.WriteString(fs, 0x05, updateHelper.UpdateSuccessArgs);
-
-            // fail args
-            if (updateHelper.UpdateFailArgs != null)
-                WriteFiles.WriteString(fs, 0x06, updateHelper.UpdateFailArgs);
-
-
+            if (updateHelper.AutoUpdateID != null)
+                WriteFiles.WriteString(fs, 0x05, updateHelper.AutoUpdateID);
 
             fs.WriteByte(0xFF);
             fs.Close();
@@ -1527,13 +1527,10 @@ namespace wyUpdate
                     case 0x04: // file to execute
                         updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
                         break;
-                    case 0x05: // success args
-                        updateHelper.UpdateSuccessArgs = ReadFiles.ReadString(fs);
-                        break;
-                    case 0x06: // fail args
-                        updateHelper.UpdateFailArgs = ReadFiles.ReadString(fs);
-                        break;
 
+                    case 0x05: // autoupdate ID
+                        updateHelper.AutoUpdateID = ReadFiles.ReadString(fs);
+                        break;
 
                     default:
                         ReadFiles.SkipField(fs, bType);

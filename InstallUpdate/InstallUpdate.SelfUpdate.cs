@@ -115,7 +115,7 @@ namespace wyUpdate
             if (canceled || except != null)
             {
                 //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1);
+                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
 
                 //Delete temporary files
                 if (except != null && except.GetType() != typeof(PatchApplicationException))
