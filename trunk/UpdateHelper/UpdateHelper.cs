@@ -15,9 +15,7 @@ namespace wyUpdate.Common
         public bool Installing;
 
         public string FileToExecuteAfterUpdate;
-        public string UpdateSuccessArgs;
-        public string UpdateFailArgs;
-
+        public string AutoUpdateID;
 
         public event EventHandler SenderProcessClosed;
         public event RequestHandler RequestReceived;
@@ -81,14 +79,12 @@ namespace wyUpdate.Common
             if (UpdateStep == UpdateStep.RestartInfo)
             {
                 // load the pre-install info
-                if (data.ExtraData.Count >= 1)
+                if (data.ExtraData.Count > 0)
                     FileToExecuteAfterUpdate = data.ExtraData[0];
 
-                if (data.ExtraData.Count >= 2)
-                    UpdateSuccessArgs = data.ExtraData[1];
-
-                if (data.ExtraData.Count >= 3)
-                    UpdateFailArgs = data.ExtraData[2];
+                // load the AutoUpdateID (for writing to file whether the update failed or Succeeded)
+                if (data.ExtraData.Count > 1)
+                    AutoUpdateID = data.ExtraData[1];
             }
             else if (UpdateStep == UpdateStep.Install)
                 Installing = true;

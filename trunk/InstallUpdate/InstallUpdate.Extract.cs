@@ -23,11 +23,11 @@ namespace wyUpdate
 
                     if (!SkipProgressReporting)
                     {
+                        int unweightedPercent = totalFiles > 0 ? (filesDone*100)/totalFiles : 0;
+
                         ThreadHelper.ReportProgress(Sender, SenderDelegate,
                             "Extracting " + Path.GetFileName(e.FileName),
-                            totalFiles > 0 ?
-                               GetRelativeProgess(1, (filesDone * 100) / totalFiles) :
-                               GetRelativeProgess(1, 0));
+                            GetRelativeProgess(1, unweightedPercent), unweightedPercent);
 
                         filesDone++;
                     }
@@ -117,7 +117,7 @@ namespace wyUpdate
             if (canceled || except != null)
             {
                 //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1);
+                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
 
                 //Delete temporary files
 

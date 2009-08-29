@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 10:07:26>
+// Time-stamp: <2009-August-29 00:15:49>
 //
 // ------------------------------------------------------------------
 //
@@ -1052,45 +1052,6 @@ namespace Ionic.Zip
 
 
     
-        /// <summary>
-        /// Create an entry in the <c>ZipFile</c> using the given Stream as input.  The
-        /// entry will have the given filename and given directory path.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// This method has been deprecated. Please use <see cref="AddEntry(string,
-        /// string, System.IO.Stream)"/>.  This method will be removed in a future
-        /// version of this library.
-        /// </remarks>
-        ///
-        [Obsolete("Please use method AddEntry(string, string, System.IO.Stream))")]
-        public ZipEntry AddFileFromStream(string fileName,
-                                          string directoryPathInArchive,
-                                          Stream stream)
-        {
-            return AddEntry(fileName, directoryPathInArchive, stream);
-        }
-        
-
-
-        /// <summary>
-        /// Uses the given stream as input to create an entry in the <c>ZipFile</c>,
-        /// with the given filename and given directory path.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// This method has been deprecated. Please use <see cref="AddEntry(string,
-        /// string, System.IO.Stream)"/>.  This method will be removed in a future
-        /// version of this library.
-        /// </remarks>
-        [Obsolete("Please use method AddEntry(string, string, System.IO.Stream))")]
-        public ZipEntry AddFileStream(string fileName,
-                                      string directoryPathInArchive,
-                                      Stream stream)
-        {
-            return AddEntry(fileName, directoryPathInArchive, stream);
-        }
-
 
         /// <summary>
         /// Adds a named entry into the zip archive, taking content for the entry
@@ -1337,21 +1298,6 @@ namespace Ionic.Zip
 
         
         
-        /// <summary>
-        /// Adds a named entry into the zip archive, taking content for the entry
-        /// from a string.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// This method has been deprecated. Please use <see cref="AddEntry(string, string,
-        /// string)"/>.  This method will be removed in a future version of this library.
-        /// </remarks>
-        [Obsolete("Please use method AddEntry(string, String, string))")] 
-        public ZipEntry AddFileFromString(string fileName, string directoryPathInArchive, string content)
-        {
-            return AddEntry(fileName, directoryPathInArchive, content,
-                                     System.Text.Encoding.Default);
-        }
 
 
         /// <summary>
@@ -1487,23 +1433,6 @@ namespace Ionic.Zip
             return AddEntry(fileName, directoryPathInArchive, stream);
         }
 
-
-        /// <summary>
-        /// Updates the given entry in the <c>ZipFile</c>, using the given stream as
-        /// input, and the given filename and given directory path.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// This method has been deprecated. Please use <see cref="UpdateEntry(string,
-        /// string, System.IO.Stream)"/>.  This method will be removed in a future
-        /// version of this library.
-        /// </remarks>
-        [Obsolete("Please use method UpdateEntry()")]
-        public ZipEntry UpdateFileStream(string fileName, string directoryPathInArchive, Stream stream)
-        {
-            return UpdateEntry(fileName, directoryPathInArchive, stream);
-
-        }
 
 
 

@@ -23,7 +23,7 @@ namespace wyUpdate.Common
 
                     // NOTE: a -1 for progress assures that the progress bar won't be reset
 
-                    sender.BeginInvoke(del, new object[] { -1, true, errorText, ex });
+                    sender.BeginInvoke(del, new object[] { -1, -1, true, errorText, ex });
                     break;
                 }
                 catch { }
@@ -31,11 +31,11 @@ namespace wyUpdate.Common
             } while (true);
         }
 
-        public static void ReportProgress(ContainerControl sender, Delegate del, string text, int progress)
+        public static void ReportProgress(ContainerControl sender, Delegate del, string text, int progress, int unweightedProgress)
         {
             try
             {
-                sender.BeginInvoke(del, new object[] { progress, false, text, null });
+                sender.BeginInvoke(del, new object[] { progress, unweightedProgress, false, text, null });
             }
             catch
             {
@@ -53,7 +53,7 @@ namespace wyUpdate.Common
 
                     // NOTE: a -1 for progress assures that the progress bar won't be reset
 
-                    sender.BeginInvoke(del, new object[] { -1, true, text, null });
+                    sender.BeginInvoke(del, new object[] { -1, -1, true, text, null });
                     break;
                 }
                 catch (Exception ex) { }

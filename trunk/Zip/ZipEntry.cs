@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 15:29:47>
+// Time-stamp: <2009-August-29 00:19:34>
 //
 // ------------------------------------------------------------------
 //
@@ -246,7 +246,7 @@ namespace Ionic.Zip
         /// the times get the value <c>DateTime.Now</c>.  In this case <c>LastModified</c>
         /// and <c>ModifiedTime</c> will be identical, to 2 seconds of precision.  You can
         /// explicitly set the <c>CreationTime</c>, <c>AccessedTime</c>, and <c>ModifiedTime</c> of an entry
-        /// using <see cref="SetNtfsTimes(DateTime, DateTime, DateTime)"/>. Those changes
+        /// using <see cref="SetEntryTimes(DateTime, DateTime, DateTime)"/>. Those changes
         /// are not made permanent in the zip file until you call <see
         /// cref="ZipFile.Save()"/> or one of its cousins.  </para>
         ///
@@ -344,14 +344,6 @@ namespace Ionic.Zip
         }
 
 
-        /// <summary>
-        /// This method is obsolete.
-        /// </summary>
-        [Obsolete("Please use method SetEntryTimes(DateTime,DateTime,DateTime)")]
-        public void SetNtfsTimes(DateTime created, DateTime accessed, DateTime modified)
-        {
-            SetEntryTimes(created, accessed, modified);
-        }
 
         /// <summary>
         /// Specifies whether the Creation, Access, and Modified times for the
@@ -372,7 +364,7 @@ namespace Ionic.Zip
         /// cref="ModifiedTime"/>) times for the given entry are automatically set from the
         /// filesystem values. When adding an entry from a stream or string, all three
         /// values are implicitly set to DateTime.Now.  Applications can also explicitly
-        /// set those times by calling <see cref="SetNtfsTimes(DateTime, DateTime,
+        /// set those times by calling <see cref="SetEntryTimes(DateTime, DateTime,
         /// DateTime)" />.
         /// </para>
         ///
@@ -453,7 +445,7 @@ namespace Ionic.Zip
         /// cref="ModifiedTime"/>) times for the given entry are automatically set from the
         /// filesystem values. When adding an entry from a stream or string, all three
         /// values are implicitly set to DateTime.Now.  Applications can also explicitly
-        /// set those times by calling <see cref="SetNtfsTimes(DateTime, DateTime,
+        /// set those times by calling <see cref="SetEntryTimes(DateTime, DateTime,
         /// DateTime)"/>.
         /// </para>
         ///
@@ -754,7 +746,7 @@ namespace Ionic.Zip
         ///
         /// <para> Now imagine a different application that creates a zipfile with
         /// content obtained from hundreds of streams, added through <see
-        /// cref="ZipFile.AddFileFromStream(string, string, System.IO.Stream)"/>.
+        /// cref="ZipFile.AddEntry(string, string, System.IO.Stream)"/>.
         /// Normally the application would supply an open stream to that call.  But when
         /// large numbers of streams are being added, this can mean many open streams at
         /// one time, unnecessarily.  </para>
@@ -882,7 +874,7 @@ namespace Ionic.Zip
         /// <para>
         /// When creating a zip archive, an application can obtain content for one or more of the
         /// <c>ZipEntry</c> instances from streams, using the <see
-        /// cref="ZipFile.AddFileFromStream(string, string, System.IO.Stream)"/> method.  At the
+        /// cref="ZipFile.AddEntry(string, string, System.IO.Stream)"/> method.  At the
         /// time of calling that method, the application can supply null as the value of the
         /// stream parameter.  By doing so, the application indicates to the library that it will
         /// provide a stream for the entry on a just-in-time basis, at the time one of the
@@ -1743,34 +1735,6 @@ namespace Ionic.Zip
             }
         }
 
-
-
-        /// <summary>
-        /// Specifies that the extraction should overwrite any existing files. This
-        /// property is Obsolete.
-        /// </summary>
-        /// <remarks>
-        /// This property is Obsolete. Please don't use it!  Instead, use property <see
-        /// cref="ExtractExistingFile"/>.  If you must use it, you should know this:
-        /// this property applies only when calling an Extract method. By default this
-        /// property is false.
-        /// </remarks>
-        /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
-        [Obsolete("Please use property ExtractExistingFile")]
-        public bool OverwriteOnExtract
-        {
-            get
-            {
-                return (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently);
-            }
-            set
-            {
-                // legacy behavior
-                ExtractExistingFile = (value)
-                    ? ExtractExistingFileAction.OverwriteSilently
-                    : ExtractExistingFileAction.Throw;
-            }
-        }
 
 
 
