@@ -139,9 +139,11 @@
     <Compile Include="SystemMenu.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="UpdateHelper\AutoUpdaterInfo.cs" />
     <Compile Include="UpdateHelper\PipeServer.cs" />
     <Compile Include="UpdateHelper\UpdateHelper.cs" />
     <Compile Include="UpdateHelper\UpdateHelperData.cs" />
+    <Compile Include="UpdateHelper\UpdateStepOn.cs" />
     <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails.cs" />
     <Compile Include="UpdateEngine.cs" />

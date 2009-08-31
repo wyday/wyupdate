@@ -1165,18 +1165,31 @@ namespace wyUpdate
                 }
                 else if(isAutoUpdateMode)
                 {
-                    //TODO: use updateHelper.AutoUpdateID to write Update AutoUpdater\[indetifier].autoupdate whether the update succeeded or failed
-
-                    if ((frameNum == 4 || frameNum == -1) && 
+                    if ((frameNum == 4 || frameNum == -1) &&
                         updateHelper.FileToExecuteAfterUpdate != null && File.Exists(updateHelper.FileToExecuteAfterUpdate))
                     {
+                        //TODO: use updateHelper.AutoUpdateID to write Update AutoUpdater\[indetifier].autoupdate whether the update succeeded or failed
+                        wyDay.Controls.AutoUpdaterInfo auInfo =
+                            new wyDay.Controls.AutoUpdaterInfo(updateHelper.AutoUpdateID)
+                                {
+                                    UpdateVersion = update.NewVersion
+                                };
+
+                        if (frameNum == -1)
+                            auInfo.UpdateFailed = true;
+                        else
+                            auInfo.UpdateSucceeded = true;
+
+                        auInfo.Save();
+
+                        // start the updated program
                         Process start = new Process
-                        {
-                            StartInfo =
-                            {
-                                FileName = updateHelper.FileToExecuteAfterUpdate
-                            }
-                        };
+                                            {
+                                                StartInfo =
+                                                    {
+                                                        FileName = updateHelper.FileToExecuteAfterUpdate
+                                                    }
+                                            };
 
                         start.Start();
                     }
