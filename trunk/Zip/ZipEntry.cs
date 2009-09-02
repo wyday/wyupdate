@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-29 00:19:34>
+// Time-stamp: <2009-September-01 18:43:58>
 //
 // ------------------------------------------------------------------
 //
@@ -1737,8 +1737,6 @@ namespace Ionic.Zip
 
 
 
-
-
         /// <summary>
         /// The action the library should take when extracting a file that already exists.
         /// </summary>
@@ -1782,7 +1780,8 @@ namespace Ionic.Zip
         ///             response = Console.ReadLine();
         ///             Console.WriteLine();
         ///             
-        ///         } while (response != null &amp;&amp; response[0]!='Y' &amp;&amp; response[0]!='N' &amp;&amp; response[0]!='C');
+        ///         } while (response != null &amp;&amp; response[0]!='Y' &amp;&amp;
+        ///                  response[0]!='N' &amp;&amp; response[0]!='C');
         ///
         ///         if  (response[0]=='C')
         ///             e.Cancel = true;
@@ -1802,28 +1801,41 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        ///   The action the library should take when an error is encountered while
-        ///   opening or reading files as they are added to a zip archive. 
+        ///   The action to take when an error is encountered while
+        ///   opening or reading files as they are saved into a zip archive. 
         /// </summary>
         ///
         /// <remarks>
         ///  <para>
-        ///     In some cases an error will occur when DotNetZip tries to open a file to be
-        ///     added to the zip archive.  In other cases, an error might occur after the
-        ///     file has been successfully opened, while DotNetZip is reading the file.
+        ///     Errors can occur within a call to <see
+        ///     cref="ZipFile.Save()">ZipFile.Save</see>, as the various files contained
+        ///     in a ZipFile are being saved into the zip archive.  During the
+        ///     <c>Save</c>, DotNetZip will perform a <c>File.Open</c> on the file
+        ///     associated to the ZipEntry, and then will read the entire contents of
+        ///     the file as it is zipped. Either the open or the Read may fail, because
+        ///     of lock conflicts or other reasons.  Using this property, you can
+        ///     specify the action to take when such errors occur.
         ///  </para>
-        /// 
+        ///
         ///  <para>
-        ///    The first problem might occur when calling Adddirectory() on a directory
-        ///    that contains a Clipper .dbf file; the file is locked by Clipper and
-        ///    cannot be opened bby another process. An example of the second problem is
-        ///    the ERROR_LOCK_VIOLATION that results when a file is opened by another
-        ///    process, but not locked, and a range lock has been taken on the file.
-        ///    Microsoft Outlook takes range locks on .PST files.
+        ///     Typically you will NOT set this property on individual ZipEntry
+        ///     instances.  Instead, you will set the <see
+        ///     cref="ZipFile.ZipErrorAction">ZipFile.ZipErrorAction</see> property on
+        ///     the ZipFile instance, before adding any entries to the
+        ///     <c>ZipFile</c>. If you do this, errors encountered on behalf of any of
+        ///     the entries in the ZipFile will be handled the same way.
+        ///  </para>
+        ///
+        ///  <para>
+        ///     But, if you use a <see cref="ZipFile.ZipError"/> handler, you will want
+        ///     to set this property on the <c>ZipEntry</c> within the handler, to
+        ///     communicate back to DotNetZip what you would like to do with the
+        ///     particular error.
         ///  </para>
         ///
         /// </remarks>
         /// <seealso cref="Ionic.Zip.ZipFile.ZipErrorAction"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ZipError"/>
         public ZipErrorAction ZipErrorAction
         {
             get;

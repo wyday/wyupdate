@@ -33,7 +33,7 @@
         /// <summary>
         /// The AutomaticUpdater is extracting updates.
         /// </summary>
-        UpdateExtracting = 5,
+        ExtractingUpdate = 5,
 
         /// <summary>
         /// Updates have downloaded and extracted and are ready to be installed.

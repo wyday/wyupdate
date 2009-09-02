@@ -8,6 +8,7 @@ using System.Runtime.InteropServices; //launching elevated client
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using wyDay.Controls;
 using wyUpdate.Common;
 using wyUpdate.Downloader;
 
@@ -221,7 +222,14 @@ namespace wyUpdate
                 Directory.CreateDirectory(tempDirectory);
 
                 //TODO: load the previous auto update state from "autoupdate"
-                
+                try
+                {
+
+                }
+                catch (Exception)
+                {
+                    
+                }
                 
                 //TODO: sometimes we'll be on a completely different step
                 checkForUpdate = true;
@@ -264,7 +272,7 @@ namespace wyUpdate
             {
                 try
                 {
-                    //load the server file (without filling the 'changes' box)
+                    //load the server file (without filling the 'changes' box & without downloading the wyUpdate Server file)
                     LoadServerFile(false);
                 }
                 catch (Exception ex)
@@ -296,6 +304,8 @@ namespace wyUpdate
                 checkForUpdate = true;
         }
 
+        UpdateStepOn startStep;
+
         protected override void SetVisibleCore(bool value)
         {
             if (_isApplicationRun)
@@ -321,6 +331,8 @@ namespace wyUpdate
                 else if (checkForUpdate)
                     // begin check for updates
                     ShowFrame(1);
+
+                //TODO: load other steps from the autoupdate file
 
                 return;
             }
@@ -499,8 +511,7 @@ namespace wyUpdate
                     serverFileLoc = downloader.DownloadingTo;
                     try
                     {
-                        //load the server file into memory
-                        LoadServerFile(true);
+                        ServerDownloadedSuccessfully();
                     }
                     catch (NoUpdatePathToNewestException)
                     {
@@ -572,6 +583,7 @@ namespace wyUpdate
                 ShowFrame(-1);
             }
         }
+
 
         private void SelfUpdateProgress(int percentDone, int unweightedProgress, bool done, string extraStatus, Exception ex)
         {
@@ -856,6 +868,48 @@ namespace wyUpdate
                 updateEngine.LoadServerDatav2(clientSFLoc);
         }
 
+        private void ServerDownloadedSuccessfully()
+        {
+            //load the server file into memory
+            LoadServerFile(true);
+
+            // if we went to the finish page, bail out
+            if (frameOn != 1)
+                return;
+
+            if (isAutoUpdateMode)
+            {
+                //TODO: create a new folder to store the downloaded & extracted folder
+                try
+                {
+                    //TODO: delete existing update folders
+
+
+                    // TODO: set the autoupdate filename
+                    autoUpdateStateFile = Path.Combine(tempDirectory, "autoupdate");
+
+                    tempDirectory = Path.Combine(tempDirectory, update.NewVersion);
+
+                    // create a new upate folder
+                    Directory.CreateDirectory(tempDirectory);
+
+                    string newServerFileLoc = Path.Combine(tempDirectory, Path.GetFileName(serverFileLoc));
+
+                    if (File.Exists(newServerFileLoc))
+                        File.Delete(newServerFileLoc);
+
+                    // move the server file to the new update folder
+                    File.Move(serverFileLoc, newServerFileLoc);
+
+                    serverFileLoc = newServerFileLoc;
+                }
+                catch { }
+            }
+
+            //download the client server file and see if the client is new enough
+            BeginSelfUpdateDownload(update.ClientServerSites, 0);
+        }
+
         //returns True if an update is necessary, otherwise false
         private void LoadServerFile(bool setChangesText)
         {
@@ -884,32 +938,6 @@ namespace wyUpdate
                 return;
             }
 
-            if (isAutoUpdateMode)
-            {
-                //TODO: create a new folder to store the downloaded & extracted folder
-                try
-                {
-                    //TODO: delete existing update folders
-
-
-                    tempDirectory = Path.Combine(tempDirectory, update.NewVersion);
-
-                    // create a new upate folder
-                    Directory.CreateDirectory(tempDirectory);
-
-                    string newServerFileLoc = Path.Combine(tempDirectory, Path.GetFileName(serverFileLoc));
-
-                    if (File.Exists(newServerFileLoc))
-                        File.Delete(newServerFileLoc);
-
-                    // move the server file to the new update folder
-                    File.Move(serverFileLoc, newServerFileLoc);
-
-                    serverFileLoc = newServerFileLoc;
-                }
-                catch { }
-            }
-
             int i;
 
             for (i = 0; i < update.VersionChoices.Count; i++)
@@ -930,7 +958,8 @@ namespace wyUpdate
             if (updateFrom == null)
                 throw new NoUpdatePathToNewestException();
 
-            if (setChangesText)
+            // set the changes text
+            if (setChangesText || isAutoUpdateMode)
             {
                 //if there's a catch-all update start with one less than "update.VersionChoices.Count - 1"
 
@@ -953,9 +982,6 @@ namespace wyUpdate
                             panelDisplaying.AppendText(update.VersionChoices[j].Changes);
                     }
                 }
-
-                //download the client server file and see if the client is new enough
-                BeginSelfUpdateDownload(update.ClientServerSites, 0);
             }
         }
 
@@ -1007,7 +1033,7 @@ namespace wyUpdate
                     btnNext.Enabled = true;
                     btnNext.Text = clientLang.UpdateButton;
 
-                    if(QuickCheck)
+                    if (QuickCheck)
                     {
                         // show the update window
                         Visible = true;
@@ -1016,8 +1042,11 @@ namespace wyUpdate
 
                         QuickCheck = false;
                     }
-                    else if(isAutoUpdateMode)
+                    else if (isAutoUpdateMode)
                     {
+                        //TODO: save the automatic updater file
+                        SaveAutoUpdateData(UpdateStepOn.UpdateAvailable);
+
                         updateHelper.SendSuccess(update.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
                     }
 
@@ -1168,17 +1197,28 @@ namespace wyUpdate
                     if ((frameNum == 4 || frameNum == -1) &&
                         updateHelper.FileToExecuteAfterUpdate != null && File.Exists(updateHelper.FileToExecuteAfterUpdate))
                     {
-                        //TODO: use updateHelper.AutoUpdateID to write Update AutoUpdater\[indetifier].autoupdate whether the update succeeded or failed
-                        wyDay.Controls.AutoUpdaterInfo auInfo =
-                            new wyDay.Controls.AutoUpdaterInfo(updateHelper.AutoUpdateID)
-                                {
-                                    UpdateVersion = update.NewVersion
-                                };
+                        // save whether an update succeeded or failed
+                        AutoUpdaterInfo auInfo;
 
                         if (frameNum == -1)
-                            auInfo.UpdateFailed = true;
+                        {
+                            auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID)
+                                         {
+                                             UpdateFailed = true,
+                                             ErrorTitle = error,
+                                             ErrorMessage = errorDetails
+                                         };
+                        }
                         else
-                            auInfo.UpdateSucceeded = true;
+                        {
+                            auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID)
+                                         {
+                                             UpdateSucceeded = true,
+                                             UpdateVersion = update.NewVersion,
+                                             ChangesInLatestVersion = panelDisplaying.GetChangesRTF(),
+                                             ChangesIsRTF = true
+                                         };
+                        }
 
                         auInfo.Save();
 
@@ -1483,36 +1523,33 @@ namespace wyUpdate
 
 
 
-        private void SaveAutoUpdateData(string fileName)
+        private void SaveAutoUpdateData(UpdateStepOn updateStepOn)
         {
-            FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
+            FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Create, FileAccess.Write);
 
             // Write any file-identification data you want to here
             WriteFiles.WriteHeader(fs, "IUAUFV1");
 
-            // Version checked for / downloaded / or extracted
-            WriteFiles.WriteString(fs, 0x01, update.NewVersion);
-
-            //TODO: Step on {Checked = 0, Downloaded = 1, Extracted = 2}
-            WriteFiles.WriteString(fs, 0x02, serverFileLoc);
+            // Step on {Checked = 2, Downloaded = 4, Extracted = 6}
+            WriteFiles.WriteInt(fs, 0x01, (int)updateStepOn);
 
             // DateTime when the last step was taken.
-            WriteFiles.WriteLong(fs, 0x03, DateTime.Now.ToBinary());
+            WriteFiles.WriteLong(fs, 0x02, DateTime.Now.ToBinary());
 
             // file to execute
             if (updateHelper.FileToExecuteAfterUpdate != null)
-                WriteFiles.WriteString(fs, 0x04, updateHelper.FileToExecuteAfterUpdate);
+                WriteFiles.WriteString(fs, 0x03, updateHelper.FileToExecuteAfterUpdate);
 
             if (updateHelper.AutoUpdateID != null)
-                WriteFiles.WriteString(fs, 0x05, updateHelper.AutoUpdateID);
+                WriteFiles.WriteString(fs, 0x04, updateHelper.AutoUpdateID);
 
             fs.WriteByte(0xFF);
             fs.Close();
         }
 
-        private void LoadAutoUpdateData(string fileName)
+        private void LoadAutoUpdateData()
         {
-            FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+            FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Open, FileAccess.Read);
 
             if(!ReadFiles.IsHeaderValid(fs, "IUAUFV1"))
             {
@@ -1526,22 +1563,18 @@ namespace wyUpdate
             {
                 switch (bType)
                 {
-                    case 0x01: // Version checked for / downloaded / or extracted
-
+                    case 0x01:
+                        
 
                         break;
                     case 0x02:
                         
-
                         break;
-                    case 0x03:
-                        
-                        break;
-                    case 0x04: // file to execute
+                    case 0x03: // file to execute
                         updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
                         break;
 
-                    case 0x05: // autoupdate ID
+                    case 0x04: // autoupdate ID
                         updateHelper.AutoUpdateID = ReadFiles.ReadString(fs);
                         break;
 
@@ -1709,6 +1742,9 @@ namespace wyUpdate
             if (!string.IsNullOrEmpty(serverOverwrite))
                 WriteFiles.WriteDeprecatedString(fs, 0x09, serverOverwrite);
 
+            if (!string.IsNullOrEmpty(autoUpdateStateFile))
+                WriteFiles.WriteString(fs, 0x0A, autoUpdateStateFile);
+
             fs.WriteByte(0xFF);
             fs.Close();
         }
@@ -1781,6 +1817,9 @@ namespace wyUpdate
                         break;
                     case 0x09:
                         serverOverwrite = ReadFiles.ReadDeprecatedString(fs);
+                        break;
+                    case 0x0A:
+                        autoUpdateStateFile = ReadFiles.ReadString(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);

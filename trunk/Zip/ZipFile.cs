@@ -1063,9 +1063,9 @@ namespace Ionic.Zip
         ///
         /// <example>
         /// <para>
-        /// In this example, a console application instantiates a ZipFile, then sets
-        /// the StatusMessageTextWriter to Console.Out.  At that point, all verbose
-        /// status messages for that ZipFile are sent to the console. 
+        /// In this example, a console application instantiates a <c>ZipFile</c>, then sets
+        /// the <c>StatusMessageTextWriter</c> to Console.Out.  At that point, all verbose
+        /// status messages for that <c>ZipFile</c> are sent to the console. 
         /// </para>
         ///
         /// <code lang="C#">
@@ -1083,6 +1083,34 @@ namespace Ionic.Zip
         ///   'Status Messages will be sent to the console during extraction
         ///   zip.ExtractAll()
         /// End Using
+        /// </code>
+        /// </example>
+        /// 
+        /// <example>
+        /// <para>
+        /// In this example, a Windows Forms application instantiates a <c>ZipFile</c>, then sets
+        /// the <c>StatusMessageTextWriter</c> to a StringWriter.  At that point, all verbose
+        /// status messages for that <c>ZipFile</c> are sent to the <c>StringWriter</c>. 
+        /// </para>
+        ///
+        /// <code lang="C#">
+        /// var sw = new System.IO.StringWriter();
+        /// using (ZipFile zip= ZipFile.Read(FilePath))
+        /// {
+        ///   zip.StatusMessageTextWriter= sw;
+        ///   zip.ExtractAll();
+        /// }
+        /// Console.WriteLine("{0}", sw.ToString());
+        /// </code>
+        ///
+        /// <code lang="VB">
+        /// Dim sw as New System.IO.StringWriter
+        /// Using zip As ZipFile = ZipFile.Read(FilePath)
+        ///   zip.StatusMessageTextWriter= sw
+        ///   zip.ExtractAll()
+        /// End Using
+        /// 'Status Messages are now available in sw
+        ///
         /// </code>
         /// </example>
         public TextWriter StatusMessageTextWriter
@@ -1398,31 +1426,109 @@ namespace Ionic.Zip
 
         /// <summary>
         ///   The action the library should take when an error is encountered while
-        ///   opening or reading files as they are added to a zip archive. 
+        ///   opening or reading files as they are saved into a zip archive. 
         /// </summary>
         ///
         /// <remarks>
         ///  <para>
-        ///     In some cases an error will occur when DotNetZip tries to open a file to be
-        ///     added to the zip archive.  In other cases, an error might occur after the
-        ///     file has been successfully opened, while DotNetZip is reading the file.
+        ///     Errors can occur as a file is being saved to the zip archive.  For
+        ///     example, the File.Open may fail, or a File.Read may fail, because of
+        ///     lock conflicts or other reasons.
         ///  </para>
         /// 
         ///  <para>
-        ///    The first problem might occur when calling Adddirectory() on a directory
-        ///    that contains a Clipper .dbf file; the file is locked by Clipper and
-        ///    cannot be opened bby another process. An example of the second problem is
-        ///    the ERROR_LOCK_VIOLATION that results when a file is opened by another
-        ///    process, but not locked, and a range lock has been taken on the file.
-        ///    Microsoft Outlook takes range locks on .PST files.
+        ///    The first problem might occur after having called AddDirectory() on a
+        ///    directory that contains a Clipper .dbf file; the file is locked by
+        ///    Clipper and cannot be opened for read by another process. An example of
+        ///    the second problem might occur when trying to zip a .pst file that is in
+        ///    use by Microsoft Outlook. Outlook locks a range on the file, which allows
+        ///    other processes to open the file, but not read it in its entirety.
         ///  </para>
         ///
+        ///  <para>
+        ///    This property tells DotNetZip what you would like to do in the case of
+        ///    these errors.  The primary options are: <c>ZipErrorAction.Throw</c> to
+        ///    throw an exception (this is the default behavior if you don't set this
+        ///    property); <c>ZipErrorAction.Skip</c> to Skip the file for which there
+        ///    was an error and continue saving; <c>ZipErrorAction.Retry</c> to Retry
+        ///    the entry that caused the problem; or
+        ///    <c>ZipErrorAction.InvokeErrorEvent</c> to invoke an event handler.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    This property is implicitly set to <c>ZipErrorAction.InvokeErrorEvent</c>
+        ///    if you add a handler to the <see cref="ZipError" /> event.  If you set
+        ///    this property to something other than
+        ///    <c>ZipErrorAction.InvokeErrorEvent</c>, then the <c>ZipError</c>
+        ///    event is implicitly cleared.  What it means is you can set one or the
+        ///    other (or neither), depending on what you want, but you never need to set
+        ///    both.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    As with some other properties on the <c>ZipFile</c> class, like <see
+        ///    cref="Password"/> and <see cref="Encryption"/>, setting this property a
+        ///    <c>ZipFile</c> instance will cause the specified <c>ZipErrorAction</c> to
+        ///    be used on all <see cref="ZipEntry"/> items that are subsequently added
+        ///    to the <c>ZipFile</c> instance. If you set this property after you have
+        ///    added items to the <c>ZipFile</c>, but before you have called
+        ///    <c>Save()</c>, those items will not use the specified error handling action.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    If you want to handle any errors that occur with any entry in the zip
+        ///    file in the same way, then set this property once, before adding any
+        ///    entries to the zip archive.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    If you set this property to <c>ZipErrorAction.Skip</c> and you'd like to
+        ///    learn which files may have been skipped after a <c>Save()</c>, you can
+        ///    set the <see cref="StatusMessageTextWriter" /> on the ZipFile before
+        ///    calling <c>Save()</c>. A message will be emitted into that writer for
+        ///    each skipped file, if any.
+        ///  </para>
+        ///  
         /// </remarks>
+        ///
+        /// <example>
+        /// This example shows how to tell DotNetZip to skip any files for
+        /// which an error is generated during the Save(). 
+        /// <code lang="VB">
+        /// Public Sub SaveZipFile()
+        ///     Dim SourceFolder As String = "fodder"
+        ///     Dim DestFile As String =  "eHandler.zip"
+        ///     Dim sw as New StringWriter
+        ///     Using zipArchive As ZipFile = New ZipFile
+        ///         ' Tell DotNetZip to skip any files for which it encounters an error
+        ///         zipArchive.ZipErrorAction = ZipErrorAction.Skip
+        ///         zipArchive.StatusMessageTextWriter = sw
+        ///         zipArchive.AddDirectory(SourceFolder)
+        ///         zipArchive.Save(DestFile)
+        ///     End Using
+        ///     ' examine sw here to see any messages
+        /// End Sub    
+        /// 
+        /// </code>
+        /// </example>
+        ///
         /// <seealso cref="Ionic.Zip.ZipEntry.ZipErrorAction"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ZipError"/>
+        
         public ZipErrorAction ZipErrorAction
         {
-            get;
-            set;
+            get
+            {
+                if (ZipError != null)
+                    _zipErrorAction = ZipErrorAction.InvokeErrorEvent;
+                return _zipErrorAction;
+            }
+            set
+            {
+                _zipErrorAction = value;
+                if (_zipErrorAction != ZipErrorAction.InvokeErrorEvent && ZipError != null)
+                    ZipError = null; 
+            }
         }
 
 
@@ -1444,17 +1550,17 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// As with other properties (like <see cref="Password"/> and <see
-        /// cref="ForceNoCompression"/>), setting this property a <c>ZipFile</c>
-        /// instance will cause that <c>EncryptionAlgorithm</c> to be used on all <see
-        /// cref="ZipEntry"/> items that are subsequently added to the <c>ZipFile</c>
-        /// instance. In other words, if you set this property after you have added
-        /// items to the <c>ZipFile</c>, but before you have called <c>Save()</c>, those
-        /// items will not be encrypted or protected with a password in the resulting
-        /// zip archive. To get a zip archive with encrypted entries, set this property,
-        /// along with the <see cref="Password"/> property, before calling
-        /// <c>AddFile</c>, <c>AddItem</c>, or <c>AddDirectory</c> (etc.) on
-        /// the <c>ZipFile</c> instance.
+        /// As with some other properties on the <c>ZipFile</c> class, like <see
+        /// cref="Password"/> and <see cref="ForceNoCompression"/>, setting this
+        /// property on a <c>ZipFile</c> instance will cause the specified
+        /// <c>EncryptionAlgorithm</c> to be used on all <see cref="ZipEntry"/> items
+        /// that are subsequently added to the <c>ZipFile</c> instance. In other words,
+        /// if you set this property after you have added items to the <c>ZipFile</c>,
+        /// but before you have called <c>Save()</c>, those items will not be encrypted
+        /// or protected with a password in the resulting zip archive. To get a zip
+        /// archive with encrypted entries, set this property, along with the <see
+        /// cref="Password"/> property, before calling <c>AddFile</c>, <c>AddItem</c>,
+        /// or <c>AddDirectory</c> (etc.) on the <c>ZipFile</c> instance.
         /// </para>
         ///
         /// <para>
@@ -3016,6 +3122,7 @@ namespace Ionic.Zip
         private UInt32 _diskNumberWithCd;
         private Int32 _maxOutputSegmentSize;
         private UInt32 _numberOfSegmentsForMostRecentSave;
+        private ZipErrorAction _zipErrorAction;
         private bool _disposed;
         private System.Collections.Generic.List<ZipEntry> _entries;
         private bool _ForceNoCompression;

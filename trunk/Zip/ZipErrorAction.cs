@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 14:43:37>
+// Time-stamp: <2009-September-01 18:43:20>
 //
 // ------------------------------------------------------------------
 //
@@ -30,13 +30,13 @@ namespace Ionic.Zip
 {
     /// <summary>
     /// An enum providing the options when an error occurs during opening or reading
-    /// of a file or directory to be added to a zip file. 
+    /// of a file or directory that is being saved to a zip file. 
     /// </summary>
     ///
     /// <remarks>
     ///  <para>
     ///    This enum describes the actions that the library can take when an error occurs
-    ///    opening or reading a file, as it is being added to or saved into a Zip archive. 
+    ///    opening or reading a file, as it is being saved into a Zip archive. 
     ///  </para>
     ///
     ///  <para>
@@ -46,9 +46,9 @@ namespace Ionic.Zip
     ///  </para>
     /// 
     ///  <para>
-    ///    The first problem might occur when calling Adddirectory() on a directory
+    ///    The first problem might occur when calling AddDirectory() on a directory
     ///    that contains a Clipper .dbf file; the file is locked by Clipper and
-    ///    cannot be opened bby another process. An example of the second problem is
+    ///    cannot be opened by another process. An example of the second problem is
     ///    the ERROR_LOCK_VIOLATION that results when a file is opened by another
     ///    process, but not locked, and a range lock has been taken on the file.
     ///    Microsoft Outlook takes range locks on .PST files.

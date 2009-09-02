@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 12:39:38>
+// Time-stamp: <2009-September-01 13:37:42>
 //
 // ------------------------------------------------------------------
 //
@@ -74,12 +74,16 @@ namespace Ionic.Zip
             {
                 var builder = new System.Text.StringBuilder();
                 builder.Append(string.Format("ZipEntry: {0}\n", this.FileName))
+                    .Append(string.Format("  Version Made By: 0x{0:X}\n", this._VersionMadeBy))
+                    .Append(string.Format("  Version Needed: 0x{0:X}\n", this.VersionNeeded))
+                    .Append(string.Format("  Compression Method: 0x{0:X}\n", this.CompressionMethod))
                     .Append(string.Format("  Compressed: 0x{0:X}\n", this.CompressedSize))
                     .Append(string.Format("  Uncompressed: 0x{0:X}\n", this.UncompressedSize))
                     .Append(string.Format("  Disk Number: {0}\n", this._diskNumber))
                     .Append(string.Format("  Relative Offset: 0x{0:X}\n", this._RelativeOffsetOfLocalHeader))
                     .Append(string.Format("  Bit Field: 0x{0:X4}\n", this._BitField))
                     .Append(string.Format("  Encrypted?: {0}\n", this._sourceIsEncrypted))
+                    .Append(string.Format("  Timeblob: 0x{0:X4}\n", this._TimeBlob))
                     .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
                     .Append(string.Format("  Is Text?: {0}\n", this._IsText))
                     .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64));
