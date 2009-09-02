@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 11:07:15>
+// Time-stamp: <2009-September-01 12:13:31>
 //
 // ------------------------------------------------------------------
 //
@@ -323,7 +323,7 @@ namespace Ionic.Zip
             }
             catch (System.ArgumentOutOfRangeException)
             {
-                if (year == 1980 && month == 0 && day == 0)
+                if (year == 1980 && (month == 0 || day == 0))
                 {
                     try
                     {

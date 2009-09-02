@@ -11,8 +11,14 @@ namespace wyDay.Controls
         public UpdateStepOn UpdateStepOn { get; set; }
 
         public bool UpdateSucceeded { get; set; }
-        public bool UpdateFailed { get; set; }
         public string UpdateVersion { get; set; }
+        public string ChangesInLatestVersion { get; set; }
+        public bool ChangesIsRTF { get; set; }
+
+        public bool UpdateFailed { get; set; }
+        public string ErrorTitle { get; set; }
+        public string ErrorMessage { get; set; }
+        
 
         string autoUpdateID;
 
@@ -78,11 +84,25 @@ namespace wyDay.Controls
             WriteFiles.WriteInt(fs, 0x02, (int)UpdateStepOn);
 
 #if CLIENT
-            if (UpdateSucceeded && !string.IsNullOrEmpty(UpdateVersion))
-                WriteFiles.WriteString(fs, 0x03, UpdateVersion);
+            if (UpdateSucceeded)
+            {
+                if (!string.IsNullOrEmpty(UpdateVersion))
+                    WriteFiles.WriteString(fs, 0x03, UpdateVersion);
 
-            if (UpdateFailed && !string.IsNullOrEmpty(UpdateVersion))
-                WriteFiles.WriteString(fs, 0x04, UpdateVersion);
+                if (!string.IsNullOrEmpty(ChangesInLatestVersion))
+                    WriteFiles.WriteString(fs, 0x04, ChangesInLatestVersion);
+
+                WriteFiles.WriteBool(fs, 0x05, ChangesIsRTF);
+            }
+
+            if (UpdateFailed)
+            {
+                if (!string.IsNullOrEmpty(ErrorTitle))
+                    WriteFiles.WriteString(fs, 0x06, ErrorTitle);
+
+                if (!string.IsNullOrEmpty(ErrorMessage))
+                    WriteFiles.WriteString(fs, 0x07, ErrorMessage);
+            }
 #endif
 
             fs.WriteByte(0xFF);
@@ -118,8 +138,23 @@ namespace wyDay.Controls
                         UpdateSucceeded = true;
                         break;
 
-                    case 0x04: // update failed
-                        UpdateVersion = ReadFiles.ReadString(fs);
+                    case 0x04:
+                        ChangesInLatestVersion = ReadFiles.ReadString(fs);
+                        UpdateSucceeded = true;
+                        break;
+
+                    case 0x05:
+                        ChangesIsRTF = ReadFiles.ReadBool(fs);
+                        UpdateSucceeded = true;
+                        break;
+
+                    case 0x06: // update failed
+                        ErrorTitle = ReadFiles.ReadString(fs);
+                        UpdateFailed = true;
+                        break;
+
+                    case 0x07:
+                        ErrorMessage = ReadFiles.ReadString(fs);
                         UpdateFailed = true;
                         break;
 

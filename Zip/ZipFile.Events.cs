@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 15:27:07>
+// Time-stamp: <2009-September-01 18:35:29>
 //
 // ------------------------------------------------------------------
 //
@@ -1005,28 +1005,125 @@ namespace Ionic.Zip
         
         #region Error
         /// <summary>
-        /// An event handler invoked when an error occurs during open or read of files
+        /// An event that is raised when an error occurs during open or read of files
         /// while saving a zip archive.
         /// </summary>
         ///
         /// <remarks>
         ///  <para>
-        ///     In some cases an error will occur when a file to be added to the zip
-        ///     archive is opened.  In other cases, an error might occur after the file
-        ///     has been successfully opened, while reading the file.
+        ///     Errors can occur as a file is being saved to the zip archive.  For
+        ///     example, the File.Open may fail, or a File.Read may fail, because of
+        ///     lock conflicts or other reasons.  If you add a handler to this event,
+        ///     you can handle such errors in your own code.  If you don't add a
+        ///     handler, the library will throw an exception if it encounters an I/O
+        ///     error during a call to <c>Save()</c>.
         ///  </para>
         /// 
         ///  <para>
-        ///    The first problem might occur when calling Adddirectory() on a directory
-        ///    that contains a Clipper .dbf file; the file is locked by Clipper and
-        ///    cannot be opened bby another process. An example of the second problem is
-        ///    the ERROR_LOCK_VIOLATION that results when a file is opened by another
-        ///    process, but not locked, and a range lock has been taken on the file.
-        ///    Microsoft Outlook takes range locks on .PST files.
+        ///    Setting a handler implicitly sets <see cref="ZipFile.ZipErrorAction"/> to
+        ///    <c>ZipErrorAction.InvokeErrorEvent</c>.
+        ///  </para>
+        /// 
+        ///  <para>
+        ///    The handler you add applies to all <see cref="ZipEntry"/> items that are
+        ///    subsequently added to the <c>ZipFile</c> instance. If you set this
+        ///    property after you have added items to the <c>ZipFile</c>, but before you
+        ///    have called <c>Save()</c>, errors that occur while saving those items
+        ///    will not cause the error handler to be invoked.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    If you want to handle any errors that occur with any entry in the zip
+        ///    file using the same error handler, then add your error handler once,
+        ///    before adding any entries to the zip archive.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    In the error handler method, you need to set the <see
+        ///    cref="ZipEntry.ZipErrorAction"/> property on the
+        ///    <c>ZipErrorEventArgs.CurrentEntry</c>.  This communicates back to
+        ///    DotNetZip what you would like to do with this particular error.  Within
+        ///    an error handler, if you set the <c>ZipEntry.ZipErrorAction</c> property
+        ///    on the <c>ZipEntry</c> to <c>ZipErrorAction.InvokeErrorEvent</c> or if
+        ///    you don't set it at all, the library will throw the exception. (It is the
+        ///    same as if you had set the <c>ZipEntry.ZipErrorAction</c> property on the
+        ///    <c>ZipEntry</c> to <c>ZipErrorAction.Throw</c>.) If you set the
+        ///    <c>ZipErrorEventArgs.Cancel</c> to true, the entire <c>Save()</c> will be
+        ///    canceled.
         ///  </para>
         ///
         /// </remarks>
         ///
+        /// <example>
+        /// 
+        /// This example shows how to use an event handler to handle
+        /// errors during save of the zip file.
+        /// <code lang="C#">
+        ///
+        /// public static void MyZipError(object sender, ZipErrorEventArgs e)
+        /// {
+        ///     Console.WriteLine("Error saving {0}...", e.FileName);
+        ///     Console.WriteLine("   Exception: {0}", e.exception);
+        ///     ZipEntry entry = e.CurrentEntry;
+        ///     string response = null;
+        ///     // Ask the user whether he wants to skip this error or not
+        ///     do
+        ///     {
+        ///         Console.Write("Retry, Skip, Throw, or Cancel ? (R/S/T/C) ");
+        ///         response = Console.ReadLine();
+        ///         Console.WriteLine();
+        ///             
+        ///     } while (response != null &amp;&amp;
+        ///              response[0]!='S' &amp;&amp; response[0]!='s' &amp;&amp;
+        ///              response[0]!='R' &amp;&amp; response[0]!='r' &amp;&amp;
+        ///              response[0]!='T' &amp;&amp; response[0]!='t' &amp;&amp;
+        ///              response[0]!='C' &amp;&amp; response[0]!='c');
+        ///
+        ///     e.Cancel = (response[0]=='C' || response[0]=='c');
+        ///
+        ///     if (response[0]=='S' || response[0]=='s')
+        ///         entry.ZipErrorAction = ZipErrorAction.Skip;
+        ///     else if (response[0]=='R' || response[0]=='r')
+        ///         entry.ZipErrorAction = ZipErrorAction.Retry;
+        ///     else if (response[0]=='T' || response[0]=='t')
+        ///         entry.ZipErrorAction = ZipErrorAction.Throw;
+        /// }
+        ///
+        /// public void SaveTheFile()
+        /// {
+        ///   using (var zip = new ZipFile())
+        ///   {
+        ///     zip.ZipError += MyZipError;
+        ///     zip.AddDirectory(directoryToZip,"fodder");
+        ///     zip.Save(zipFileToCreate);
+        ///   }
+        /// }
+        /// </code>
+        ///
+        /// <code lang="VB">
+        /// Private Sub zipArchive_ZipError(ByVal sender As Object, ByVal e As Ionic.Zip.ZipErrorEventArgs)
+        ///     ' At this point, can prompt the user for an action to take
+        ///     Console.WriteLine("Zip Error,  entry {0}", e.CurrentEntry.FileName)
+        ///     Console.WriteLine("   Exception: {0}", e.exception)
+        ///     ' set the desired ZipErrorAction on the CurrentEntry to communicate that to DotNetZip
+        ///     e.CurrentEntry.ZipErrorAction = Zip.ZipErrorAction.Skip
+        /// End Sub
+        ///
+        /// Public Sub SaveTheFile()
+        ///     Dim SourceFolder As String = "fodder"
+        ///     Dim DestFile As String =  "eHandler.zip"
+        ///     Using zipArchive As ZipFile = New ZipFile
+        ///         ' set the event handler before adding any entries
+        ///         AddHandler zipArchive.ZipError, AddressOf zipArchive_ZipError
+        ///         zipArchive.AddDirectory(SourceFolder)
+        ///         zipArchive.Save(DestFile)
+        ///     End Using
+        /// End Sub    
+        ///     
+        /// </code>
+        /// </example>
+        ///
+        /// <seealso cref="Ionic.Zip.ZipFile.ZipErrorAction"/>
         public event EventHandler<ZipErrorEventArgs> ZipError;
 
         internal bool OnZipErrorSaving(ZipEntry entry, Exception exc)
