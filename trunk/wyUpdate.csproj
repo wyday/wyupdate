@@ -89,16 +89,41 @@
     </Compile>
     <Compile Include="Controls\Windows7Taskbar.cs" />
     <Compile Include="FileDownloader.cs" />
+    <Compile Include="frmMain\Frame.cs" />
+    <Compile Include="frmMain\frmMain.AutomaticUpdate.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Buttons.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Downloading.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.LogOffShutDown.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Progress.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.SelfUpdate.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Updating.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.UserElevation.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmProcesses.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="frmProcesses.Designer.cs">
       <DependentUpon>frmProcesses.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmMain.cs">
+    <Compile Include="frmMain\frmMain.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmMain.Designer.cs">
+    <Compile Include="frmMain\frmMain.Designer.cs">
       <DependentUpon>frmMain.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\PanelDisplay.cs">
@@ -110,7 +135,7 @@
     <Compile Include="InstallUpdate\InstallUpdate.SelfUpdate.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="frmMain.resx">
+    <EmbeddedResource Include="frmMain\frmMain.resx">
       <DependentUpon>frmMain.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
