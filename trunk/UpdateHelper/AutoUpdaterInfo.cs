@@ -50,7 +50,7 @@ namespace wyDay.Controls
         private string GetFilename()
         {
             string filename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                           "wyUpdate AutoUpdater");
+                                           "wyUpdate AU");
 
             if (!Directory.Exists(filename))
             {

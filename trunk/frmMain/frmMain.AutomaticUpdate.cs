@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using wyDay.Controls;
 using wyUpdate.Common;
 
@@ -93,6 +94,27 @@ namespace wyUpdate
             // close wyUpdate if we're not installing an update
             if (isAutoUpdateMode && !updateHelper.Installing)
                 CancelUpdate(true);
+        }
+
+
+        string CreateAutoUpdateTempFolder()
+        {
+            string temp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                       "wyUpdate AU");
+
+            // if the folder temp folder doesn't exist, create the folder with hiden attributes
+            if(!Directory.Exists(temp))
+            {
+                Directory.CreateDirectory(temp);
+
+                File.SetAttributes(temp, FileAttributes.System | FileAttributes.Hidden);
+            }
+
+            temp = Path.Combine(temp, "cache\\" + update.GUID);
+
+            Directory.CreateDirectory(temp);
+
+            return temp;
         }
 
 

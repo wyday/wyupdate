@@ -105,147 +105,102 @@ namespace wyUpdate.Common
     public class UpdateEngine
     {
         #region Private Variables
+        
         //Client Side Information
-        private string productName;
-        private string companyName;
-        private string installedVersion;
-        List<string> serverFileSites = new List<string>(1);
-        List<string> clientServerSites = new List<string>(1);
-
-        private ImageAlign m_HeaderImageAlign = ImageAlign.Left;
-        private string m_HeaderTextColorName = "";
-        private int m_HeaderTextIndent = -1;
-        private bool m_HideHeaderDivider;
-
-        private Image m_TopImage;
-        private string m_TopImageFilename;
-        private Image m_SideImage;
-        private string m_SideImageFilename;
 
         public Hashtable Languages = new Hashtable();
-
-        private UpdateOn m_CurrentlyUpdating = UpdateOn.DownloadingUpdate;
+        private string m_GUID;
 
         //Server Side Information
-        private string newVersion;
-        private string m_MinClientVersion;
         public List<VersionChoice> VersionChoices = new List<VersionChoice>();
 
-        private string m_NoUpdateToLatestLinkText;
-        private string m_NoUpdateToLatestLinkURL;
+        public UpdateEngine()
+        {
+            CurrentlyUpdating = UpdateOn.DownloadingUpdate;
+            ServerFileSites = new List<string>(1);
+            ClientServerSites = new List<string>(1);
+            HeaderTextIndent = -1;
+            HeaderTextColorName = "";
+            HeaderImageAlign = ImageAlign.Left;
+        }
 
         #endregion Private Variables
 
         #region Properties
 
-        public UpdateOn CurrentlyUpdating
+        public UpdateOn CurrentlyUpdating { get; set; }
+
+        public List<string> ServerFileSites { get; set; }
+
+        public string CompanyName { get; set; }
+
+        public string ProductName { get; set; }
+
+        public string GUID
         {
-            get { return m_CurrentlyUpdating; }
-            set { m_CurrentlyUpdating = value; }
+            get
+            {
+                if(string.IsNullOrEmpty(m_GUID))
+                {
+                    // generate a GUID from the product name
+
+                    List<char> invalidFilenameChars = new List<char>(Path.GetInvalidFileNameChars());
+
+                    if (ProductName.IndexOfAny(invalidFilenameChars.ToArray()) != -1)
+                    {
+                        // there are bad filename characters
+                        //make a new string builder (with at least one bad character)
+                        StringBuilder newText = new StringBuilder(ProductName.Length - 1);
+
+                        //remove the bad characters
+                        for (int i = 0; i < ProductName.Length; i++)
+                        {
+                            if (invalidFilenameChars.IndexOf(ProductName[i]) == -1)
+                                newText.Append(ProductName[i]);
+                        }
+
+                        return newText.ToString();
+                    }
+
+                    return ProductName;
+                }
+
+                return m_GUID;
+            }
+            set
+            {
+                m_GUID = value;
+            }
         }
 
-        public List<string> ServerFileSites
-        {
-            get { return serverFileSites; }
-            set { serverFileSites = value; }
-        }
+        public string InstalledVersion { get; set; }
 
-        public string CompanyName
-        {
-            get { return companyName; }
-            set { companyName = value; }
-        }
+        public ImageAlign HeaderImageAlign { get; set; }
 
-        public string ProductName
-        {
-            get { return productName; }
-            set { productName = value; }
-        }
+        public string HeaderTextColorName { get; set; }
 
-        public string InstalledVersion
-        {
-            get { return installedVersion; }
-            set { installedVersion = value; }
-        }
+        public int HeaderTextIndent { get; set; }
 
-        public ImageAlign HeaderImageAlign
-        {
-            get { return m_HeaderImageAlign; }
-            set { m_HeaderImageAlign = value; }
-        }
+        public bool HideHeaderDivider { get; set; }
 
-        public string HeaderTextColorName
-        {
-            get { return m_HeaderTextColorName; }
-            set { m_HeaderTextColorName = value; }
-        }
+        public Image TopImage { get; set; }
 
-        public int HeaderTextIndent
-        {
-            get { return m_HeaderTextIndent; }
-            set { m_HeaderTextIndent = value; }
-        }
-
-        public bool HideHeaderDivider
-        {
-            get { return m_HideHeaderDivider; }
-            set { m_HideHeaderDivider = value; }
-        }
-
-        public Image TopImage
-        {
-            get { return m_TopImage; }
-            set { m_TopImage = value; }
-        }
-
-        public Image SideImage
-        {
-            get { return m_SideImage; }
-            set { m_SideImage = value; }
-        }
+        public Image SideImage { get; set; }
 
 
-        public string TopImageFilename
-        {
-            get { return m_TopImageFilename; }
-            set { m_TopImageFilename = value; }
-        }
+        public string TopImageFilename { get; set; }
 
-        public string SideImageFilename
-        {
-            get { return m_SideImageFilename; }
-            set { m_SideImageFilename = value; }
-        }
+        public string SideImageFilename { get; set; }
 
-        public List<string> ClientServerSites
-        {
-            get { return clientServerSites; }
-            set { clientServerSites = value; }
-        }
+        public List<string> ClientServerSites { get; set; }
 
-        public string NewVersion
-        {
-            get { return newVersion; }
-            set { newVersion = value; }
-        }
+        public string NewVersion { get; set; }
 
-        public string MinClientVersion
-        {
-            get { return m_MinClientVersion; }
-            set { m_MinClientVersion = value; }
-        }
+        public string MinClientVersion { get; set; }
 
-        public string NoUpdateToLatestLinkText
-        {
-            get { return m_NoUpdateToLatestLinkText; }
-            set { m_NoUpdateToLatestLinkText = value; }
-        }
+        public string NoUpdateToLatestLinkText { get; set; }
 
-        public string NoUpdateToLatestLinkURL
-        {
-            get { return m_NoUpdateToLatestLinkURL; }
-            set { m_NoUpdateToLatestLinkURL = value; }
-        }
+        public string NoUpdateToLatestLinkURL { get; set; }
 
         #endregion Properties
 
@@ -287,38 +242,38 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01://Read Company Name
-                        companyName = ReadFiles.ReadDeprecatedString(fs);
+                        CompanyName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02://Product Name
-                        productName = ReadFiles.ReadDeprecatedString(fs);
+                        ProductName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03://Read Installed Version
-                        installedVersion = ReadFiles.ReadDeprecatedString(fs);
+                        InstalledVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serverFileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ServerFileSites);
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), clientServerSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ClientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
                         {
-                            m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(fs));
+                            HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(fs));
                         }
                         catch { }
                         break;
                     case 0x12://Header text indent
-                        m_HeaderTextIndent = ReadFiles.ReadInt(fs);
+                        HeaderTextIndent = ReadFiles.ReadInt(fs);
                         break;
                     case 0x13://Header text color
-                        m_HeaderTextColorName = ReadFiles.ReadDeprecatedString(fs);
+                        HeaderTextColorName = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://top Image
-                        m_TopImage = ReadFiles.ReadImage(fs);
+                        TopImage = ReadFiles.ReadImage(fs);
                         break;
                     case 0x07://side Image
-                        m_SideImage = ReadFiles.ReadImage(fs);
+                        SideImage = ReadFiles.ReadImage(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -353,38 +308,41 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01://Read Company Name
-                        companyName = ReadFiles.ReadDeprecatedString(ms);
+                        CompanyName = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x02://Product Name
-                        productName = ReadFiles.ReadDeprecatedString(ms);
+                        ProductName = ReadFiles.ReadDeprecatedString(ms);
                         break;
+                    case 0x0A: // GUID
+                        m_GUID = ReadFiles.ReadString(ms);
+                    break;
                     case 0x03://Read Installed Version
-                        installedVersion = ReadFiles.ReadDeprecatedString(ms);
+                        InstalledVersion = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), serverFileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), ServerFileSites);
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), clientServerSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), ClientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
                         {
-                            m_HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(ms));
+                            HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(ms));
                         }
                         catch { }
                         break;
                     case 0x12://Header text indent
-                        m_HeaderTextIndent = ReadFiles.ReadInt(ms);
+                        HeaderTextIndent = ReadFiles.ReadInt(ms);
                         break;
                     case 0x13://Header text color
-                        m_HeaderTextColorName = ReadFiles.ReadDeprecatedString(ms);
+                        HeaderTextColorName = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x14: //header image filename
-                        m_TopImageFilename = ReadFiles.ReadDeprecatedString(ms);
+                        TopImageFilename = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x15: //side image filename
-                        m_SideImageFilename = ReadFiles.ReadDeprecatedString(ms);
+                        SideImageFilename = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x18: // language culture
 
@@ -401,7 +359,7 @@ namespace wyUpdate.Common
 
                         break;
                     case 0x17: //hide the header divider
-                        m_HideHeaderDivider = ReadFiles.ReadBool(ms);
+                        HideHeaderDivider = ReadFiles.ReadBool(ms);
                         break;
                     default:
                         ReadFiles.SkipField(ms, bType);
@@ -446,26 +404,26 @@ namespace wyUpdate.Common
                 }
 
                 // load the top image
-                if (!string.IsNullOrEmpty(m_TopImageFilename))
+                if (!string.IsNullOrEmpty(TopImageFilename))
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        zip[m_TopImageFilename].Extract(ms);
+                        zip[TopImageFilename].Extract(ms);
 
                         // convert the bytes to an images
-                        m_TopImage = Image.FromStream(ms, true);
+                        TopImage = Image.FromStream(ms, true);
                     }
                 }
 
                 // load the side image
-                if (!string.IsNullOrEmpty(m_SideImageFilename))
+                if (!string.IsNullOrEmpty(SideImageFilename))
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        zip[m_SideImageFilename].Extract(ms);
+                        zip[SideImageFilename].Extract(ms);
 
                         // convert the bytes to an images
-                        m_SideImage = Image.FromStream(ms, true);
+                        SideImage = Image.FromStream(ms, true);
                     }
                 }
 
@@ -562,43 +520,47 @@ namespace wyUpdate.Common
             WriteFiles.WriteHeader(ms, "IUCDFV2");
 
             //Company Name
-            WriteFiles.WriteDeprecatedString(ms, 0x01, companyName);
+            WriteFiles.WriteDeprecatedString(ms, 0x01, CompanyName);
 
             //Product Name
-            WriteFiles.WriteDeprecatedString(ms, 0x02, productName);
+            WriteFiles.WriteDeprecatedString(ms, 0x02, ProductName);
+
+            // GUID
+            if (m_GUID != null)
+                WriteFiles.WriteString(ms, 0x0A, m_GUID);
 
             //Installed Version
-            WriteFiles.WriteDeprecatedString(ms, 0x03, installedVersion);
+            WriteFiles.WriteDeprecatedString(ms, 0x03, InstalledVersion);
 
-            foreach (string site in serverFileSites)
+            foreach (string site in ServerFileSites)
             {
                 //Server File Site
                 WriteFiles.WriteDeprecatedString(ms, 0x04, site);
             }
 
-            foreach (string site in clientServerSites)
+            foreach (string site in ClientServerSites)
             {
                 //Client Server File Site
                 WriteFiles.WriteDeprecatedString(ms, 0x09, site);
             }
 
             //Header image alignment
-            WriteFiles.WriteDeprecatedString(ms, 0x11, m_HeaderImageAlign.ToString());
+            WriteFiles.WriteDeprecatedString(ms, 0x11, HeaderImageAlign.ToString());
 
             //Header text indent
-            WriteFiles.WriteInt(ms, 0x12, m_HeaderTextIndent);
+            WriteFiles.WriteInt(ms, 0x12, HeaderTextIndent);
 
             //Header text color
-            if (!string.IsNullOrEmpty(m_HeaderTextColorName))
-                WriteFiles.WriteDeprecatedString(ms, 0x13, m_HeaderTextColorName);
+            if (!string.IsNullOrEmpty(HeaderTextColorName))
+                WriteFiles.WriteDeprecatedString(ms, 0x13, HeaderTextColorName);
 
             //Top image filename
-            if (!string.IsNullOrEmpty(m_TopImageFilename))
-                WriteFiles.WriteDeprecatedString(ms, 0x14, m_TopImageFilename);
+            if (!string.IsNullOrEmpty(TopImageFilename))
+                WriteFiles.WriteDeprecatedString(ms, 0x14, TopImageFilename);
 
             //Side image filename
-            if (!string.IsNullOrEmpty(m_SideImageFilename))
-                WriteFiles.WriteDeprecatedString(ms, 0x15, m_SideImageFilename);
+            if (!string.IsNullOrEmpty(SideImageFilename))
+                WriteFiles.WriteDeprecatedString(ms, 0x15, SideImageFilename);
 
             foreach (DictionaryEntry dLang in Languages)
             {
@@ -615,7 +577,7 @@ namespace wyUpdate.Common
 
 
             //Hide the header divider
-            if (m_HideHeaderDivider)
+            if (HideHeaderDivider)
                 WriteFiles.WriteBool(ms, 0x17, true);
 
             ms.WriteByte(0xFF);
@@ -637,16 +599,16 @@ namespace wyUpdate.Common
             fs.Write(Encoding.UTF8.GetBytes("IUSDFV2"), 0, 7);
 
             //Current Version
-            WriteFiles.WriteDeprecatedString(fs, 0x01, newVersion);
+            WriteFiles.WriteDeprecatedString(fs, 0x01, NewVersion);
 
-            foreach (string site in serverFileSites)
+            foreach (string site in ServerFileSites)
             {
                 //Server File Site
                 WriteFiles.WriteDeprecatedString(fs, 0x02, site);
             }
 
             //Minimum client version needed to install update
-            WriteFiles.WriteDeprecatedString(fs, 0x07, m_MinClientVersion);
+            WriteFiles.WriteDeprecatedString(fs, 0x07, MinClientVersion);
 
             
             MemoryStream ms = new MemoryStream();
@@ -747,7 +709,7 @@ namespace wyUpdate.Common
 
 
 
-            foreach (string site in clientServerSites)
+            foreach (string site in ClientServerSites)
             {
                 //Client server site
                 WriteFiles.WriteDeprecatedString(fs, 0x13, site);
@@ -755,11 +717,11 @@ namespace wyUpdate.Common
 
             // link to show when there is no update patch available
 
-            if (!string.IsNullOrEmpty(m_NoUpdateToLatestLinkText))
-                WriteFiles.WriteDeprecatedString(fs, 0x20, m_NoUpdateToLatestLinkText);
+            if (!string.IsNullOrEmpty(NoUpdateToLatestLinkText))
+                WriteFiles.WriteDeprecatedString(fs, 0x20, NoUpdateToLatestLinkText);
 
-            if (!string.IsNullOrEmpty(m_NoUpdateToLatestLinkURL))
-                WriteFiles.WriteDeprecatedString(fs, 0x21, m_NoUpdateToLatestLinkURL);
+            if (!string.IsNullOrEmpty(NoUpdateToLatestLinkURL))
+                WriteFiles.WriteDeprecatedString(fs, 0x21, NoUpdateToLatestLinkURL);
 
             fs.WriteByte(0xFF);
 
@@ -829,13 +791,13 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01://Read New Version
-                        newVersion = ReadFiles.ReadDeprecatedString(fs);
+                        NewVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02://Add server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serverFileSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ServerFileSites);
                         break;
                     case 0x07: //Min Client version
-                        m_MinClientVersion = ReadFiles.ReadDeprecatedString(fs);
+                        MinClientVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x0B: //The version to update from
                         if (VersionChoices.Count > 1 || VersionChoices[0].Version != null)
@@ -868,13 +830,13 @@ namespace wyUpdate.Common
                         VersionChoices[VersionChoices.Count - 1].RegChanges.Add(RegChange.ReadFromStream(fs));
                         break;
                     case 0x13://add client server sites
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), clientServerSites);
+                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ClientServerSites);
                         break;
                     case 0x20:
-                        m_NoUpdateToLatestLinkText = ReadFiles.ReadDeprecatedString(fs);
+                        NoUpdateToLatestLinkText = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x21:
-                        m_NoUpdateToLatestLinkURL = ReadFiles.ReadDeprecatedString(fs);
+                        NoUpdateToLatestLinkURL = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x0F:
                         //skip over the integer (4 bytes) length
