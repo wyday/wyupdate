@@ -31,6 +31,11 @@ namespace wyUpdate
                 return;
             }
 
+            //TODO: process the correct step. That is, don't assume the step 's' is coming in the correct order.
+            // for example if they try to check for updates when already checking for updates the request should be rejected.
+
+            // Or: if they request "CheckForUpdate" when showing the update info page we should respond with RequestSucceeded(), and provide the update info
+
             switch (s)
             {
                 case UpdateStep.CheckForUpdate:
@@ -50,7 +55,7 @@ namespace wyUpdate
                     break;
                 case UpdateStep.DownloadUpdate:
 
-                    ShowFrame(Frame.InstallUpdates);
+                    DownloadUpdate();
 
                     break;
                 case UpdateStep.BeginExtraction:
@@ -68,11 +73,16 @@ namespace wyUpdate
                 case UpdateStep.Install:
 
                     TopMost = true;
+                    TopMost = false;
+
+                    if (needElevation || willSelfUpdate)
+                    {
+                        StartSelfElevated();
+                        return;
+                    }
 
                     update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
                     InstallUpdates(update.CurrentlyUpdating);
-
-                    TopMost = false;
 
                     break;
             }
@@ -85,6 +95,53 @@ namespace wyUpdate
                 CancelUpdate(true);
         }
 
+
+        void PrepareStepOn(UpdateStepOn step)
+        {
+            switch (step)
+            {
+                case UpdateStepOn.Checking:
+
+                    ShowFrame(Frame.Checking);
+
+                    break;
+
+                case UpdateStepOn.UpdateAvailable:
+
+                    ShowFrame(Frame.UpdateInfo);
+
+                    break;
+
+                case UpdateStepOn.UpdateDownloaded:
+
+                    needElevation = NeedElevationToUpdate();
+
+                    // show frame InstallUpdate
+                    ShowFrame(Frame.InstallUpdates);
+
+                    // put a checkmark next to downloaded
+                    panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
+
+                    break;
+
+                case UpdateStepOn.UpdateReadyToInstall:
+
+                    needElevation = NeedElevationToUpdate();
+
+                    // show frame InstallUpdate
+                    ShowFrame(Frame.InstallUpdates);
+
+                    // put a checkmark next to downloaded
+                    panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
+
+                    // set the "Extracting" text
+                    SetStepStatus(1, clientLang.Extract);
+                    break;
+
+                default:
+                    throw new Exception("Can't restore from this automatic update state: " + step);
+            }
+        }
 
 
         private void SaveAutoUpdateData(UpdateStepOn updateStepOn)
@@ -119,6 +176,10 @@ namespace wyUpdate
             if (!string.IsNullOrEmpty(tempDirectory))
                 WriteFiles.WriteString(fs, 0x07, tempDirectory);
 
+            // the update filename
+            if (!string.IsNullOrEmpty(updateFilename))
+                WriteFiles.WriteString(fs, 0x08, updateFilename);
+
             fs.WriteByte(0xFF);
             fs.Close();
         }
@@ -126,56 +187,62 @@ namespace wyUpdate
         // Note: the server file (client or regular) might not exist. If they don't, redownload them.
         private void LoadAutoUpdateData()
         {
-            FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Open, FileAccess.Read);
-
-            if (!ReadFiles.IsHeaderValid(fs, "IUAUFV1"))
+            using (FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Open, FileAccess.Read))
             {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("Auto update state file ID is wrong.");
-            }
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
+                if (!ReadFiles.IsHeaderValid(fs, "IUAUFV1"))
                 {
-                    case 0x01:
-
-
-                        break;
-                    case 0x02:
-
-                        break;
-                    case 0x03: // file to execute
-                        updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x04: // autoupdate ID
-                        updateHelper.AutoUpdateID = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x05: // Server data file location
-                        serverFileLoc = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x06: // Client's server file location (self update server file)
-                        clientSFLoc = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x07: // Temp directory
-                        tempDirectory = ReadFiles.ReadString(fs);
-                        break;
-
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
+                    throw new Exception("Auto update state file ID is wrong.");
                 }
 
-                bType = (byte)fs.ReadByte();
+                byte bType = (byte) fs.ReadByte();
+                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+                {
+                    switch (bType)
+                    {
+                        case 0x01:
+
+                            startStep = (UpdateStepOn) ReadFiles.ReadInt(fs);
+
+                            break;
+                        //case 0x02:
+
+                            //TODO: use the DateTime for something
+
+                            //break;
+                        case 0x03: // file to execute
+                            updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x04: // autoupdate ID
+                            updateHelper.AutoUpdateID = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x05: // Server data file location
+                            serverFileLoc = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x06: // Client's server file location (self update server file)
+                            clientSFLoc = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x07: // Temp directory
+                            tempDirectory = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x08: // update filename
+                            updateFilename = ReadFiles.ReadString(fs);
+                            break;
+
+                        default:
+                            ReadFiles.SkipField(fs, bType);
+                            break;
+                    }
+
+                    bType = (byte) fs.ReadByte();
+                }
             }
 
-            fs.Close();
+            //TODO: load the server file
         }
 
     }

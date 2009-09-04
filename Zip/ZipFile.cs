@@ -71,30 +71,36 @@ namespace Ionic.Zip
             /// <remarks>
             ///
             /// <para>
-            /// When reading a zip file, if this flag is <c>true</c> (<c>True</c> in
-            /// VB), the entire zip archive will be scanned and searched for entries.
-            /// For large archives, this can take a very, long time. The much more
-            /// efficient default behavior is to read the zip directory, at the end of
-            /// the zip file. However, in some cases the directory is corrupted and it
-            /// is desirable to perform a full scan of the zip file to determine the
-            /// contents of the zip file.
+            ///   You almost never want to use this property.
             /// </para>
             ///
             /// <para>
-            /// If you want to track progress, you can set the ReadProgress event. 
+            ///   When reading a zip file, if this flag is <c>true</c> (<c>True</c> in
+            ///   VB), the entire zip archive will be scanned and searched for entries.
+            ///   For large archives, this can take a very, long time. The much more
+            ///   efficient default behavior is to read the zip directory, which is
+            ///   stored at the end of the zip file. But, in some cases the directory is
+            ///   corrupted and you need to perform a full scan of the zip file to
+            ///   determine the contents of the zip file. This property lets you do
+            ///   that, when necessary.
             /// </para>
             ///
             /// <para>
-            /// This flag is effective only when calling Initialize.  The Initialize
-            /// method may take a long time to run for large zip files, when
-            /// <c>Fullscan</c> is true.
+            ///   This flag is effective only when calling <see
+            ///   cref="Initialize(string)"/>. Normally you would read a ZipFile with the
+            ///   static <see cref="ZipFile.Read(String)">ZipFile.Read</see>
+            ///   method. But you can't set the <c>FullScan</c> property on the
+            ///   <c>ZipFile</c> instance when you use a static factory method like
+            ///   <c>ZipFile.Read</c>.
             /// </para>
             ///
             /// </remarks>
             ///
             /// <example>
-            /// This example shows how to read a zip file using the full scan approach,
-            /// and then save it, thereby producing a corrected zip file. 
+            /// 
+            ///   This example shows how to read a zip file using the full scan approach,
+            ///   and then save it, thereby producing a corrected zip file.
+            ///
             /// <code lang="C#">
             /// using (var zip = new ZipFile())
             /// {
@@ -184,6 +190,7 @@ namespace Ionic.Zip
         /// <summary>
         /// Size of the work buffer to use for the ZLIB codec during compression.
         /// </summary>
+        ///
         public int CodecBufferSize
         {
             get;
@@ -218,6 +225,7 @@ namespace Ionic.Zip
             set { _Strategy = value; }
         }
 
+        
         /// <summary>
         /// The name of the <c>ZipFile</c>, on disk.
         /// </summary>
@@ -236,9 +244,10 @@ namespace Ionic.Zip
         /// If you use the no-argument constructor, and you then explicitly set this
         /// property, when you call <see cref="ZipFile.Save()"/>, this name will specify
         /// the name of the zip file created.  Doing so is equivalent to calling <see
-        /// cref="ZipFile.Save(String)"/>.  When instantiating a ZipFile by reading from
-        /// a stream or byte array, the Name property remains <c>null</c>.  When saving
-        /// to a stream, the Name property is implicitly set to <c>null</c>.
+        /// cref="ZipFile.Save(String)"/>.  When instantiating a <c>ZipFile</c> by
+        /// reading from a stream or byte array, the <c>Name</c> property remains
+        /// <c>null</c>.  When saving to a stream, the <c>Name</c> property is
+        /// implicitly set to <c>null</c>.
         /// </para>
         /// </remarks>
         public string Name
@@ -268,6 +277,7 @@ namespace Ionic.Zip
             set;
         }
 
+        
         /// <summary>
         /// A comment attached to the zip archive.
         /// </summary>
@@ -295,14 +305,14 @@ namespace Ionic.Zip
         /// encoded Comment, for example using code page 950 "Big-5 Chinese".  DotNetZip
         /// will encode the comment in the code page specified by <see
         /// cref="ProvisionalAlternateEncoding"/>, at the time of the call to
-        /// ZipFile.Save().
+        /// <c>ZipFile.Save()</c>.
         /// </para>
         ///
         /// <para>
         /// When creating a zip archive using this library, it is possible to change the
         /// value of <see cref="ProvisionalAlternateEncoding" /> between each entry you
         /// add, and between adding entries and the call to Save(). Don't do this.  It
-        /// will likely result in a zipfile that is not readable by any tool or
+        /// will likely result in a zip file that is not readable by any tool or
         /// application.  For best interoperability, leave <see
         /// cref="ProvisionalAlternateEncoding" /> alone, or specify it only once,
         /// before adding any entries to the <c>ZipFile</c> instance.
@@ -341,8 +351,8 @@ namespace Ionic.Zip
         /// cref="ZipEntry.CreationTime"/>), Access (<see cref="ZipEntry.AccessedTime"/>),
         /// and Modified (<see cref="ZipEntry.ModifiedTime"/>) times for the given entry are
         /// automatically set from the filesystem values. When adding an entry from a stream
-        /// or string, all three values are implicitly set to DateTime.Now.  Applications
-        /// can also explicitly set those times by calling <see
+        /// or string, all three values are implicitly set to <c>DateTime.Now</c>.
+        /// Applications can also explicitly set those times by calling <see
         /// cref="ZipEntry.SetEntryTimes(DateTime, DateTime, DateTime)"/>.
         /// </para>
         ///
@@ -354,7 +364,7 @@ namespace Ionic.Zip
         /// use: seconds since Jan 1, 1970 UTC.  Each format can be stored in an "extra
         /// field" in the zip entry when saving the zip archive. The former uses an
         /// extra field with a Header Id of 0x000A, while the latter uses a header ID of
-        /// 0x5455.
+        /// 0x5455, although you probably don't need to know that.
         /// </para>
         ///
         /// <para>
@@ -457,7 +467,7 @@ namespace Ionic.Zip
         /// use: seconds since Jan 1, 1970 UTC.  Each format can be stored in an "extra
         /// field" in the zip entry when saving the zip archive. The former uses an
         /// extra field with a Header Id of 0x000A, while the latter uses a header ID of
-        /// 0x5455.
+        /// 0x5455, although you probably don't need to know that.
         /// </para>
         ///
         /// <para>
@@ -504,8 +514,8 @@ namespace Ionic.Zip
         #if LEGACY
         /// <summary>
             /// When this is set, any volume name (eg C:) is trimmed 
-            /// from fully-qualified pathnames on any ZipEntry, before writing the 
-            /// ZipEntry into the <c>ZipFile</c>. 
+            /// from fully-qualified pathnames on any <c>ZipEntry</c>, before writing the 
+            /// <c>ZipEntry</c> into the <c>ZipFile</c>. 
             /// </summary>
             ///
             /// <remarks>
@@ -730,7 +740,7 @@ namespace Ionic.Zip
         /// in Windows Explorer, use <c>Never</c>. If you set this property to <see
         /// cref="Zip64Option.Never"/>, and your application creates a zip that would
         /// exceed one of the ZIP limits, the library will throw an exception during the
-        /// Save().
+        /// <c>Save()</c>.
         /// </para>
         ///
         /// <para>
@@ -808,7 +818,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// This property is <c>null</c> (or <c>Nothing</c> in VB) if the archive has not been
-        /// saved, and there are fewer than 65334 ZipEntry items contained in the archive.
+        /// saved, and there are fewer than 65334 <c>ZipEntry</c> items contained in the archive.
         /// </para>
         ///
         /// <para>
@@ -931,12 +941,12 @@ namespace Ionic.Zip
         /// When using DotNetZip to write zip archives that will be read by one of these
         /// other archivers, set this property to specify the code page to use when
         /// encoding the <see cref="ZipEntry.FileName"/> and <see
-        /// cref="ZipEntry.Comment"/> for each ZipEntry in the zip file, for values that
+        /// cref="ZipEntry.Comment"/> for each <c>ZipEntry</c> in the zip file, for values that
         /// cannot be encoded with the default codepage for zip files, IBM437.  This is
         /// why this property is "provisional".  In all cases, IBM437 is used where
         /// possible, in other words, where no loss of data would result. It is
-        /// possible, therefore, to have a given entry with a Comment encoded in IBM437
-        /// and a FileName encoded with the specified "provisional" codepage.
+        /// possible, therefore, to have a given entry with a <c>Comment</c> encoded in IBM437
+        /// and a <c>FileName</c> encoded with the specified "provisional" codepage.
         /// </para>
         ///
         /// <para>
@@ -951,7 +961,7 @@ namespace Ionic.Zip
         /// <para>
         /// When creating a zip archive using this library, it is possible to change the
         /// value of <see cref="ProvisionalAlternateEncoding" /> between each entry you
-        /// add, and between adding entries and the call to Save(). Don't do this. It
+        /// add, and between adding entries and the call to <c>Save()</c>. Don't do this. It
         /// will likely result in a zipfile that is not readable.  For best
         /// interoperability, either leave <see cref="ProvisionalAlternateEncoding" />
         /// alone, or specify it only once, before adding any entries to the
@@ -1008,7 +1018,7 @@ namespace Ionic.Zip
         /// CP950 set as the default code page.  In that case, the names of entries
         /// within the Zip archive will be stored in that code page, and reading the zip
         /// archive must be done using that code page.  If the application did not use
-        /// the correct code page in ZipFile.Read(), then names of entries within the
+        /// the correct code page in <c>ZipFile.Read()</c>, then names of entries within the
         /// zip archive would not be correctly retrieved.
         /// <code>
         /// using (var zip = ZipFile.Read(zipFileName, System.Text.Encoding.GetEncoding("big5")))
@@ -1053,12 +1063,12 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// If the TextWriter is set to a non-null value, then verbose output is sent to the
-        /// <c>TextWriter</c> during <c>Add</c><c>, Read</c><c>, Save</c> and <c>Extract</c>
-        /// operations.  Typically, console applications might use <c>Console.Out</c>
-        /// and graphical or headless applications might use a
-        /// <c>System.IO.StringWriter</c>. The output of this is suitable for viewing by
-        /// humans.
+        ///   If the TextWriter is set to a non-null value, then verbose output is sent
+        ///   to the <c>TextWriter</c> during <c>Add</c><c>, Read</c><c>, Save</c> and
+        ///   <c>Extract</c> operations.  Typically, console applications might use
+        ///   <c>Console.Out</c> and graphical or headless applications might use a
+        ///   <c>System.IO.StringWriter</c>. The output of this is suitable for viewing
+        ///   by humans.
         /// </remarks>
         ///
         /// <example>
@@ -1119,35 +1129,39 @@ namespace Ionic.Zip
             set { _StatusMessageTextWriter = value; }
         }
 
+        
         /// <summary>
-        /// Gets or sets the flag that indicates whether the <c>ZipFile</c> should use
-        /// compression for subsequently added entries in the <c>ZipFile</c> instance.
+        ///   Gets or sets the flag that indicates whether the <c>ZipFile</c> should use
+        ///   compression for subsequently added entries in the <c>ZipFile</c> instance.
         /// </summary>
         ///
         /// <remarks>
-        /// <para> When saving an entry into a zip archive, the DotNetZip by default
-        /// compresses the file. That's what a ZIP archive is all about, isn't it?  For
-        /// files that are already compressed, like MP3's or JPGs, the deflate algorithm
-        /// can actually slightly expand the size of the data.  Setting this property to
-        /// trye allows you to specify that compression should not be used.  The default
-        /// value is false.  </para>
-        ///
         /// <para>
-        /// Do not construe setting this flag to false as "Force Compression".  Setting
-        /// it to false merely does NOT force No compression.  If you want to force the
-        /// use of the deflate algorithm when storing each entry into the zip archive,
-        /// define a <see cref="WillReadTwiceOnInflation"/> callback, which always
-        /// returns false, and a <see cref="WantCompression" /> callback that always
-        /// returns true.  This is probably the wrong thing to do, but you could do
-        /// it. Forcing the use of the Deflate algorithm when storing an entry does not
-        /// guarantee that the data size will get smaller. It could increase, as
-        /// described above.
+        ///   When saving an entry into a zip archive, the DotNetZip by default
+        ///   compresses the file. That's what a ZIP archive is all about, isn't it?
+        ///   For files that are already compressed, like MP3's or JPGs, the deflate
+        ///   algorithm can actually slightly expand the size of the data.  Setting this
+        ///   property to trye allows you to specify that compression should not be
+        ///   used.  The default value is false.
         /// </para>
         ///
         /// <para>
-        /// Changes to this flag apply to all entries subsequently added to the archive. 
-        /// The application can also set the <see cref="ZipEntry.CompressionMethod"/>
-        /// property on each ZipEntry, for more granular control of this capability.
+        ///   Do not construe setting this flag to false as "Force Compression".
+        ///   Setting it to false merely does NOT force No compression.  If you want to
+        ///   force the use of the deflate algorithm when storing each entry into the
+        ///   zip archive, define a <see cref="WillReadTwiceOnInflation"/> callback,
+        ///   which always returns false, and a <see cref="WantCompression" /> callback
+        ///   that always returns true.  This is probably the wrong thing to do, but you
+        ///   could do it. Forcing the use of the Deflate algorithm when storing an
+        ///   entry does not guarantee that the data size will get smaller. It could
+        ///   increase, as described above.
+        /// </para>
+        ///
+        /// <para>
+        ///   Changes to this flag apply to all entries subsequently added to the
+        ///   archive.  The application can also set the <see
+        ///   cref="ZipEntry.CompressionMethod"/> property on each <c>ZipEntry</c>, for
+        ///   more granular control of this capability.
         /// </para>
         ///
         /// </remarks>
@@ -1258,7 +1272,7 @@ namespace Ionic.Zip
         /// 
         /// <para>
         /// When writing a zip archive, this password is applied to the entries, not to
-        /// the zip archive itself. It applies to any ZipEntry subsequently added to the
+        /// the zip archive itself. It applies to any <c>ZipEntry</c> subsequently added to the
         /// <c>ZipFile</c>, using one of the <c>AddFile</c>, <c>AddDirectory</c>,
         /// <c>AddEntry</c>, or <c>AddItem</c> methods, etc.  When reading a zip
         /// archive, this property applies to any entry subsequently extracted from the
@@ -1695,7 +1709,7 @@ namespace Ionic.Zip
         /// <para>
         /// As with other properties (like <see cref="Password"/> and <see
         /// cref="ForceNoCompression"/>), setting the corresponding delegate on a
-        /// <c>ZipFile</c> instance will caused it to be applied to all ZipEntry items
+        /// <c>ZipFile</c> instance will caused it to be applied to all <c>ZipEntry</c> items
         /// that are subsequently added to the <c>ZipFile</c> instance. In other words,
         /// if you set this callback after you have added files to the <c>ZipFile</c>,
         /// but before you have called Save(), those items will not be governed by the
@@ -1959,11 +1973,16 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// This property is exposed as a convenience.  Callers
-        /// could also get the version value by retrieving  GetName().Version 
-        /// on the System.Reflection.Assembly object pointing to the
-        /// DotNetZip assembly. But sometimes it is not clear which
-        /// assembly is being loaded.  This property makes it clear. 
+        ///   <para>
+        ///     This property is exposed as a convenience.  Callers could also get the
+        ///     version value by retrieving GetName().Version on the
+        ///     System.Reflection.Assembly object pointing to the DotNetZip
+        ///     assembly. But sometimes it is not clear which assembly is being loaded.
+        ///     This property makes it clear.
+        ///   </para>
+        ///   <para>
+        ///     This static property is primarily useful for diagnostic purposes. 
+        ///   </para>
         /// </remarks>
         public static System.Version LibraryVersion
         {
@@ -1982,9 +2001,11 @@ namespace Ionic.Zip
 
         internal Stream StreamForDiskNumber(uint diskNumber)
         {
+                    Console.WriteLine("StreamForDiskNumber");
             if (diskNumber + 1 == this._diskNumberWithCd || (diskNumber == 0 && this._diskNumberWithCd==0))
             {
-                return (this.ReadStream as FileStream);
+                //return (this.ReadStream as FileStream);
+                return this.ReadStream;
             }
             return ZipSegmentedStream.ForReading(this._name, diskNumber, _diskNumberWithCd);
         }
@@ -2355,19 +2376,19 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// This version of the constructor allows the caller to pass in a TextWriter,
-        /// and an Encoding.  The TextWriter will collect verbose messages that are
-        /// generated by the library during extraction or creation of the zip archive.
-        /// A console application may wish to pass System.Console.Out to get messages on
-        /// the Console. A graphical or headless application may wish to capture the
-        /// messages in a different <c>TextWriter</c>, for example, a
-        /// <c>StringWriter</c>, and then display the messages in a TextBox, or generate
-        /// an audit log of ZipFile operations.
+        /// This version of the constructor allows the caller to pass in a
+        /// <c>TextWriter</c>, and an Encoding.  The <c>TextWriter</c> will collect
+        /// verbose messages that are generated by the library during extraction or
+        /// creation of the zip archive.  A console application may wish to pass
+        /// <c>System.Console.Out</c> to get messages on the Console. A graphical or
+        /// headless application may wish to capture the messages in a different
+        /// <c>TextWriter</c>, for example, a <c>StringWriter</c>, and then display the
+        /// messages in a <c>TextBox</c>, or generate an audit log of <c>ZipFile</c> operations.
         /// </para>
         /// 
         /// <para>
-        /// The Encoding is used as the default alternate encoding for entries with
-        /// filenames or comments that cannot be encoded with the IBM437 code page.
+        /// The <c>Encoding</c> is used as the default alternate encoding for entries
+        /// with filenames or comments that cannot be encoded with the IBM437 code page.
         /// This is a equivalent to setting the <see
         /// cref="ProvisionalAlternateEncoding"/> property on the <c>ZipFile</c>
         /// instance after construction.
@@ -2375,7 +2396,7 @@ namespace Ionic.Zip
         /// 
         /// <para>
         /// To encrypt the data for the files added to the <c>ZipFile</c> instance, set
-        /// the Password property after creating the <c>ZipFile</c> instance.
+        /// the <c>Password</c> property after creating the <c>ZipFile</c> instance.
         /// </para>
         /// 
         /// <para>
@@ -2388,7 +2409,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <exception cref="Ionic.Zip.ZipException">
-        /// Thrown if name refers to an existing file that is not a valid zip file. 
+        /// Thrown if <c>fileName</c> refers to an existing file that is not a valid zip file. 
         /// </exception>
         ///
         /// <param name="fileName">The filename to use for the new zip archive.</param>
@@ -2425,7 +2446,7 @@ namespace Ionic.Zip
         /// reading or extracting zip files. In COM, it is not possible to invoke
         /// parameterized constructors for a class. A COM Automation application can
         /// update a zip file by using the default (no argument) constructor, then
-        /// calling Initialize() to read the contents of an on-disk zip archive into the
+        /// calling <c>Initialize()</c> to read the contents of an on-disk zip archive into the
         /// <c>ZipFile</c> instance.
         /// </para>
         ///
@@ -2730,14 +2751,76 @@ namespace Ionic.Zip
         /// Returns the readonly collection of entries in the Zip archive.
         /// </summary>
         /// <remarks>
-        /// If there are no entries in the current ZipFile, the value returned is a
-        /// non-null zero-element collection.
+        /// <para>
+        ///   If there are no entries in the current ZipFile, the value returned is a
+        ///   non-null zero-element collection.  If there are entries in the zip file,
+        ///   the elements are returned in no particular order.
+        /// </para>
+        /// <para>
+        ///   This is the implied enumerator on the ZipFile class.  If you use a ZipFile
+        ///   instance in a context that expects an enumerator, you will get this
+        ///   collection.
+        /// </para>
         /// </remarks>
         public System.Collections.ObjectModel.ReadOnlyCollection<ZipEntry> Entries
         {
             get
             {
                 return _entries.AsReadOnly();
+            }
+        }
+
+        
+        /// <summary>
+        ///   Returns a readonly collection of entries in the Zip archive, sorted by FileName.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   If there are no entries in the current ZipFile, the value returned is a
+        ///   non-null zero-element collection.  If there are entries in the zip file,
+        ///   the elements are returned sorted by the name of the entry.
+        /// </remarks>
+        ///
+        /// <example>
+        ///
+        ///   This example fills a Windows Forms ListView with the entries in a zip file.
+        /// 
+        /// <code lang="C#">
+        /// using (ZipFile zip = ZipFile.Read(zipFile))
+        /// {
+        ///     foreach (ZipEntry entry in zip.EntriesSorted)
+        ///     {
+        ///         ListViewItem item = new ListViewItem(n.ToString());
+        ///         n++;
+        ///         string[] subitems = new string[] {
+        ///             entry.FileName.Replace("/","\\"),
+        ///             entry.LastModified.ToString("yyyy-MM-dd HH:mm:ss"),
+        ///             entry.UncompressedSize.ToString(),
+        ///             String.Format("{0,5:F0}%", entry.CompressionRatio),
+        ///             entry.CompressedSize.ToString(),
+        ///             (entry.UsesEncryption) ? "Y" : "N",
+        ///             String.Format("{0:X8}", entry.Crc)};
+        ///
+        ///         foreach (String s in subitems)
+        ///         {
+        ///             ListViewItem.ListViewSubItem subitem = new ListViewItem.ListViewSubItem();
+        ///             subitem.Text = s;
+        ///             item.SubItems.Add(subitem);
+        ///         }
+        ///
+        ///         this.listView1.Items.Add(item);
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        ///
+        public System.Collections.ObjectModel.ReadOnlyCollection<ZipEntry> EntriesSorted
+        {
+            get
+            {
+                var coll=  new System.Collections.Generic.List<ZipEntry>(this.Entries);
+                coll.Sort( (x,y) => { return String.Compare(x.FileName,y.FileName); });
+                return coll.AsReadOnly();
             }
         }
 
@@ -2756,7 +2839,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Removes the given ZipEntry from the zip archive.  
+        /// Removes the given <c>ZipEntry</c> from the zip archive.  
         /// </summary>
         /// 
         /// <remarks>
@@ -2767,7 +2850,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <exception cref="System.ArgumentException">
-        /// Thrown if the specified ZipEntry does not exist in the <c>ZipFile</c>.
+        /// Thrown if the specified <c>ZipEntry</c> does not exist in the <c>ZipFile</c>.
         /// </exception>
         ///
         /// <example>
@@ -2881,16 +2964,19 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <exception cref="System.InvalidOperationException">
-        /// Thrown if the <c>ZipFile</c> is not updatable. 
+        ///   Thrown if the <c>ZipFile</c> is not updatable. 
         /// </exception>
         ///
         /// <exception cref="System.ArgumentException">
-        /// Thrown if a ZipEntry with the specified filename does not exist in the <c>ZipFile</c>.
+        ///   Thrown if a <c>ZipEntry</c> with the specified filename does not exist in
+        ///   the <c>ZipFile</c>.
         /// </exception>
         ///
         /// <example>
-        /// This example shows one way to remove an entry with a given filename from an 
-        /// existing zip archive.
+        ///
+        ///   This example shows one way to remove an entry with a given filename from
+        ///   an existing zip archive.
+        ///
         /// <code>
         /// String ZipFileToRead= "PackedDocuments.zip";
         /// string Candidate = "DatedMaterial.xps";

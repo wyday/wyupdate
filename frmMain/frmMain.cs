@@ -31,7 +31,7 @@ namespace wyUpdate
         string error;
         string errorDetails;
 
-        //The full filename of the update & servers files 
+        // full filename of the update & servers files 
         string updateFilename;
         string serverFileLoc;
 
@@ -41,15 +41,15 @@ namespace wyUpdate
         // are we using the -server commandline switch?
         string serverOverwrite;
 
-        //the base directory (same path as the executable, unless specified)
+        // base directory: same path as the executable, unless specified
         string baseDirectory;
         //the extract directory
         string tempDirectory;
 
         readonly PanelDisplay panelDisplaying = new PanelDisplay(500, 320);
 
-        // should the client download the server file to check for updates
-        bool checkForUpdate;
+        // the first step wyUpdate should take
+        UpdateStepOn startStep = UpdateStepOn.Nothing;
 
         //does the client need elevation?
         bool needElevation;
@@ -117,6 +117,7 @@ namespace wyUpdate
                 {
                     LoadSelfUpdateData(selfUpdateFileLoc);
 
+                    //TODO: wyUp 3.0: excise this hack
                     //if the loaded file is from RC1, then update self and bail out
                     if (selfUpdateFromRC1)
                     {
@@ -149,7 +150,7 @@ namespace wyUpdate
 
                 //Load the client information
                 if (clientFileType == ClientFileType.PreRC2)
-                    //TODO: stop supporting old client files after 1.0 Final.
+                    //TODO: wyUp 3.0: stop supporting old client files (barely anyone uses RC2).
                     update.OpenObsoleteClientFile(clientFileLoc);
                 else
                     update.OpenClientFile(clientFileLoc, clientLang);
@@ -191,25 +192,24 @@ namespace wyUpdate
 
             if (isAutoUpdateMode)
             {
-                //TODO: create the temp folder where we'll
+                //TODO: create the temp folder where we'll store the updates long term
 
                 tempDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), update.ProductName);
 
-                Directory.CreateDirectory(tempDirectory);
-
-                //TODO: load the previous auto update state from "autoupdate"
                 try
                 {
+                    Directory.CreateDirectory(tempDirectory);
 
+                    // load the previous auto update state from "autoupdate"
+                    LoadAutoUpdateData();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    
-                }
-                
-                //TODO: sometimes we'll be on a completely different step
-                checkForUpdate = true;
+                    error = "Failed to load the AutoUpdate State file.";
+                    errorDetails = ex.Message;
 
+                    ShowFrame(Frame.Error);
+                }
             }
             else if (SelfUpdating)
             {
@@ -241,7 +241,7 @@ namespace wyUpdate
                     needElevation = false;
 
                     //begin updating the product
-                    ShowFrame(Frame.InstallUpdates);
+                    DownloadUpdate();
                 }
             }
             else if (continuingUpdate) //continuing from elevation or self update (or both)
@@ -273,14 +273,12 @@ namespace wyUpdate
                     needElevation = false;
 
                     //begin updating the product
-                    ShowFrame(Frame.InstallUpdates);
+                    DownloadUpdate();
                 }
             }
             else if (!uninstalling)
-                checkForUpdate = true;
+                startStep = UpdateStepOn.Checking;
         }
-
-        UpdateStepOn startStep;
 
         protected override void SetVisibleCore(bool value)
         {
@@ -304,9 +302,10 @@ namespace wyUpdate
                     //Relaunch self
                     StartSelfElevated();
                 }
-                else if (checkForUpdate)
-                    // begin check for updates
-                    ShowFrame(Frame.Checking);
+                else if (startStep != UpdateStepOn.Nothing)
+                {
+                    PrepareStepOn(startStep);
+                }
 
                 //TODO: load other steps from the autoupdate file
 

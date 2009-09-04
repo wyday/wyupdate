@@ -84,7 +84,7 @@ namespace wyUpdate
                     case 0x01://Read Client data file location
                         clientFileLoc = ReadFiles.ReadDeprecatedString(fs);
 
-                        //TODO: Remove this hackish behavior to cope with pre-RC2 client data files
+                        //TODO: wyUp 3.0: Remove this hackish behavior to cope with pre-RC2 client data files
                         if (clientFileLoc.EndsWith("iuc", StringComparison.InvariantCultureIgnoreCase))
                             clientFileType = ClientFileType.PreRC2;
                         else if (clientFileLoc.EndsWith("iucz", StringComparison.InvariantCultureIgnoreCase))

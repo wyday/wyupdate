@@ -99,7 +99,7 @@ namespace wyUpdate
                             update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
                             // download the catch-all update
-                            ShowFrame(Frame.InstallUpdates);
+                            DownloadUpdate();
 
                             return;
                         }
@@ -206,7 +206,7 @@ namespace wyUpdate
                             update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
                             // download the catch-all update
-                            ShowFrame(Frame.InstallUpdates);
+                            DownloadUpdate();
 
                             return;
                         }

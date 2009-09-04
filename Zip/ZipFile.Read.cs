@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 16:11:41>
+// Time-stamp: <2009-September-03 13:38:23>
 //
 // ------------------------------------------------------------------
 //
@@ -1403,32 +1403,6 @@ namespace Ionic.Zip
 
 
         
-
-        // workitem 8098
-//         internal void SeekFromOrigin(long position)
-//         {
-//             this.ReadStream.Seek(position + _originPosition, SeekOrigin.Begin);
-//         }
-
-        //internal long Origin
-        //{
-        //    get
-        //    {
-        //        return _originPosition;
-        //    }
-        //}
-
-//         internal long RelativeOffset
-//         {
-//             get
-//             {
-//                 return this.ReadStream.Position - _originPosition;
-//             }
-//         }
-
-
-
-
         /// <summary>
         /// Checks the given file to see if it appears to be a valid zip file.
         /// </summary>
@@ -1563,5 +1537,9 @@ namespace Ionic.Zip
             return result;
         }
 
+
+
+
     }
+
 }

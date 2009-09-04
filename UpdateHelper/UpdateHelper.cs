@@ -23,7 +23,7 @@ namespace wyUpdate.Common
 
         private Control owner;
 
-        public UpdateHelper(Form OwnerHandle)
+        public UpdateHelper(Control OwnerHandle)
         {
             owner = OwnerHandle;
 
