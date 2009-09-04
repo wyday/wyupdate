@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-01 18:43:58>
+// Time-stamp: <2009-September-03 04:47:41>
 //
 // ------------------------------------------------------------------
 //
@@ -2262,6 +2262,8 @@ namespace Ionic.Zip
                 if (_archiveStream == null)
                 {
                     _zipfile.Reset();
+
+                    Console.WriteLine("ArchiveStream");
                     _archiveStream = _zipfile.StreamForDiskNumber(_diskNumber);
                 }
                 return _archiveStream;

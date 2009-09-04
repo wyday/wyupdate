@@ -94,17 +94,6 @@ namespace wyUpdate
 
                     btnNext.Enabled = false;
 
-                    if (SelfUpdating)
-                    {
-                        //download self update
-                        update.CurrentlyUpdating = UpdateOn.DownloadingClientUpdt;
-                        BeginSelfUpdateDownload(updateFrom.FileSites, updateFrom.Adler32);
-                    }
-                    else
-                    {
-                        //download the update file
-                        BeginDownload(updateFrom.FileSites, updateFrom.Adler32, true);
-                    }
                     break;
                 case Frame.UpdatedSuccessfully: //Display Congrats Window
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
@@ -416,6 +405,16 @@ namespace wyUpdate
                 //successfully deleted temporary files
                 panelDisplaying.UpdateItems[3].Status = UpdateItemStatus.Success;
 
+                // delete the autoupdate file
+                if(autoUpdateStateFile != null)
+                {
+                    try
+                    {
+                        File.Delete(autoUpdateStateFile);
+                    }
+                    catch { }
+                }
+
                 //Successfully Updated
                 ShowFrame(Frame.UpdatedSuccessfully);
 
@@ -444,6 +443,11 @@ namespace wyUpdate
                 // if we're in wait mode, then don't continue to the next step
                 if (isAutoUpdateMode && (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.Extracting))
                 {
+                    // save the autoupdate state details
+                    SaveAutoUpdateData(update.CurrentlyUpdating == UpdateOn.DownloadingUpdate 
+                        ? UpdateStepOn.UpdateDownloaded
+                        : UpdateStepOn.UpdateReadyToInstall);
+
                     updateHelper.SendSuccess();
                     return;
                 }

@@ -7,6 +7,23 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
+        void DownloadUpdate()
+        {
+            ShowFrame(Frame.InstallUpdates);
+
+            if (SelfUpdating)
+            {
+                //download self update
+                update.CurrentlyUpdating = UpdateOn.DownloadingClientUpdt;
+                BeginSelfUpdateDownload(updateFrom.FileSites, updateFrom.Adler32);
+            }
+            else
+            {
+                //download the update file
+                BeginDownload(updateFrom.FileSites, updateFrom.Adler32, true);
+            }
+        }
+
         //downlaod regular update files
         private void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
         {
