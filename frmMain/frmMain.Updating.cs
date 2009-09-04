@@ -244,6 +244,9 @@ namespace wyUpdate
                         start.Start();
                     }
 
+                    // we're no longer in autoupdate mode - cleanup temp files on close
+                    isAutoUpdateMode = false;
+
                     Close();
                     return;
                 }

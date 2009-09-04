@@ -192,23 +192,17 @@ namespace wyUpdate
 
             if (isAutoUpdateMode)
             {
-                //TODO: create the temp folder where we'll store the updates long term
-
-                tempDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), update.ProductName);
-
+                // create the temp folder where we'll store the updates long term
+                tempDirectory = CreateAutoUpdateTempFolder();
+                
                 try
                 {
-                    Directory.CreateDirectory(tempDirectory);
-
                     // load the previous auto update state from "autoupdate"
                     LoadAutoUpdateData();
                 }
-                catch (Exception ex)
+                catch
                 {
-                    error = "Failed to load the AutoUpdate State file.";
-                    errorDetails = ex.Message;
-
-                    ShowFrame(Frame.Error);
+                    startStep = UpdateStepOn.Checking;
                 }
             }
             else if (SelfUpdating)
@@ -304,10 +298,9 @@ namespace wyUpdate
                 }
                 else if (startStep != UpdateStepOn.Nothing)
                 {
+                    // either begin checking or load the step from the autoupdate file
                     PrepareStepOn(startStep);
                 }
-
-                //TODO: load other steps from the autoupdate file
 
                 return;
             }
@@ -404,8 +397,7 @@ namespace wyUpdate
                     serverOverwrite = commands["server"];
 
 
-                //only allow silent uninstalls 
-                //TODO: allow silent checking and updating
+                // only allow silent uninstalls 
                 if (uninstalling && commands["s"] != null)
                 {
                     isSilent = true;

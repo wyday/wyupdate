@@ -165,6 +165,13 @@ namespace wyUpdate
 
                     // close this client
                     isCancelled = true;
+
+                    // let wyUpdate cleanup the files
+                    isAutoUpdateMode = false;
+
+                    // let ServerDownloadedSuccessfully() exit early
+                    frameOn = Frame.AlreadyUpToDate;
+
                     Close();
 
                     return;
