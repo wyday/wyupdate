@@ -65,7 +65,7 @@ namespace wyUpdate
                     UpdtDetails.Load(updtDetailsFilename);
                 }
                 else
-                    throw new Exception("The upddate details file \"updtdetails.udt\" is missing.");
+                    throw new Exception("The update details file \"updtdetails.udt\" is missing.");
 
 
                 if (Directory.Exists(Path.Combine(TempDirectory, "patches")))
