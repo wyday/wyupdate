@@ -299,8 +299,39 @@ namespace wyUpdate
                 else if (startStep != UpdateStepOn.Nothing)
                 {
                     // either begin checking or load the step from the autoupdate file
-                    PrepareStepOn(startStep);
+                    try
+                    {
+                        PrepareStepOn(startStep);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (startStep != UpdateStepOn.Checking)
+                            startStep = UpdateStepOn.Checking;
+                        else
+                        {
+                            // show the error screen
+                            error = "Automatic update state failed to load.";
+                            errorDetails = ex.Message;
+
+                            ShowFrame(Frame.Error);
+                            return;
+                        }
+
+                        try
+                        {
+                            PrepareStepOn(startStep);
+                        }
+                        catch (Exception ex2)
+                        {
+                            // show the error screen
+                            error = "Automatic update state failed to load.";
+                            errorDetails = ex2.Message;
+
+                            ShowFrame(Frame.Error);
+                        }
+                    }
                 }
+
 
                 return;
             }

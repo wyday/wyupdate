@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using wyDay.Controls;
 using wyUpdate.Common;
 
@@ -73,6 +72,8 @@ namespace wyUpdate
                     break;
                 case UpdateStep.Install:
 
+                    // show self & make topmost
+                    Visible = true;
                     TopMost = true;
                     TopMost = false;
 
@@ -148,6 +149,19 @@ namespace wyUpdate
 
                 case UpdateStepOn.UpdateReadyToInstall:
 
+                    string updtDetailsFilename = Path.Combine(tempDirectory, "updtdetails.udt");
+
+                    // Try to load the update details file
+
+                    if (File.Exists(updtDetailsFilename))
+                    {
+                        updtDetails = new UpdateDetails();
+                        updtDetails.Load(updtDetailsFilename);
+                    }
+                    else
+                        throw new Exception("Update details file does not exist.");
+
+
                     needElevation = NeedElevationToUpdate();
 
                     // show frame InstallUpdate
@@ -158,6 +172,7 @@ namespace wyUpdate
 
                     // set the "Extracting" text
                     SetStepStatus(1, clientLang.Extract);
+
                     break;
 
                 default:
@@ -206,9 +221,10 @@ namespace wyUpdate
             fs.Close();
         }
 
-        // Note: the server file (client or regular) might not exist. If they don't, redownload them.
         private void LoadAutoUpdateData()
         {
+            autoUpdateStateFile = Path.Combine(tempDirectory, "autoupdate");
+
             using (FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Open, FileAccess.Read))
             {
                 if (!ReadFiles.IsHeaderValid(fs, "IUAUFV1"))
@@ -241,10 +257,17 @@ namespace wyUpdate
 
                         case 0x05: // Server data file location
                             serverFileLoc = ReadFiles.ReadString(fs);
+
+                            if (!File.Exists(serverFileLoc))
+                                serverFileLoc = null;
+
                             break;
 
                         case 0x06: // Client's server file location (self update server file)
                             clientSFLoc = ReadFiles.ReadString(fs);
+
+                            if (!File.Exists(clientSFLoc))
+                                clientSFLoc = null;
                             break;
 
                         case 0x07: // Temp directory
@@ -264,7 +287,14 @@ namespace wyUpdate
                 }
             }
 
-            //TODO: load the server file
+            // if the server file doesn't exist we need to download a new one
+            if (serverFileLoc == null)
+                startStep = UpdateStepOn.Checking;
+            else
+            {
+                // load the server file
+                LoadServerFile(true);
+            }
         }
 
     }
