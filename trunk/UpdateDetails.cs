@@ -7,68 +7,39 @@ namespace wyUpdate.Common
     // File information and instuctions for updates
     public class UpdateDetails
     {
-        private string m_PostUpdateCommands;
-        private List<RegChange> m_RegistryModifications = new List<RegChange>();
-        private List<UpdateFile> m_UpdateFiles = new List<UpdateFile>();
-        private List<ShortcutInfo> m_ShortcutInfos = new List<ShortcutInfo>();
-
-        private List<string> m_PreviousDesktopShortcuts = new List<string>();
-        private List<string> m_PreviousSMenuShortcuts = new List<string>();
-
-        private List<string> m_FoldersToDelete = new List<string>();
+        public UpdateDetails()
+        {
+            RegistryModifications = new List<RegChange>();
+            UpdateFiles = new List<UpdateFile>();
+            ShortcutInfos = new List<ShortcutInfo>();
+            FoldersToDelete = new List<string>();
+            PreviousSMenuShortcuts = new List<string>();
+            PreviousDesktopShortcuts = new List<string>();
+        }
 
         #region Properties
 
-        public string PostUpdateCommands
-        {
-            get { return m_PostUpdateCommands; }
-            set { m_PostUpdateCommands = value; }
-        }
+        public string PostUpdateCommands { get; set; }
 
-        public List<RegChange> RegistryModifications
-        {
-            get { return m_RegistryModifications; }
-            set { m_RegistryModifications = value; }
-        }
+        public List<RegChange> RegistryModifications { get; set; }
 
-        public List<UpdateFile> UpdateFiles
-        {
-            get { return m_UpdateFiles; }
-            set { m_UpdateFiles = value; }
-        }
+        public List<UpdateFile> UpdateFiles { get; set; }
 
-        public List<ShortcutInfo> ShortcutInfos
-        {
-            get { return m_ShortcutInfos; }
-            set { m_ShortcutInfos = value; }
-        }
+        public List<ShortcutInfo> ShortcutInfos { get; set; }
 
-        public List<string> PreviousDesktopShortcuts
-        {
-            get { return m_PreviousDesktopShortcuts; }
-            set { m_PreviousDesktopShortcuts = value; }
-        }
+        public List<string> PreviousDesktopShortcuts { get; set; }
 
-        public List<string> PreviousSMenuShortcuts
-        {
-            get { return m_PreviousSMenuShortcuts; }
-            set { m_PreviousSMenuShortcuts = value; }
-        }
+        public List<string> PreviousSMenuShortcuts { get; set; }
 
-        public List<string> FoldersToDelete
-        {
-            get { return m_FoldersToDelete; }
-            set { m_FoldersToDelete = value; }
-        }
+        public List<string> FoldersToDelete { get; set; }
 
         #endregion Properties
 
-        // count the number of file infos that
-        // execute or need .NET ngening
+        // count # NGEN or execute files
         private int CountFileInfos()
         {
             int count = 0;
-            foreach (UpdateFile file in m_UpdateFiles)
+            foreach (UpdateFile file in UpdateFiles)
             {
                 if (file.Execute || file.IsNETAssembly)
                     count++;
@@ -110,22 +81,22 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01:
-                        m_PostUpdateCommands = ReadFiles.ReadDeprecatedString(fs);
+                        PostUpdateCommands = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x20://num reg changes
-                        m_RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
+                        RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
                         break;
                     case 0x21://num file infos
-                        m_UpdateFiles = new List<UpdateFile>(ReadFiles.ReadInt(fs));
+                        UpdateFiles = new List<UpdateFile>(ReadFiles.ReadInt(fs));
                         break;
                     case 0x8E:
-                        m_RegistryModifications.Add(RegChange.ReadFromStream(fs));
+                        RegistryModifications.Add(RegChange.ReadFromStream(fs));
                         break;
                     case 0x30:
-                        m_PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                        PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x31:
-                        m_PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                        PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x40:
                         tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
@@ -155,14 +126,14 @@ namespace wyUpdate.Common
                         tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
                         break;
                     case 0x9B://end of file
-                        m_UpdateFiles.Add(tempUpdateFile);
+                        UpdateFiles.Add(tempUpdateFile);
                         tempUpdateFile = new UpdateFile();
                         break;
                     case 0x8D:
-                        m_ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
+                        ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
                         break;
                     case 0x60:
-                        m_FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
+                        FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -183,34 +154,34 @@ namespace wyUpdate.Common
             WriteFiles.WriteHeader(ms, "IUUDFV2");
 
             //Write post-update commands
-            if (!string.IsNullOrEmpty(m_PostUpdateCommands))
-                WriteFiles.WriteDeprecatedString(ms, 0x01, m_PostUpdateCommands);
+            if (!string.IsNullOrEmpty(PostUpdateCommands))
+                WriteFiles.WriteDeprecatedString(ms, 0x01, PostUpdateCommands);
 
             //number of registry changes
-            WriteFiles.WriteInt(ms, 0x20, m_RegistryModifications.Count);
+            WriteFiles.WriteInt(ms, 0x20, RegistryModifications.Count);
 
-            for (int i = 0; i < m_RegistryModifications.Count; i++)
+            for (int i = 0; i < RegistryModifications.Count; i++)
             {
-                m_RegistryModifications[i].WriteToStream(ms, true);
+                RegistryModifications[i].WriteToStream(ms, true);
             }
 
             //Shortcut information
-            foreach (ShortcutInfo si in m_ShortcutInfos)
+            foreach (ShortcutInfo si in ShortcutInfos)
                 si.SaveToStream(ms, true);
 
 
             //Previous shortcuts that needs to be installed in order to install new shortcuts
-            foreach (string shortcut in m_PreviousDesktopShortcuts)
+            foreach (string shortcut in PreviousDesktopShortcuts)
                 WriteFiles.WriteDeprecatedString(ms, 0x30, shortcut);
 
-            foreach (string shortcut in m_PreviousSMenuShortcuts)
+            foreach (string shortcut in PreviousSMenuShortcuts)
                 WriteFiles.WriteDeprecatedString(ms, 0x31, shortcut);
 
             //number of file infos
             WriteFiles.WriteInt(ms, 0x21, CountFileInfos());
 
             // write file info for ngening .NET, execution of files, etc.
-            foreach (UpdateFile file in m_UpdateFiles)
+            foreach (UpdateFile file in UpdateFiles)
             {
                 if (file.Execute || file.IsNETAssembly || file.DeleteFile || file.DeltaPatchRelativePath != null)
                 {
@@ -255,7 +226,7 @@ namespace wyUpdate.Common
                 }
             }
 
-            foreach (string folder in m_FoldersToDelete)
+            foreach (string folder in FoldersToDelete)
                 WriteFiles.WriteDeprecatedString(ms, 0x60, folder);
 
             //end of file
