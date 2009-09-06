@@ -143,11 +143,12 @@ namespace wyUpdate.Common
                 if(string.IsNullOrEmpty(m_GUID))
                 {
                     // generate a GUID from the product name
+                    char[] invalidChars = Path.GetInvalidFileNameChars();
 
-                    List<char> invalidFilenameChars = new List<char>(Path.GetInvalidFileNameChars());
-
-                    if (ProductName.IndexOfAny(invalidFilenameChars.ToArray()) != -1)
+                    if (ProductName.IndexOfAny(invalidChars) != -1)
                     {
+                        List<char> invalidFilenameChars = new List<char>(invalidChars);
+
                         // there are bad filename characters
                         //make a new string builder (with at least one bad character)
                         StringBuilder newText = new StringBuilder(ProductName.Length - 1);
