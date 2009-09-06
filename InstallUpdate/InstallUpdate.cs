@@ -88,10 +88,6 @@ namespace wyUpdate
         }
 
         //Methods
-
-
-
-
         private void UpdateFiles(string tempDir, string progDir, string backupFolder, List<FileFolder> rollbackList, ref int totalDone, ref int totalFiles)
         {
             DirectoryInfo tempDirInf = new DirectoryInfo(tempDir);
@@ -178,8 +174,6 @@ namespace wyUpdate
                 UpdateFiles(tempDirs[i].FullName, newProgDir, Path.Combine(backupFolder, tempDirs[i].Name), rollbackList, ref totalDone, ref totalFiles);
             }
         }
-
-
 
         public void RunUpdateFiles()
         {
@@ -406,9 +400,6 @@ namespace wyUpdate
         }
 
 
-
-
-
         public void RunUpdateClientDataFile()
         {
             Thread.CurrentThread.IsBackground = true; //make them a daemon
@@ -556,7 +547,6 @@ namespace wyUpdate
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
 
-
         public void RunUninstall()
         {
             Thread.CurrentThread.IsBackground = true; //make them a daemon
@@ -612,10 +602,6 @@ namespace wyUpdate
             //All done
             Sender.BeginInvoke(SenderDelegate, new object[] { 0, 2, "", null });
         }
-
-
-
-
 
         public void RunPreExecute()
         {
