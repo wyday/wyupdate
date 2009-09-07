@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -27,17 +26,7 @@ namespace wyUpdate
 
                     if (!isAutoUpdateMode)
                     {
-                        if (!string.IsNullOrEmpty(serverOverwrite))
-                        {
-                            // overrite server file
-                            List<string> overwriteServer = new List<string> { serverOverwrite };
-                            BeginDownload(overwriteServer, 0, false);
-                        }
-                        else
-                        {
-                            //download the server file
-                            BeginDownload(update.ServerFileSites, 0, false);
-                        }
+                        CheckForUpdate();
                     }
 
                     break;
@@ -279,14 +268,17 @@ namespace wyUpdate
                     installUpdate = new InstallUpdate(Path.Combine(tempDirectory, updateFilename),
                         tempDirectory, this, showProgress)
                     {
+                        //location of old "self" to replace
                         OldIUPClientLoc = oldClientLocation
                     };
-
-                    //location of old "self" to replace
 
                     asyncThread = new Thread(installUpdate.RunSelfUpdate);
                     break;
                 case UpdateOn.Extracting:
+
+                    // set for auto-updates
+                    currentlyExtracting = true;
+
                     SetStepStatus(1, clientLang.Extract);
 
                     installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
@@ -408,16 +400,6 @@ namespace wyUpdate
                 //successfully deleted temporary files
                 panelDisplaying.UpdateItems[3].Status = UpdateItemStatus.Success;
 
-                // delete the autoupdate file
-                if(autoUpdateStateFile != null)
-                {
-                    try
-                    {
-                        File.Delete(autoUpdateStateFile);
-                    }
-                    catch { }
-                }
-
                 //Successfully Updated
                 ShowFrame(Frame.UpdatedSuccessfully);
 
@@ -447,11 +429,18 @@ namespace wyUpdate
                 if (isAutoUpdateMode && (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.Extracting))
                 {
                     // save the autoupdate state details
-                    SaveAutoUpdateData(update.CurrentlyUpdating == UpdateOn.DownloadingUpdate 
-                        ? UpdateStepOn.UpdateDownloaded
-                        : UpdateStepOn.UpdateReadyToInstall);
+                    SaveAutoUpdateData(update.CurrentlyUpdating == UpdateOn.DownloadingUpdate
+                                            ? UpdateStepOn.UpdateDownloaded
+                                            : UpdateStepOn.UpdateReadyToInstall);
 
-                    updateHelper.SendSuccess();
+                    updateHelper.SendSuccess(autoUpdateStepProcessing);
+
+                    //Go to the next step
+                    update.CurrentlyUpdating += 1;
+
+                    // set for auto-updates
+                    currentlyExtracting = false;
+
                     return;
                 }
 

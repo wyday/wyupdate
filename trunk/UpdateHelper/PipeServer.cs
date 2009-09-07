@@ -33,7 +33,7 @@ namespace wyUpdate
             SafeFileHandle hHandle);
 
 
-        class Client
+        public class Client
         {
             public SafeFileHandle handle;
             public FileStream stream;
@@ -43,7 +43,8 @@ namespace wyUpdate
         /// Handles messages received from a client pipe
         /// </summary>
         /// <param name="message">The byte message received</param>
-        public delegate void MessageReceivedHandler(byte[] message);
+        /// <param name="client">The client that sent the message</param>
+        public delegate void MessageReceivedHandler(byte[] message, Client client);
 
         /// <summary>
         /// Event is called whenever a message is received from a client pipe
@@ -54,7 +55,7 @@ namespace wyUpdate
         /// <summary>
         /// Handles client disconnected messages
         /// </summary>
-        public delegate void ClientDisconnectedHandler();
+        public delegate void ClientDisconnectedHandler(Client client);
 
         /// <summary>
         /// Event is called when a client pipe is severed.
@@ -198,7 +199,7 @@ namespace wyUpdate
 
                     //fire message received event
                     if (MessageReceived != null)
-                        MessageReceived(ms.ToArray());
+                        MessageReceived(ms.ToArray(), client);
                 }
             }
 
@@ -211,7 +212,7 @@ namespace wyUpdate
 
             // invoke the event, a client disconnected
             if (ClientDisconnected != null)
-                ClientDisconnected();
+                ClientDisconnected(client);
         }
 
         /// <summary>
@@ -235,6 +236,43 @@ namespace wyUpdate
                     client.stream.Flush();
                 }
             }
+        }
+
+        public void SendMessageExclude(byte[] message, Client clientToExclude)
+        {
+            lock (clients)
+            {
+                //get the entire stream length
+                byte[] messageLength = BitConverter.GetBytes(message.Length);
+
+                foreach (Client client in clients)
+                {
+                    if (client == clientToExclude)
+                        continue;
+
+                    // length
+                    client.stream.Write(messageLength, 0, 4);
+
+                    // data
+                    client.stream.Write(message, 0, message.Length);
+                    client.stream.Flush();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a message to a single connected client.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="client">The client to send the message to.</param>
+        public void SendMessage(byte[] message, Client client)
+        {
+            // length
+            client.stream.Write(BitConverter.GetBytes(message.Length), 0, 4);
+
+            // data
+            client.stream.Write(message, 0, message.Length);
+            client.stream.Flush();
         }
     }
 }

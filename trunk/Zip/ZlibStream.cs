@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-19 18:39:59>
+// Time-stamp: <2009-September-05 12:18:27>
 //
 // ------------------------------------------------------------------
 //
@@ -852,8 +852,6 @@ namespace Ionic.Zlib
                 // workitem 7159
                 if (_flavor == ZlibStreamFlavor.GZIP)
                 {
-                    //Console.WriteLine("GZipStream: Last write");
-
                     if (_wantCompress)
                     {
                         // Emit the GZIP trailer: CRC32 and  size mod 2^32
@@ -882,19 +880,31 @@ namespace Ionic.Zlib
                         // Read and potentially verify the GZIP trailer: CRC32 and  size mod 2^32
                         byte[] trailer = new byte[8];
 
+                        // workitem 8679
                         if (_z.AvailableBytesIn != 8)
-                            throw new ZlibException(String.Format("Protocol error. AvailableBytesIn={0}, expected 8",
-                                 _z.AvailableBytesIn));
-
-                        Array.Copy(_z.InputBuffer, _z.NextIn, trailer, 0, trailer.Length);
-
+                        {
+                            // Make sure we have read to the end of the stream
+                            Array.Copy(_z.InputBuffer, _z.NextIn,trailer, 0, _z.AvailableBytesIn);
+                            int bytesNeeded = 8 - _z.AvailableBytesIn;
+                            int bytesRead = _stream.Read(trailer,
+                                                         _z.AvailableBytesIn,
+                                                         bytesNeeded);
+                            if (bytesNeeded != bytesRead)
+                            {
+                                throw new ZlibException(String.Format("Protocol error. AvailableBytesIn={0}, expected 8",
+                                                                      _z.AvailableBytesIn + bytesRead));
+                            }
+                        }
+                        else
+                        {
+                            Array.Copy(_z.InputBuffer, _z.NextIn, trailer, 0, trailer.Length);
+                        }
+                                
+                        
                         Int32 crc32_expected = BitConverter.ToInt32(trailer, 0);
-                        int crc32_actual = crc.Crc32Result;
+                        Int32 crc32_actual = crc.Crc32Result;
                         Int32 isize_expected = BitConverter.ToInt32(trailer, 4);
                         Int32 isize_actual = (Int32)(_z.TotalBytesOut & 0x00000000FFFFFFFF);
-
-                        // Console.WriteLine("GZipStream: slurped trailer  crc(0x{0:X8}) isize({1})", crc32_expected, isize_expected);
-                        // Console.WriteLine("GZipStream: calc'd data      crc(0x{0:X8}) isize({1})", crc32_actual, isize_actual);
 
                         if (crc32_actual != crc32_expected)
                             throw new ZlibException(String.Format("Bad CRC32 in GZIP stream. (actual({0:X8})!=expected({1:X8}))", crc32_actual, crc32_expected));
@@ -905,10 +915,7 @@ namespace Ionic.Zlib
                     }
                     else
                     {
-                        //Console.WriteLine("ZlibBaseStream::finish / Reader / GZIP / compression");
-                        // should emit the GZIP trailer here
                         throw new ZlibException("Reading with compression is not supported.");
-
                     }
                 }
             }

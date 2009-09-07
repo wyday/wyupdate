@@ -48,8 +48,10 @@ namespace wyUpdate.Common
             return count;
         }
 
-        public void Load(string fileName)
+        public static UpdateDetails Load(string fileName)
         {
+            UpdateDetails updtDetails = new UpdateDetails();
+
             FileStream fs = null;
 
             try
@@ -81,22 +83,22 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01:
-                        PostUpdateCommands = ReadFiles.ReadDeprecatedString(fs);
+                        updtDetails.PostUpdateCommands = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x20://num reg changes
-                        RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
+                        updtDetails.RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
                         break;
                     case 0x21://num file infos
-                        UpdateFiles = new List<UpdateFile>(ReadFiles.ReadInt(fs));
+                        updtDetails.UpdateFiles = new List<UpdateFile>(ReadFiles.ReadInt(fs));
                         break;
                     case 0x8E:
-                        RegistryModifications.Add(RegChange.ReadFromStream(fs));
+                        updtDetails.RegistryModifications.Add(RegChange.ReadFromStream(fs));
                         break;
                     case 0x30:
-                        PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                        updtDetails.PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x31:
-                        PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                        updtDetails.PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     case 0x40:
                         tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
@@ -126,14 +128,14 @@ namespace wyUpdate.Common
                         tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
                         break;
                     case 0x9B://end of file
-                        UpdateFiles.Add(tempUpdateFile);
+                        updtDetails.UpdateFiles.Add(tempUpdateFile);
                         tempUpdateFile = new UpdateFile();
                         break;
                     case 0x8D:
-                        ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
+                        updtDetails.ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
                         break;
                     case 0x60:
-                        FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
+                        updtDetails.FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -144,6 +146,8 @@ namespace wyUpdate.Common
             }
 
             fs.Close();
+
+            return updtDetails;
         }
 
         public Stream Save()
