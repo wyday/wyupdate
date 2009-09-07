@@ -24,8 +24,8 @@ namespace wyUpdate
                 panelDisplaying.Progress = percentDone;
 
                 // send the progress to the AutoUpdate control
-                if (isAutoUpdateMode && updateHelper.UpdateStep != UpdateStep.Install)
-                    updateHelper.SendProgress(unweightedPercent);
+                if (isAutoUpdateMode && autoUpdateStepProcessing != UpdateStep.Install)
+                    updateHelper.SendProgress(unweightedPercent, autoUpdateStepProcessing);
             }
 
             //update bottom status
@@ -96,10 +96,15 @@ namespace wyUpdate
 
                             panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Nothing;
 
-                            update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
+                            // we're no longer extracting
+                            if (isAutoUpdateMode)
+                                autoUpdateStepProcessing = UpdateStep.DownloadUpdate;
 
                             // download the catch-all update
                             DownloadUpdate();
+
+                            // set for auto-updates
+                            currentlyExtracting = false;
 
                             return;
                         }
@@ -109,7 +114,8 @@ namespace wyUpdate
                     }
                 }
 
-                updateHelper.SendFailed(error, errorDetails);
+                if (isAutoUpdateMode)
+                    updateHelper.SendFailed(error, errorDetails, autoUpdateStepProcessing);
 
                 ShowFrame(Frame.Error);
             }
@@ -202,8 +208,6 @@ namespace wyUpdate
                             error = null;
 
                             panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Nothing;
-
-                            update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
                             // download the catch-all update
                             DownloadUpdate();

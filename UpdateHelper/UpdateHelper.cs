@@ -8,9 +8,8 @@ namespace wyUpdate.Common
 {
     class UpdateHelper
     {
-        readonly PipeServer pipeServer = new PipeServer();
-
-        public UpdateStep UpdateStep;
+        readonly PipeServer pipeServer;
+        readonly PipeClient pipeClient;
 
         public bool Installing;
 
@@ -23,60 +22,162 @@ namespace wyUpdate.Common
 
         private Control owner;
 
+        private string m_PipeName;
+
+        private string PipeName
+        {
+            get
+            {
+                if(m_PipeName == null)
+                {
+                    // get the unique pipe name (the last 246 chars of the complete path)
+                    string pipeName = Application.ExecutablePath.Replace("\\", "").ToLower();
+                    int pipeNameL = pipeName.Length;
+
+                    // store the pipename for communicating with Self-update
+                    m_PipeName = "\\\\.\\pipe\\" + pipeName.Substring(Math.Max(0, pipeNameL - 246), Math.Min(246, pipeNameL));
+                }
+
+                return m_PipeName;
+            }
+        }
+
+        private PipeServer.Client SelfMaster;
+
         public UpdateHelper(Control OwnerHandle)
         {
             owner = OwnerHandle;
 
+            pipeServer = new PipeServer();
+
             pipeServer.MessageReceived += pipeServer_MessageReceived;
             pipeServer.ClientDisconnected += pipeServer_ClientDisconnected;
 
-            // get the unique pipe name (the last 246 chars of the complete path)
-            string pipeName = Application.ExecutablePath.Replace("\\", "").ToLower();
-            int pipeNameL = pipeName.Length;
-
-            pipeServer.Start("\\\\.\\pipe\\" + pipeName.Substring(Math.Max(0, pipeNameL - 246), Math.Min(246, pipeNameL)));
+            pipeServer.Start(PipeName);
         }
 
-        void pipeServer_ClientDisconnected()
+        public UpdateHelper(Control OwnerHandle, string pipeName)
+        {
+            owner = OwnerHandle;
+
+            m_PipeName = pipeName;
+
+            pipeClient = new PipeClient();
+
+            pipeClient.MessageReceived += pipeClient_MessageReceived;
+            pipeClient.ServerDisconnected += pipeClient_ServerDisconnected;
+
+            pipeClient.Connect(PipeName);
+        }
+
+        void pipeClient_ServerDisconnected()
         {
             try
             {
-                owner.Invoke(new PipeServer.ClientDisconnectedHandler(ClientDisconnected));
+                owner.Invoke(new PipeClient.ServerDisconnectedHandler(ServerDisconnected));
             }
             catch { }
         }
 
-        void ClientDisconnected()
+        void ServerDisconnected()
         {
+            if (SenderProcessClosed != null)
+                SenderProcessClosed(this, EventArgs.Empty);
+        }
+
+        void pipeServer_ClientDisconnected(PipeServer.Client client)
+        {
+            try
+            {
+                owner.Invoke(new PipeServer.ClientDisconnectedHandler(ClientDisconnected),
+                             new object[] {client});
+            }
+            catch { }
+        }
+
+        void ClientDisconnected(PipeServer.Client client)
+        {
+            // we're no longer piping messages to/from the master
+            if (client == SelfMaster)
+                SelfMaster = null;
+
+            //TODO: the SelfMaster needs to be notified if all the REAL clients are disconnected (i.e. SelfMaster != null && TotalConnectedClients == 1)
+            // or better yet, just close this, and when the SelfMaster detects we've close, have it close.
+
             if (SenderProcessClosed != null && pipeServer.TotalConnectedClients == 0)
                 SenderProcessClosed(this, EventArgs.Empty);
         }
 
-        void pipeServer_MessageReceived(byte[] message)
+        void pipeClient_MessageReceived(byte[] message)
         {
             try
             {
-                owner.Invoke(new PipeServer.MessageReceivedHandler(ProcessReceivedData),
-                             new object[] {message});
+                owner.Invoke(new PipeClient.MessageReceivedHandler(ClientReceivedData),
+                             new object[] { message });
             }
             catch { }
         }
 
-        void ProcessReceivedData(byte[] message)
+        void ClientReceivedData(byte[] message)
         {
-            // get the data
-            UpdateHelperData data = UpdateHelperData.FromByteArray(message);
+            ProcessMessage(UpdateHelperData.FromByteArray(message));
+        }
 
-            UpdateStep = data.UpdateStep;
-            
-            if (data.Action == Action.GetwyUpdateProcessID)
+        void pipeServer_MessageReceived(byte[] message, PipeServer.Client client)
+        {
+            try
             {
-                // send ProcessID
-                pipeServer.SendMessage(new UpdateHelperData(Action.GetwyUpdateProcessID){ProcessID = Process.GetCurrentProcess().Id}.GetByteArray());
+                owner.Invoke(new PipeServer.MessageReceivedHandler(ServerReceivedData),
+                             new object[] {message, client});
+            }
+            catch { }
+        }
+
+        void ServerReceivedData(byte[] message, PipeServer.Client client)
+        {
+            if(SelfMaster != null)
+            {
+                if(client == SelfMaster)
+                {
+                    // relay the message to all other clients (exclude SelfMaster)
+                    pipeServer.SendMessageExclude(message, client);
+                }
+                else
+                {
+                    // send the message to SelfMaster
+                    pipeServer.SendMessage(message, client);
+                }
+
                 return;
             }
 
-            if (UpdateStep == UpdateStep.RestartInfo)
+            // get the data
+            UpdateHelperData data = UpdateHelperData.FromByteArray(message);
+
+            if (data.Action == Action.wyUpdateSlave)
+            {
+                // We've been ordered to become a wyUpdate slave - save the Client class.
+                // All further communications will be piped through this wyUpdate instance
+                // to the "master"
+                SelfMaster = client;
+                return;
+            }
+            
+            ProcessMessage(data);
+        }
+
+        void ProcessMessage(UpdateHelperData data)
+        {
+            if (data.Action == Action.GetwyUpdateProcessID)
+            {
+                // send ProcessID
+                pipeServer.SendMessage(new UpdateHelperData(Action.GetwyUpdateProcessID) { ProcessID = Process.GetCurrentProcess().Id }.GetByteArray());
+                return;
+            }
+
+            UpdateStep step = data.UpdateStep;
+
+            if (step == UpdateStep.RestartInfo)
             {
                 // load the pre-install info
                 if (data.ExtraData.Count > 0)
@@ -86,39 +187,46 @@ namespace wyUpdate.Common
                 if (data.ExtraData.Count > 1)
                     AutoUpdateID = data.ExtraData[1];
             }
-            else if (UpdateStep == UpdateStep.Install)
+            else if (step == UpdateStep.Install)
                 Installing = true;
 
             if (RequestReceived != null)
-                RequestReceived(this, data.Action, UpdateStep);
+                RequestReceived(this, data.Action, step);
         }
 
-        public void SendProgress(int progress)
+        public void SendProgress(int progress, UpdateStep step)
         {
-            pipeServer.SendMessage(new UpdateHelperData(Response.Progress, UpdateStep, progress).GetByteArray());
+            Send(new UpdateHelperData(Response.Progress, step, progress).GetByteArray());
         }
 
         public void SendSuccess(string extraData1, string extraData2, bool ed2IsRtf, List<RichTextBoxLink> links)
         {
-            UpdateHelperData uh = new UpdateHelperData(Response.Succeeded, UpdateStep, extraData1, extraData2);
+            UpdateHelperData uh = new UpdateHelperData(Response.Succeeded, UpdateStep.CheckForUpdate, extraData1, extraData2);
 
             uh.ExtraDataIsRTF[1] = ed2IsRtf;
             
             uh.LinksData = links;
 
-            pipeServer.SendMessage(uh.GetByteArray());
+            Send(uh.GetByteArray());
         }
 
-        public void SendSuccess()
+        public void SendSuccess(UpdateStep step)
         {
-            UpdateHelperData uh = new UpdateHelperData(Response.Succeeded, UpdateStep);
-
-            pipeServer.SendMessage(uh.GetByteArray());
+            Send(new UpdateHelperData(Response.Succeeded, step).GetByteArray());
         }
 
-        public void SendFailed(string messageTitle, string messageBody)
+        public void SendFailed(string messageTitle, string messageBody, UpdateStep step)
         {
-            pipeServer.SendMessage(new UpdateHelperData(Response.Failed, UpdateStep, messageTitle, messageBody).GetByteArray());
+            Send(new UpdateHelperData(Response.Failed, step, messageTitle, messageBody).GetByteArray());
+        }
+
+        private void Send(byte[] message)
+        {
+            if (pipeServer != null)
+                pipeServer.SendMessage(message);
+
+            else
+                pipeClient.SendMessage(message);
         }
     }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using wyDay.Controls;
 using wyUpdate.Common;
@@ -13,12 +12,25 @@ namespace wyUpdate
         bool isAutoUpdateMode;
         string autoUpdateStateFile;
 
+        UpdateStep autoUpdateStepProcessing;
+
+
+        bool currentlyExtracting;
 
         void SetupAutoupdateMode()
         {
             isAutoUpdateMode = true;
 
             updateHelper = new UpdateHelper(this);
+            updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
+            updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+        }
+
+        void SetupSelfAutoupdateMode(string pipeName)
+        {
+            isAutoUpdateMode = true;
+
+            updateHelper = new UpdateHelper(this, pipeName);
             updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
             updateHelper.RequestReceived += UpdateHelper_RequestReceived;
         }
@@ -31,26 +43,17 @@ namespace wyUpdate
                 return;
             }
 
-            //TODO: process the correct step. That is, don't assume the step 's' is coming in the correct order.
-            // for example if they try to check for updates when already checking for updates the request should be rejected.
+            // filter out out-of-order requests (never assume the step 's' is coming in the correct order)
+            if (FilterBadRequest(s))
+                return;
 
-            // Or: if they request "CheckForUpdate" when showing the update info page we should respond with RequestSucceeded(), and provide the update info
+            autoUpdateStepProcessing = s;
 
             switch (s)
             {
                 case UpdateStep.CheckForUpdate:
 
-                    if (!string.IsNullOrEmpty(serverOverwrite))
-                    {
-                        // overrite server file
-                        List<string> overwriteServer = new List<string> { serverOverwrite };
-                        BeginDownload(overwriteServer, 0, false);
-                    }
-                    else
-                    {
-                        //download the server file
-                        BeginDownload(update.ServerFileSites, 0, false);
-                    }
+                    CheckForUpdate();
 
                     break;
                 case UpdateStep.DownloadUpdate:
@@ -67,7 +70,7 @@ namespace wyUpdate
                 case UpdateStep.RestartInfo:
 
                     // send a success signal.
-                    updateHelper.SendSuccess();
+                    updateHelper.SendSuccess(autoUpdateStepProcessing);
 
                     break;
                 case UpdateStep.Install:
@@ -95,6 +98,148 @@ namespace wyUpdate
             // close wyUpdate if we're not installing an update
             if (isAutoUpdateMode && !updateHelper.Installing)
                 CancelUpdate(true);
+        }
+
+        /// <summary>
+        /// Filters bad request by responding with the required info.
+        /// </summary>
+        /// <param name="s">The requested step.</param>
+        /// <returns>True if a bad request has been filtered, false otherwise</returns>
+        bool FilterBadRequest(UpdateStep s)
+        {
+            // for example if they try to check for updates when already checking for updates the request should be rejected.
+
+            // Or: if they request "CheckForUpdate" when showing the update info page we should respond with RequestSucceeded(), and provide the update info
+
+
+            switch (s)
+            {
+                case UpdateStep.CheckForUpdate:
+
+                    // if already checking ...
+                    if (frameOn == Frame.Checking && downloader != null)
+                    {
+                        // report progress of 0%
+                        updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                        return true;
+                    }
+
+                    // if on another step ...
+                    if (frameOn != Frame.Checking)
+                    {
+                        // report UpdateAvailable, with changes
+                        updateHelper.SendSuccess(update.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
+
+                        return true;
+                    }
+
+                    break;
+                case UpdateStep.DownloadUpdate:
+
+                    if(frameOn == Frame.Checking)
+                    {
+                        // waiting to be told to check for updates...
+                        if(downloader == null)
+                        {
+                            // report 0% and begin checking
+                            updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                            CheckForUpdate();
+                        }
+                        else // already checking ...
+                        {
+                            // report 0% progress
+                            updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                        }
+
+                        return true;
+                    }
+                    
+                    if(frameOn == Frame.InstallUpdates)
+                    {
+                        // if already downloading ...
+                        if(update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
+                        {
+                            // report 0%
+                            updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
+                        }
+                        else // on another step (extracting, etc.) ...
+                        {
+                            // report UpdateDownloaded
+                            updateHelper.SendSuccess(UpdateStep.DownloadUpdate);
+                        }
+
+                        return true;
+                    }
+
+                    break;
+                case UpdateStep.BeginExtraction:
+
+                    if (frameOn == Frame.Checking)
+                    {
+                        // waiting to be told to check for updates...
+                        if (downloader == null)
+                        {
+                            // report 0% and begin checking
+                            updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                            CheckForUpdate();
+                        }
+                        else // already checking ...
+                        {
+                            // report 0% progress
+                            updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                        }
+
+                        return true;
+                    }
+
+                    // if we haven't downloaded yet...
+                    if (frameOn == Frame.UpdateInfo)
+                    {
+                        // report 0% progress & download
+                        updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
+                        DownloadUpdate();
+                    }
+
+                    if (frameOn == Frame.InstallUpdates)
+                    {
+                        // if already downloading ...
+                        if (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
+                        {
+                            // report 0%
+                            updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
+                            return true;
+                        }
+
+                        // if done extracting...
+                        if(updtDetails != null)
+                        {
+                            // report extraction completed successfully
+                            updateHelper.SendSuccess(UpdateStep.BeginExtraction);
+                            return true;
+                        }
+
+                        if (currentlyExtracting)
+                        {
+                            // report extraction has begun
+                            updateHelper.SendProgress(0, UpdateStep.BeginExtraction);
+                            return true;
+                        }
+                    }
+
+
+                    break;
+                case UpdateStep.RestartInfo:
+                case UpdateStep.Install:
+
+
+                    //TODO: if there isn't an update ready to install - 
+
+                    break;
+            }
+
+
+            // no bad request found - continue processing as usual
+            return false;
         }
 
 
@@ -137,6 +282,9 @@ namespace wyUpdate
 
                 case UpdateStepOn.UpdateDownloaded:
 
+                    // set the update step pending (extracting)
+                    update.CurrentlyUpdating = UpdateOn.Extracting;
+
                     needElevation = NeedElevationToUpdate();
 
                     // show frame InstallUpdate
@@ -155,12 +303,13 @@ namespace wyUpdate
 
                     if (File.Exists(updtDetailsFilename))
                     {
-                        updtDetails = new UpdateDetails();
-                        updtDetails.Load(updtDetailsFilename);
+                        updtDetails = UpdateDetails.Load(updtDetailsFilename);
                     }
                     else
                         throw new Exception("Update details file does not exist.");
 
+                    // set the update step pending (closing processes & installing files, etc.)
+                    update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
 
                     needElevation = NeedElevationToUpdate();
 

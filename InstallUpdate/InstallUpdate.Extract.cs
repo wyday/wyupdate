@@ -61,8 +61,7 @@ namespace wyUpdate
                 // Try to load the update details file
                 if (File.Exists(updtDetailsFilename))
                 {
-                    UpdtDetails = new UpdateDetails();
-                    UpdtDetails.Load(updtDetailsFilename);
+                    UpdtDetails = UpdateDetails.Load(updtDetailsFilename);
                 }
                 else
                     throw new Exception("The update details file \"updtdetails.udt\" is missing.");

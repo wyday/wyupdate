@@ -35,8 +35,7 @@ namespace wyUpdate
 
                 if (File.Exists(updtDetailsFilename))
                 {
-                    UpdtDetails = new UpdateDetails();
-                    UpdtDetails.Load(updtDetailsFilename);
+                    UpdtDetails = UpdateDetails.Load(updtDetailsFilename);
 
                     //remove the file to prevent conflicts with the regular product update
                     File.Delete(updtDetailsFilename);

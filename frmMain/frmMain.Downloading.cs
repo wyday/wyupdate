@@ -20,11 +20,27 @@ namespace wyUpdate
             else
             {
                 //download the update file
+                update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
                 BeginDownload(updateFrom.FileSites, updateFrom.Adler32, true);
             }
         }
 
-        //downlaod regular update files
+        void CheckForUpdate()
+        {
+            if (!string.IsNullOrEmpty(serverOverwrite))
+            {
+                // overrite server file
+                List<string> overwriteServer = new List<string> { serverOverwrite };
+                BeginDownload(overwriteServer, 0, false);
+            }
+            else
+            {
+                //download the server file
+                BeginDownload(update.ServerFileSites, 0, false);
+            }
+        }
+
+        //download regular update files
         private void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
         {
             if (downloader != null)
@@ -34,10 +50,10 @@ namespace wyUpdate
             }
 
             downloader = new FileDownloader(sites, tempDirectory)
-            {
-                Adler32 = adler32,
-                UseRelativeProgress = relativeProgress
-            };
+                             {
+                                 Adler32 = adler32,
+                                 UseRelativeProgress = relativeProgress
+                             };
 
             downloader.ProgressChanged += ShowProgress;
             downloader.Download();
@@ -53,9 +69,9 @@ namespace wyUpdate
             }
 
             downloader = new FileDownloader(sites, tempDirectory)
-            {
-                Adler32 = adler32
-            };
+                             {
+                                 Adler32 = adler32
+                             };
 
             downloader.ProgressChanged += SelfUpdateProgress;
             downloader.Download();
@@ -124,21 +140,6 @@ namespace wyUpdate
 
                     // TODO: set the autoupdate filename
                     autoUpdateStateFile = Path.Combine(tempDirectory, "autoupdate");
-
-                    tempDirectory = Path.Combine(tempDirectory, update.NewVersion);
-
-                    // create a new upate folder
-                    Directory.CreateDirectory(tempDirectory);
-
-                    string newServerFileLoc = Path.Combine(tempDirectory, Path.GetFileName(serverFileLoc));
-
-                    if (File.Exists(newServerFileLoc))
-                        File.Delete(newServerFileLoc);
-
-                    // move the server file to the new update folder
-                    File.Move(serverFileLoc, newServerFileLoc);
-
-                    serverFileLoc = newServerFileLoc;
                 }
                 catch { }
             }
