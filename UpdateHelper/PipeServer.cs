@@ -109,7 +109,7 @@ namespace wyUpdate
             Running = true;
         }
 
-        private void ListenForClients()
+        void ListenForClients()
         {
             while (true)
             {
@@ -153,7 +153,7 @@ namespace wyUpdate
             }
         }
 
-        private void Read(object clientObj)
+        void Read(object clientObj)
         {
             Client client = (Client)clientObj;
             client.stream = new FileStream(client.handle, FileAccess.ReadWrite, BUFFER_SIZE, true);

@@ -6,7 +6,7 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        private void btnNext_Click(object sender, EventArgs e)
+        void btnNext_Click(object sender, EventArgs e)
         {
             if (FrameIs.ErrorFinish(frameOn))
             {
@@ -21,13 +21,13 @@ namespace wyUpdate
             }
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
+        void btnCancel_Click(object sender, EventArgs e)
         {
             CancelUpdate();
         }
 
 
-        private void CancelUpdate(bool ForceClose)
+        void CancelUpdate(bool ForceClose)
         {
             if ((frameOn == Frame.Checking || frameOn == Frame.InstallUpdates) && !ForceClose) //if downloading or updating
             {
@@ -66,7 +66,7 @@ namespace wyUpdate
             }
         }
 
-        private bool IsDownloading()
+        bool IsDownloading()
         {
             //if downloading in anything, return true
             return frameOn == Frame.Checking || frameOn == Frame.InstallUpdates && downloader != null &&
@@ -74,12 +74,12 @@ namespace wyUpdate
         }
 
 
-        private void CancelUpdate()
+        void CancelUpdate()
         {
             CancelUpdate(false);
         }
 
-        private void DisableCancel()
+        void DisableCancel()
         {
             if (btnCancel.Enabled)
                 SystemMenu.DisableCloseButton(this);
@@ -87,7 +87,7 @@ namespace wyUpdate
             btnCancel.Enabled = false;
         }
 
-        private void EnableCancel()
+        void EnableCancel()
         {
             if (!btnCancel.Enabled)
                 SystemMenu.EnableCloseButton(this);
@@ -105,13 +105,13 @@ namespace wyUpdate
             base.OnSizeChanged(e);
         }
 
-        private void SetButtonText()
+        void SetButtonText()
         {
             btnNext.Text = clientLang.NextButton;
             btnCancel.Text = clientLang.CancelButton;
         }
 
-        private void btnCancel_SizeChanged(object sender, EventArgs e)
+        void btnCancel_SizeChanged(object sender, EventArgs e)
         {
             btnNext.Left = btnCancel.Left - btnNext.Width - 6;
         }

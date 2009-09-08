@@ -31,7 +31,7 @@ namespace wyUpdate
             Sender.BeginInvoke(SenderDelegate, new object[] { files, true });
         }
 
-        private static void RemoveSelfFromProcesses(List<FileInfo> files)
+        static void RemoveSelfFromProcesses(List<FileInfo> files)
         {
             for (int i = 0; i < files.Count; i++)
             {
@@ -61,7 +61,7 @@ namespace wyUpdate
             return false;
         }
 
-        private static bool ProcessesNeedClosing(List<FileInfo> baseFiles)
+        static bool ProcessesNeedClosing(List<FileInfo> baseFiles)
         {
             Process[] aProcess = Process.GetProcesses();
 

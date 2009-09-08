@@ -9,7 +9,7 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        private void ShowFrame(Frame frameNum)
+        void ShowFrame(Frame frameNum)
         {
             frameOn = frameNum;
 
@@ -252,7 +252,7 @@ namespace wyUpdate
             btnNext.Focus();
         }
 
-        private void InstallUpdates(UpdateOn CurrentlyUpdating)
+        void InstallUpdates(UpdateOn CurrentlyUpdating)
         {
             ShowProgressDelegate showProgress = ShowProgress;
 
@@ -385,7 +385,7 @@ namespace wyUpdate
             }
         }
 
-        private void SetStepStatus(int stepNum, string stepText)
+        void SetStepStatus(int stepNum, string stepText)
         {
             panelDisplaying.ProgressStatus = "";
             panelDisplaying.UpdateItems[stepNum].Status = UpdateItemStatus.Working;
@@ -393,7 +393,7 @@ namespace wyUpdate
         }
 
         //update step completed, continue to next
-        private void StepCompleted()
+        void StepCompleted()
         {
             if (update.CurrentlyUpdating == UpdateOn.DeletingTemp)
             {

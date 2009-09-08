@@ -13,7 +13,7 @@ namespace wyDay.Controls
 {
     public class LinkLabel2 : Control
     {
-        private Font hoverFont;
+        Font hoverFont;
 
         Rectangle textRect;
         
@@ -221,7 +221,7 @@ namespace wyDay.Controls
             base.OnFontChanged(e);
         }
 
-        private void RefreshTextRect()
+        void RefreshTextRect()
         {
             textRect = new Rectangle(Point.Empty, TextRenderer.MeasureText(Text, Font, Size, TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix));
             int width = textRect.Width + 1, 

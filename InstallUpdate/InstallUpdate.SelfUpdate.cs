@@ -150,7 +150,7 @@ namespace wyUpdate
             }
         }
 
-        private bool FindNewClient()
+        bool FindNewClient()
         {
             //first search the update details file
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
@@ -181,7 +181,7 @@ namespace wyUpdate
             return false;
         }
 
-        private static void KillProcess(string filename)
+        static void KillProcess(string filename)
         {
             Process[] aProcess = Process.GetProcesses();
 

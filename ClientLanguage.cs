@@ -50,20 +50,20 @@ namespace wyUpdate
     public class ClientLanguage
     {
         //Return parsed strings?
-        private bool m_ReturnParsedStrings = true;
+        bool m_ReturnParsedStrings = true;
 
         //Language Name
-        private string m_EnglishName, m_Name = "English", m_Culture = "en-US";
+        string m_EnglishName, m_Name = "English", m_Culture = "en-US";
 
         //Buttons
-        private string m_NextButton = "Next",
+        string m_NextButton = "Next",
                        m_UpdateButton = "Update",
                        m_FinishButton = "Finish",
                        m_CancelButton = "Cancel",
                        m_ShowDetails = "Show details";
 
         //Dialogs
-        private ScreenDialog 
+        ScreenDialog 
             m_ProcessDialog = new ScreenDialog("Close processes...",
                 null,
                 "The following processes need to be closed before updating can continue. Select a process and click Close Process."),
@@ -71,12 +71,12 @@ namespace wyUpdate
                 null,
                 "Are you sure you want to exit before the update is complete?");
 
-        private string m_ClosePrc = "Close Process",
+        string m_ClosePrc = "Close Process",
             m_CloseAllPrc = "Close All Processes", 
             m_CancelUpdate = "Cancel Update";
 
         //Errors
-        private string m_ServerError = "Unable to check for updates, the server file failed to load.",
+        string m_ServerError = "Unable to check for updates, the server file failed to load.",
             m_AdminError = "wyUpdate needs administrative privileges to update %product%. You can do this one of two ways:\r\n\r\n" +
                 "1. When prompted, enter an administrator's username and password.\r\n\r\n" +
                 "2. In Windows Explorer right click wyUpdate.exe and click \"Run as Administrator\"",
@@ -86,7 +86,7 @@ namespace wyUpdate
             m_LogOffError = "Updating %product%. You must cancel wyUpdate before you can log off.";
 
         //Update Screens
-        private ScreenDialog
+        ScreenDialog
             m_Checking = new ScreenDialog("Searching for updates",
                 "wyUpdate is searching for updates.",
                 "wyUpdate is searching for updates to %product%. This process could take a few minutes."),
@@ -113,11 +113,11 @@ namespace wyUpdate
                 null);
 
         //Bottoms
-        private string m_UpdateBottom = "Click Update to begin.", 
+        string m_UpdateBottom = "Click Update to begin.", 
             m_FinishBottom = "Click Finish to exit.";
 
         //Status
-        private string m_Download = "Downloading update",
+        string m_Download = "Downloading update",
             m_DownloadingSelfUpdate = "Downloading new wyUpdate",
             m_SelfUpdate = "Updating wyUpdate",
             m_Extract = "Extracting files",
@@ -133,7 +133,7 @@ namespace wyUpdate
             m_RollingBackRegistry = "Rolling back registry";
 
         //Variables
-        private string m_ProductName, m_OldVersion, m_NewVersion;
+        string m_ProductName, m_OldVersion, m_NewVersion;
         
         #region Properties
 
@@ -736,7 +736,7 @@ namespace wyUpdate
 
         #region Parsing language strings
 
-        private string ParseText(string text)
+        string ParseText(string text)
         {
             if (string.IsNullOrEmpty(text))
                 return text;
@@ -746,7 +746,7 @@ namespace wyUpdate
             return ParseVariableText(text, ref excludeVariables);
         }
 
-        private string ParseVariableText(string text, ref List<string> excludeVariables)
+        string ParseVariableText(string text, ref List<string> excludeVariables)
         {
             //parse a string, and return a pretty string (sans %%)
             StringBuilder returnString = new StringBuilder();
@@ -804,7 +804,7 @@ namespace wyUpdate
             return returnString.ToString();
         }
 
-        private string VariableToPretty(string variable, ref List<string> excludeVariables)
+        string VariableToPretty(string variable, ref List<string> excludeVariables)
         {
             variable = variable.ToLower();
 
@@ -838,7 +838,7 @@ namespace wyUpdate
             return returnValue;
         }
 
-        private ScreenDialog ParseScreenDialog(ScreenDialog dialog)
+        ScreenDialog ParseScreenDialog(ScreenDialog dialog)
         {
             return new ScreenDialog(ParseText(dialog.Title),
                 ParseText(dialog.SubTitle),
@@ -886,7 +886,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadLanguageFile(XmlReader reader)
+        void ReadLanguageFile(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -916,7 +916,7 @@ namespace wyUpdate
             reader.Close();
         }
 
-        private void ReadButtons(XmlReader reader)
+        void ReadButtons(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -946,7 +946,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadScreens(XmlReader reader)
+        void ReadScreens(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -976,7 +976,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadDialogs(XmlReader reader)
+        void ReadDialogs(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -994,7 +994,7 @@ namespace wyUpdate
             }
         }
 
-        private static void ReadScreenDialog(XmlReader reader, ScreenDialog sd)
+        static void ReadScreenDialog(XmlReader reader, ScreenDialog sd)
         {
             string screenEndName = reader.LocalName;
 
@@ -1016,7 +1016,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadStatus(XmlReader reader)
+        void ReadStatus(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -1058,7 +1058,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadErrors(XmlReader reader)
+        void ReadErrors(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -1084,7 +1084,7 @@ namespace wyUpdate
             }
         }
 
-        private void ReadBottoms(XmlReader reader)
+        void ReadBottoms(XmlReader reader)
         {
             while (reader.Read())
             {
@@ -1123,7 +1123,7 @@ namespace wyUpdate
             }
         }
 
-        private void WriteLanguageFile(XmlTextWriter writer)
+        void WriteLanguageFile(XmlTextWriter writer)
         {
             writer.Formatting = Formatting.Indented;
             writer.IndentChar = '\t';
@@ -1219,13 +1219,13 @@ namespace wyUpdate
             writer.Close();
         }
 
-        private static void WriteString(XmlWriter writer, string name, string value)
+        static void WriteString(XmlWriter writer, string name, string value)
         {
             if (!string.IsNullOrEmpty(value))
                 writer.WriteElementString(name, value);
         }
 
-        private static void WriteScreenDialog(XmlWriter writer, string name, ScreenDialog sd)
+        static void WriteScreenDialog(XmlWriter writer, string name, ScreenDialog sd)
         {
             if (!sd.IsEmpty)
             {

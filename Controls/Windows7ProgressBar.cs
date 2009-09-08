@@ -15,7 +15,7 @@ namespace wyDay.Controls
     public class Windows7ProgressBar : ProgressBar
     {
         bool showInTaskbar;
-        private ProgressBarState m_State = ProgressBarState.Normal;
+        ProgressBarState m_State = ProgressBarState.Normal;
         ContainerControl ownerForm;
 
         public Windows7ProgressBar () {}
@@ -189,7 +189,7 @@ namespace wyDay.Controls
             SetValueInTB();
         }
 
-        private void SetValueInTB()
+        void SetValueInTB()
         {
             if (showInTaskbar)
             {
@@ -200,7 +200,7 @@ namespace wyDay.Controls
             }
         }
 
-        private void SetStateInTB()
+        void SetStateInTB()
         {
             if (ownerForm == null) return;
 

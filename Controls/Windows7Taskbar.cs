@@ -10,7 +10,7 @@ namespace wyDay.Controls
     /// </summary>
     public static class Windows7Taskbar
     {
-        private static ITaskbarList3 _taskbarList;
+        static ITaskbarList3 _taskbarList;
         internal static ITaskbarList3 TaskbarList
         {
             get

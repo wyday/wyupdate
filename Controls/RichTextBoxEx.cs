@@ -30,7 +30,7 @@ namespace wyDay.Controls
 	{
 		#region Interop-Defines
 		[ StructLayout( LayoutKind.Sequential )]
-		private struct CHARFORMAT2_STRUCT
+		struct CHARFORMAT2_STRUCT
 		{
 			public UInt32	cbSize; 
 			public UInt32   dwMask; 
@@ -56,18 +56,18 @@ namespace wyDay.Controls
 		}
 
 		[DllImport("user32.dll", CharSet=CharSet.Auto)]
-		private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+		static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
-		private const int WM_USER			 = 0x0400;
-		private const int EM_GETCHARFORMAT	 = WM_USER+58;
-		private const int EM_SETCHARFORMAT	 = WM_USER+68;
+		const int WM_USER			 = 0x0400;
+		const int EM_GETCHARFORMAT	 = WM_USER+58;
+		const int EM_SETCHARFORMAT	 = WM_USER+68;
 
-		private const int SCF_SELECTION	= 0x0001;
+		const int SCF_SELECTION	= 0x0001;
 
 		#region CHARFORMAT2 Flags
 
-		private const UInt32 CFE_LINK		= 0x0020;
-        private const UInt32 CFM_LINK		= 0x00000020;
+		const UInt32 CFE_LINK		= 0x0020;
+        const UInt32 CFM_LINK		= 0x00000020;
 
 		#endregion
 
@@ -258,8 +258,7 @@ namespace wyDay.Controls
 		/// LinkClickedEventArgs.
 		/// </summary>
 		/// <param name="text">Text to be inserted</param>
-		/// <param name="hyperlink">Invisible hyperlink string to be inserted</param>
-		/// <param name="position">Insert position</param>
+        /// <param name="linkText">Invisible hyperlink string to be inserted</param>
 		public void InsertLink(string text, string linkText)
 		{
             RichTextBoxLink link = new RichTextBoxLink(linkText);
@@ -273,7 +272,7 @@ namespace wyDay.Controls
             CreateLink(link, text, linkCollection.Count - 1);
 		}
 
-        private void CreateLink(RichTextBoxLink link, string text, int linkOn)
+        void CreateLink(RichTextBoxLink link, string text, int linkOn)
         {
             string hyperlink = linkOn.ToString();
             SelectedRtf = @"{\rtf1\ansi " + FormatStringForRTF(text) + @"\v #" + hyperlink + @"\v0}";
@@ -298,7 +297,7 @@ namespace wyDay.Controls
             }
         }
 
-        private static string FormatStringForRTF(string inString)
+        static string FormatStringForRTF(string inString)
         {
             string tmpStr = inString.Replace("\n", "$n$");
             tmpStr = tmpStr.Replace(@"\", @"\\");
@@ -326,7 +325,7 @@ namespace wyDay.Controls
 			return GetSelectionStyle(CFM_LINK, CFE_LINK);
 		}
 
-		private void SetSelectionStyle(UInt32 mask, UInt32 effect)
+		void SetSelectionStyle(UInt32 mask, UInt32 effect)
 		{
 			CHARFORMAT2_STRUCT cf = new CHARFORMAT2_STRUCT();
 			cf.cbSize = (UInt32)Marshal.SizeOf(cf);
@@ -342,7 +341,7 @@ namespace wyDay.Controls
 			Marshal.FreeCoTaskMem(lpar);
 		}
 
-		private int GetSelectionStyle(UInt32 mask, UInt32 effect)
+		int GetSelectionStyle(UInt32 mask, UInt32 effect)
 		{
 			CHARFORMAT2_STRUCT cf = new CHARFORMAT2_STRUCT();
 			cf.cbSize = (UInt32)Marshal.SizeOf(cf);

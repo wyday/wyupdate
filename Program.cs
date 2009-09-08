@@ -47,11 +47,11 @@ namespace wyUpdate
 
 
         [DllImport("user32")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
+        static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32")]
-        private static extern int ShowWindow(IntPtr hWnd, int swCommand);
+        static extern int ShowWindow(IntPtr hWnd, int swCommand);
         [DllImport("user32")]
-        private static extern bool IsIconic(IntPtr hWnd);
+        static extern bool IsIconic(IntPtr hWnd);
 
         public static void FocusOtherProcess()
         {

@@ -20,11 +20,11 @@ namespace wyUpdate.Common
         public event RequestHandler RequestReceived;
 
 
-        private Control owner;
+        Control owner;
 
-        private string m_PipeName;
+        string m_PipeName;
 
-        private string PipeName
+        string PipeName
         {
             get
             {
@@ -42,7 +42,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private PipeServer.Client SelfMaster;
+        PipeServer.Client SelfMaster;
 
         public UpdateHelper(Control OwnerHandle)
         {
@@ -220,7 +220,7 @@ namespace wyUpdate.Common
             Send(new UpdateHelperData(Response.Failed, step, messageTitle, messageBody).GetByteArray());
         }
 
-        private void Send(byte[] message)
+        void Send(byte[] message)
         {
             if (pipeServer != null)
                 pipeServer.SendMessage(message);

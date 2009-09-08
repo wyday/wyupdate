@@ -7,14 +7,14 @@ namespace wyUpdate
     public partial class frmMain
     {
         [DllImport("user32.dll")]
-        public extern static bool ShutdownBlockReasonCreate(IntPtr hWnd, [MarshalAs(UnmanagedType.LPWStr)] string pwszReason);
+        extern static bool ShutdownBlockReasonCreate(IntPtr hWnd, [MarshalAs(UnmanagedType.LPWStr)] string pwszReason);
 
         [DllImport("user32.dll")]
-        public extern static bool ShutdownBlockReasonDestroy(IntPtr hWnd);
+        extern static bool ShutdownBlockReasonDestroy(IntPtr hWnd);
 
-        private bool logOffBlocked;
+        bool logOffBlocked;
 
-        private void BlockLogOff(bool block)
+        void BlockLogOff(bool block)
         {
             logOffBlocked = block;
 

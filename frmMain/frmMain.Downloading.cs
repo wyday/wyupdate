@@ -41,7 +41,7 @@ namespace wyUpdate
         }
 
         //download regular update files
-        private void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
+        void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
         {
             if (downloader != null)
             {
@@ -60,7 +60,7 @@ namespace wyUpdate
         }
 
         //download self update files (server file or update file)
-        private void BeginSelfUpdateDownload(List<string> sites, long adler32)
+        void BeginSelfUpdateDownload(List<string> sites, long adler32)
         {
             if (downloader != null)
             {
@@ -78,7 +78,7 @@ namespace wyUpdate
         }
 
         //client server file downloaded
-        private void DownloadClientSFSuccess()
+        void DownloadClientSFSuccess()
         {
             //load the client server file, and see if a new version is availiable
             UpdateEngine clientSF = new UpdateEngine();
@@ -92,7 +92,7 @@ namespace wyUpdate
             ShowFrame(Frame.UpdateInfo);
         }
 
-        private void LoadClientServerFile(UpdateEngine updateEngine)
+        void LoadClientServerFile(UpdateEngine updateEngine)
         {
             //load the client server file
             if (updateEngine == null)
@@ -121,7 +121,7 @@ namespace wyUpdate
                 updateEngine.LoadServerDatav2(clientSFLoc);
         }
 
-        private void ServerDownloadedSuccessfully()
+        void ServerDownloadedSuccessfully()
         {
             //load the server file into memory
             LoadServerFile(true);
@@ -149,7 +149,7 @@ namespace wyUpdate
         }
 
         //returns True if an update is necessary, otherwise false
-        private void LoadServerFile(bool setChangesText)
+        void LoadServerFile(bool setChangesText)
         {
             //load the server file
             update.LoadServerDatav2(serverFileLoc);

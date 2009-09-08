@@ -47,7 +47,7 @@ namespace wyDay.Controls
             }
         }
 
-        private string GetFilename()
+        string GetFilename()
         {
             string filename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                                            "wyUpdate AU");
@@ -109,7 +109,7 @@ namespace wyDay.Controls
             fs.Close();
         }
 
-        private void Load()
+        void Load()
         {
             FileStream fs = new FileStream(GetFilename(), FileMode.Open, FileAccess.Read);
 

@@ -16,7 +16,7 @@ namespace wyUpdate
 
 
         // update the label & progress bar when downloading/updating
-        private void ShowProgress(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex)
+        void ShowProgress(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex)
         {
             //update progress bar when between 0 and 100
             if (percentDone > -1 && percentDone < 101)
@@ -122,7 +122,7 @@ namespace wyUpdate
         }
 
 
-        private void SelfUpdateProgress(int percentDone, int unweightedProgress, bool done, string extraStatus, Exception ex)
+        void SelfUpdateProgress(int percentDone, int unweightedProgress, bool done, string extraStatus, Exception ex)
         {
             //update progress bar
             panelDisplaying.Progress = percentDone;
@@ -224,7 +224,7 @@ namespace wyUpdate
             }
         }
 
-        private void UninstallProgress(int percentDone, int step, string extraStatus, Exception ex)
+        void UninstallProgress(int percentDone, int step, string extraStatus, Exception ex)
         {
             //update progress bar
             panelDisplaying.Progress = percentDone;
@@ -257,7 +257,7 @@ namespace wyUpdate
             }
         }
 
-        private void CheckProcess(List<FileInfo> files, bool done)
+        void CheckProcess(List<FileInfo> files, bool done)
         {
             if (done)
             {
@@ -293,7 +293,7 @@ namespace wyUpdate
             }
         }
 
-        private void ChangeRollback(bool rbRegistry)
+        void ChangeRollback(bool rbRegistry)
         {
             DisableCancel();
 

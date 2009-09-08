@@ -25,19 +25,18 @@ namespace wyUpdate
         static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
         static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "process-working.png");
 
-        private Label m_Label = new Label { AutoSize = true };
+        Label m_Label = new Label { AutoSize = true };
 
         public Label Label
         {
             get { return m_Label; }
             set { m_Label = value; }
         }
-        private UpdateItemStatus m_Status;
-        private AnimationControl m_Animation = new AnimationControl(null, 1);
+        UpdateItemStatus m_Status;
+        AnimationControl m_Animation = new AnimationControl(null, 1);
 
         //Position
-        private int m_Left;
-        private int m_Top;
+        int m_Left, m_Top;
 
         //Animation width
 
@@ -170,64 +169,64 @@ namespace wyUpdate
         #region Private Variables
 
         //Images
-        private Image m_SideImage;
-        private Image m_TopImage;
+        Image m_SideImage;
+        Image m_TopImage;
 
-        private ImageAlign m_HeaderImageAlign = ImageAlign.Left;
-        private int m_HeaderIndent = 14;
-        private Color m_HeaderTextColor = Color.Black;
+        ImageAlign m_HeaderImageAlign = ImageAlign.Left;
+        int m_HeaderIndent = 14;
+        Color m_HeaderTextColor = Color.Black;
 
-        private bool m_HideHeaderDivider;
+        bool m_HideHeaderDivider;
 
         //Text
-        private string m_Title;
-        private Font m_TitleFont;
-        private Rectangle m_TitleRect;
+        string m_Title;
+        Font m_TitleFont;
+        Rectangle m_TitleRect;
 
-        private string m_Description;
-        private Rectangle m_DescriptionRect;
+        string m_Description;
+        Rectangle m_DescriptionRect;
 
-        private string m_Body;
-        private Rectangle m_BodyRect;
+        string m_Body;
+        Rectangle m_BodyRect;
 
-        private string m_BottomText;
-        private Rectangle m_BottomRect;
+        string m_BottomText;
+        Rectangle m_BottomRect;
 
         //message (and/or license)
-        private readonly RichTextBoxEx messageBox = new RichTextBoxEx();
+        readonly RichTextBoxEx messageBox = new RichTextBoxEx();
 
         //downloading and installing
-        private readonly Windows7ProgressBar progressBar = new Windows7ProgressBar();
-        private int m_Progress;
+        readonly Windows7ProgressBar progressBar = new Windows7ProgressBar();
+        int m_Progress;
 
-        private string m_ProgressStatus;
-        private Rectangle m_ProgressStatusRect;
+        string m_ProgressStatus;
+        Rectangle m_ProgressStatusRect;
 
         //padding for the text
-        private int m_LeftPad = 14;
-        private int m_RightPad = 14;
-        private int m_TopPad = 14;
+        int m_LeftPad = 14;
+        int m_RightPad = 14;
+        int m_TopPad = 14;
 
         //offset for the Top description
-        private int m_DescriptionOffset = 10;
+        int m_DescriptionOffset = 10;
 
         //the total HeaderHeight (including 3d line)
-        private const int m_HeaderHeight = 59;
+        const int m_HeaderHeight = 59;
 
-        private FrameType m_TypeofFrame;
+        FrameType m_TypeofFrame;
 
         //"working" animation
-        private AnimationControl aniWorking;
+        AnimationControl aniWorking;
 
-        private LinkLabel2 noUpdateAvailableLink;
-        private string noUpdateAvailableURL;
+        LinkLabel2 noUpdateAvailableLink;
+        string noUpdateAvailableURL;
 
-        private Button errorDetailsButton;
+        Button errorDetailsButton;
 
         #endregion Private Variables
 
         //Update Items
-        private bool m_ShowChecklist;
+        bool m_ShowChecklist;
         public UpdateItem[] UpdateItems = new UpdateItem[4];
 
         #region Properties
@@ -619,7 +618,7 @@ namespace wyUpdate
             System.Diagnostics.Process.Start(link);
         }
 
-        private void UpdateTextRectangles()
+        void UpdateTextRectangles()
         {
             int lPad = m_LeftPad;
             int lHeaderPad = m_HeaderIndent, rHeaderPad = m_RightPad;
@@ -721,12 +720,12 @@ namespace wyUpdate
             }
         }
 
-        private Rectangle UpdateTextSize(string text, Padding padding, TextFormatFlags flags, Font font)
+        Rectangle UpdateTextSize(string text, Padding padding, TextFormatFlags flags, Font font)
         {
             return UpdateTextSize(text, padding, flags, font, ContentAlignment.TopLeft);
         }
 
-        private Rectangle UpdateTextSize(string text, Padding padding, TextFormatFlags flags, Font font, ContentAlignment alignment)
+        Rectangle UpdateTextSize(string text, Padding padding, TextFormatFlags flags, Font font, ContentAlignment alignment)
         {
             if (font == null)
                 font = Font;
@@ -742,7 +741,7 @@ namespace wyUpdate
             return new Rectangle(new Point(padding.Left, padding.Top), tabTextSize);
         }
 
-        private void HideAnimations()
+        void HideAnimations()
         {
             //set the defaults for the UpdateItems
             for (int i = 0; i < UpdateItems.Length; i++)
@@ -776,7 +775,7 @@ namespace wyUpdate
             DrawMain(e.Graphics);
         }
 
-        private void DrawSide(Graphics gr)
+        void DrawSide(Graphics gr)
         {
             try
             {
@@ -790,7 +789,7 @@ namespace wyUpdate
             gr.FillRectangle(Brushes.White, 0, 0, Width, 314);
         }
 
-        private void DrawTop(Graphics gr)
+        void DrawTop(Graphics gr)
         {
             //draw the topImage
             try
@@ -820,7 +819,7 @@ namespace wyUpdate
                 Draw3DLine(gr, 0, Width, m_HeaderHeight - 2);
         }
 
-        private void DrawMain(Graphics gr)
+        void DrawMain(Graphics gr)
         {
             if (m_TypeofFrame == FrameType.WelcomeFinish)
             {
@@ -862,7 +861,7 @@ namespace wyUpdate
             gr.DrawLine(SystemPens.ControlLightLight, x1, y1 + 1, x2, y1 + 1);
         }
 
-        private int DrawBranding(Graphics gr, int x, int midPointY)
+        int DrawBranding(Graphics gr, int x, int midPointY)
         {
             SizeF textSize = gr.MeasureString("wyUpdate", Font);
             midPointY -= (int)(textSize.Height / 2.0);
