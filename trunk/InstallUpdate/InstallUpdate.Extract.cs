@@ -9,7 +9,7 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
-        private void ExtractUpdateFile()
+        void ExtractUpdateFile()
         {
             using (ZipFile zip = ZipFile.Read(Filename))
             {

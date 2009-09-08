@@ -8,7 +8,7 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
-        private void UpdateRegistry(List<RegChange> rollbackRegistry)
+        void UpdateRegistry(List<RegChange> rollbackRegistry)
         {
             int i = 0;
 

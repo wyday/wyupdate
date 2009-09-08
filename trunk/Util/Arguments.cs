@@ -18,7 +18,7 @@ namespace wyUpdate.Common
     public sealed class Arguments
     {
         // Variables
-        private StringDictionary Parameters;
+        StringDictionary Parameters;
 
         // Constructors
         public Arguments(string Args)
@@ -40,7 +40,7 @@ namespace wyUpdate.Common
         }
 
         // Extract command line parameters and values stored in a string array
-        private void Extract(string[] Args)
+        void Extract(string[] Args)
         {
             Parameters = new StringDictionary();
             Regex Spliter = new Regex(@"^([/-]|--){1}(?<name>\w+)([:=])?(?<value>.+)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);

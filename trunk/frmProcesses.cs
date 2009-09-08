@@ -13,7 +13,7 @@ namespace wyUpdate
         List<Process> runningProcesses = new List<Process>();
         List<FileInfo> filenames;
 
-        private const int SidePadding = 12;
+        const int SidePadding = 12;
 
         public frmProcesses(List<FileInfo> files, ClientLanguage cLang)
         {
@@ -46,7 +46,7 @@ namespace wyUpdate
 
         Rectangle m_DescripRect;
 
-        private void UpdateSizes()
+        void UpdateSizes()
         {
             m_DescripRect = new Rectangle(new Point(SidePadding, SidePadding),
                 TextRenderer.MeasureText(clientLang.ProcessDialog.Content,
@@ -59,7 +59,7 @@ namespace wyUpdate
             listProc.Height = ClientRectangle.Height - listProc.Top - (ClientRectangle.Height - btnCloseProc.Top) - 5;
         }
 
-        private void closeProc_Click(object sender, EventArgs e)
+        void closeProc_Click(object sender, EventArgs e)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace wyUpdate
             }
         }
 
-        private void closeAll_Click(object sender, EventArgs e)
+        void closeAll_Click(object sender, EventArgs e)
         {
             foreach (Process proc in runningProcesses)
             {
@@ -90,7 +90,7 @@ namespace wyUpdate
             }
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
+        void btnCancel_Click(object sender, EventArgs e)
         {
             chkProc.Enabled = false;
 
@@ -105,7 +105,7 @@ namespace wyUpdate
             }
         }
 
-        private int CheckProcesses()
+        int CheckProcesses()
         {
             Process[] aProcess = Process.GetProcesses();
 
@@ -159,7 +159,7 @@ namespace wyUpdate
             return procLeft ? 1 : 0;
         }
 
-        private static bool SameProcs(List<Process> procs1, List<Process> procs2)
+        static bool SameProcs(List<Process> procs1, List<Process> procs2)
         {
             if (procs1.Count != procs2.Count)
                 return false;
@@ -173,7 +173,7 @@ namespace wyUpdate
             return true;
         }
 
-        private void chkProc_Tick(object sender, EventArgs e)
+        void chkProc_Tick(object sender, EventArgs e)
         {
             if (CheckProcesses() == 0)
             {
@@ -190,7 +190,7 @@ namespace wyUpdate
             base.OnPaint(e);
         }
 
-        private void frmProcesses_Resize(object sender, EventArgs e)
+        void frmProcesses_Resize(object sender, EventArgs e)
         {
             UpdateSizes();
         }

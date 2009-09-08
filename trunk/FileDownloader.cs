@@ -16,7 +16,7 @@ namespace wyUpdate.Downloader
     public class FileDownloader
     {
         // Block size to download is by default 4K.
-        private const int BufferSize = 4096;
+        const int BufferSize = 4096;
 
         /// <summary>
         /// This is the name of the file we get back from the server when we
@@ -27,9 +27,9 @@ namespace wyUpdate.Downloader
         public string DownloadingTo { get; private set; }
 
         //used to measure download speed
-        private readonly Stopwatch sw = new Stopwatch();
-        private long sentSinceLastCalc;
-        private string downloadSpeed = "";
+        readonly Stopwatch sw = new Stopwatch();
+        long sentSinceLastCalc;
+        string downloadSpeed = "";
 
         //download site and destination
         string url;
@@ -40,7 +40,7 @@ namespace wyUpdate.Downloader
 
         public long Adler32;
 
-        private long downloadedAdler32 = 1;
+        long downloadedAdler32 = 1;
 
         public bool UseRelativeProgress;
 
@@ -170,7 +170,7 @@ namespace wyUpdate.Downloader
             ServicePointManager.ServerCertificateValidationCallback += OnCheckSSLCert;
         }
 
-        private static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             //allow all downloads regardless of SSL security errors
             /* This will 'fix' the self-signed SSL certificate problem
@@ -193,7 +193,7 @@ namespace wyUpdate.Downloader
         }
 
         // Begin downloading the file at the specified url, and save it to the given folder.
-        private void BeginDownload()
+        void BeginDownload()
         {
             DownloadData data = null;
             FileStream fs = null;
@@ -307,7 +307,7 @@ namespace wyUpdate.Downloader
             }
         }
 
-        private void calculateBps(long BytesReceived)
+        void calculateBps(long BytesReceived)
         {
             if (sw.Elapsed >= TimeSpan.FromSeconds(2))
             {
@@ -333,7 +333,7 @@ namespace wyUpdate.Downloader
         /// </summary>
         /// <param name="bps">Bytes per second transfer rate.</param>
         /// <returns>String represenation of the transfer rate in bytes/sec, KB/sec, MB/sec, etc.</returns>
-        private static string BpsToString(double bps)
+        static string BpsToString(double bps)
         {
             string[] m = new[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
             int i = 0;
@@ -346,7 +346,7 @@ namespace wyUpdate.Downloader
             return String.Format("{0:0.00} {1}/sec", bps, m[i]);
         }
 
-        private void ValidateDownload()
+        void ValidateDownload()
         {
             //if an Adler32 checksum is provided, check the file
             if (!bw.CancellationPending && Adler32 != 0 && Adler32 != downloadedAdler32)
@@ -356,7 +356,7 @@ namespace wyUpdate.Downloader
             }
         }
 
-        private void GetAdler32(string fileName)
+        void GetAdler32(string fileName)
         {
             byte[] buffer = new byte[BufferSize];
 
@@ -382,11 +382,11 @@ namespace wyUpdate.Downloader
 
     class DownloadData
     {
-        private WebResponse response;
+        WebResponse response;
 
-        private Stream stream;
-        private long size;
-        private long start;
+        Stream stream;
+        long size;
+        long start;
 
         public static DownloadData Create(string url, string destFolder)
         {
@@ -456,7 +456,7 @@ namespace wyUpdate.Downloader
         }
 
         // Checks whether a WebResponse is an error.
-        private static void ValidateResponse(WebResponse response, string url)
+        static void ValidateResponse(WebResponse response, string url)
         {
             if (response is HttpWebResponse)
             {
@@ -480,7 +480,7 @@ namespace wyUpdate.Downloader
             // FileWebResponse doesn't have a status code to check.
         }
 
-        private void GetFileSize()
+        void GetFileSize()
         {
             if (response != null)
             {
@@ -496,7 +496,7 @@ namespace wyUpdate.Downloader
             }
         }
 
-        private static WebRequest GetRequest(string url)
+        static WebRequest GetRequest(string url)
         {
             WebRequest request = WebRequest.Create(url);
 

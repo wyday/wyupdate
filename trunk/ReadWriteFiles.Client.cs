@@ -65,7 +65,7 @@ namespace wyUpdate.Common
         }
 
         // Finds the size of a Bitmap in memory given its pixel format
-        private static int BitmapArraySize(int width, int height, System.Drawing.Imaging.PixelFormat pixFormat)
+        static int BitmapArraySize(int width, int height, System.Drawing.Imaging.PixelFormat pixFormat)
         {
             switch (pixFormat)
             {

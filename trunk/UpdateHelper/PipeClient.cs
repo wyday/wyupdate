@@ -94,7 +94,7 @@ namespace wyDay.Controls
             readThread.Start();
         }
 
-        private void Read()
+        void Read()
         {
             stream = new FileStream(handle, FileAccess.ReadWrite, BUFFER_SIZE, true);
             byte[] readBuffer = new byte[BUFFER_SIZE];

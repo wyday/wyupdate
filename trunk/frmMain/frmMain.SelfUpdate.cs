@@ -12,7 +12,7 @@ namespace wyUpdate
         string oldClientLocation;
         string clientSFLoc;
 
-        private void SaveSelfUpdateData(string fileName)
+        void SaveSelfUpdateData(string fileName)
         {
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
 
@@ -53,7 +53,7 @@ namespace wyUpdate
             fs.Close();
         }
 
-        private void LoadSelfUpdateData(string fileName)
+        void LoadSelfUpdateData(string fileName)
         {
             byte[] fileIDBytes = new byte[7];
 
@@ -137,7 +137,7 @@ namespace wyUpdate
         }
 
         //Backwards compatability with 1.0 RC1
-        private void LoadSelfUpdateRC1Data(Stream fs)
+        void LoadSelfUpdateRC1Data(Stream fs)
         {
             selfUpdateFromRC1 = true;
 

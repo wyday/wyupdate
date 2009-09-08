@@ -15,18 +15,18 @@ namespace wyUpdate
     /// </remarks>
     public class ShellShortcut : IDisposable
     {
-        private const int INFOTIPSIZE = 1024;
-        private const int MAX_PATH = 260;
+        const int INFOTIPSIZE = 1024;
+        const int MAX_PATH = 260;
 
 
 
 
 #if UNICODE
-        private IShellLinkW m_Link;
+        IShellLinkW m_Link;
 #else
-        private IShellLinkA m_Link;
+        IShellLinkA m_Link;
 #endif
-        private string m_sPath;
+        string m_sPath;
 
         ///
         /// <param name='linkPath'>
@@ -281,7 +281,7 @@ namespace wyUpdate
 
         /*
         #region Native Win32 API functions
-        private class Native
+        class Native
         {
             [DllImport("shell32.dll", CharSet = CharSet.Auto)]
             public static extern IntPtr ExtractIcon(IntPtr hInst, string lpszExeFileName, int nIconIndex);

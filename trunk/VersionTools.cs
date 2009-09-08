@@ -137,7 +137,7 @@ namespace wyUpdate.Common
         }
 
 
-        private static string GetNextObject(string version, ref int index, ref bool lastWasLetter)
+        static string GetNextObject(string version, ref int index, ref bool lastWasLetter)
         {
             //1 == string, 2 == int, -1 == neither
             int StringOrInt = -1;
@@ -184,7 +184,7 @@ namespace wyUpdate.Common
             return null;
         }
 
-        private static int GetGreekIndex(object version)
+        static int GetGreekIndex(object version)
         {
             object val = greek_ltrs[version];
 
@@ -195,7 +195,7 @@ namespace wyUpdate.Common
         }
 
 
-        private static int IntCompare(string a, string b)
+        static int IntCompare(string a, string b)
         {
             int lastZero = -1;
 
@@ -268,7 +268,7 @@ namespace wyUpdate.Common
             return version;
         }
 
-        private static string NumberPlusOne(string number)
+        static string NumberPlusOne(string number)
         {
             StringBuilder sb = new StringBuilder(number.Length + 2);
 

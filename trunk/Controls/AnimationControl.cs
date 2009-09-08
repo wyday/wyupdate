@@ -8,23 +8,23 @@ namespace wyDay.Controls
 {
     public class AnimationControl : Control
     {
-        private Image m_BaseImage;
-        private int m_Rows = 1;
-        private int m_Columns = 1;
-        private bool m_SkipFirstFrame;
+        Image m_BaseImage;
+        int m_Rows = 1;
+        int m_Columns = 1;
+        bool m_SkipFirstFrame;
 
-        private readonly Timer aniTimer = new Timer();
-        private int m_AnimationInterval = 1000;
+        readonly Timer aniTimer = new Timer();
+        int m_AnimationInterval = 1000;
 
         //used in animation
-        private int columnOn = 1;
-        private int rowOn = 1;
+        int columnOn = 1;
+        int rowOn = 1;
 
-        private int frameWidth;
-        private int frameHeight;
+        int frameWidth;
+        int frameHeight;
 
         //for static images
-        private bool staticImage;
+        bool staticImage;
 
         readonly float[][] ptsArray ={ 
             new float[] {1, 0, 0, 0, 0},
@@ -135,7 +135,7 @@ namespace wyDay.Controls
             SetupObjects();
         }
 
-        private void SetupObjects()
+        void SetupObjects()
         {
             //Set Defaults
             aniTimer.Enabled = false;

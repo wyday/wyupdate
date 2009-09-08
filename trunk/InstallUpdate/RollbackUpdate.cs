@@ -502,7 +502,7 @@ namespace wyUpdate
             catch { }
         }
 
-        private static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
             FileStream fs = null;
 
@@ -552,7 +552,7 @@ namespace wyUpdate
             fs.Close();
         }
 
-        private static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
         {
             ms.Position = 0;
 

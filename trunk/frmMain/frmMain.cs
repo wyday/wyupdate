@@ -340,7 +340,7 @@ namespace wyUpdate
         }
 
 
-        private void ProcessArguments(Arguments commands)
+        void ProcessArguments(Arguments commands)
         {
             if (commands["supdf"] != null)
             {

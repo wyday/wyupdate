@@ -9,7 +9,7 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        private void StartSelfElevated()
+        void StartSelfElevated()
         {
             ProcessStartInfo psi = new ProcessStartInfo
             {
@@ -60,7 +60,7 @@ namespace wyUpdate
             }
         }
 
-        private bool NeedElevationToUpdate()
+        bool NeedElevationToUpdate()
         {
             //no elevation necessary if it's not overwriting important files
             if (IsAdmin || (updateFrom.InstallingTo == 0 && updateFrom.RegChanges.Count == 0))
@@ -81,7 +81,7 @@ namespace wyUpdate
             return true;
         }
 
-        private bool OnlyUpdatingLocalUser()
+        bool OnlyUpdatingLocalUser()
         {
             //Vista only check when the client isn't already 
             // running with Admin (and elevated) priviledges
@@ -114,7 +114,7 @@ namespace wyUpdate
             return true;
         }
 
-        private static bool IsFileInDirectory(string dir, string file)
+        static bool IsFileInDirectory(string dir, string file)
         {
             StringBuilder strBuild = new StringBuilder(InstallUpdate.MAX_PATH);
 
@@ -137,7 +137,7 @@ namespace wyUpdate
             return false;
         }
 
-        private static bool IsDirInDir(string dir, string checkDir)
+        static bool IsDirInDir(string dir, string checkDir)
         {
             StringBuilder strBuild = new StringBuilder(InstallUpdate.MAX_PATH);
 

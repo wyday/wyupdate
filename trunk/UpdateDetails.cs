@@ -36,7 +36,7 @@ namespace wyUpdate.Common
         #endregion Properties
 
         // count # NGEN or execute files
-        private int CountFileInfos()
+        int CountFileInfos()
         {
             int count = 0;
             foreach (UpdateFile file in UpdateFiles)

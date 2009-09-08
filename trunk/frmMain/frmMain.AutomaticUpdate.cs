@@ -330,7 +330,7 @@ namespace wyUpdate
         }
 
 
-        private void SaveAutoUpdateData(UpdateStepOn updateStepOn)
+        void SaveAutoUpdateData(UpdateStepOn updateStepOn)
         {
             FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Create, FileAccess.Write);
 
@@ -370,7 +370,7 @@ namespace wyUpdate
             fs.Close();
         }
 
-        private void LoadAutoUpdateData()
+        void LoadAutoUpdateData()
         {
             autoUpdateStateFile = Path.Combine(tempDirectory, "autoupdate");
 

@@ -32,7 +32,7 @@ namespace wyUpdate
         public UpdateDetails UpdtDetails;
 
         //for self update
-        private string m_NewIUPClientLoc = "";
+        string m_NewIUPClientLoc = "";
         public string OldIUPClientLoc = "";
 
         //for writing the client data file
@@ -45,8 +45,8 @@ namespace wyUpdate
 
 
         //cancellation & pausing
-        private volatile bool canceled;
-        //private volatile bool paused = false;
+        volatile bool canceled;
+        //volatile bool paused = false;
         #endregion Private Variables
 
 
@@ -88,7 +88,7 @@ namespace wyUpdate
         }
 
         //Methods
-        private void UpdateFiles(string tempDir, string progDir, string backupFolder, List<FileFolder> rollbackList, ref int totalDone, ref int totalFiles)
+        void UpdateFiles(string tempDir, string progDir, string backupFolder, List<FileFolder> rollbackList, ref int totalDone, ref int totalFiles)
         {
             DirectoryInfo tempDirInf = new DirectoryInfo(tempDir);
 
@@ -256,7 +256,7 @@ namespace wyUpdate
             }
         }
 
-        private void DeleteFilesAndInstallShortcuts(string[] destFolders, string backupFolder, List<FileFolder> rollbackList)
+        void DeleteFilesAndInstallShortcuts(string[] destFolders, string backupFolder, List<FileFolder> rollbackList)
         {
             bool installDesktopShortcut = true, installStartMenuShortcut = true;
 
@@ -394,7 +394,7 @@ namespace wyUpdate
 
 
         //count files in the directory and subdirectories
-        private static int CountFiles(string directory)
+        static int CountFiles(string directory)
         {
             return new DirectoryInfo(directory).GetFiles("*", SearchOption.AllDirectories).Length;
         }
@@ -516,7 +516,7 @@ namespace wyUpdate
         }
 
         //creates list of files to add to client data file
-        private static void AddFiles(int charsToTrim, string dir, List<UpdateFile> files)
+        static void AddFiles(int charsToTrim, string dir, List<UpdateFile> files)
         {
             string[] filenames = Directory.GetFiles(dir);
             string[] dirs = Directory.GetDirectories(dir);
@@ -709,9 +709,9 @@ namespace wyUpdate
         string clrPath;
 
         [DllImport("mscoree.dll")]
-        private static extern int GetCORSystemDirectory([MarshalAs(UnmanagedType.LPWStr)]StringBuilder pbuffer, int cchBuffer, ref int dwlength);
+        static extern int GetCORSystemDirectory([MarshalAs(UnmanagedType.LPWStr)]StringBuilder pbuffer, int cchBuffer, ref int dwlength);
 
-        private static string GetClrInstallationDirectory()
+        static string GetClrInstallationDirectory()
         {
             int MAX_PATH = 260;
             StringBuilder sb = new StringBuilder(MAX_PATH);
@@ -719,7 +719,7 @@ namespace wyUpdate
             return sb.ToString();
         }
 
-        private void NGenInstall(string filename)
+        void NGenInstall(string filename)
         {
             if (string.IsNullOrEmpty(clrPath))
             {
@@ -741,7 +741,7 @@ namespace wyUpdate
             proc.WaitForExit();
         }
 
-        private void NGenUninstall(string filename)
+        void NGenUninstall(string filename)
         {
             if (string.IsNullOrEmpty(clrPath))
             {
@@ -765,7 +765,7 @@ namespace wyUpdate
 
         #endregion NGen Install
 
-        private void FixUpdateFilesPaths(List<UpdateFile> updateFiles)
+        void FixUpdateFilesPaths(List<UpdateFile> updateFiles)
         {
             UpdateFile tempUFile;
 
@@ -783,7 +783,7 @@ namespace wyUpdate
             }
         }
 
-        private string FixUpdateDetailsPaths(string relPath)
+        string FixUpdateDetailsPaths(string relPath)
         {
             if (relPath.Length < 4)
                 return null;
@@ -829,7 +829,7 @@ namespace wyUpdate
              [In] uint dwAttrTo
         );
 
-        private static void DeleteClientInPath(string destPath, string origPath)
+        static void DeleteClientInPath(string destPath, string origPath)
         {
             string tempClientLoc = ClientInTempBase(destPath, origPath);
 
@@ -839,7 +839,7 @@ namespace wyUpdate
 
         //returns a non-null string filename of the Client in the tempbase
         //if the Running Client will be overwritten by the Temp Client
-        private static string ClientInTempBase(string actualBase, string tempBase)
+        static string ClientInTempBase(string actualBase, string tempBase)
         {
             //relative path from origFolder to client location
             StringBuilder strBuild = new StringBuilder(MAX_PATH);
@@ -873,7 +873,7 @@ namespace wyUpdate
 
         #region Parse variables
 
-        private RegChange ParseRegChange(RegChange reg)
+        RegChange ParseRegChange(RegChange reg)
         {
             if (reg.RegValueKind == Microsoft.Win32.RegistryValueKind.MultiString ||
                 reg.RegValueKind == Microsoft.Win32.RegistryValueKind.String)
@@ -883,7 +883,7 @@ namespace wyUpdate
             return reg;
         }
 
-        private string ParseText(string text)
+        string ParseText(string text)
         {
             if (string.IsNullOrEmpty(text))
                 return text;
@@ -893,7 +893,7 @@ namespace wyUpdate
             return ParseVariableText(text, excludeVariables);
         }
 
-        private string ParseVariableText(string text, List<string> excludeVariables)
+        string ParseVariableText(string text, List<string> excludeVariables)
         {
             //parse a string, and return a pretty string (sans %%)
             StringBuilder returnString = new StringBuilder();
@@ -947,7 +947,7 @@ namespace wyUpdate
             return returnString.ToString();
         }
 
-        private string VariableToPretty(string variable, List<string> excludeVariables)
+        string VariableToPretty(string variable, List<string> excludeVariables)
         {
             variable = variable.ToLower();
 
@@ -983,7 +983,7 @@ namespace wyUpdate
 
         #region Execute Commands
 
-        private static void ParseCommandText(string text)
+        static void ParseCommandText(string text)
         {
             int lastDollarIndex = text.LastIndexOf('$');
             int beginParen, endParen;
@@ -1022,7 +1022,7 @@ namespace wyUpdate
             } while (lastDollarIndex != -1);
         }
 
-        private static int IndexOfNonEnclosed(char ch, string str, int startIndex)
+        static int IndexOfNonEnclosed(char ch, string str, int startIndex)
         {
             for (int i = startIndex; i < str.Length; i++)
             {
@@ -1043,7 +1043,7 @@ namespace wyUpdate
             return -1;
         }
 
-        private static int LastIndexOfReal(char ch, string str, int startIndex, int endIndex)
+        static int LastIndexOfReal(char ch, string str, int startIndex, int endIndex)
         {
             for (int i = startIndex; i <= endIndex; i++)
             {
@@ -1056,7 +1056,7 @@ namespace wyUpdate
 
         public enum CommandName { NULL = -1, refreshicons }
 
-        private static CommandName GetCommandName(string command)
+        static CommandName GetCommandName(string command)
         {
             CommandName name = CommandName.NULL;
 
@@ -1069,7 +1069,7 @@ namespace wyUpdate
             return name;
         }
 
-        private static void ExecuteTextCommand(CommandName command)
+        static void ExecuteTextCommand(CommandName command)
         {
             switch (command)
             {

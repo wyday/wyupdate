@@ -13,13 +13,13 @@ namespace wyUpdate.Common
 
     public class RegChange : ICloneable
     {
-        private RegOperations m_RegOperation;
-        private RegBasekeys m_RegBasekey;
+        RegOperations m_RegOperation;
+        RegBasekeys m_RegBasekey;
 
-        private string m_SubKey;
-        private string m_ValueName;
-        private object m_ValueData;
-        private RegistryValueKind m_RegValueKind;
+        string m_SubKey;
+        string m_ValueName;
+        object m_ValueData;
+        RegistryValueKind m_RegValueKind;
 
         #region Properties
 
@@ -127,7 +127,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private void CreateValue(List<RegChange> rollbackRegistry)
+        void CreateValue(List<RegChange> rollbackRegistry)
         {
             if (rollbackRegistry != null)
             {
@@ -164,7 +164,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private static object StringToMultiString(object str)
+        static object StringToMultiString(object str)
         {
             if (typeof(string[]) == str.GetType())
                 return str;
@@ -172,7 +172,7 @@ namespace wyUpdate.Common
             return ((string)str).Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        private void DeleteRegistryValue(List<RegChange> rollbackRegistry)
+        void DeleteRegistryValue(List<RegChange> rollbackRegistry)
         {
             RegistryKey reg = ReturnOpenKey(m_SubKey);
 
@@ -204,7 +204,7 @@ namespace wyUpdate.Common
             reg.Close();
         }
 
-        private RegistryKey ReturnCreateKey()
+        RegistryKey ReturnCreateKey()
         {
             switch (m_RegBasekey)
             {
@@ -221,7 +221,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private RegistryKey ReturnOpenKey(string subkey)
+        RegistryKey ReturnOpenKey(string subkey)
         {
             switch (m_RegBasekey)
             {
@@ -238,7 +238,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private void CreateKey(List<RegChange> rollbackRegistry)
+        void CreateKey(List<RegChange> rollbackRegistry)
         {
             //if Key already exists, bail out
             if (SubkeyExists(m_SubKey))
@@ -252,7 +252,7 @@ namespace wyUpdate.Common
             key.Close();
         }
 
-        private void BackupCreateKeyTree(List<RegChange> rollbackRegistry)
+        void BackupCreateKeyTree(List<RegChange> rollbackRegistry)
         {
             char[] delim = { '/', '\\' };
             string[] subKeys = m_SubKey.Split(delim, StringSplitOptions.RemoveEmptyEntries);
@@ -273,12 +273,12 @@ namespace wyUpdate.Common
             }
         }
 
-        private bool SubkeyExists(string subkey)
+        bool SubkeyExists(string subkey)
         {
             return ReturnOpenKey(subkey) != null;
         }
 
-        private void DeleteRegistryKey(List<RegChange> rollbackRegistry)
+        void DeleteRegistryKey(List<RegChange> rollbackRegistry)
         {
             bool ret = true;
 
@@ -316,7 +316,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private bool BackupDeleteKeyTree(string subkey, List<RegChange> rollbackRegistry)
+        bool BackupDeleteKeyTree(string subkey, List<RegChange> rollbackRegistry)
         {
             RegistryKey regKey = ReturnOpenKey(subkey);
 
@@ -459,7 +459,7 @@ namespace wyUpdate.Common
             fs.WriteByte(0x9E);
         }
 
-        private static void WriteOutFile(Stream fs, byte flag, string filename)
+        static void WriteOutFile(Stream fs, byte flag, string filename)
         {
             //yes, I'm casting 'long' as an 'int'. But if someone is trying to save a 
             //file larger than 4 Gb to the registry then they have some serious problems.
@@ -504,7 +504,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private static string MultiStringToString(object strs)
+        static string MultiStringToString(object strs)
         {
             if (strs.GetType() == typeof(string))
                 return (string)strs;

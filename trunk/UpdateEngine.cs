@@ -109,7 +109,7 @@ namespace wyUpdate.Common
         //Client Side Information
 
         public Hashtable Languages = new Hashtable();
-        private string m_GUID;
+        string m_GUID;
 
         //Server Side Information
         public List<VersionChoice> VersionChoices = new List<VersionChoice>();
@@ -288,7 +288,7 @@ namespace wyUpdate.Common
         }
 
 
-        private void LoadClientData(Stream ms)
+        void LoadClientData(Stream ms)
         {
             ms.Position = 0;
 
@@ -513,7 +513,7 @@ namespace wyUpdate.Common
             }
         }
 
-        private Stream SaveClientFile()
+        Stream SaveClientFile()
         {
             MemoryStream ms = new MemoryStream();
 
