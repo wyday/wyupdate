@@ -58,6 +58,7 @@ namespace wyUpdate
                     break;
                 case UpdateStep.DownloadUpdate:
 
+                    ShowFrame(Frame.InstallUpdates);
                     DownloadUpdate();
 
                     break;
@@ -195,6 +196,8 @@ namespace wyUpdate
                     // if we haven't downloaded yet...
                     if (frameOn == Frame.UpdateInfo)
                     {
+                        ShowFrame(Frame.InstallUpdates);
+
                         // report 0% progress & download
                         updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
                         DownloadUpdate();

@@ -9,8 +9,6 @@ namespace wyUpdate
     {
         void DownloadUpdate()
         {
-            ShowFrame(Frame.InstallUpdates);
-
             if (SelfUpdating)
             {
                 //download self update

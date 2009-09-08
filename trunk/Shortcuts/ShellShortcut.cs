@@ -18,14 +18,8 @@ namespace wyUpdate
         const int INFOTIPSIZE = 1024;
         const int MAX_PATH = 260;
 
-
-
-
-#if UNICODE
         IShellLinkW m_Link;
-#else
-        IShellLinkA m_Link;
-#endif
+
         string m_sPath;
 
         ///
@@ -39,11 +33,8 @@ namespace wyUpdate
 
             m_sPath = linkPath;
 
-#if UNICODE
             m_Link = (IShellLinkW) new ShellLink();
-#else
-            m_Link = (IShellLinkA)new ShellLink();
-#endif
+
 
             if (File.Exists(linkPath))
             {
@@ -75,7 +66,7 @@ namespace wyUpdate
                 m_Link.GetArguments(sb, sb.Capacity);
                 return sb.ToString();
             }
-            set { m_Link.SetArguments(value != null ? value : string.Empty); }
+            set { m_Link.SetArguments(value ?? string.Empty); }
         }
 
         /// <value>
@@ -89,7 +80,7 @@ namespace wyUpdate
                 m_Link.GetDescription(sb, sb.Capacity);
                 return sb.ToString();
             }
-            set { m_Link.SetDescription(value != null ? value : string.Empty); }
+            set { m_Link.SetDescription(value ?? string.Empty); }
         }
 
         /// <value>
@@ -103,7 +94,7 @@ namespace wyUpdate
                 m_Link.GetWorkingDirectory(sb, sb.Capacity);
                 return sb.ToString();
             }
-            set { m_Link.SetWorkingDirectory(value != null ? value : string.Empty); }
+            set { m_Link.SetWorkingDirectory(value ?? string.Empty); }
         }
 
         //
@@ -118,17 +109,14 @@ namespace wyUpdate
         {
             get
             {
-#if UNICODE
                 WIN32_FIND_DATAW wfd = new WIN32_FIND_DATAW();
-#else
-                WIN32_FIND_DATAA wfd = new WIN32_FIND_DATAA();
-#endif
+
                 StringBuilder sb = new StringBuilder(MAX_PATH);
 
                 m_Link.GetPath(sb, sb.Capacity, out wfd, SLGP_FLAGS.SLGP_UNCPRIORITY);
                 return sb.ToString();
             }
-            set { m_Link.SetPath(value != null ? value : string.Empty); }
+            set { m_Link.SetPath(value ?? string.Empty); }
         }
 
         /// <value>
