@@ -235,7 +235,7 @@ namespace wyUpdate
                     needElevation = false;
 
                     //begin updating the product
-                    DownloadUpdate();
+                    ShowFrame(Frame.InstallUpdates);
                 }
             }
             else if (continuingUpdate) //continuing from elevation or self update (or both)
@@ -267,7 +267,7 @@ namespace wyUpdate
                     needElevation = false;
 
                     //begin updating the product
-                    DownloadUpdate();
+                    ShowFrame(Frame.InstallUpdates);
                 }
             }
             else if (!uninstalling)

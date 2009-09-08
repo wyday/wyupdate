@@ -81,6 +81,9 @@ namespace wyUpdate
                         SetStepStatus(0, clientLang.Download);
                     }
 
+                    if (!isAutoUpdateMode)
+                        DownloadUpdate();
+
                     btnNext.Enabled = false;
 
                     break;
