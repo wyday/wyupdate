@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-03 13:38:23>
+// Time-stamp: <2009-September-08 15:21:51>
 //
 // ------------------------------------------------------------------
 //
@@ -1428,8 +1428,7 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// This method opens the specified zip file, reads in the zip archive,
-        /// verifying the ZIP metadata as it reads.  Then, if testExtract is true, this
-        /// method extracts each entry in the archive, dumping all the bits.
+        /// verifying the ZIP metadata as it reads.  
         /// </para>
         /// 
         /// <para>
@@ -1440,9 +1439,9 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// If <c>testExtract</c> is true, this method reads in the content for each
-        /// entry, expands it, and checks CRCs.  This provides an additional check
-        /// beyond verifying the zip header data.
+        /// If <c>testExtract</c> is true, as part of its check, this method reads in
+        /// the content for each entry, expands it, and checks CRCs.  This provides an
+        /// additional check beyond verifying the zip header and directory data.
         /// </para>
         ///
         /// <para>
