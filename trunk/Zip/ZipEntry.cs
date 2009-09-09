@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-03 04:47:41>
+// Time-stamp: <2009-September-08 23:14:04>
 //
 // ------------------------------------------------------------------
 //
@@ -179,94 +179,155 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         ///
-        /// <para> This value corresponds to the "last modified" time in the NTFS file times
-        /// as described in <see
-        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">the Zip
-        /// specification</see>.  This value is different from <see cref="LastModified" />.
-        /// </para>
-        ///
-        /// <para> Let me explain. Originally, waaaaay back in 1989 when the ZIP
-        /// specification was originally described by the esteemed Mr. Phil Katz, the
-        /// dominant operating system of the time was MS-DOS. MSDOS stored file times with a
-        /// 2-second precision, because, c'mon, <em>who is ever going to need better
-        /// resolution than THAT?</em> And so ZIP files, regardless of the platform on which
-        /// the zip file was created, store file times in exactly <see
-        /// href="http://www.vsft.com/hal/dostime.htm">the same format that DOS used in
-        /// 1989</see>.  </para>
-        ///
-        /// <para> Since then, the ZIP spec has evolved, but the internal format for file
-        /// timestamps remains the same.  Despite the fact that the way times are stored in
-        /// a zip file is rooted in DOS heritage, any program on any operating system can
-        /// format a time in this way, and most zip tools and libraries DO - they round file
-        /// times to the nearest even second and store it just like DOS did 20 years ago.
-        /// </para>
-        ///
-        /// <para> PKWare extended the ZIP specification to allow a zip file to store what
-        /// is called "NTFS Times" for a file.  These are the <em>last write</em>, <em>last
-        /// access</em>, and <em>file creation</em> times of a particular file. These
-        /// metadata are not actually specific to NTFS. They are tracked for each file by
-        /// NTFS, but they are also tracked by other filesystems. DotNetZip represents this
-        /// with the <c>ModifiedTime</c>, <c>AccessedTime</c> and <c>CreationTime</c> properties on a
-        /// <c>ZipEntry</c>.</para>
-        ///
-        /// <para> Inside a zip file, these three distinct timestamps are stored in the same
-        /// format that Windows NTFS uses to store file times. Rather than a resolution of 2
-        /// seconds, NTFS times have a resolution of 100 nanoseconds. And, just as with the
-        /// DOS time, any tool or library on any operating system is capable of formatting a
-        /// time in this way and embedding it into the zip file. The key is, not all zip
-        /// tools or libraries do.  Storing the higher-precision times for each entry is
-        /// optional for zip files, and many tools and libraries don't use the option,
-        /// though it is much nicer than the DOS time.  And futher, there are also cases
-        /// where the timestamp of the file entry is not known, and is not stored. For
-        /// example, this happens when content for the entry is obtained from a stream.  The
-        /// bottom line is that the higher-resolution time is not guaranteed to be present
-        /// for a ZipEntry.  The old DOS time, represented by <see cref="LastModified"/>, is
-        /// guaranteed to be present, though it sometimes unset. </para>
-        ///
-        /// <para> Ok, getting back to the question about how the <c>LastModified</c>
-        /// property relates to this <c>ModifiedTime</c> property... <c>LastModified</c> is always
-        /// set, while <c>ModifiedTime</c> is not. (The other times stored in the <em>NTFS times
-        /// extension</em>, <c>CreationTime</c> and <c>AccessedTime</c> also may not be set on an entry
-        /// that is read from an existing zip file.) When reading a zip file, then
-        /// <c>LastModified</c> takes the DOS time that is stored with the file. If the DOS time
-        /// has been stored as zero in the zipfile, then this library will use
-        /// <c>DateTime.Now</c> for the <c>LastModified</c> value.  If the ZIP file was
-        /// created by an evolved tool, then there will also be NTFS times in the zip file.
-        /// In that case, this library will read those times, and set <c>LastModified</c>
-        /// and <c>ModifiedTime</c> to the same value, the one corresponding to the last write time
-        /// of the file.  If there are no "NTFS times" stored for the entry, then
-        /// <c>ModifiedTime</c> remains unset (likewise <c>AccessedTime</c> and <c>CreationTime</c>), and
-        /// <c>LastModified</c> keeps its DOS time. </para>
-        ///
-        /// <para> When creating zip files with this library, then the NTFS time properties
-        /// (<c>ModifiedTime</c>, <c>AccessedTime</c>, and <c>CreationTime</c>) are always set on the ZipEntry
-        /// instance, and these data are always stored in the zip archive for each entry. If
-        /// you add an entry from an actual filesystem file, then the entry gets the actual
-        /// NTFS times for that file.  If you add an entry from a stream, or a string, then
-        /// the times get the value <c>DateTime.Now</c>.  In this case <c>LastModified</c>
-        /// and <c>ModifiedTime</c> will be identical, to 2 seconds of precision.  You can
-        /// explicitly set the <c>CreationTime</c>, <c>AccessedTime</c>, and <c>ModifiedTime</c> of an entry
-        /// using <see cref="SetEntryTimes(DateTime, DateTime, DateTime)"/>. Those changes
-        /// are not made permanent in the zip file until you call <see
-        /// cref="ZipFile.Save()"/> or one of its cousins.  </para>
-        ///
         /// <para>
-        /// And that is why <c>ModifiedTime</c> may or may not be meaningful, and it may or may not agree 
-        /// exactly with the <c>LastModified</c> time on the <c>ZipEntry</c>.
+        ///   This value corresponds to the "last modified" time in the NTFS file times
+        ///   as described in <see
+        ///   href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">the Zip
+        ///   specification</see>.  When getting this property, the value may be
+        ///   different from <see cref="LastModified" />.  When setting the property,
+        ///   the <see cref="LastModified"/> property also gets set, but with a lower
+        ///   precision.
         /// </para>
         ///
         /// <para>
-        /// I'll bet you didn't think one person could type so much about time, eh?  And reading
-        /// it was so enjoyable, too!  Well, in appreciation, <see
-        /// href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">maybe you should
-        /// donate</see>?
+        ///   Let me explain. It's going to take a while, so get
+        ///   comfortable. Originally, waaaaay back in 1989 when the ZIP specification
+        ///   was originally described by the esteemed Mr. Phil Katz, the dominant
+        ///   operating system of the time was MS-DOS. MSDOS stored file times with a
+        ///   2-second precision, because, c'mon, <em>who is ever going to need better
+        ///   resolution than THAT?</em> And so ZIP files, regardless of the platform on
+        ///   which the zip file was created, store file times in exactly <see
+        ///   href="http://www.vsft.com/hal/dostime.htm">the same format that DOS used
+        ///   in 1989</see>.
+        /// </para>
+        ///
+        /// <para>
+        ///   Since then, the ZIP spec has evolved, but the internal format for file
+        ///   timestamps remains the same.  Despite the fact that the way times are
+        ///   stored in a zip file is rooted in DOS heritage, any program on any
+        ///   operating system can format a time in this way, and most zip tools and
+        ///   libraries DO - they round file times to the nearest even second and store
+        ///   it just like DOS did 25+ years ago.
+        /// </para>
+        ///
+        /// <para>
+        ///   PKWare extended the ZIP specification to allow a zip file to store what
+        ///   are called "NTFS Times" and "Unix(tm) times" for a file.  These are the
+        ///   <em>last write</em>, <em>last access</em>, and <em>file creation</em>
+        ///   times of a particular file. These metadata are not actually specific to
+        ///   NTFS or Unix. They are tracked for each file by NTFS and by various Unix
+        ///   filesystems, but they are also tracked by other filesystems, too.  The key
+        ///   point is that the times are <em>formatted in the zip file</em> in the same
+        ///   way that NTFS formats the time (ticks since win32 epoch), or in the same
+        ///   way that Unix formats the time (seconds since Unix epoch).
+        /// </para>
+        ///
+        /// <para>
+        ///   These extended times are higher precision quantities than the DOS time.
+        ///   As described above, the (DOS) LastModified has a precision of 2 seconds.
+        ///   The Unix time is stored with a precision of 1 second. The NTFS time is
+        ///   stored with a precision of 0.0000001 seconds. The quantities are easily
+        ///   convertible, except for the loss of precision you may incur. 
+        /// </para>
+        ///
+        /// <para>
+        ///   A zip archive can store the {C,A,M} times in NTFS format, in Unix format,
+        ///   or not at all.  Often a tool running on Unix or Mac will embed the times
+        ///   in Unix format (1 second precision), while WinZip running on Windows might
+        ///   embed the times in NTFS format (precision of of 0.0000001 seconds).  When
+        ///   reading a zip file with these "extended" times, in either format,
+        ///   DotNetZip represents the values with the
+        ///   <c>ModifiedTime</c>, <c>AccessedTime</c> and <c>CreationTime</c>
+        ///   properties on the <c>ZipEntry</c>.
+        /// </para>
+        ///
+        /// <para>
+        ///   As with the DOS time, any tool or library running on any operating system
+        ///   is capable of formatting a time in one of these ways and embedding it into
+        ///   the zip file. The key is, not all zip tools or libraries support all these
+        ///   formats.  Storing the higher-precision times for each entry is optional
+        ///   for zip files, and many tools and libraries don't use the higher precision
+        ///   quantities at all, though it is much nicer than the DOS time.  And futher,
+        ///   there are also cases where the timestamp of the file entry is not known,
+        ///   and is not stored. For example, this happens when content for the entry is
+        ///   obtained from a stream.  The bottom line is that the higher-resolution
+        ///   times, in either format, are not guaranteed to be present for a ZipEntry.
+        ///   The old DOS time, represented by <see cref="LastModified"/>, is guaranteed
+        ///   to be present, though it sometimes unset.
+        /// </para>
+        ///
+        /// <para>
+        ///   Ok, getting back to the question about how the <c>LastModified</c>
+        ///   property relates to this <c>ModifiedTime</c>
+        ///   property... <c>LastModified</c> is always set, while <c>ModifiedTime</c>
+        ///   is not. (The other times stored in the <em>NTFS times extension</em>,
+        ///   <c>CreationTime</c> and <c>AccessedTime</c> also may not be set on an
+        ///   entry that is read from an existing zip file.) When reading a zip file,
+        ///   then <c>LastModified</c> takes the DOS time that is stored with the
+        ///   file. If the DOS time has been stored as zero in the zipfile, then this
+        ///   library will use <c>DateTime.Now</c> for the <c>LastModified</c> value.
+        ///   If the ZIP file was created by an evolved tool, then there will also be
+        ///   NTFS times in the zip file.  In that case, this library will read those
+        ///   times, and set <c>LastModified</c> and <c>ModifiedTime</c> to the same
+        ///   value, the one corresponding to the last write time of the file.  If there
+        ///   are no "NTFS times" stored for the entry, then <c>ModifiedTime</c> remains
+        ///   unset (likewise <c>AccessedTime</c> and <c>CreationTime</c>), and
+        ///   <c>LastModified</c> keeps its DOS time.
+        /// </para>
+        ///
+        /// <para>
+        ///   When creating zip files with this library, by default the extended time
+        ///   properties (<c>ModifiedTime</c>, <c>AccessedTime</c>, and
+        ///   <c>CreationTime</c>) are set on the ZipEntry instance, and these data are
+        ///   stored in the zip archive for each entry, in NTFS format. If you add an
+        ///   entry from an actual filesystem file, then the entry gets the actual file
+        ///   times for that file, to NTFS-level precision.  If you add an entry from a
+        ///   stream, or a string, then the times get the value <c>DateTime.Now</c>.  In
+        ///   this case <c>LastModified</c> and <c>ModifiedTime</c> will be identical,
+        ///   to 2 seconds of precision.  You can explicitly set the
+        ///   <c>CreationTime</c>, <c>AccessedTime</c>, and <c>ModifiedTime</c> of an
+        ///   entry using the property setters.  If you want to set all of those
+        ///   quantities, it's more efficient to use the <see
+        ///   cref="SetEntryTimes(DateTime, DateTime, DateTime)"/> method.  Those
+        ///   changes are not made permanent in the zip file until you call <see
+        ///   cref="ZipFile.Save()"/> or one of its cousins.
+        /// </para>
+        ///
+        /// <para>
+        ///   When creating a zip file, you can override the default behavior for
+        ///   formatting times in the zip file, disabling the embedding of file times in
+        ///   NTFS format or enabling the storage of file times in Unix format, or both.
+        ///   You may want to do this, for example, when creating a zip file on Windows,
+        ///   that will be consumed on a Mac, by an application that is not hip to the
+        ///   "NTFS times" format. To do this, use the <see
+        ///   cref="EmitTimesInWindowsFormatWhenSaving"/> and <see
+        ///   cref="EmitTimesInUnixFormatWhenSaving"/> properties.  A valid zip file may
+        ///   store the file times in both formats.  But, there are no guarantees that a
+        ///   program running on Mac or Linux will gracefully handle the NTFS Formatted
+        ///   times, or that a non-DotNetZip-powered application running on Windows will
+        ///   be able to handle file times in Unix format. When in doubt, test.
+        /// </para>
+        /// 
+        /// <para>
+        ///   I'll bet you didn't think one person could type so much about time, eh?
+        ///   And reading it was so enjoyable, too!  Well, in appreciation, <see
+        ///   href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">maybe you
+        ///   should donate</see>?
         /// </para>
         /// </remarks>
         ///
         /// <seealso cref="AccessedTime"/>
         /// <seealso cref="CreationTime"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.LastModified"/>
-        public DateTime ModifiedTime { get { return _Mtime; } }
+        /// <seealso cref="SetEntryTimes"/>
+        public DateTime ModifiedTime
+        {
+            get { return _Mtime; }
+            set
+            {
+                SetEntryTimes(_Ctime, _Atime, value);
+            }
+        }
 
         /// <summary>
         /// Last Access time for the file represented by the entry.
@@ -278,7 +339,14 @@ namespace Ionic.Zip
         /// </remarks>
         /// <seealso cref="ModifiedTime"/>
         /// <seealso cref="CreationTime"/>
-        public DateTime AccessedTime { get { return _Atime; } }
+        /// <seealso cref="SetEntryTimes"/>
+        public DateTime AccessedTime {
+            get { return _Atime; }
+            set
+            {
+                SetEntryTimes(_Ctime, value, _Mtime);
+            }
+        }
 
         /// <summary>
         /// The file creation time for the file represented by the entry.
@@ -292,36 +360,47 @@ namespace Ionic.Zip
         /// </remarks>
         /// <seealso cref="ModifiedTime"/>
         /// <seealso cref="AccessedTime"/>
-        public DateTime CreationTime { get { return _Ctime; } }
+        /// <seealso cref="SetEntryTimes"/>
+        public DateTime CreationTime {
+            get { return _Ctime; }
+            set
+            {
+                SetEntryTimes(value, _Atime, _Mtime);
+            }
+        }
 
         /// <summary>
-        /// Sets the NTFS Creation, Access, and Modified times for the given entry.
+        ///   Sets the NTFS Creation, Access, and Modified times for the given entry.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// When adding an entry from a file or directory, the Creation, Access, and
-        /// Modified times for the given entry are automatically set from the filesystem
-        /// values. When adding an entry from a stream or string, the values are
-        /// implicitly set to DateTime.Now.  The application may wish to set these
-        /// values to some arbitrary value, before saving the archive.  If you set the
-        /// times using this method, the <see cref="LastModified"/> property also gets
-        /// set, to the same value provided for mtime.
+        ///   When adding an entry from a file or directory, the Creation, Access, and
+        ///   Modified times for the given entry are automatically set from the
+        ///   filesystem values. When adding an entry from a stream or string, the
+        ///   values are implicitly set to DateTime.Now.  The application may wish to
+        ///   set these values to some arbitrary value, before saving the archive, and
+        ///   can do so using the various setters.  If you want to set all of the times,
+        ///   this method is more efficient.
         /// </para>
         ///
         /// <para>
-        /// The values you set here will be retrievable with the <see cref="ModifiedTime"/>,
-        /// <see cref="CreationTime"/> and <see cref="AccessedTime"/> read-only properties.
+        ///   The values you set here will be retrievable with the <see
+        ///   cref="ModifiedTime"/>, <see cref="CreationTime"/> and <see
+        ///   cref="AccessedTime"/> properties.
         /// </para>
         ///
         /// <para>
-        /// When this method is called, the <see
-        /// cref="EmitTimesInWindowsFormatWhenSaving"/> flag is automatically set.
+        ///   When this method is called, if both <see
+        ///   cref="EmitTimesInWindowsFormatWhenSaving"/> and <see
+        ///   cref="EmitTimesInUnixFormatWhenSaving"/> are false, then the
+        ///   <c>EmitTimesInWindowsFormatWhenSaving</c> flag is automatically set.
         /// </para>
         ///
         /// <para>
-        /// DateTime values provided here without a DateTimeKind are assumed to be Local Time.
+        ///   DateTime values provided here without a DateTimeKind are assumed to be Local Time.
         /// </para>
+        ///
         /// </remarks>
         /// <param name="created">the creation time of the entry.</param>
         /// <param name="accessed">the last access time of the entry.</param>
@@ -335,11 +414,15 @@ namespace Ionic.Zip
         public void SetEntryTimes(DateTime created, DateTime accessed, DateTime modified)
         {
             _ntfsTimesAreSet = true;
+            if (created == _zeroHour &&  created.Kind == _zeroHour.Kind) created = _win32Epoch;
+            if (accessed == _zeroHour && accessed.Kind == _zeroHour.Kind) accessed = _win32Epoch;
+            if (modified == _zeroHour && modified.Kind == _zeroHour.Kind) modified = _win32Epoch;
             _Ctime = created.ToUniversalTime();
             _Atime = accessed.ToUniversalTime();
             _Mtime = modified.ToUniversalTime();
             _LastModified = _Mtime;
-            _emitNtfsTimes = true;
+            if (!_emitUnixTimes && !_emitNtfsTimes)
+                _emitNtfsTimes = true;
             _metadataChanged = true;
         }
 
@@ -382,9 +465,10 @@ namespace Ionic.Zip
         /// <para>
         /// Not all tools and libraries can interpret these fields.  Windows compressed
         /// folders is one that can read the Windows Format timestamps, while I believe
-        /// the <see href="http://www.info-zip.org/">Infozip</see> tools can read the Unix
-        /// format timestamps. Some tools and libraries may be able to read only one or
-        /// the other.
+        /// the <see href="http://www.info-zip.org/">Infozip</see> tools can read the
+        /// Unix format timestamps. Although the time values are easily convertible,
+        /// subject to a loss of precision, some tools and libraries may be able to read
+        /// only one or the other.
         /// </para>
         ///
         /// <para>
@@ -393,17 +477,20 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// This property is not mutually exclusive from the <see
-        /// cref="ZipFile.EmitTimesInUnixFormatWhenSaving"/> property.
-        /// It is possible that a zip entry can embed the timestamps in both
-        /// forms.
+        ///   This property is not mutually exclusive from the <see
+        ///   cref="ZipEntry.EmitTimesInUnixFormatWhenSaving"/> property.  It is
+        ///   possible that a zip entry can embed the timestamps in both forms, one
+        ///   form, or neither.  But, there are no guarantees that a program running on
+        ///   Mac or Linux will gracefully handle NTFS Formatted times, or that a
+        ///   non-DotNetZip-powered application running on Windows will be able to
+        ///   handle file times in Unix format. When in doubt, test.
         /// </para>
         ///
         /// <para>
         /// Normally you will use the <see
-        /// cref="ZipFile.EmitTimesInWindowsFormatWhenSaving"/> property, to specify the
-        /// behavior for all entries in a zip, rather than the property on each
-        /// individual entry.
+        /// cref="ZipFile.EmitTimesInWindowsFormatWhenSaving">ZipFile.EmitTimesInWindowsFormatWhenSaving</see>
+        /// property, to specify the behavior for all entries in a zip, rather than the
+        /// property on each individual entry.
         /// </para>
         ///
         /// </remarks>
@@ -463,9 +550,10 @@ namespace Ionic.Zip
         /// <para>
         /// Not all tools and libraries can interpret these fields.  Windows compressed
         /// folders is one that can read the Windows Format timestamps, while I believe
-        /// the <see href="http://www.info-zip.org/">Infozip</see> tools can read the Unix
-        /// format timestamps. Some tools and libraries may be able to read only one or
-        /// the other.
+        /// the <see href="http://www.info-zip.org/">Infozip</see> tools can read the
+        /// Unix format timestamps. Although the time values are easily convertible,
+        /// subject to a loss of precision, some tools and libraries may be able to read
+        /// only one or the other.
         /// </para>
         ///
         /// <para>
@@ -474,15 +562,20 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// This property is not mutually exclusive from the <see
-        /// cref="EmitTimesInWindowsFormatWhenSaving" /> flag.  It is possible that a
-        /// zip entry can embed the timestamps in both forms.
+        ///   This property is not mutually exclusive from the <see
+        ///   cref="ZipEntry.EmitTimesInWindowsFormatWhenSaving"/> property.  It is
+        ///   possible that a zip entry can embed the timestamps in both forms, one
+        ///   form, or neither.  But, there are no guarantees that a program running on
+        ///   Mac or Linux will gracefully handle NTFS Formatted times, or that a
+        ///   non-DotNetZip-powered application running on Windows will be able to
+        ///   handle file times in Unix format. When in doubt, test.
         /// </para>
         ///
         /// <para>
         /// Normally you will use the <see
-        /// cref="ZipFile.EmitTimesInUnixFormatWhenSaving"/> property, to specify the
-        /// behavior for all entries, rather than the property on each individual entry.
+        /// cref="ZipFile.EmitTimesInUnixFormatWhenSaving">ZipFile.EmitTimesInUnixFormatWhenSaving</see>
+        /// property, to specify the behavior for all entries, rather than the property
+        /// on each individual entry.
         /// </para>
         /// </remarks>
         ///
@@ -2262,8 +2355,6 @@ namespace Ionic.Zip
                 if (_archiveStream == null)
                 {
                     _zipfile.Reset();
-
-                    Console.WriteLine("ArchiveStream");
                     _archiveStream = _zipfile.StreamForDiskNumber(_diskNumber);
                 }
                 return _archiveStream;
@@ -2435,6 +2526,8 @@ namespace Ionic.Zip
         private ZipEntryTimestamp _timestamp;
 
         private static System.DateTime _unixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static System.DateTime _win32Epoch = System.DateTime.FromFileTimeUtc(0L);
+        private static System.DateTime _zeroHour = new System.DateTime(1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
 
         // summary

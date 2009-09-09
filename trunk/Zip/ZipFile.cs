@@ -386,14 +386,17 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// This property is not mutually exclusive of the <see
-        /// cref="EmitTimesInUnixFormatWhenSaving" /> property.  It is possible and
-        /// legal and valid to produce a zip file that contains timestamps encoded in
-        /// the Unix format as well as in the Windows format.  I haven't got a complete
-        /// list of tools and which sort of timestamps they can use and will
-        /// tolerate. You'll have to test it yourself.  If you get any good information
-        /// and would like to pass it on, please do so and I will include that
-        /// information in this documentation.
+        ///   This property is not mutually exclusive of the <see
+        ///   cref="EmitTimesInUnixFormatWhenSaving" /> property.  It is possible and
+        ///   legal and valid to produce a zip file that contains timestamps encoded in
+        ///   the Unix format as well as in the Windows format.  But, there are no
+        ///   guarantees that a program running on Mac or Linux will gracefully handle
+        ///   NTFS Formatted times, or that a non-DotNetZip-powered application running
+        ///   on Windows will be able to handle file times in Unix format. When in
+        ///   doubt, test.  Sorry, I haven't got a complete list of tools and which sort
+        ///   of timestamps they can use and will tolerate.  If you get any good
+        ///   information and would like to pass it on, please do so and I will include
+        ///   that information in this documentation.
         /// </para>
         /// </remarks>
         ///
@@ -403,6 +406,7 @@ namespace Ionic.Zip
         /// <code lang="C#">
         /// using (var zip = new ZipFile())
         /// {
+        ///     // produce a zip file the Mac will like
         ///     zip.EmitTimesInWindowsFormatWhenSaving = false;
         ///     zip.EmitTimesInUnixFormatWhenSaving = true;
         ///     zip.AddDirectory(directoryToZip, "files");
@@ -412,6 +416,7 @@ namespace Ionic.Zip
         ///
         /// <code lang="VB">
         /// Using zip As New ZipFile
+        ///     '' produce a zip file the Mac will like
         ///     zip.EmitTimesInWindowsFormatWhenSaving = False
         ///     zip.EmitTimesInUnixFormatWhenSaving = True
         ///     zip.AddDirectory(directoryToZip, "files")
@@ -484,14 +489,17 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// This property is not mutually exclusive of the <see
-        /// cref="EmitTimesInWindowsFormatWhenSaving" /> property.  It is possible and
-        /// legal and valid to produce a zip file that contains timestamps encoded in
-        /// the Unix format as well as in the Windows format.  I haven't got a complete
-        /// list of tools and which sort of timestamps they can use and will
-        /// tolerate. You'll have to test it yourself.  If you get any good information
-        /// and would like to pass it on, please do so and I will include that
-        /// information in this documentation.
+        ///   This property is not mutually exclusive of the <see
+        ///   cref="EmitTimesInWindowsFormatWhenSaving" /> property.  It is possible and
+        ///   legal and valid to produce a zip file that contains timestamps encoded in
+        ///   the Unix format as well as in the Windows format.  But, there are no
+        ///   guarantees that a program running on Mac or Linux will gracefully handle
+        ///   NTFS Formatted times, or that a non-DotNetZip-powered application running
+        ///   on Windows will be able to handle file times in Unix format. When in
+        ///   doubt, test.  Sorry, I haven't got a complete list of tools and which sort
+        ///   of timestamps they can use and will tolerate.  If you get any good
+        ///   information and would like to pass it on, please do so and I will include
+        ///   that information in this documentation.
         /// </para>
         /// </remarks>
         ///
@@ -2001,7 +2009,6 @@ namespace Ionic.Zip
 
         internal Stream StreamForDiskNumber(uint diskNumber)
         {
-                    Console.WriteLine("StreamForDiskNumber");
             if (diskNumber + 1 == this._diskNumberWithCd || (diskNumber == 0 && this._diskNumberWithCd==0))
             {
                 //return (this.ReadStream as FileStream);
