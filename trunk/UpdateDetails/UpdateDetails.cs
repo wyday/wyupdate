@@ -128,7 +128,7 @@ namespace wyUpdate.Common
                         tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
                         break;
                     case 0x49:
-                        tempUpdateFile.CPUVersion = (CPUVersion) ReadFiles.ReadInt(fs);
+                        tempUpdateFile.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
                         break;
                     case 0x9B://end of file
                         updtDetails.UpdateFiles.Add(tempUpdateFile);
@@ -214,7 +214,7 @@ namespace wyUpdate.Common
                     }
 
                     //is it a .NET assembly?
-                    if(file.IsNETAssembly)
+                    if (file.IsNETAssembly)
                     {
                         WriteFiles.WriteBool(ms, 0x44, true);
 
