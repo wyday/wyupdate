@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-29 00:17:58>
+// Time-stamp: <2009-September-11 12:03:40>
 //
 // ------------------------------------------------------------------
 //
@@ -60,12 +60,12 @@ namespace Ionic.Zip
         /// <para>
         /// The action to take when an extract would overwrite an existing file applies
         /// to all entries.  If you want to set this on a per-entry basis, then you must
-        /// use one of the <see cef="ZipEntry.Extract" >ZipEntry.Extract</see> methods.
+        /// use one of the <see cref="M:ZipEntry.Extract">ZipEntry.Extract</see> methods.
         /// </para>
         ///
         /// <para>
         /// This method will send verbose output messages to the
-        /// StatusMessageTextWriter, if it is set on the <c>ZipFile</c> instance.
+        /// <see cref="StatusMessageTextWriter"/>, if it is set on the <c>ZipFile</c> instance.
         /// </para>
         ///
         /// <para>
@@ -77,7 +77,7 @@ namespace Ionic.Zip
         /// extracted file gets the last modified time of the entry as stored in the
         /// archive. The archive may also store extended file timestamp information,
         /// including last accessed and created times. If these are present in the
-        /// ZipEntry, then the extracted file will also get these times.
+        /// <c>ZipEntry</c>, then the extracted file will also get these times.
         /// </para>
         ///
         /// <para>
@@ -157,14 +157,15 @@ namespace Ionic.Zip
         /// <para>
         /// This method will extract all entries in the <c>ZipFile</c> to the specified
         /// path.  For an extraction that would overwrite an existing file, the behavior
-        /// is dictated by the extractExistingFile parameter, which overrides any
+        /// is dictated by <paramref name="extractExistingFile"/>, which overrides any
         /// setting you may have made on individual ZipEntry instances.
         /// </para>
         ///
         /// <para>
-        /// The action to take when an extract would overwrite an existing file applies
-        /// to all entries.  If you want to set this on a per-entry basis, then you must
-        /// use one of the <see cef="ZipEntry.Extract" /> methods.
+        /// The action to take when an extract would overwrite an existing file
+        /// applies to all entries.  If you want to set this on a per-entry basis,
+        /// then you must use <see cref="ZipEntry.Extract(String,
+        /// ExtractExistingFileAction)" /> or one of the similar methods.
         /// </para>
         ///
         /// <para>
@@ -175,7 +176,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// This method will send verbose output messages to the
-        /// StatusMessageTextWriter, if it is set on the <c>ZipFile</c> instance.
+        /// <see cref="StatusMessageTextWriter"/>, if it is set on the <c>ZipFile</c> instance.
         /// </para>
         /// </remarks>
         ///

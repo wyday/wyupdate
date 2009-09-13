@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-08 15:21:51>
+// Time-stamp: <2009-September-11 20:52:31>
 //
 // ------------------------------------------------------------------
 //
@@ -436,15 +436,9 @@ namespace Ionic.Zip
 
             if (zf.Verbose) zf._StatusMessageTextWriter.WriteLine("reading from {0}...", fileName);
 
-            try
-            {
-                ReadIntoInstance(zf);
-                zf._fileAlreadyExists = true;
-            }
-            catch (Exception e1)
-            {
-                throw new ZipException(String.Format("{0} could not be read", fileName), e1);
-            }
+            ReadIntoInstance(zf);
+            zf._fileAlreadyExists = true;
+            
             return zf;
         }
 
@@ -583,11 +577,6 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         /// 
-        /// <exception cref="Ionic.Zip.ZipException">
-        /// Thrown if zipStream is <c>null</c> (<c>Nothing</c> in VB).
-        /// In this case, the inner exception is an ArgumentException.
-        /// </exception>
-        ///
         /// <param name="zipStream">the stream containing the zip data.</param>
         /// 
         /// <param name="statusMessageWriter">
@@ -678,11 +667,6 @@ namespace Ionic.Zip
         /// </para>
         /// </remarks>
         ///
-        /// <exception cref="Ionic.Zip.ZipException">
-        /// Thrown if zipStream is <c>null</c> (<c>Nothing</c> in VB).
-        /// In this case, the inner exception is an ArgumentException.
-        /// </exception>
-        ///
         /// <param name="zipStream">the stream containing the zip data.</param>
         /// 
         /// <param name="encoding">
@@ -770,11 +754,6 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         ///
-        /// <exception cref="Ionic.Zip.ZipException">
-        /// Thrown if zipStream is <c>null</c> (<c>Nothing</c> in VB).
-        /// In this case, the inner exception is an ArgumentException.
-        /// </exception>
-        ///
         /// <param name="zipStream">the stream containing the zip data.</param>
         ///
         /// <param name="statusMessageWriter">
@@ -854,7 +833,7 @@ namespace Ionic.Zip
                                    EventHandler<ReadProgressEventArgs> readProgress)
         {
             if (zipStream == null)
-                throw new ZipException("Cannot read.", new ArgumentException("The stream must be non-null", "zipStream"));
+                throw new ArgumentException("The stream must be non-null", "zipStream");
 
             ZipFile zf = new ZipFile();
             zf._provisionalAlternateEncoding = encoding;

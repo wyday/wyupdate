@@ -5,17 +5,25 @@ using wyUpdate.Common;
 
 namespace wyDay.Controls
 {
+    internal enum AutoUpdaterStatus
+    {
+        Nothing = 0,
+        UpdateSucceeded = 1,
+        UpdateFailed = 2
+    }
+
     internal class AutoUpdaterInfo
     {
         public DateTime LastCheckedForUpdate { get; set; }
         public UpdateStepOn UpdateStepOn { get; set; }
 
-        public bool UpdateSucceeded { get; set; }
+        public AutoUpdaterStatus AutoUpdaterStatus { get; set; }
+
         public string UpdateVersion { get; set; }
         public string ChangesInLatestVersion { get; set; }
         public bool ChangesIsRTF { get; set; }
 
-        public bool UpdateFailed { get; set; }
+
         public string ErrorTitle { get; set; }
         public string ErrorMessage { get; set; }
         
@@ -25,6 +33,7 @@ namespace wyDay.Controls
         public AutoUpdaterInfo(string auID)
         {
             autoUpdateID = auID;
+            AutoUpdaterStatus = AutoUpdaterStatus.Nothing;
 
             try
             {
@@ -81,28 +90,30 @@ namespace wyDay.Controls
             WriteFiles.WriteDateTime(fs, 0x01, LastCheckedForUpdate);
 
             // update step on
-            WriteFiles.WriteInt(fs, 0x02, (int)UpdateStepOn);
+            WriteFiles.WriteInt(fs, 0x02, (int) UpdateStepOn);
 
 #if CLIENT
-            if (UpdateSucceeded)
+            // only save the AutoUpdaterStatus when wyUpdate writes the file
+            WriteFiles.WriteInt(fs, 0x03, (int)AutoUpdaterStatus);
+#endif
+
+            if (!string.IsNullOrEmpty(UpdateVersion))
+                WriteFiles.WriteString(fs, 0x04, UpdateVersion);
+
+            if (!string.IsNullOrEmpty(ChangesInLatestVersion))
             {
-                if (!string.IsNullOrEmpty(UpdateVersion))
-                    WriteFiles.WriteString(fs, 0x03, UpdateVersion);
+                WriteFiles.WriteString(fs, 0x05, ChangesInLatestVersion);
 
-                if (!string.IsNullOrEmpty(ChangesInLatestVersion))
-                    WriteFiles.WriteString(fs, 0x04, ChangesInLatestVersion);
-
-                WriteFiles.WriteBool(fs, 0x05, ChangesIsRTF);
+                WriteFiles.WriteBool(fs, 0x06, ChangesIsRTF);
             }
+            
 
-            if (UpdateFailed)
-            {
-                if (!string.IsNullOrEmpty(ErrorTitle))
-                    WriteFiles.WriteString(fs, 0x06, ErrorTitle);
+#if CLIENT
+            if (!string.IsNullOrEmpty(ErrorTitle))
+                WriteFiles.WriteString(fs, 0x07, ErrorTitle);
 
-                if (!string.IsNullOrEmpty(ErrorMessage))
-                    WriteFiles.WriteString(fs, 0x07, ErrorMessage);
-            }
+            if (!string.IsNullOrEmpty(ErrorMessage))
+                WriteFiles.WriteString(fs, 0x08, ErrorMessage);
 #endif
 
             fs.WriteByte(0xFF);
@@ -133,29 +144,28 @@ namespace wyDay.Controls
                         UpdateStepOn = (UpdateStepOn) ReadFiles.ReadInt(fs);
                         break;
 
-                    case 0x03: // update succeeded
-                        UpdateVersion = ReadFiles.ReadString(fs);
-                        UpdateSucceeded = true;
+                    case 0x03:
+                        AutoUpdaterStatus = (AutoUpdaterStatus) ReadFiles.ReadInt(fs);
                         break;
 
-                    case 0x04:
-                        ChangesInLatestVersion = ReadFiles.ReadString(fs);
-                        UpdateSucceeded = true;
+                    case 0x04: // update succeeded
+                        UpdateVersion = ReadFiles.ReadString(fs);
                         break;
 
                     case 0x05:
+                        ChangesInLatestVersion = ReadFiles.ReadString(fs);
+                        break;
+
+                    case 0x06:
                         ChangesIsRTF = ReadFiles.ReadBool(fs);
-                        UpdateSucceeded = true;
                         break;
 
-                    case 0x06: // update failed
+                    case 0x07: // update failed
                         ErrorTitle = ReadFiles.ReadString(fs);
-                        UpdateFailed = true;
                         break;
 
-                    case 0x07:
+                    case 0x08:
                         ErrorMessage = ReadFiles.ReadString(fs);
-                        UpdateFailed = true;
                         break;
 
                     default:
@@ -167,10 +177,18 @@ namespace wyDay.Controls
             }
 
             fs.Close();
+        }
 
-            // reset the value so we don't keep seeing the same damn message
-            if (UpdateSucceeded || UpdateFailed)
-                Save();
+        public void ClearSuccessError()
+        {
+            AutoUpdaterStatus = AutoUpdaterStatus.Nothing;
+
+            UpdateVersion = null;
+            ChangesInLatestVersion = null;
+            ChangesIsRTF = false;
+
+            ErrorTitle = null;
+            ErrorMessage = null;
         }
     }
 }

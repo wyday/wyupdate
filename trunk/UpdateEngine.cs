@@ -12,62 +12,6 @@ namespace wyUpdate.Common
     //also used in settings.cs
     public enum ImageAlign { Left = 0, Right = 1, Fill = 2 }
 
-    public class UpdateFile
-    {
-        #region Properties
-
-        //full path of file for creating zip file
-        public string Filename { get; set; }
-
-        public string RelativePath { get; set; }
-
-        //execute the file?
-        public bool Execute { get; set; }
-
-        //if so, before or after update?
-        public bool ExBeforeUpdate { get; set; }
-
-        //command line arguents
-        public string CommandLineArgs { get; set; }
-
-        //is it a .NET assembly?
-        public bool IsNETAssembly { get; set; }
-
-        public bool WaitForExecution { get; set; }
-
-        //Delta Patching Particulars:
-        public string DeltaPatchRelativePath { get; set; }
-
-        public bool DeleteFile { get; set; }
-
-        public long NewFileAdler32 { get; set; }
-
-        #endregion Properties
-
-        public UpdateFile() { }
-
-        public UpdateFile(string filename, string prefix)
-        {
-            Filename = filename;
-
-            if (!string.IsNullOrEmpty(filename))
-                RelativePath = prefix + Path.GetExtension(filename);
-        }
-
-        public UpdateFile(string filename, string relative, bool execute, bool executeBef, bool waitForExecution, string commArgs, bool deleteFile, string oldFile)
-        {
-            Filename = filename;
-            RelativePath = relative;
-            Execute = execute;
-            ExBeforeUpdate = executeBef;
-            WaitForExecution = waitForExecution;
-            CommandLineArgs = commArgs;
-
-            DeleteFile = deleteFile;
-            DeltaPatchRelativePath = oldFile;
-        }
-    }
-
     public enum UpdateOn 
     { 
         DownloadingClientUpdt = 0, SelfUpdating = 1,

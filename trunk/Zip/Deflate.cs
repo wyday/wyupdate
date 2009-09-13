@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-19 18:25:04>
+// Time-stamp: <2009-September-09 22:08:55>
 //
 // ------------------------------------------------------------------
 //
@@ -194,79 +194,91 @@ namespace Ionic.Zlib
 
 
         private CompressFunc DeflateFunction;
-
-        //UPGRADE_NOTE: Final was removed from the declaration of 'z_errmsg'. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
-        private static readonly System.String[] z_errmsg = new System.String[] { "need dictionary", "stream end", "", "file error", "stream error", "data error", "insufficient memory", "buffer error", "incompatible version", "" };
+        
+        private static readonly System.String[] _ErrorMessage = new System.String[]
+        {
+            "need dictionary",
+            "stream end",
+            "",
+            "file error",
+            "stream error",
+            "data error",
+            "insufficient memory",
+            "buffer error",
+            "incompatible version",
+            ""
+        };
 
         // preset dictionary flag in zlib header
-        private const int PRESET_DICT = 0x20;
+        private const int PRESET_DICT             = 0x20;
 
-        private const int INIT_STATE = 42;
-        private const int BUSY_STATE = 113;
-        private const int FINISH_STATE = 666;
+        private const int INIT_STATE              = 42;
+        private const int BUSY_STATE              = 113;
+        private const int FINISH_STATE            = 666;
 
         // The deflate compression method
-        private const int Z_DEFLATED = 8;
+        private const int Z_DEFLATED              = 8;
 
-        private const int STORED_BLOCK = 0;
-        private const int STATIC_TREES = 1;
-        private const int DYN_TREES = 2;
+        private const int STORED_BLOCK            = 0;
+        private const int STATIC_TREES            = 1;
+        private const int DYN_TREES               = 2;
 
         // The three kinds of block type
-        private const int Z_BINARY = 0;
-        private const int Z_ASCII = 1;
-        private const int Z_UNKNOWN = 2;
+        private const int Z_BINARY                = 0;
+        private const int Z_ASCII                 = 1;
+        private const int Z_UNKNOWN               = 2;
 
-        private const int Buf_size = 8 * 2;
+        private const int Buf_size                = 8 * 2;
 
         // repeat previous bit length 3-6 times (2 bits of repeat count)
-        private const int REP_3_6 = 16;
+        private const int REP_3_6                 = 16;
 
         // repeat a zero length 3-10 times  (3 bits of repeat count)
-        private const int REPZ_3_10 = 17;
+        private const int REPZ_3_10               = 17;
 
         // repeat a zero length 11-138 times  (7 bits of repeat count)
-        private const int REPZ_11_138 = 18;
+        private const int REPZ_11_138             = 18;
 
-        private const int MIN_MATCH = 3;
-        private const int MAX_MATCH = 258;
-        //UPGRADE_NOTE: Final was removed from the declaration of 'MIN_LOOKAHEAD '. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
+        private const int MIN_MATCH               = 3;
+        private const int MAX_MATCH               = 258;
+
         private static readonly int MIN_LOOKAHEAD = (MAX_MATCH + MIN_MATCH + 1);
 
-        private const int MAX_BITS = 15;
-        private const int D_CODES = 30;
-        private const int BL_CODES = 19;
-        private const int LENGTH_CODES = 29;
-        private const int LITERALS = 256;
-        //UPGRADE_NOTE: Final was removed from the declaration of 'L_CODES '. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
+        private const int MAX_BITS                = 15;
+        private const int D_CODES                 = 30;
+        private const int BL_CODES                = 19;
+        private const int LENGTH_CODES            = 29;
+        private const int LITERALS                = 256;
+
         private static readonly int L_CODES = (LITERALS + 1 + LENGTH_CODES);
-        //UPGRADE_NOTE: Final was removed from the declaration of 'HEAP_SIZE '. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
+
         private static readonly int HEAP_SIZE = (2 * L_CODES + 1);
 
         private const int END_BLOCK = 256;
 
-        internal ZlibCodec _codec; // pointer back to this zlib stream
-        internal int status; // as the name implies
-        internal byte[] pending; // output still pending
-        internal int nextPending; // index of next pending byte to output to the stream
+        internal ZlibCodec _codec; // the zlib encoder/decoder
+        internal int status;       // as the name implies
+        internal byte[] pending;   // output still pending - waiting to be compressed
+        internal int nextPending;  // index of next pending byte to output to the stream
         internal int pendingCount; // number of bytes in the pending buffer
 
-        internal sbyte data_type; // UNKNOWN, BINARY or ASCII
-        internal sbyte method; // STORED (for zip only) or DEFLATED
-        internal int last_flush; // value of flush param for previous deflate call
+        internal sbyte data_type;  // UNKNOWN, BINARY or ASCII
+        //internal sbyte method;     // STORED (for zip only) or DEFLATED
+        internal int last_flush;   // value of flush param for previous deflate call
 
-        internal int w_size; // LZ77 window size (32K by default)
-        internal int w_bits; // log2(w_size)  (8..16)
-        internal int w_mask; // w_size - 1
+        internal int w_size;       // LZ77 window size (32K by default)
+        internal int w_bits;       // log2(w_size)  (8..16)
+        internal int w_mask;       // w_size - 1
 
         //internal byte[] dictionary;
         internal byte[] window;
+        
         // Sliding window. Input bytes are read into the second half of the window,
         // and move to the first half later to keep a dictionary of at least wSize
         // bytes. With this organization, matches are limited to a distance of
         // wSize-MAX_MATCH bytes, but this ensures that IO is always
-        // performed with a length multiple of the block size. Also, it limits
-        // the window size to 64K, which is quite useful on MSDOS.
+        // performed with a length multiple of the block size. 
+        //
         // To do: use the user input buffer as sliding window.
 
         internal int window_size;
@@ -278,9 +290,9 @@ namespace Ionic.Zlib
         // array to 64K, this link is maintained only for the last 32K strings.
         // An index in this array is thus a window index modulo 32K.
 
-        internal short[] head; // Heads of the hash chains or NIL.
+        internal short[] head;  // Heads of the hash chains or NIL.
 
-        internal int ins_h; // hash index of string to be inserted
+        internal int ins_h;     // hash index of string to be inserted
         internal int hash_size; // number of elements in hash table
         internal int hash_bits; // log2(hash_size)
         internal int hash_mask; // hash_size-1
@@ -297,12 +309,12 @@ namespace Ionic.Zlib
         internal int block_start;
 
         Config config;
-        internal int match_length; // length of best match
-        internal int prev_match; // previous match
+        internal int match_length;    // length of best match
+        internal int prev_match;      // previous match
         internal int match_available; // set if previous match exists
-        internal int strstart; // start of string to insert into.....????
-        internal int match_start; // start of matching string
-        internal int lookahead; // number of valid bytes ahead in window
+        internal int strstart;        // start of string to insert into.....????
+        internal int match_start;     // start of matching string
+        internal int lookahead;       // number of valid bytes ahead in window
 
         // Length of the best match at previous step. Matches not greater than this
         // are discarded. This is used in the lazy match evaluation.
@@ -316,12 +328,12 @@ namespace Ionic.Zlib
         internal CompressionStrategy compressionStrategy; // favor or force Huffman coding
 
 
-        internal short[] dyn_ltree; // literal and length tree
-        internal short[] dyn_dtree; // distance tree
-        internal short[] bl_tree; // Huffman tree for bit lengths
+        internal short[] dyn_ltree;         // literal and length tree
+        internal short[] dyn_dtree;         // distance tree
+        internal short[] bl_tree;           // Huffman tree for bit lengths
 
-        internal Tree l_desc = new Tree(); // desc for literal tree
-        internal Tree d_desc = new Tree(); // desc for distance tree
+        internal Tree l_desc = new Tree();  // desc for literal tree
+        internal Tree d_desc = new Tree();  // desc for distance tree
         internal Tree bl_desc = new Tree(); // desc for bit length tree
 
         // number of codes at each bit length for an optimal tree
@@ -330,16 +342,18 @@ namespace Ionic.Zlib
         // heap used to build the Huffman trees
         internal int[] heap = new int[2 * L_CODES + 1];
 
-        internal int heap_len; // number of elements in the heap
-        internal int heap_max; // element of largest frequency
+        internal int heap_len;              // number of elements in the heap
+        internal int heap_max;              // element of largest frequency
+        
         // The sons of heap[n] are heap[2*n] and heap[2*n+1]. heap[0] is not used.
         // The same heap array is used to build all trees.
 
         // Depth of each subtree used as tie breaker for trees of equal frequency
         internal sbyte[] depth = new sbyte[2 * L_CODES + 1];
 
-        internal int l_buf; // index for literals or lengths */
+        internal int _lengthOffset;                 // index for literals or lengths 
 
+        
         // Size of match buffer for literals/lengths.  There are 4 reasons for
         // limiting lit_bufsize to 64K:
         //   - frequencies can be kept in 16 bit counters
@@ -356,20 +370,20 @@ namespace Ionic.Zlib
         //     a highly compressible string table.) Smaller buffer sizes give
         //     fast adaptation but have of course the overhead of transmitting
         //     trees more frequently.
-        //   - I can't count above 4
+
         internal int lit_bufsize;
 
-        internal int last_lit; // running index in l_buf
+        internal int last_lit;     // running index in l_buf
 
         // Buffer for distances. To simplify the code, d_buf and l_buf have
         // the same number of elements. To use different lengths, an extra flag
         // array would be necessary.
 
-        internal int d_buf; // index of pendig_buf
+        internal int _distanceOffset;        // index into pending; points to distance data??
 
-        internal int opt_len; // bit length of current block with optimal trees
-        internal int static_len; // bit length of current block with static trees
-        internal int matches; // number of string matches in current block
+        internal int opt_len;      // bit length of current block with optimal trees
+        internal int static_len;   // bit length of current block with static trees
+        internal int matches;      // number of string matches in current block
         internal int last_eob_len; // bit length of EOB code for last block
 
         // Output buffer. bits are inserted starting at the bottom (least
@@ -380,6 +394,7 @@ namespace Ionic.Zlib
         // are always zero.
         internal int bi_valid;
 
+        
         internal DeflateManager()
         {
             dyn_ltree = new short[HEAP_SIZE * 2];
@@ -387,6 +402,7 @@ namespace Ionic.Zlib
             bl_tree = new short[(2 * BL_CODES + 1) * 2]; // Huffman tree for bit lengths
         }
 
+        
         // lm_init
         private void _InitializeLazyMatch()
         {
@@ -487,6 +503,7 @@ namespace Ionic.Zlib
             return (tn2 < tm2 || (tn2 == tm2 && depth[n] <= depth[m]));
         }
 
+        
         // Scan a literal or distance tree to determine the frequencies of the codes
         // in the bit length tree.
         internal void scan_tree(short[] tree, int max_code)
@@ -693,25 +710,25 @@ namespace Ionic.Zlib
             send_bits((tree[c2] & 0xffff), (tree[c2 + 1] & 0xffff));
         }
 
-        internal void send_bits(int value_Renamed, int length)
+        internal void send_bits(int value, int length)
         {
             int len = length;
             unchecked
             {
                 if (bi_valid > (int)Buf_size - len)
                 {
-                    int val = value_Renamed;
+                    //int val = value;
                     //      bi_buf |= (val << bi_valid);
 
-                    bi_buf |= (short)(((val << bi_valid) & 0xffff));
+                    bi_buf |= (short)((value << bi_valid) & 0xffff);
                     put_short(bi_buf);
-                    bi_buf = (short)(SharedUtils.URShift(val, (Buf_size - bi_valid)));
+                    bi_buf = (short)(SharedUtils.URShift(value, (Buf_size - bi_valid)));
                     bi_valid += len - Buf_size;
                 }
                 else
                 {
                     //      bi_buf |= (value) << bi_valid;
-                    bi_buf |= (short)((((value_Renamed) << bi_valid) & 0xffff));
+                    bi_buf |= (short) ((value << bi_valid) & 0xffff);
                     bi_valid += len;
                 }
             }
@@ -751,10 +768,9 @@ namespace Ionic.Zlib
         // the current block must be flushed.
         internal bool _tr_tally(int dist, int lc)
         {
-
-            pending[d_buf + last_lit * 2] = unchecked((byte)(SharedUtils.URShift(dist, 8)));
-            pending[d_buf + last_lit * 2 + 1] = unchecked((byte)dist);
-            pending[l_buf + last_lit] = unchecked((byte)lc);
+            pending[_distanceOffset + last_lit * 2] = unchecked((byte)(SharedUtils.URShift(dist, 8)));
+            pending[_distanceOffset + last_lit * 2 + 1] = unchecked((byte)dist);
+            pending[_lengthOffset + last_lit] = unchecked((byte)lc);
             last_lit++;
 
             if (dist == 0)
@@ -767,8 +783,8 @@ namespace Ionic.Zlib
                 matches++;
                 // Here, lc is the match length - MIN_MATCH
                 dist--; // dist = match distance - 1
-                dyn_ltree[(Tree._length_code[lc] + LITERALS + 1) * 2]++;
-                dyn_dtree[Tree.d_code(dist) * 2]++;
+                dyn_ltree[(Tree.LengthCode[lc] + LITERALS + 1) * 2]++;
+                dyn_dtree[Tree.DistanceCode(dist) * 2]++;
             }
 
             if ((last_lit & 0x1fff) == 0 && (int)compressionLevel > 2)
@@ -779,7 +795,7 @@ namespace Ionic.Zlib
                 int dcode;
                 for (dcode = 0; dcode < D_CODES; dcode++)
                 {
-                    out_length = (int)(out_length + (int)dyn_dtree[dcode * 2] * (5L + Tree.extra_dbits[dcode]));
+                    out_length = (int)(out_length + (int)dyn_dtree[dcode * 2] * (5L + Tree.ExtraDistanceBits[dcode]));
                 }
                 out_length = SharedUtils.URShift(out_length, 3);
                 if ((matches < (last_lit / 2)) && out_length < in_length / 2)
@@ -793,51 +809,62 @@ namespace Ionic.Zlib
             // 64K-1 bytes.
         }
 
+
+        
         // Send the block data compressed using the given Huffman trees
         internal void send_compressed_block(short[] ltree, short[] dtree)
         {
-            int dist; // distance of matched string
-            int lc; // match length or unmatched char (if dist == 0)
-            int lx = 0; // running index in l_buf
-            int code; // the code to send
-            int extra; // number of extra bits to send
+            int distance; // distance of matched string
+            int lc;       // match length or unmatched char (if dist == 0)
+            int lx = 0;   // running index in l_buf
+            int code;     // the code to send
+            int extra;    // number of extra bits to send
 
             if (last_lit != 0)
             {
                 do
                 {
-                    dist = ((pending[d_buf + lx * 2] << 8) & 0xff00) | (pending[d_buf + lx * 2 + 1] & 0xff);
-                    lc = (pending[l_buf + lx]) & 0xff; lx++;
+                    int ix = _distanceOffset + lx * 2;
+                    distance = ((pending[ix] << 8) & 0xff00) | 
+                        (pending[ix + 1] & 0xff);
+                    lc = (pending[_lengthOffset + lx]) & 0xff; 
+                    lx++;
 
-                    if (dist == 0)
+                    if (distance == 0)
                     {
                         send_code(lc, ltree); // send a literal byte
                     }
                     else
                     {
+                        // literal or match pair 
                         // Here, lc is the match length - MIN_MATCH
-                        code = Tree._length_code[lc];
+                        code = Tree.LengthCode[lc];
 
-                        send_code(code + LITERALS + 1, ltree); // send the length code
-                        extra = Tree.extra_lbits[code];
+                        // send the length code
+                        send_code(code + LITERALS + 1, ltree);
+                        extra = Tree.ExtraLengthBits[code];
                         if (extra != 0)
                         {
-                            lc -= Tree.base_length[code];
-                            send_bits(lc, extra); // send the extra length bits
+                            // send the extra length bits
+                            lc -= Tree.LengthBase[code];
+                            send_bits(lc, extra); 
                         }
-                        dist--; // dist is now the match distance - 1
-                        code = Tree.d_code(dist);
+                        distance--; // dist is now the match distance - 1
+                        code = Tree.DistanceCode(distance);
 
-                        send_code(code, dtree); // send the distance code
-                        extra = Tree.extra_dbits[code];
+                        // send the distance code
+                        send_code(code, dtree);
+                        
+                        extra = Tree.ExtraDistanceBits[code];
                         if (extra != 0)
                         {
-                            dist -= Tree.base_dist[code];
-                            send_bits(dist, extra); // send the extra distance bits
+                            // send the extra distance bits
+                            distance -= Tree.DistanceBase[code];
+                            send_bits(distance, extra);
                         }
-                    } // literal or match pair ?
+                    } 
 
-                    // Check that the overlay between pending_buf and d_buf+l_buf is ok:
+                    // Check that the overlay between pending and d_buf+l_buf is ok:
                 }
                 while (lx < last_lit);
             }
@@ -846,6 +873,8 @@ namespace Ionic.Zlib
             last_eob_len = ltree[END_BLOCK * 2 + 1];
         }
 
+
+        
         // Set the data type to ASCII or BINARY, using a crude approximation:
         // binary if more than 20% of the bytes are <= 6 or >= 128, ascii otherwise.
         // IN assertion: the fields freq of dyn_ltree are set and the total of all
@@ -870,6 +899,8 @@ namespace Ionic.Zlib
             data_type = (sbyte)(bin_freq > (SharedUtils.URShift(ascii_freq, 2)) ? Z_BINARY : Z_ASCII);
         }
 
+
+        
         // Flush the bit buffer, keeping at most 7 bits in it.
         internal void bi_flush()
         {
@@ -939,7 +970,7 @@ namespace Ionic.Zlib
         // window to pending_buf.
         internal BlockState DeflateNone(FlushType flush)
         {
-            // Stored blocks are limited to 0xffff bytes, pending_buf is limited
+            // Stored blocks are limited to 0xffff bytes, pending is limited
             // to pending_buf_size, and each stored block has a 5 byte header:
 
             int max_block_size = 0xffff;
@@ -966,7 +997,7 @@ namespace Ionic.Zlib
                 strstart += lookahead;
                 lookahead = 0;
 
-                // Emit a stored block if pending_buf will be full:
+                // Emit a stored block if pending will be full:
                 max_start = block_start + max_block_size;
                 if (strstart == 0 || strstart >= max_start)
                 {
@@ -1583,18 +1614,25 @@ namespace Ionic.Zlib
             prev = new short[w_size];
             head = new short[hash_size];
 
-            lit_bufsize = 1 << (memLevel + 6); // 16K elements by default
+            // for memLevel==8, this will be 16384, 16k
+            lit_bufsize = 1 << (memLevel + 6); 
 
-            // We overlay pending_buf and d_buf+l_buf. This works since the average
+            // Use a single array as the buffer for data pending compression,
+            // the output distance codes, and the output length codes (aka tree).  
+            // orig comment: This works just fine since the average
             // output size for (length,distance) codes is <= 24 bits.
             pending = new byte[lit_bufsize * 4];
+            _distanceOffset = lit_bufsize;
+            _lengthOffset = (1 + 2) * lit_bufsize;
 
-            d_buf = lit_bufsize / 2;
-            l_buf = (1 + 2) * lit_bufsize;
-
+            // So, for memLevel 8, the length of the pending buffer is 65536. 64k.
+            // The first 16k are pending bytes.
+            // The middle slice, of 32k, is used for distance codes. 
+            // The final 16k are length codes.
+            
             this.compressionLevel = level;
             this.compressionStrategy = strategy;
-            this.method = 0x08;  // (sbyte)method;
+            //this.method = 0x08;  // (sbyte) method;
 
             Reset();
             return ZlibConstants.Z_OK;
@@ -1608,7 +1646,7 @@ namespace Ionic.Zlib
             //strm.data_type = Z_UNKNOWN;
 
             pendingCount = 0;
-            nextPending = 0;
+            nextPending  = 0;
 
             Rfc1950BytesEmitted = false;
 
@@ -1620,6 +1658,7 @@ namespace Ionic.Zlib
             _InitializeTreeData();
             _InitializeLazyMatch();
         }
+        
 
         internal int End()
         {
@@ -1723,13 +1762,13 @@ namespace Ionic.Zlib
                 (_codec.InputBuffer == null && _codec.AvailableBytesIn != 0) ||
                 (status == FINISH_STATE && flush != FlushType.Finish))
             {
-                _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_STREAM_ERROR)];
+                _codec.Message = _ErrorMessage[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_STREAM_ERROR)];
                 throw new ZlibException(String.Format("Something is fishy. [{0}]", _codec.Message));
                 //return ZlibConstants.Z_STREAM_ERROR;
             }
             if (_codec.AvailableBytesOut == 0)
             {
-                _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
+                _codec.Message = _ErrorMessage[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
                 throw new ZlibException("OutputBuffer is full (AvailableBytesOut == 0)");
                 //return ZlibConstants.Z_BUF_ERROR;
             }
@@ -1802,7 +1841,7 @@ namespace Ionic.Zlib
             // User must not provide more input after the first FINISH:
             if (status == FINISH_STATE && _codec.AvailableBytesIn != 0)
             {
-                _codec.Message = z_errmsg[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
+                _codec.Message = _ErrorMessage[ZlibConstants.Z_NEED_DICT - (ZlibConstants.Z_BUF_ERROR)];
                 throw new ZlibException("status == FINISH_STATE && _codec.AvailableBytesIn != 0");
             }
 

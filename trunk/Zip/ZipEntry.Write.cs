@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 15:28:33>
+// Time-stamp: <2009-September-11 14:55:43>
 //
 // ------------------------------------------------------------------
 //
@@ -541,8 +541,10 @@ namespace Ionic.Zip
         {
             if (_UncompressedSize < 0x10) return false;
             if (_CompressionMethod == 0x00) return false;
+            if (_zipfile.CompressionLevel == 0) return false;
             if (_CompressedSize < _UncompressedSize) return false;
             if (ForceNoCompression) return false;
+            
             if (this._Source == ZipEntrySource.Stream && !this._sourceStream.CanSeek) return false;
 
 #if AESCRYPTO
@@ -555,6 +557,7 @@ namespace Ionic.Zip
             if (WillReadTwiceOnInflation != null)
                 return WillReadTwiceOnInflation(_UncompressedSize, _CompressedSize, FileName);
 
+            //Console.WriteLine("***WantReadAgain: returning TRUE...");
             return true;
         }
 
@@ -705,7 +708,7 @@ namespace Ionic.Zip
             var counter = s as CountingStream;
 
             // workitem 8098: ok (output)
-            // this may change later, for split archives
+            // This may change later, for split archives
             _RelativeOffsetOfLocalHeader = (counter != null)
                 ? counter.BytesWritten
                 : s.Position;
@@ -1489,7 +1492,7 @@ namespace Ionic.Zip
                     do
                     {
                         nCycles++;
-
+                           
                         WriteHeader(s, nCycles);
 
                         // now, write the actual file data. (incl the encrypted header)
@@ -1507,8 +1510,17 @@ namespace Ionic.Zip
                             // Seek back in the raw output stream, to the beginning of the file
                             // data for this entry.
 
-                            // workitem 8098: ok (output).
-                            s.Seek(_RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
+                            // handle case for split archives
+                            var zss = s as ZipSegmentedStream;
+                            if (zss!=null)
+                            {
+                                // Console.WriteLine("***_diskNumber/first: {0}", _diskNumber);
+                                // Console.WriteLine("***_diskNumber/current: {0}", zss.CurrentSegment);
+                                zss.TruncateBackward(_diskNumber, _RelativeOffsetOfLocalHeader);
+                            }
+                            else
+                                // workitem 8098: ok (output).
+                                s.Seek(_RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
 
                             // If the last entry expands, we read again; but here, we must
                             // truncate the stream to prevent garbage data after the

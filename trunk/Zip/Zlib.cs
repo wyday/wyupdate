@@ -398,8 +398,8 @@ namespace Ionic.Zlib
         }
         static StaticTree()
         {
-            static_l_desc = new StaticTree(static_ltree, Tree.extra_lbits, LITERALS + 1, L_CODES, MAX_BITS);
-            static_d_desc = new StaticTree(static_dtree, Tree.extra_dbits, 0, D_CODES, MAX_BITS);
+            static_l_desc = new StaticTree(static_ltree, Tree.ExtraLengthBits, LITERALS + 1, L_CODES, MAX_BITS);
+            static_d_desc = new StaticTree(static_dtree, Tree.ExtraDistanceBits, 0, D_CODES, MAX_BITS);
             static_bl_desc = new StaticTree(null, Tree.extra_blbits, 0, BL_CODES, MAX_BL_BITS);
         }
     }

@@ -31,10 +31,6 @@ namespace wyUpdate
         //Modify registry, executing/optimizing files
         public UpdateDetails UpdtDetails;
 
-        //for self update
-        string m_NewIUPClientLoc = "";
-        public string OldIUPClientLoc = "";
-
         //for writing the client data file
 
         public ClientFileType ClientFileType;

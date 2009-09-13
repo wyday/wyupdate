@@ -15,13 +15,14 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-29 15:55:07>
+// Time-stamp: <2009-September-11 11:11:31>
 //
 // ------------------------------------------------------------------
 //
-// This module implements a "file selector" that finds files based on a set of inclusion criteria,
-// including filename, size, file time, and potentially file attributes.
-// The criteria are given in a string with a simple expression language. Examples: 
+// This module implements a "file selector" that finds files based on a
+// set of inclusion criteria, including filename, size, file time, and
+// potentially file attributes.  The criteria are given in a string with
+// a simple expression language. Examples:
 // 
 // find all .txt files: 
 //     name = *.txt 
@@ -460,33 +461,43 @@ namespace Ionic
 
 
     /// <summary>
-    /// FileSelector encapsulates logic that selects files from a source
-    /// - a zip file or the filesystem - based on a set of criteria.  This class is used 
-    /// internally by the DotNetZip library, but you may also find utility in using it 
-    /// externally. 
+    ///   FileSelector encapsulates logic that selects files from a source - a zip file
+    ///   or the filesystem - based on a set of criteria.  This class is used internally
+    ///   by the DotNetZip library, in particular for the AddSelectedFiles() methods.
+    ///   This class can also be used independently of the zip capability in DotNetZip.
     /// </summary>
+    ///
     /// <remarks>
     ///
     /// <para>
-    /// Typically, an application that creates or manipulates Zip archives will not directly
-    /// interact with the FileSelector class.  The FileSelector class is used internally by the
-    /// ZipFile class for selecting files for inclusion into the ZipFile, when the <see
-    /// cref="Ionic.Zip.ZipFile.AddSelectedFiles(String,String)"/> method is called.
+    ///   The FileSelector class is used internally by the ZipFile class for selecting
+    ///   files for inclusion into the ZipFile, when the <see
+    ///   cref="Ionic.Zip.ZipFile.AddSelectedFiles(String,String)"/> method, or one of
+    ///   its overloads, is called.  It's also used for the <see
+    ///   cref="Ionic.Zip.ZipFile.ExtractSelectedEntries(String)"/> methods.  Typically, an
+    ///   application that creates or manipulates Zip archives will not directly
+    ///   interact with the FileSelector class.
     /// </para>
     ///
     /// <para>
-    /// But, some applications may wish to use the FileSelector class directly, to select
-    /// files from disk volumes based on a set of criteria, without creating or querying Zip
-    /// archives.  The file selection criteria include: a pattern to match the filename; the
-    /// last modified, created, or last accessed time of the file; the size of the file; and
-    /// the attributes of the file.
+    ///   Some applications may wish to use the FileSelector class directly, to
+    ///   select files from disk volumes based on a set of criteria, without creating or
+    ///   querying Zip archives.  The file selection criteria include: a pattern to
+    ///   match the filename; the last modified, created, or last accessed time of the
+    ///   file; the size of the file; and the attributes of the file.
     /// </para>
+    /// 
+    /// <para>
+    ///   Consult the documentation for <see cref="SelectionCriteria"/>
+    ///   for more information on specifying the selection criteria.
+    /// </para>
+    /// 
     /// </remarks>
     public partial class FileSelector
     {
         internal SelectionCriterion _Criterion;
 
-        #if NOTUSED
+#if NOTUSED
         /// <summary>
         /// The default constructor.  
         /// </summary>
@@ -497,7 +508,32 @@ namespace Ionic
         /// SelectFiles().
         /// </remarks>
         protected FileSelector() { }
-        #endif
+#endif
+        /// <summary>
+        /// Constructor that allows the caller to specify file selection criteria.
+        /// </summary>
+        /// 
+        /// <remarks>
+        /// <para>
+        /// This constructor allows the caller to specify a set of criteria for selection of files.
+        /// </para>
+        /// 
+        /// <para>
+        /// See <see cref="FileSelector.SelectionCriteria"/> for a description of the syntax of 
+        /// the selectionCriteria string.
+        /// </para>
+        /// 
+        /// <para>
+        /// By default the FileSelector will traverse NTFS Reparse Points. 
+        /// To change this, use <see cref="FileSelector(String, bool)">FileSelector(String, bool)</see>.
+        /// </para>
+        /// </remarks>
+        /// 
+        /// <param name="selectionCriteria">The criteria for file selection.</param>
+        public FileSelector(String selectionCriteria) 
+        : this(selectionCriteria, true)
+        {
+        }
 
         /// <summary>
         /// Constructor that allows the caller to specify file selection criteria.
@@ -515,10 +551,14 @@ namespace Ionic
         /// </remarks>
         /// 
         /// <param name="selectionCriteria">The criteria for file selection.</param>
-        public FileSelector(String selectionCriteria)
+        /// <param name="traverseDirectoryReparsePoints">
+        /// whether to traverse NTFS reparse points (junctions).
+        /// </param>
+        public FileSelector(String selectionCriteria, bool traverseDirectoryReparsePoints)
         {
             if (!String.IsNullOrEmpty(selectionCriteria))
                 _Criterion = _ParseCriterion(selectionCriteria);
+            TraverseReparsePoints = traverseDirectoryReparsePoints;
         }
 
 
@@ -568,12 +608,58 @@ namespace Ionic
         /// </para> 
         ///
         /// <para>
-        /// Some examples: a string like "attributes != H" retrieves all entries whose
-        /// attributes do not include the Hidden bit.  A string like "mtime > 2009-01-01"
-        /// retrieves all entries with a last modified time after January 1st, 2009.  For
-        /// example "size &gt; 2gb" retrieves all entries whose uncompressed size is greater
-        /// than 2gb.
-        /// </para> 
+        /// Some examples:
+        /// </para>
+        ///
+        /// <list type="table">
+        ///   <listheader>
+        ///     <term>criteria</term>
+        ///     <description>Files retrieved</description>
+        ///   </listheader>
+        /// 
+        ///   <item>
+        ///     <term>name != *.xls </term>
+        ///     <description>any file with an extension that is not .xls
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>name = *.mp3 </term>
+        ///     <description>any file with a .mp3 extension.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>*.mp3</term>
+        ///     <description>(same as above) any file with a .mp3 extension.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>attributes = A </term>
+        ///     <description>all files whose attributes include the Archive bit.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>attributes != H </term>
+        ///     <description>all files whose attributes do not include the Hidden bit.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>mtime > 2009-01-01</term>
+        ///     <description>all files with a last modified time after January 1st, 2009.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>size > 2gb</term>
+        ///     <description>all files whose uncompressed size is greater than 2gb.
+        ///     </description>
+        ///   </item>
+        /// 
+        /// </list>
         ///
         /// <para>
         /// You can combine criteria with the conjunctions AND, OR, and XOR. Using a string like
@@ -604,7 +690,7 @@ namespace Ionic
         /// <para>
         /// The syntax allows one special case: if you provide a string with no spaces, it is treated as
         /// a pattern to match for the filename.  Therefore a string like "*.xls" will be equivalent to 
-        /// specifying "name = *.xls".  
+        /// specifying "name = *.xls".  This "shorthand" notation does not work with compound criteria.
         /// </para>
         /// 
         /// <para>
@@ -612,7 +698,7 @@ namespace Ionic
         /// are internally consistent.  For example, it's possible to specify criteria that
         /// says the file must have a size of less than 100 bytes, as well as a size that
         /// is greater than 1000 bytes.  Obviously no file will ever satisfy such criteria,
-        /// but this class does not check and find such inconsistencies.
+        /// but this class does not check for or detect such inconsistencies.
         /// </para>
         /// 
         /// </remarks>
@@ -636,7 +722,15 @@ namespace Ionic
             }
         }
 
+        /// <summary>
+        ///  Indicates whether searches will traverse NTFS reparse points, like Junctions.
+        /// </summary>
+        public bool TraverseReparsePoints
+        {
+            get; set;    
+        }
 
+        
         private enum ParseState
         {
             Start,
@@ -951,27 +1045,28 @@ namespace Ionic
             {
                 if (Directory.Exists(directory))
                 {
+                    String[] filenames = System.IO.Directory.GetFiles(directory);
 
-                String[] filenames = System.IO.Directory.GetFiles(directory);
-
-                // add the files: 
-                foreach (String filename in filenames)
-                {
-                    if (Evaluate(filename))
-                        list.Add(filename);
-                }
-
-                if (recurseDirectories)
-                {
-                    // add the subdirectories:
-                    String[] dirnames = System.IO.Directory.GetDirectories(directory);
-                    foreach (String dir in dirnames)
+                    // add the files: 
+                    foreach (String filename in filenames)
                     {
-                        list.AddRange(this.SelectFiles(dir, recurseDirectories));
+                        if (Evaluate(filename))
+                            list.Add(filename);
                     }
-                }
-                    
-                }                
+
+                    if (recurseDirectories)
+                    {
+                        // add the subdirectories:
+                        String[] dirnames = System.IO.Directory.GetDirectories(directory);
+                        foreach (String dir in dirnames)
+                        {
+                            if (this.TraverseReparsePoints ||
+                                ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0)) 
+
+                                list.AddRange(this.SelectFiles(dir, recurseDirectories));
+                        }
+                    }
+                } 
             }
             // can get System.UnauthorizedAccessException here
             catch (System.UnauthorizedAccessException)

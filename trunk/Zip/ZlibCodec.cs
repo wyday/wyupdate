@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-18 21:02:55>
+// Time-stamp: <2009-September-09 21:44:00>
 //
 // ------------------------------------------------------------------
 //
@@ -669,8 +669,6 @@ namespace Ionic.Zlib
                 dstate.pending.Length < (dstate.nextPending + len) ||
                 OutputBuffer.Length < (NextOut + len))
             {
-                //System.Console.Out.WriteLine(dstate.pending.Length + ", " + dstate.pending_out + ", " + next_out.Length + ", " + next_out_index + ", " + len);
-                //System.Console.Out.WriteLine("avail_out=" + avail_out);
                 throw new ZlibException(String.Format("Invalid State. (pending.Length={0}, pendingCount={1})",
                     dstate.pending.Length, dstate.pendingCount));
             }

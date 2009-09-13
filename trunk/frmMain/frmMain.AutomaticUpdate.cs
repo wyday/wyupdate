@@ -135,6 +135,7 @@ namespace wyUpdate
                     }
 
                     break;
+
                 case UpdateStep.DownloadUpdate:
 
                     if(frameOn == Frame.Checking)
@@ -173,6 +174,7 @@ namespace wyUpdate
                     }
 
                     break;
+
                 case UpdateStep.BeginExtraction:
 
                     if (frameOn == Frame.Checking)
@@ -231,6 +233,7 @@ namespace wyUpdate
 
 
                     break;
+
                 case UpdateStep.RestartInfo:
                 case UpdateStep.Install:
 
@@ -447,6 +450,8 @@ namespace wyUpdate
                 // load the server file
                 LoadServerFile(true);
             }
+
+            //TODO: load self update details (exe location - etc.)
         }
 
     }

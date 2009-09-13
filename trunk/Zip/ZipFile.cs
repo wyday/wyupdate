@@ -126,6 +126,33 @@ namespace Ionic.Zip
         }
 
 
+
+        /// <summary>
+        ///   Indicates whether NTFS Reparse Points, like junctions,
+        ///   should be traversed during calls to  <c>AddDirectory()</c>.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   By default, calls to AddDirectory() will traverse NTFS
+        ///   reparse points, like mounted volumes, and directory
+        ///   junctions.  An example of a junction is the "My Music"
+        ///   directory in Windows Vista.  In some cases you may not
+        ///   want DotNetZip to traverse those directories.  In that
+        ///   case, set this property to false.
+        /// </remarks>
+        ///
+        /// <example>
+        /// <code lang="C#">
+        /// using (var zip = new ZipFile())
+        /// {
+        ///     zip.AddDirectoryWillTraverseReparsePoints = false;
+        ///     zip.AddDirectory(dirToZip,"fodder");
+        ///     zip.Save(zipFileToCreate);
+        /// }
+        /// </code>
+        /// </example>
+        public bool AddDirectoryWillTraverseReparsePoints { get; set; }
+
         
         /// <summary>
         /// Size of the IO buffer used while saving.
@@ -188,9 +215,15 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Size of the work buffer to use for the ZLIB codec during compression.
+        ///   Size of the work buffer to use for the ZLIB codec during compression.
         /// </summary>
         ///
+        /// <remarks>
+        ///   Setting this may affect performance.  For larger files, setting this to a
+        ///   larger size may improve performance, but I'm not sure.  Sorry, I don't
+        ///   currently have good recommendations on how to set it.  You can test it if
+        ///   you like.
+        /// </remarks>
         public int CodecBufferSize
         {
             get;
@@ -201,6 +234,9 @@ namespace Ionic.Zip
         /// Indicates whether extracted files should keep their paths as
         /// stored in the zip archive. 
         /// </summary>
+        /// <remarks>
+        ///   This property affects Extraction.  It is not used when creating zip archives.
+        /// </remarks>
         public bool FlattenFoldersOnExtract
         {
             get;
@@ -311,7 +347,7 @@ namespace Ionic.Zip
         /// <para>
         /// When creating a zip archive using this library, it is possible to change the
         /// value of <see cref="ProvisionalAlternateEncoding" /> between each entry you
-        /// add, and between adding entries and the call to Save(). Don't do this.  It
+        /// add, and between adding entries and the call to <c>Save()</c>. Don't do this.  It
         /// will likely result in a zip file that is not readable by any tool or
         /// application.  For best interoperability, leave <see
         /// cref="ProvisionalAlternateEncoding" /> alone, or specify it only once,
@@ -334,7 +370,7 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Specifies whether the Creation, Access, and Modified times
-        /// for entries added to the zip file will be emitted in "Unix(tm)
+        /// for entries added to the zip file will be emitted in "Windows
         /// format" when the zip archive is saved.
         /// </summary>
         ///
@@ -342,7 +378,7 @@ namespace Ionic.Zip
         /// <para>
         /// An application creating a zip archive can use this flag to explicitly
         /// specify that the file times for the entries should or should not be stored
-        /// in the zip archive in the format used by Unix. By default this flag is
+        /// in the zip archive in the format used by Windows. By default this flag is
         /// <c>false</c>.
         /// </para>
         ///
@@ -368,11 +404,11 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// Not all tools and libraries can interpret these fields.  Windows compressed
-        /// folders is one that can read the Windows Format timestamps, while I believe
-        /// the <see href="http://www.info-zip.org/">Infozip</see> tools can read the Unix
-        /// format timestamps. Some tools and libraries may be able to read only one or
-        /// the other.
+        ///   Not all tools and libraries can interpret these fields.  Windows
+        ///   compressed folders is one that can read the Windows Format timestamps,
+        ///   while I believe <see href="http://www.info-zip.org/">the Infozip
+        ///   tools</see> can read the Unix format timestamps. Some tools and libraries
+        ///   may be able to read only one or the other.
         /// </para>
         ///
         /// <para>
@@ -381,22 +417,30 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// The value set here applies to all entries subsequently added to the
-        /// <c>ZipFile</c>.
+        ///   The value set here applies to all entries subsequently added to the
+        ///   <c>ZipFile</c>.
         /// </para>
         ///
         /// <para>
         ///   This property is not mutually exclusive of the <see
-        ///   cref="EmitTimesInUnixFormatWhenSaving" /> property.  It is possible and
+        ///   cref="EmitTimesInUnixFormatWhenSaving" /> property. It is possible and
         ///   legal and valid to produce a zip file that contains timestamps encoded in
-        ///   the Unix format as well as in the Windows format.  But, there are no
-        ///   guarantees that a program running on Mac or Linux will gracefully handle
-        ///   NTFS Formatted times, or that a non-DotNetZip-powered application running
-        ///   on Windows will be able to handle file times in Unix format. When in
-        ///   doubt, test.  Sorry, I haven't got a complete list of tools and which sort
-        ///   of timestamps they can use and will tolerate.  If you get any good
-        ///   information and would like to pass it on, please do so and I will include
-        ///   that information in this documentation.
+        ///   the Unix format as well as in the Windows format, in addition to the <see
+        ///   cref="ZipEntry.LastModified">LastModified</see> time attached to each
+        ///   entry in the archive, a time that is always stored in "DOS format". And,
+        ///   notwithstanding the names PKWare uses for these time formats, any of them
+        ///   can be read and written by any computer, on any operating system.  But,
+        ///   there are no guarantees that a program running on Mac or Linux will
+        ///   gracefully handle a zip file with "Windows" Formatted times, or that an
+        ///   application that does not use DotNetZip but runs on Windows will be able to
+        ///   handle file times in Unix format.
+        /// </para>
+        ///
+        /// <para>
+        ///   When in doubt, test.  Sorry, I haven't got a complete list of tools and
+        ///   which sort of timestamps they can use and will tolerate.  If you get any
+        ///   good information and would like to pass it on, please do so and I will
+        ///   include that information in this documentation.
         /// </para>
         /// </remarks>
         ///
@@ -490,16 +534,24 @@ namespace Ionic.Zip
         ///
         /// <para>
         ///   This property is not mutually exclusive of the <see
-        ///   cref="EmitTimesInWindowsFormatWhenSaving" /> property.  It is possible and
+        ///   cref="EmitTimesInWindowsFormatWhenSaving" /> property. It is possible and
         ///   legal and valid to produce a zip file that contains timestamps encoded in
-        ///   the Unix format as well as in the Windows format.  But, there are no
-        ///   guarantees that a program running on Mac or Linux will gracefully handle
-        ///   NTFS Formatted times, or that a non-DotNetZip-powered application running
-        ///   on Windows will be able to handle file times in Unix format. When in
-        ///   doubt, test.  Sorry, I haven't got a complete list of tools and which sort
-        ///   of timestamps they can use and will tolerate.  If you get any good
-        ///   information and would like to pass it on, please do so and I will include
-        ///   that information in this documentation.
+        ///   the Unix format as well as in the Windows format, in addition to the <see
+        ///   cref="ZipEntry.LastModified">LastModified</see> time attached to each
+        ///   entry in the zip archive, a time that is always stored in "DOS
+        ///   format". And, notwithstanding the names PKWare uses for these time
+        ///   formats, any of them can be read and written by any computer, on any
+        ///   operating system.  But, there are no guarantees that a program running on
+        ///   Mac or Linux will gracefully handle a zip file with "Windows" Formatted
+        ///   times, or that an application that does not use DotNetZip but runs on
+        ///   Windows will be able to handle file times in Unix format.
+        /// </para>
+        ///
+        /// <para>
+        ///   When in doubt, test.  Sorry, I haven't got a complete list of tools and
+        ///   which sort of timestamps they can use and will tolerate.  If you get any
+        ///   good information and would like to pass it on, please do so and I will
+        ///   include that information in this documentation.
         /// </para>
         /// </remarks>
         ///
@@ -547,13 +599,14 @@ namespace Ionic.Zip
         #endif
 
         /// <summary>
-        /// Indicates whether verbose output is sent to the StatusMessageTextWriter during
-        /// <c>AddXxx()</c> and <c>ReadXxx()</c> operations.
+        ///   Indicates whether verbose output is sent to the <see
+        ///   cref="StatusMessageTextWriter"/> during <c>AddXxx()</c> and
+        ///   <c>ReadXxx()</c> operations.
         /// </summary>
         ///
         /// <remarks>
-        /// This is a synthetic property.  It returns true if the <see
-        /// cref="StatusMessageTextWriter"/> is non-null.
+        ///   This is a <em>synthetic</em> property.  It returns true if the <see
+        ///   cref="StatusMessageTextWriter"/> is non-null.
         /// </remarks>
         internal bool Verbose
         {
@@ -568,7 +621,7 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// The default value is <c>false</c>, which means DON'T do case-sensitive
+        /// The default value is <c>false</c>, which means don't do case-sensitive
         /// matching. In other words, retrieving zip["ReadMe.Txt"] is the same as
         /// zip["readme.txt"].  It really makes sense to set this to <c>true</c> only if
         /// you are not running on Windows, which has case-insensitive filenames. But
@@ -1082,7 +1135,7 @@ namespace Ionic.Zip
         /// <example>
         /// <para>
         /// In this example, a console application instantiates a <c>ZipFile</c>, then sets
-        /// the <c>StatusMessageTextWriter</c> to Console.Out.  At that point, all verbose
+        /// the <c>StatusMessageTextWriter</c> to <c>Console.Out</c>.  At that point, all verbose
         /// status messages for that <c>ZipFile</c> are sent to the console. 
         /// </para>
         ///
@@ -1102,12 +1155,10 @@ namespace Ionic.Zip
         ///   zip.ExtractAll()
         /// End Using
         /// </code>
-        /// </example>
-        /// 
-        /// <example>
+        ///
         /// <para>
         /// In this example, a Windows Forms application instantiates a <c>ZipFile</c>, then sets
-        /// the <c>StatusMessageTextWriter</c> to a StringWriter.  At that point, all verbose
+        /// the <c>StatusMessageTextWriter</c> to a <c>StringWriter</c>.  At that point, all verbose
         /// status messages for that <c>ZipFile</c> are sent to the <c>StringWriter</c>. 
         /// </para>
         ///
@@ -1562,8 +1613,8 @@ namespace Ionic.Zip
         /// <para>
         /// Set this when creating a zip archive, or when updating a zip archive. The
         /// specified Encryption is applied to the entries subsequently added to the
-        /// <c>ZipFile</c> instance.  Applications do not need to set <c>Encryption</c>
-        /// when reading or extracting a zip archive.
+        /// <c>ZipFile</c> instance.  Applications do not need to set the
+        /// <c>Encryption</c> property when reading or extracting a zip archive.
         /// </para>
         /// 
         /// <para>
@@ -1586,17 +1637,17 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// Some comments on updating archives: If you read a <c>ZipFile</c>, you cannot
-        /// modify the Encryption on any encrypted entry, except by extracting the entry
-        /// with the original password (if any), removing the original entry via <see
+        /// If you read a <c>ZipFile</c>, you cannot modify the <c>Encryption</c> on an
+        /// encrypted entry, except by extracting the entry with the original password
+        /// (if any), removing the original entry from the <c>ZipFile</c> via <see
         /// cref="ZipFile.RemoveEntry(ZipEntry)"/>, and then adding a new entry with a
-        /// new Password and Encryption setting.
+        /// non-empty <c>Password</c> and a valid <c>Encryption</c> setting.
         /// </para>
         ///
         /// <para>
         /// For example, suppose you read a <c>ZipFile</c>, and there is an encrypted
-        /// entry.  Setting the Encryption property on that <c>ZipFile</c> and then
-        /// calling <c>Save()</c> on the <c>ZipFile</c> does not update the Encryption
+        /// entry.  Setting the <c>Encryption</c> property on that <c>ZipFile</c> and then
+        /// calling <c>Save()</c> on the <c>ZipFile</c> does not update the <c>Encryption</c>
         /// used for the entries in the archive.  Neither is an exception
         /// thrown. Instead, what happens during the <c>Save()</c> is that all
         /// previously existing entries are copied through to the new zip archive, with
@@ -2409,7 +2460,7 @@ namespace Ionic.Zip
         /// <para>
         /// Instances of the <c>ZipFile</c> class are not multi-thread safe.  You may
         /// not party on a single instance with multiple threads.  You may have multiple
-        /// threads that each use a distinct ZipFile instance, or you can synchronize
+        /// threads that each use a distinct <c>ZipFile</c> instance, or you can synchronize
         /// multi-thread access to a single instance.
         /// </para>
         /// 
@@ -2452,7 +2503,7 @@ namespace Ionic.Zip
         /// This method is primarily useful from COM Automation environments, when
         /// reading or extracting zip files. In COM, it is not possible to invoke
         /// parameterized constructors for a class. A COM Automation application can
-        /// update a zip file by using the default (no argument) constructor, then
+        /// update a zip file by using the <see cref="ZipFile()">default (no argument) constructor</see>, then
         /// calling <c>Initialize()</c> to read the contents of an on-disk zip archive into the
         /// <c>ZipFile</c> instance.
         /// </para>
@@ -2483,6 +2534,7 @@ namespace Ionic.Zip
             _name = zipFileName;
             _StatusMessageTextWriter = statusMessageWriter;
             _contentsChanged = true;
+            AddDirectoryWillTraverseReparsePoints = true;  // workitem 8617
             CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
             // workitem 7685
             _entries = new System.Collections.Generic.List<ZipEntry>();
@@ -2546,8 +2598,9 @@ namespace Ionic.Zip
             set
             {
                 if (value != null)
-                    throw new ZipException("You may not set this to a non-null ZipEntry value.",
-                                           new ArgumentException("this[int]"));
+                    throw new InvalidOperationException("You may not set this to a non-null ZipEntry value.");
+//                     throw new ZipException("You may not set this to a non-null ZipEntry value.",
+//                                            new ArgumentException("this[int]"));
                 RemoveEntry(_entries[ix]);
             }
         }
@@ -2759,16 +2812,17 @@ namespace Ionic.Zip
         /// </summary>
         /// <remarks>
         /// <para>
-        ///   If there are no entries in the current ZipFile, the value returned is a
+        ///   If there are no entries in the current <c>ZipFile</c>, the value returned is a
         ///   non-null zero-element collection.  If there are entries in the zip file,
         ///   the elements are returned in no particular order.
         /// </para>
         /// <para>
-        ///   This is the implied enumerator on the ZipFile class.  If you use a ZipFile
+        ///   This is the implied enumerator on the <c>ZipFile</c> class.  If you use a ZipFile
         ///   instance in a context that expects an enumerator, you will get this
         ///   collection.
         /// </para>
         /// </remarks>
+        /// <seealso cref="EntriesSorted"/>
         public System.Collections.ObjectModel.ReadOnlyCollection<ZipEntry> Entries
         {
             get
@@ -2821,6 +2875,7 @@ namespace Ionic.Zip
         /// </code>
         /// </example>
         ///
+        /// <seealso cref="Entries"/>
         public System.Collections.ObjectModel.ReadOnlyCollection<ZipEntry> EntriesSorted
         {
             get
@@ -3047,15 +3102,16 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Handles closing of the read and write streams associated
-        /// to the <c>ZipFile</c>, if necessary.  
+        ///   Closes the read and write streams associated
+        ///   to the <c>ZipFile</c>, if necessary.  
         /// </summary>
         ///
         /// <remarks>
-        /// The Dispose() method is generally 
-        /// employed implicitly, via a using() {} statement. (Using...End Using in VB)
-        /// Always use a using statement, or always insure that you are calling Dispose() 
-        /// explicitly.
+        ///   The Dispose() method is generally employed implicitly, via a <c>using(..) {..}</c>
+        ///   statement. (<c>Using...End Using</c> in VB) If you do not employ a using
+        ///   statement, insure that your application calls Dispose() explicitly.  For
+        ///   example, in a Powershell application, or an application that uses the COM
+        ///   interop interface, you must call Dispose() explicitly.
         /// </remarks>
         ///
         /// <example>
@@ -3094,12 +3150,18 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// The Dispose() method.  It disposes any managed resources, 
-        /// if the flag is set, then marks the instance disposed.
-        /// This method is typically not called from application code.
+        ///   Disposes any managed resources, if the flag is set, then marks the
+        ///   instance disposed.  This method is typically not called explicitly from
+        ///   application code.
         /// </summary>
-        /// <param name="disposeManagedResources">indicates whether the
-        /// method should dispose streams or not.</param>
+        ///
+        /// <remarks>
+        ///   Applications should call <see cref="Dispose()">the no-arg Dispose method</see>.
+        /// </remarks>
+        ///
+        /// <param name="disposeManagedResources">
+        ///   indicates whether the method should dispose streams or not.
+        /// </param>
         protected virtual void Dispose(bool disposeManagedResources)
         {
             if (!this._disposed)
@@ -3150,15 +3212,8 @@ namespace Ionic.Zip
                 {
                     if (_name != null)
                     {
-                        try
-                        {
-                            _readstream = File.OpenRead(_name);
-                            _ReadStreamIsOurs = true;
-                        }
-                        catch (System.IO.IOException ioe)
-                        {
-                            throw new ZipException("Error opening the file", ioe);
-                        }
+                        _readstream = File.OpenRead(_name);
+                        _ReadStreamIsOurs = true;
                     }
                 }
                 return _readstream;

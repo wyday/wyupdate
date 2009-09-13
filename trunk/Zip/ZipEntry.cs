@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-08 23:14:04>
+// Time-stamp: <2009-September-11 12:35:36>
 //
 // ------------------------------------------------------------------
 //
@@ -628,22 +628,24 @@ namespace Ionic.Zip
         /// ReadOnly, Archive, Hidden, System, and Indexed.  When adding a
         /// <c>ZipEntry</c> to a ZipFile, these attributes are set implicitly when
         /// adding an entry from the filesystem.  When adding an entry from a stream or
-        /// string, the Attributes are not set.
+        /// string, the Attributes are not set implicitly.  Regardless of the way an
+        /// entry was added to a <c>ZipFile</c>, you can set the attributes explicitly
+        /// if you like.
         /// </para>
         ///
         /// <para>
-        /// When reading a <c>ZipEntry</c> from a ZipFile, the attributes are set
-        /// according to the data stored in the ZipFile. If you extract the entry from
-        /// the archive to a disk file, DotNetZip will set the attributes on the
+        /// When reading a <c>ZipEntry</c> from a <c>ZipFile</c>, the attributes are set
+        /// according to the data stored in the <c>ZipFile</c>. If you extract the entry from
+        /// the archive to a filesystem file, DotNetZip will set the attributes on the
         /// resulting file accordingly.
         /// </para>
         ///
         /// <para>
-        /// The attributes can be set explicitly by the application for whatever
-        /// purpose.  For example the application may wish to set the
-        /// FileAttributes.ReadOnly bit for all entries added to an archive, so that on
+        /// The attributes can be set explicitly by the application.
+        /// For example the application may wish to set the
+        /// <c>FileAttributes.ReadOnly</c> bit for all entries added to an archive, so that on
         /// unpack, this attribute will be set on the extracted file.  Any changes you
-        /// make to this property are made permanent only when you call a Save() method
+        /// make to this property are made permanent only when you call a <c>Save()</c> method
         /// on the <c>ZipFile</c> instance that contains the ZipEntry.
         /// </para>
         ///
@@ -651,8 +653,9 @@ namespace Ionic.Zip
         /// For example, an application may wish to zip up a directory and set the
         /// ReadOnly bit on every file in the archive, so that upon later extraction,
         /// the resulting files will be marked as ReadOnly.  Not every extraction tool
-        /// respects these attributes, but if you unpack with DotNetZip, then the
-        /// attributes will be set as they are stored in the ZipFile.
+        /// respects these attributes, but if you unpack with DotNetZip, as for example
+        /// in a self-extracting archive, then the attributes will be set as they are
+        /// stored in the <c>ZipFile</c>.
         /// </para>
         ///
         /// <para>
@@ -757,8 +760,8 @@ namespace Ionic.Zip
         /// <para>
         /// In some cases there is no related filesystem file - for example when a
         /// <c>ZipEntry</c> is created using <see cref="ZipFile.AddEntry(string, string,
-        /// string)"/> or <see cref="ZipFile.AddEntry(string, string, Stream)"/>, or one of
-        /// the related overloads.  In this case, the value of this property is derived from
+        /// string)"/> or one of
+        /// the similar overloads.  In this case, the value of this property is derived from
         /// the fileName and the directory path passed to that method.
         /// </para>
         ///
@@ -837,7 +840,7 @@ namespace Ionic.Zip
         /// input stream is opened at a time, as each entry is being written
         /// out. </para>
         ///
-        /// <para> Now imagine a different application that creates a zipfile with
+        /// <para> Now imagine a different application that creates a <c>ZipFile</c> with
         /// content obtained from hundreds of streams, added through <see
         /// cref="ZipFile.AddEntry(string, string, System.IO.Stream)"/>.
         /// Normally the application would supply an open stream to that call.  But when
@@ -1454,7 +1457,7 @@ namespace Ionic.Zip
         /// CRC</see> using 0xEDB88320 for the polynomial. This is the same CRC-32 used in
         /// PNG, MPEG-2, and other protocols and formats.  It is a read-only property; when
         /// creating a Zip archive, the CRC for each entry is set only after a call to
-        /// Save() on the containing ZipFile. When reading an existing zip file, the value
+        /// <c>Save()</c> on the containing ZipFile. When reading an existing zip file, the value
         /// of this property reflects the stored CRC for the entry.  </para>
         ///
         /// </remarks>
@@ -1852,9 +1855,9 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.ExtractExistingFile"/>
         ///
         /// <example>
-        /// This example shows how to set the ExtractExistingFile property in an
-        /// ExtractProgress event, in response to user input. The ExtractProgress event
-        /// is invoked if and only if the ExtractExistingFile property was previously
+        /// This example shows how to set the <c>ExtractExistingFile</c> property in an
+        /// <c>ExtractProgress</c> event, in response to user input. The <c>ExtractProgress</c> event
+        /// is invoked if and only if the <c>ExtractExistingFile</c> property was previously
         /// set to <c>ExtractExistingFileAction.InvokeExtractProgressEvent</c>.
         /// <code lang="C#">
         /// public static void ExtractProgress(object sender, ExtractProgressEventArgs e)

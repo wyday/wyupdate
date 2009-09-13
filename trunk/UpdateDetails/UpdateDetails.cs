@@ -127,6 +127,9 @@ namespace wyUpdate.Common
                     case 0x48:
                         tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
                         break;
+                    case 0x49:
+                        tempUpdateFile.CPUVersion = (CPUVersion) ReadFiles.ReadInt(fs);
+                        break;
                     case 0x9B://end of file
                         updtDetails.UpdateFiles.Add(tempUpdateFile);
                         tempUpdateFile = new UpdateFile();
@@ -211,7 +214,13 @@ namespace wyUpdate.Common
                     }
 
                     //is it a .NET assembly?
-                    WriteFiles.WriteBool(ms, 0x44, file.IsNETAssembly);
+                    if(file.IsNETAssembly)
+                    {
+                        WriteFiles.WriteBool(ms, 0x44, true);
+
+                        // save whether the files is AnyCPU, x86, or x64
+                        WriteFiles.WriteInt(ms, 0x49, (int)file.CPUVersion);
+                    }
 
 
                     //Delta update particulars:
