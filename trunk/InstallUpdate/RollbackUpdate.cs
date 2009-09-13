@@ -7,18 +7,12 @@ using wyUpdate.Common;
 
 namespace wyUpdate
 {
-    public struct UninstallFileInfo
+    public class UninstallFileInfo
     {
         public string Path;
         public bool DeleteFile;
         public bool UnNGENFile;
-
-        public UninstallFileInfo(string path, bool delete, bool unNgen)
-        {
-            Path = path;
-            DeleteFile = delete;
-            UnNGENFile = unNgen;
-        }
+        public CPUVersion CPUVersion;
 
         public static UninstallFileInfo Read(Stream fs)
         {
@@ -26,33 +20,27 @@ namespace wyUpdate
             
             //read in the fileinfo
 
-            int bytesToSkip = 0;
-
             byte bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0x9A)) //if end byte is detected, bail out
             {
                 switch (bType)
                 {
-                    case 0x01://file path
+                    case 0x01: //file path
                         tempUFI.Path = ReadFiles.ReadDeprecatedString(fs);
                         break;
-                    case 0x02://delete the file?
+                    case 0x02: //delete the file?
                         tempUFI.DeleteFile = ReadFiles.ReadBool(fs);
                         break;
-                    case 0x03://un-NGEN the file?
+                    case 0x03: //un-NGEN the file?
                         tempUFI.UnNGENFile = ReadFiles.ReadBool(fs);
+                        break;
+                    case 0x04:
+                        tempUFI.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
                         break;
                 }
-
-                //skip unknown bytes
-                if (bytesToSkip != 0)
-                {
-                    fs.Position += bytesToSkip;
-                }
-                bytesToSkip = 0;
 
                 bType = (byte)fs.ReadByte();
             }
@@ -73,7 +61,12 @@ namespace wyUpdate
                 WriteFiles.WriteBool(fs, 0x02, true);
 
             if (UnNGENFile)
+            {
                 WriteFiles.WriteBool(fs, 0x03, true);
+
+                // the CPU version of the file to un-ngen
+                WriteFiles.WriteInt(fs, 0x04, (int) CPUVersion);
+            }
 
             //end of uninstall file info
             fs.WriteByte(0x9A);
@@ -311,7 +304,6 @@ namespace wyUpdate
                 {
                     WriteFiles.WriteDeprecatedString(fs, 0x02, fileFolder.Path);
                 }
-                
             }
 
             fs.WriteByte(0xFF);
@@ -402,7 +394,8 @@ namespace wyUpdate
                 //add files to the uninstall list
                 foreach (string filename in rollbackFiles)
                 {
-                    filesToUninstall.Add(new UninstallFileInfo(filename, true, false));
+
+                    filesToUninstall.Add(new UninstallFileInfo { Path = filename, DeleteFile = true });
                 }
             }
 
@@ -419,8 +412,8 @@ namespace wyUpdate
                         {
                             if (!filesToUninstall[i].UnNGENFile)
                             {
-                                //Overwrite the existing item, telling it to unNgen too
-                                filesToUninstall[i] = new UninstallFileInfo(filesToUninstall[i].Path, filesToUninstall[i].DeleteFile, true);
+                                // telling it to unNgen too
+                                filesToUninstall[i].UnNGENFile = true;
                             }
 
                             //don't add the file, and stop searching for a match
@@ -431,7 +424,7 @@ namespace wyUpdate
 
                     if (addFile)
                         //add the file to the list
-                        filesToUninstall.Add(new UninstallFileInfo(ngenedFile.Filename, false, true));
+                        filesToUninstall.Add(new UninstallFileInfo { Path = ngenedFile.Filename, UnNGENFile = true, CPUVersion = ngenedFile.CPUVersion });
                 }
             }
 

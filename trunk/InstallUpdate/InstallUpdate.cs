@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using Microsoft.Win32;
 using wyUpdate.Common;
 
 namespace wyUpdate
@@ -561,7 +562,7 @@ namespace wyUpdate
                 try
                 {
                     if (file.UnNGENFile)
-                        NGenUninstall(file.Path);
+                        NGenUninstall(file.Path, file.CPUVersion);
 
                     if (file.DeleteFile)
                         File.Delete(file.Path);
@@ -634,132 +635,6 @@ namespace wyUpdate
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
 
-        public void RunOptimizeExecute()
-        {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
-            // simply update the progress bar to show the 6th step is entirely complete
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0), 0);
-
-            //optimize everything but "temp" files
-            for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
-            {
-                if (UpdtDetails.UpdateFiles[i].IsNETAssembly)
-                {
-                    //if not a temp file
-                    if (UpdtDetails.UpdateFiles[i].RelativePath.Length >= 4 &&
-                        UpdtDetails.UpdateFiles[i].RelativePath.Substring(0, 4) != "temp")
-                    {
-                        //optimize (ngen) the file
-                        string filename = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
-
-                        if (!string.IsNullOrEmpty(filename))
-                            NGenInstall(filename); //optimize the file
-                    }
-                }
-            }
-
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
-
-            //execute files
-            for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
-            {
-                if (UpdtDetails.UpdateFiles[i].Execute &&
-                !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
-                {
-                    ProcessStartInfo psi = new ProcessStartInfo
-                                               {
-                                                   //use the absolute path
-
-                                                   FileName =
-                                                       FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                                               };
-
-                    if (!string.IsNullOrEmpty(psi.FileName))
-                    {
-                        //command line arguments
-                        if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
-                            psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
-
-                        //start the process
-                        Process p = Process.Start(psi);
-
-                        if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
-                            p.WaitForExit();
-                    }
-                }
-            }
-
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 100), 100);
-
-            //TODO: Make command processing more versatile
-            //Process text commands like $refreshicons()
-            if (!string.IsNullOrEmpty(UpdtDetails.PostUpdateCommands))
-                ParseCommandText(UpdtDetails.PostUpdateCommands);
-
-            ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
-        }
-
-        #region NGen Install
-
-        string clrPath;
-
-        [DllImport("mscoree.dll")]
-        static extern int GetCORSystemDirectory([MarshalAs(UnmanagedType.LPWStr)]StringBuilder pbuffer, int cchBuffer, ref int dwlength);
-
-        static string GetClrInstallationDirectory()
-        {
-            int MAX_PATH = 260;
-            StringBuilder sb = new StringBuilder(MAX_PATH);
-            GetCORSystemDirectory(sb, MAX_PATH, ref MAX_PATH);
-            return sb.ToString();
-        }
-
-        void NGenInstall(string filename)
-        {
-            if (string.IsNullOrEmpty(clrPath))
-            {
-                clrPath = GetClrInstallationDirectory();
-            }
-
-            Process proc = new Process
-                               {
-                                   StartInfo =
-                                       {
-                                           FileName = Path.Combine(clrPath, "ngen.exe"),
-                                           WindowStyle = ProcessWindowStyle.Hidden,
-                                           Arguments = " install \"" + filename + "\"" + " /nologo"
-                                       }
-                               };
-
-            proc.Start();
-
-            proc.WaitForExit();
-        }
-
-        void NGenUninstall(string filename)
-        {
-            if (string.IsNullOrEmpty(clrPath))
-            {
-                clrPath = GetClrInstallationDirectory();
-            }
-
-            Process proc = new Process
-                               {
-                                   StartInfo =
-                                       {
-                                           FileName = Path.Combine(clrPath, "ngen.exe"),
-                                           WindowStyle = ProcessWindowStyle.Hidden,
-                                           Arguments = " uninstall \"" + filename + "\"" + " /nologo"
-                                       }
-                               };
-
-            proc.Start();
-
-            proc.WaitForExit();
-        }
-
-        #endregion NGen Install
 
         void FixUpdateFilesPaths(List<UpdateFile> updateFiles)
         {
@@ -871,8 +746,8 @@ namespace wyUpdate
 
         RegChange ParseRegChange(RegChange reg)
         {
-            if (reg.RegValueKind == Microsoft.Win32.RegistryValueKind.MultiString ||
-                reg.RegValueKind == Microsoft.Win32.RegistryValueKind.String)
+            if (reg.RegValueKind == RegistryValueKind.MultiString ||
+                reg.RegValueKind == RegistryValueKind.String)
             {
                 reg.ValueData = ParseText((string)reg.ValueData);
             }

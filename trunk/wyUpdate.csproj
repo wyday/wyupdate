@@ -130,6 +130,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="InstallUpdate\InstallUpdate.Extract.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.OptimizeExecute.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.Processes.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.Registry.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.SelfUpdate.cs" />
