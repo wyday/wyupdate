@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-01 18:35:29>
+// Time-stamp: <2009-September-11 10:59:41>
 //
 // ------------------------------------------------------------------
 //
@@ -52,9 +52,9 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// Depending on the particular event, different properties on the
-        /// SaveProgressEventArgs parameter are set.  The following table 
+        /// <see cref="SaveProgressEventArgs"/> parameter are set.  The following table 
         /// summarizes the available EventTypes and the conditions under which this 
-        /// event handler is invoked with a SaveProgressEventArgs with the given EventType.
+        /// event handler is invoked with a <c>SaveProgressEventArgs</c> with the given EventType.
         /// </para>
         /// 
         /// <list type="table">
@@ -550,9 +550,9 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// Depending on the particular event being signaled, different properties on the
-        /// ReadProgressEventArgs parameter are set.  The following table 
+        /// <see cref="ReadProgressEventArgs"/> parameter are set.  The following table 
         /// summarizes the available EventTypes and the conditions under which this 
-        /// event handler is invoked with a ReadProgressEventArgs with the given EventType.
+        /// event handler is invoked with a <c>ReadProgressEventArgs</c> with the given EventType.
         /// </para>
         /// 
         /// <list type="table">
@@ -677,9 +677,9 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// Depending on the particular event, different properties on the
-        /// ExtractProgressEventArgs parameter are set.  The following table 
+        /// <see cref="ExtractProgressEventArgs"/> parameter are set.  The following table 
         /// summarizes the available EventTypes and the conditions under which this 
-        /// event handler is invoked with a ExtractProgressEventArgs with the given EventType.
+        /// event handler is invoked with a <c>ExtractProgressEventArgs</c> with the given EventType.
         /// </para>
         /// 
         /// <list type="table">

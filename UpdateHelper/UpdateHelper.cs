@@ -68,6 +68,9 @@ namespace wyUpdate.Common
             pipeClient.ServerDisconnected += pipeClient_ServerDisconnected;
 
             pipeClient.Connect(PipeName);
+
+            if (!pipeClient.Connected)
+                ServerDisconnected();
         }
 
         void pipeClient_ServerDisconnected()

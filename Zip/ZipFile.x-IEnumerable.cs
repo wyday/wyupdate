@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-15 17:03:40>
+// Time-stamp: <2009-September-11 11:09:40>
 //
 // ------------------------------------------------------------------
 //
@@ -131,7 +131,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// IEnumerator support, for use of a ZipFile in a foreach construct.  
+        /// An IEnumerator, for use of a ZipFile in a foreach construct.  
         /// </summary>
         ///
         /// <remarks>

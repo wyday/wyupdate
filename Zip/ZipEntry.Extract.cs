@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-29 00:18:40>
+// Time-stamp: <2009-September-11 20:49:01>
 //
 // ------------------------------------------------------------------
 //
@@ -156,7 +156,7 @@ namespace Ionic.Zip
         /// ExtractExistingFileAction)"/>. </para>
         ///
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
@@ -296,7 +296,7 @@ namespace Ionic.Zip
         /// cref="ExtractWithPassword(ExtractExistingFileAction,string)"/>.</para>
         ///
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
@@ -318,7 +318,7 @@ namespace Ionic.Zip
         /// 
         /// <remarks>
         /// <para>
-        /// See the remarks on the LastModified property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
@@ -342,7 +342,7 @@ namespace Ionic.Zip
         /// </summary>
         /// 
         /// <remarks>
-        /// See the remarks on the LastModified property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
         /// about how the last modified time of the created file is set.
         /// </remarks>
         ///
@@ -364,7 +364,7 @@ namespace Ionic.Zip
         /// </summary>
         /// 
         /// <remarks>
-        /// See the remarks on the LastModified property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details 
         /// about how the last modified time of the created file is set.
         /// </remarks>
         /// 
@@ -744,13 +744,13 @@ namespace Ionic.Zip
                 
                 ExitTry: ;
             }
-            catch (Exception ex1)
+            catch (Exception)
             {
                 _ioOperationCanceled = true;
-                if (ex1 as Ionic.Zip.ZipException == null)
-                    // wrap the original exception and throw
-                    throw new ZipException("Cannot extract", ex1);
-                else
+//                 if (ex1 as Ionic.Zip.ZipException == null)
+//                     // wrap the original exception and throw
+//                     throw new ZipException("Cannot extract", ex1);
+//                 else
                     throw;
             }
             finally
@@ -1215,7 +1215,8 @@ namespace Ionic.Zip
                 return false;
             }
 
-            throw new ZipException("Cannot extract.", new ArgumentException("Invalid input.", "outstream"));
+            // throw new ZipException("Cannot extract.", new ArgumentException("Invalid input.", "outstream"));
+            throw new ArgumentException("Invalid input.", "outstream");
         }
 
 

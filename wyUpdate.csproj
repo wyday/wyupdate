@@ -45,7 +45,7 @@
     <DefineConstants>TRACE;DEBUG;CLIENT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -55,7 +55,7 @@
     <DefineConstants>TRACE;CLIENT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <FileAlignment>512</FileAlignment>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
@@ -164,6 +164,8 @@
     <Compile Include="SystemMenu.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="UpdateDetails\CPUVersion.cs" />
+    <Compile Include="UpdateDetails\UpdateFile.cs" />
     <Compile Include="UpdateHelper\AutoUpdaterInfo.cs" />
     <Compile Include="UpdateHelper\PipeClient.cs" />
     <Compile Include="UpdateHelper\PipeServer.cs" />
@@ -171,7 +173,7 @@
     <Compile Include="UpdateHelper\UpdateHelperData.cs" />
     <Compile Include="UpdateHelper\UpdateStepOn.cs" />
     <Compile Include="Util\ThreadHelper.cs" />
-    <Compile Include="UpdateDetails.cs" />
+    <Compile Include="UpdateDetails\UpdateDetails.cs" />
     <Compile Include="UpdateEngine.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.cs" />
     <Compile Include="Util\Arguments.cs" />

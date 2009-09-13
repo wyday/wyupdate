@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 16:25:27>
+// Time-stamp: <2009-September-11 12:40:55>
 //
 // ------------------------------------------------------------------
 //
@@ -352,28 +352,38 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Save the zip archive to the specified stream.
+        ///   Save the zip archive to the specified stream.
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// The <c>ZipFile</c> instance is written to storage - typically a zip file in a
-        /// filesystem, but using this overload, the storage can eb anything accessible via
-        /// a writable stream - only when the caller calls <c>Save</c>.
+        ///   The <c>ZipFile</c> instance is written to storage - typically a zip file
+        ///   in a filesystem, but using this overload, the storage can be anything
+        ///   accessible via a writable stream - only when the caller calls <c>Save</c>.
         /// </para>
         ///
         /// <para>
-        /// Use this method to save the zip content to a stream directly.  A common
-        /// scenario is an ASP.NET application that dynamically generates a zip file and
-        /// allows the browser to download it. The application can call
-        /// <c>Save(Response.OutputStream)</c> to write a zipfile directly to the output
-        /// stream, without creating a zip file on the disk on the ASP.NET server.
+        ///   Use this method to save the zip content to a stream directly.  A common
+        ///   scenario is an ASP.NET application that dynamically generates a zip file
+        ///   and allows the browser to download it. The application can call
+        ///   <c>Save(Response.OutputStream)</c> to write a zipfile directly to the
+        ///   output stream, without creating a zip file on the disk on the ASP.NET
+        ///   server.
+        /// </para>
+        ///
+        /// <para>
+        ///   Be careful when saving a file to a non-seekable stream, including
+        ///   <c>Response.OutputStream</c>. When DotNetZip writes to a non-seekable
+        ///   stream, the zip archive is formatted in such a way that may not be
+        ///   compatible with all zip tools on all platforms.  It's a perfectly legal
+        ///   and compliant zip file, but some people have reported problems opening
+        ///   files produced this way using the Mac OS archive utility.
         /// </para>
         ///
         /// </remarks>
         /// 
         /// <param name="outputStream">
-        /// The <c>System.IO.Stream</c> to write to. It must be writable.
+        ///   The <c>System.IO.Stream</c> to write to. It must be writable.
         /// </param>
         public void Save(Stream outputStream)
         {

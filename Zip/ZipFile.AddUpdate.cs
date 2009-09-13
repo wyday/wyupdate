@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-29 00:15:49>
+// Time-stamp: <2009-September-11 12:44:57>
 //
 // ------------------------------------------------------------------
 //
@@ -220,7 +220,7 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// This method will throw an Exception if an entry with the same name already
+        /// This method will throw an exception if an entry with the same name already
         /// exists in the <c>ZipFile</c>.
         /// </para>
         ///
@@ -306,7 +306,7 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        /// This method will throw an Exception if an entry with the same name already exists
+        /// This method will throw an exception if an entry with the same name already exists
         /// in the <c>ZipFile</c>.
         /// </para>
         ///
@@ -492,7 +492,7 @@ namespace Ionic.Zip
         /// </param>
         ///
         /// <example>
-        /// This example shows how to create a zipfile, and add a few files into it. 
+        /// This example shows how to create a zip file, and add a few files into it. 
         /// <code>
         /// String ZipFileToCreate = "archive1.zip";
         /// String DirectoryToZip = "c:\\reports";
@@ -884,7 +884,7 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// If the specified directory does not exist in the archive, then this method
-        /// is equivalent to calling AddDirectory().  If the specified directory already
+        /// is equivalent to calling <c>AddDirectory()</c>.  If the specified directory already
         /// exists in the archive, then this method updates any existing entries, and
         /// adds any new entries. Any entries that are in the zip archive but not in the
         /// specified directory, are left alone.  In other words, the contents of the
@@ -916,7 +916,7 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// If the specified directory does not exist in the archive, then this method
-        /// is equivalent to calling AddDirectory().  If the specified directory already
+        /// is equivalent to calling <c>AddDirectory()</c>.  If the specified directory already
         /// exists in the archive, then this method updates any existing entries, and
         /// adds any new entries. Any entries that are in the zip archive but not in the
         /// specified directory, are left alone.  In other words, the contents of the
@@ -1137,9 +1137,10 @@ namespace Ionic.Zip
         /// <para>If you wish to create within a zip file a file entry with
         /// Unicode-encoded content that includes a byte-order-mark, you can convert
         /// your string to a byte array using the appropriate <see
-        /// cref="System.Text.Encoding.GetBytes(String)"/> method, then prepend to that byte
-        /// array the output of <see cref="System.Text.Encoding.GetPreamble()"/>, and use the
-        /// <c>AddEntry(string,string,byte[])</c> method, to add the entry.
+        /// cref="System.Text.Encoding.GetBytes(String)">System.Text.Encoding.GetBytes()</see>
+        /// method, then prepend to that byte array the output of <see
+        /// cref="System.Text.Encoding.GetPreamble()">System.Text.Encoding.GetPreamble()</see>,
+        /// and use the <c>AddEntry(string,string,byte[])</c> method, to add the entry.
         /// </para>
         ///
         /// </remarks>
@@ -1392,8 +1393,8 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// Calling the method is equivalent to calling RemoveEntry() if an entry by the
-        /// same name already exists, and then calling AddEntry() with the given
+        /// Calling the method is equivalent to calling <c>RemoveEntry()</c> if an entry by the
+        /// same name already exists, and then calling <c>AddEntry()</c> with the given
         /// <c>fileName</c> and stream.
         /// </para>
         ///
@@ -1405,7 +1406,7 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        /// For ZipFile properties including <see cref="Encryption"/>, <see
+        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
         /// cref="Password"/>, <see cref="WantCompression"/>, <see
         /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
         /// <see cref="ZipErrorAction"/>, 
@@ -1711,27 +1712,9 @@ namespace Ionic.Zip
             if (level > 0 || rootDirectoryPathInArchive != "")
             {
                 baseDir = ZipEntry.Create(directoryName, dirForEntries);
-                //baseDir.BufferSize = BufferSize;
                 baseDir.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;  // workitem 6410
-                //baseDir.TrimVolumeFromFullyQualifiedPaths = TrimVolumeFromFullyQualifiedPaths;
                 baseDir.MarkAsDirectory();
                 baseDir._zipfile = this;
-
-                // Previously, we used to test for the existence of the directory and 
-                // throw if it exists.  But that seems silly. We will still throw 
-                // if a file exists and the action is AddOnly.  But for a directory, 
-                // it does not matter if it already exists.  So no throw. 
-
-                //if (action == AddOrUpdateAction.AddOnly)
-                //    InsureUniqueEntry(baseDir);
-                //else
-                //{
-                //    // For updates, remove the old entry before adding the new. 
-                //    ZipEntry e = this[baseDir.FileName];
-                //    if (e != null)
-                //        RemoveEntry(e);
-                //}
-
 
                 // check for uniqueness:
                 ZipEntry e = this[baseDir.FileName];
@@ -1758,9 +1741,16 @@ namespace Ionic.Zip
             String[] dirnames = Directory.GetDirectories(directoryName);
             foreach (String dir in dirnames)
             {
-                AddOrUpdateDirectoryImpl(dir, rootDirectoryPathInArchive, action, level + 1);
+                // workitem 8617: Optionally traverse reparse points
+#if NETCF
+                FileAttributes fileAttrs = (FileAttributes) NetCfFile.GetAttributes(dir);
+#else
+                FileAttributes fileAttrs = System.IO.File.GetAttributes(dir);
+#endif
+                if (this.AddDirectoryWillTraverseReparsePoints ||
+                    ((fileAttrs & FileAttributes.ReparsePoint) == 0)) 
+                    AddOrUpdateDirectoryImpl(dir, rootDirectoryPathInArchive, action, level + 1);
             }
-            //_contentsChanged = true;
 
             if (level == 0)
                 OnAddCompleted();

@@ -206,7 +206,7 @@ namespace wyUpdate
                         {
                             auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID)
                             {
-                                UpdateFailed = true,
+                                AutoUpdaterStatus = AutoUpdaterStatus.UpdateFailed,
                                 ErrorTitle = error,
                                 ErrorMessage = errorDetails
                             };
@@ -215,7 +215,7 @@ namespace wyUpdate
                         {
                             auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID)
                             {
-                                UpdateSucceeded = true,
+                                AutoUpdaterStatus = AutoUpdaterStatus.UpdateSucceeded,
                                 UpdateVersion = update.NewVersion,
                                 ChangesInLatestVersion = panelDisplaying.GetChangesRTF(),
                                 ChangesIsRTF = true

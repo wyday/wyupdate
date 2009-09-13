@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-19 20:09:03>
+// Time-stamp: <2009-September-11 11:01:59>
 //
 // ------------------------------------------------------------------
 //
@@ -89,13 +89,60 @@ namespace Ionic.Zip
         /// criteria string for that would be "name = '* *.*'" . 
         /// </para> 
         ///
+        ///
         /// <para>
-        /// Some examples: a string like "attributes != H" retrieves all entries whose
-        /// attributes do not include the Hidden bit.  A string like "mtime > 2009-01-01"
-        /// retrieves all entries with a last modified time after January 1st, 2009.  For
-        /// example "size &gt; 2gb" retrieves all entries whose uncompressed size is greater
-        /// than 2gb.
-        /// </para> 
+        /// Some examples:
+        /// </para>
+        ///
+        /// <list type="table">
+        ///   <listheader>
+        ///     <term>criteria</term>
+        ///     <description>Files retrieved</description>
+        ///   </listheader>
+        /// 
+        ///   <item>
+        ///     <term>name != *.xls </term>
+        ///     <description>any file with an extension that is not .xls
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>name = *.mp3 </term>
+        ///     <description>any file with a .mp3 extension.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>*.mp3</term>
+        ///     <description>(same as above) any file with a .mp3 extension.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>attributes = A </term>
+        ///     <description>all files whose attributes include the Archive bit.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>attributes != H </term>
+        ///     <description>all files whose attributes do not include the Hidden bit.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>mtime > 2009-01-01</term>
+        ///     <description>all files with a last modified time after January 1st, 2009.
+        ///     </description>
+        ///   </item>
+        ///   
+        ///   <item>
+        ///     <term>size > 2gb</term>
+        ///     <description>all files whose uncompressed size is greater than 2gb.
+        ///     </description>
+        ///   </item>
+        /// 
+        /// </list>
         ///
         /// <para>
         /// You can combine criteria with the conjunctions AND or OR. Using a string like "name
@@ -488,7 +535,8 @@ namespace Ionic.Zip
             }
             if (Verbose) StatusMessageTextWriter.WriteLine("adding selection '{0}' from dir '{1}'...",
                                                                selectionCriteria, directoryOnDisk);
-            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
+            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
+                                                           AddDirectoryWillTraverseReparsePoints);
             var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
                 
             if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", filesToAdd.Count);
@@ -578,7 +626,8 @@ namespace Ionic.Zip
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
         public ICollection<ZipEntry> SelectEntries(String selectionCriteria)
         {
-            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
+            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
+                                                           AddDirectoryWillTraverseReparsePoints);
             return ff.SelectEntries(this);
         }
 
@@ -650,7 +699,8 @@ namespace Ionic.Zip
         /// <returns>a collection of ZipEntry objects that conform to the inclusion spec</returns>
         public ICollection<ZipEntry> SelectEntries(String selectionCriteria, string directoryPathInArchive)
         {
-            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria);
+            Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
+                                                           AddDirectoryWillTraverseReparsePoints);
             return ff.SelectEntries(this, directoryPathInArchive);
         }
 
@@ -835,7 +885,7 @@ namespace Ionic.Zip
         /// <para>
         /// The entries are extracted into the current working directory. When extraction would would
         /// overwrite an existing filesystem file, the action taken is as specified in the
-        /// extractExistingFile parameter.
+        /// <paramref name="extractExistingFile"/> parameter.
         /// </para>
         /// 
         /// <para>
@@ -967,7 +1017,7 @@ namespace Ionic.Zip
         /// <para>
         /// The entries are extracted into the specified directory. When extraction would would
         /// overwrite an existing filesystem file, the action taken is as specified in the
-        /// extractExistingFile parameter.
+        /// <paramref name="extractExistingFile"/> parameter.
         /// </para>
         /// 
         /// <para>
@@ -983,7 +1033,7 @@ namespace Ionic.Zip
         /// <code>
         /// using (ZipFile zip = ZipFile.Read(zipArchiveName))
         /// {
-        ///   zip.ExtractSelectedEntries("name = *.xml  or  size  &gt; 100000",
+        ///   zip.ExtractSelectedEntries("name = *.xml  or  size &gt; 100000",
         ///                              null, 
         ///                              "unpack", 
         ///                              ExtractExistingFileAction.DontOverwrite);

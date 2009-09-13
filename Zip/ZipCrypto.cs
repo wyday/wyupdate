@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-30 22:35:47>
+// Time-stamp: <2009-September-11 20:46:18>
 //
 // ------------------------------------------------------------------
 //
@@ -171,9 +171,9 @@ namespace Ionic.Zip
         {
 
             if (cipherText == null)
-                throw new ZipException("Cannot decrypt.", new System.ArgumentException("Bad length during Decryption: cipherText must be non-null.", "cipherText"));
+                throw new System.ArgumentException("Bad length during Decryption: cipherText must be non-null.", "cipherText");
             if (length > cipherText.Length)
-                throw new ZipException("Cannot decrypt.", new System.ArgumentException("Bad length during Decryption: the length parameter must be smaller than or equal to the size of the destination array.", "length"));
+                throw new System.ArgumentException("Bad length during Decryption: the length parameter must be smaller than or equal to the size of the destination array.", "length");
 
             byte[] PlainText = new byte[length];
             for (int i = 0; i < length; i++)
@@ -198,10 +198,10 @@ namespace Ionic.Zip
         public byte[] EncryptMessage(byte[] plaintext, int length)
         {
             if (plaintext == null)
-                throw new ZipException("Cannot encrypt.", new System.ArgumentException("Bad length during Encryption: the plainText must be non-null.", "plaintext"));
+                throw new System.ArgumentException("Bad length during Encryption: the plainText must be non-null.", "plaintext");
 
             if (length > plaintext.Length)
-                throw new ZipException("Cannot encrypt.", new System.ArgumentException("Bad length during Encryption: The length parameter must be smaller than or equal to the size of the destination array.", "length"));
+                throw new System.ArgumentException("Bad length during Encryption: The length parameter must be smaller than or equal to the size of the destination array.", "length");
 
             byte[] CipherText = new byte[length];
             for (int i = 0; i < length; i++)
