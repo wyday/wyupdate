@@ -51,15 +51,15 @@ namespace wyUpdate
 
 
                 //find self in Path.Combine(OutputDirectory, "base")
-                bool optimize = FindNewClient();
+                UpdateFile updateFile = FindNewClient();
 
 
                 //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
                 File.Copy(NewIUPClientLoc, OldIUPClientLoc, true);
 
                 //Optimize client if necessary
-                if (optimize)
-                    NGenInstall(OldIUPClientLoc);
+                if (updateFile != null)
+                    NGenInstall(OldIUPClientLoc, updateFile.CPUVersion);
 
                 //cleanup the client update files to prevent conflicts with the product update
                 File.Delete(NewIUPClientLoc);
@@ -145,19 +145,7 @@ namespace wyUpdate
 
 
                 //find self in Path.Combine(OutputDirectory, "base")
-                bool optimize = FindNewClient();
-
-
-                //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
-                File.Copy(NewIUPClientLoc, OldIUPClientLoc, true);
-
-                //Optimize client if necessary
-                if (optimize)
-                    NGenInstall(OldIUPClientLoc);
-
-                //cleanup the client update files to prevent conflicts with the product update
-                File.Delete(NewIUPClientLoc);
-                Directory.Delete(Path.Combine(OutputDirectory, "base"));
+                FindNewClient();
             }
             catch (Exception ex)
             {
@@ -217,15 +205,15 @@ namespace wyUpdate
             try
             {
                 //find self in Path.Combine(OutputDirectory, "base")
-                bool optimize = FindNewClient();
+                UpdateFile updateFile = FindNewClient();
 
 
                 //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
                 File.Copy(NewIUPClientLoc, OldIUPClientLoc, true);
 
                 //Optimize client if necessary
-                if (optimize)
-                    NGenInstall(OldIUPClientLoc);
+                if (updateFile != null)
+                    NGenInstall(OldIUPClientLoc, updateFile.CPUVersion);
 
                 //cleanup the client update files to prevent conflicts with the product update
                 File.Delete(NewIUPClientLoc);
@@ -310,7 +298,7 @@ namespace wyUpdate
             }
         }
 
-        bool FindNewClient()
+        UpdateFile FindNewClient()
         {
             //first search the update details file
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
@@ -320,7 +308,7 @@ namespace wyUpdate
                     //optimize (ngen) the file
                     NewIUPClientLoc = Path.Combine(OutputDirectory, UpdtDetails.UpdateFiles[i].RelativePath);
 
-                    return true;
+                    return UpdtDetails.UpdateFiles[i];
                 }
             }
 
@@ -338,7 +326,7 @@ namespace wyUpdate
             }
 
             //not ngen-able
-            return false;
+            return null;
         }
 
         static void KillProcess(string filename)

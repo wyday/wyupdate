@@ -2,7 +2,6 @@
 
 namespace wyUpdate.Common
 {
-
     public class UpdateFile
     {
         #region Properties
@@ -37,6 +36,7 @@ namespace wyUpdate.Common
 
         #endregion Properties
 
+#if DESIGNER
         public UpdateFile() { }
 
         public UpdateFile(string filename, string prefix)
@@ -46,18 +46,6 @@ namespace wyUpdate.Common
             if (!string.IsNullOrEmpty(filename))
                 RelativePath = prefix + Path.GetExtension(filename);
         }
-
-        public UpdateFile(string filename, string relative, bool execute, bool executeBef, bool waitForExecution, string commArgs, bool deleteFile, string oldFile)
-        {
-            Filename = filename;
-            RelativePath = relative;
-            Execute = execute;
-            ExBeforeUpdate = executeBef;
-            WaitForExecution = waitForExecution;
-            CommandLineArgs = commArgs;
-
-            DeleteFile = deleteFile;
-            DeltaPatchRelativePath = oldFile;
-        }
+#endif
     }
 }
