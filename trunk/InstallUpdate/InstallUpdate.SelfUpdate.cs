@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using wyUpdate.Common;
 using wyUpdate.Compression.Vcdiff;
 
@@ -15,8 +14,6 @@ namespace wyUpdate
 
         public void RunSelfUpdate()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             Exception except = null;
 
             try
@@ -111,10 +108,7 @@ namespace wyUpdate
 
         public void JustExtractSelfUpdate()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
             Exception except = null;
-
-
 
             try
             {
@@ -197,8 +191,6 @@ namespace wyUpdate
         {
             //TODO: 
 
-
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
             Exception except = null;
 
 

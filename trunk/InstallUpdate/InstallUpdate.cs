@@ -5,7 +5,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using wyUpdate.Common;
@@ -47,36 +46,13 @@ namespace wyUpdate
         #endregion Private Variables
 
 
-        #region Constructors
-
-        //Uninstalling contructor
-        public InstallUpdate(string clientFileLoc, Delegate senderDelegate, ContainerControl sender)
+        public InstallUpdate(ContainerControl sender, Delegate senderDelegate)
         {
-            Filename = clientFileLoc;
             Sender = sender;
             SenderDelegate = senderDelegate;
         }
 
-        // Constructor for backing up files, closing processes, and replacing files.
-        public InstallUpdate(string tempDir, string programDir, Delegate senderDelegate, ContainerControl sender)
-        {
-            TempDirectory = tempDir;
-            ProgramDirectory = programDir;
-            Sender = sender;
-            SenderDelegate = senderDelegate;
-        }
-
-        // Constructor for unziping files.
-        public InstallUpdate(string filename, string outputDirectory, ContainerControl sender, Delegate senderDelegate)
-        {
-            Sender = sender;
-            SenderDelegate = senderDelegate;
-            OutputDirectory = outputDirectory;
-            Filename = filename;
-        }
-
-        #endregion Constructors
-
+        
         public const int TotalUpdateSteps = 7;
 
         public static int GetRelativeProgess(int stepOn, int stepProgress)
@@ -144,14 +120,13 @@ namespace wyUpdate
                 return;
 
             DirectoryInfo[] tempDirs = tempDirInf.GetDirectories("*");
-            string newProgDir;
 
             for (int i = 0; i < tempDirs.Length; i++)
             {
                 if (canceled)
                     break;
 
-                newProgDir = Path.Combine(progDir, tempDirs[i].Name);
+                string newProgDir = Path.Combine(progDir, tempDirs[i].Name);
 
                 if (!Directory.Exists(newProgDir))
                 {
@@ -174,8 +149,6 @@ namespace wyUpdate
 
         public void RunUpdateFiles()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
             string[] backupFolders = new string[6];
@@ -399,7 +372,6 @@ namespace wyUpdate
 
         public void RunUpdateClientDataFile()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
             try
             {
                 OutputDirectory = Path.Combine(TempDirectory, "ClientData");
@@ -532,8 +504,6 @@ namespace wyUpdate
 
         public void RunDeleteTemporary()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             try
             {
                 //delete the temp directory
@@ -546,8 +516,6 @@ namespace wyUpdate
 
         public void RunUninstall()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             List<UninstallFileInfo> filesToUninstall = new List<UninstallFileInfo>();
             List<string> foldersToDelete = new List<string>();
 
@@ -602,8 +570,6 @@ namespace wyUpdate
 
         public void RunPreExecute()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             // simply update the progress bar to show the 3rd step is entirely complete
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(3, 0), 0);
 
@@ -612,10 +578,12 @@ namespace wyUpdate
                 if (UpdtDetails.UpdateFiles[i].Execute && 
                     UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo();
-
-                    //use the absolute path
-                    psi.FileName = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
+                    ProcessStartInfo psi = new ProcessStartInfo
+                                               {
+                                                   // use the absolute path
+                                                   FileName =
+                                                       FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
+                                               };
 
                     if (!string.IsNullOrEmpty(psi.FileName))
                     {
@@ -857,9 +825,6 @@ namespace wyUpdate
         static void ParseCommandText(string text)
         {
             int lastDollarIndex = text.LastIndexOf('$');
-            int beginParen, endParen;
-
-            CommandName currCommand;
 
             //if no $'s found
             if (lastDollarIndex == -1)
@@ -867,16 +832,16 @@ namespace wyUpdate
 
             do
             {
-                beginParen = text.IndexOf('(', lastDollarIndex);
+                int beginParen = text.IndexOf('(', lastDollarIndex);
 
                 if (beginParen != -1)
                 {
                     //get the text between the '$' and the '('
-                    currCommand = GetCommandName(text.Substring(lastDollarIndex + 1, beginParen - lastDollarIndex - 1));
+                    CommandName currCommand = GetCommandName(text.Substring(lastDollarIndex + 1, beginParen - lastDollarIndex - 1));
 
                     if (currCommand != CommandName.NULL)
                     {
-                        endParen = IndexOfNonEnclosed(')', text, beginParen);
+                        int endParen = IndexOfNonEnclosed(')', text, beginParen);
 
                         if (endParen != -1)
                         {

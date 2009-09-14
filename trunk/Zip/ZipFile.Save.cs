@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 12:40:55>
+// Time-stamp: <2009-September-14 00:09:26>
 //
 // ------------------------------------------------------------------
 //
@@ -612,7 +612,7 @@ namespace Ionic.Zip
                                                  long EndOfCentralDirectory)
         {
             int j = 0;
-            int bufferLength = 24;
+            int bufferLength = 22;
             byte[] block = null;
             Int16 commentLength = 0;
             if ((Comment != null) && (Comment.Length != 0))

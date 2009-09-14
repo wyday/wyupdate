@@ -294,18 +294,37 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Sets the compression level to be used for entries when saving the zip archive.
+        ///   Sets the compression level to be used for entries subsequently added to
+        ///   the zip archive.
         /// </summary>
+        ///
         /// <remarks>
-        /// The compression level setting is used at the time of <c>Save()</c>. The same
-        /// level is applied to all <c>ZipEntry</c> instances contained in the
-        /// <c>ZipFile</c> during the save.  If you do not set this property, the
-        /// default compression level is used, which normally gives a good balance of
-        /// compression efficiency and compression speed.  In some tests, using
-        /// <c>BestCompression</c> can double the time it takes to compress, while
-        /// delivering just a small increase in compression efficiency.  This behavior
-        /// will vary with the type of data you compress.  If you are in doubt, just
-        /// leave this setting alone, and accept the default.
+        ///  <para>
+        ///    Varying the compression level used on entries can affect the
+        ///    size-vs-speed tradeoff when compression and decompressing data streams
+        ///    or files.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    As with some other properties on the <c>ZipFile</c> class, like <see
+        ///    cref="Password"/>, <see cref="Encryption"/>, and <see
+        ///    cref="ZipErrorAction"/>, setting this property a <c>ZipFile</c>
+        ///    instance will cause the specified <c>CompressionLevel</c> to be used on all
+        ///    <see cref="ZipEntry"/> items that are subsequently added to the
+        ///    <c>ZipFile</c> instance. If you set this property after you have added
+        ///    items to the <c>ZipFile</c>, but before you have called <c>Save()</c>,
+        ///    those items will not use the specified compression level.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    If you do not set this property, the default compression level is used,
+        ///    which normally gives a good balance of compression efficiency and
+        ///    compression speed.  In some tests, using <c>BestCompression</c> can
+        ///    double the time it takes to compress, while delivering just a small
+        ///    increase in compression efficiency.  This behavior will vary with the
+        ///    type of data you compress.  If you are in doubt, just leave this setting
+        ///    alone, and accept the default.
+        ///  </para>
         /// </remarks>
         public Ionic.Zlib.CompressionLevel CompressionLevel
         {
@@ -1196,12 +1215,19 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
+        ///   <em>This property is obsolete.</em> It will be removed in
+        ///   a future release of this library.  If you want to force
+        ///   "no compression", set the <see cref="CompressionLevel"/>
+        ///   property to <c>Ionic.Zlib.CompressionLevel.None</c>.
+        /// </para>
+        ///
+        /// <para>
         ///   When saving an entry into a zip archive, the DotNetZip by default
         ///   compresses the file. That's what a ZIP archive is all about, isn't it?
         ///   For files that are already compressed, like MP3's or JPGs, the deflate
         ///   algorithm can actually slightly expand the size of the data.  Setting this
-        ///   property to trye allows you to specify that compression should not be
-        ///   used.  The default value is false.
+        ///   property to true allows you to specify that compression should not be
+        ///   used. The default value is false.  
         /// </para>
         ///
         /// <para>
@@ -1253,10 +1279,16 @@ namespace Ionic.Zip
         /// </code>
         ///
         /// </example>
+        [Obsolete("Set the CompressionLevel property to None")]
         public bool ForceNoCompression
         {
-            get { return _ForceNoCompression; }
-            set { _ForceNoCompression = value; }
+            get { return (CompressionLevel == Ionic.Zlib.CompressionLevel.None); }
+            set {
+                if (value)
+                    CompressionLevel = Ionic.Zlib.CompressionLevel.None;
+                else
+                    CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
+            }
         }
 
 
@@ -1540,12 +1572,13 @@ namespace Ionic.Zip
         ///
         ///  <para>
         ///    As with some other properties on the <c>ZipFile</c> class, like <see
-        ///    cref="Password"/> and <see cref="Encryption"/>, setting this property a
-        ///    <c>ZipFile</c> instance will cause the specified <c>ZipErrorAction</c> to
-        ///    be used on all <see cref="ZipEntry"/> items that are subsequently added
-        ///    to the <c>ZipFile</c> instance. If you set this property after you have
-        ///    added items to the <c>ZipFile</c>, but before you have called
-        ///    <c>Save()</c>, those items will not use the specified error handling action.
+        ///    cref="Password"/>, <see cref="Encryption"/>, and <see
+        ///    cref="CompressionLevel"/>, setting this property a <c>ZipFile</c>
+        ///    instance will cause the specified <c>ZipErrorAction</c> to be used on all
+        ///    <see cref="ZipEntry"/> items that are subsequently added to the
+        ///    <c>ZipFile</c> instance. If you set this property after you have added
+        ///    items to the <c>ZipFile</c>, but before you have called <c>Save()</c>,
+        ///    those items will not use the specified error handling action.
         ///  </para>
         ///
         ///  <para>
@@ -1624,7 +1657,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// As with some other properties on the <c>ZipFile</c> class, like <see
-        /// cref="Password"/> and <see cref="ForceNoCompression"/>, setting this
+        /// cref="Password"/> and <see cref="CompressionLevel"/>, setting this
         /// property on a <c>ZipFile</c> instance will cause the specified
         /// <c>EncryptionAlgorithm</c> to be used on all <see cref="ZipEntry"/> items
         /// that are subsequently added to the <c>ZipFile</c> instance. In other words,
@@ -1734,6 +1767,14 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
+        ///   <em>This property is obsolete.</em> It will be removed in a future release
+        ///   of this library.  It was originally included in DotNetZip to work around a
+        ///   problem in the BCL <see cref="System.IO.Compression.DeflateStream"/>
+        ///   class. DotNetZip no longer uses the BCL class, and therefore no longer
+        ///   needs the work-around.
+        /// </para>
+        ///
+        /// <para>
         /// In some cases, applying the Deflate compression algorithm in
         /// <c>DeflateStream</c> can result an increase in the size of the data.  This
         /// "inflation" can happen with previously compressed files, such as a zip, jpg,
@@ -1746,7 +1787,8 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// The application can specify that compression is not even tried, by setting the
-        /// ForceNoCompression flag.  In this case, the compress-and-check-sizes process as
+        /// <see cref="CompressionLevel"/> property to <see cref="Ionic.Zlib.CompressionLevel.None"/>.
+        /// In this case, the compress-and-check-sizes process as
         /// decribed above, is not done.
         /// </para>
         ///
@@ -1766,14 +1808,16 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// As with other properties (like <see cref="Password"/> and <see
-        /// cref="ForceNoCompression"/>), setting the corresponding delegate on a
-        /// <c>ZipFile</c> instance will caused it to be applied to all <c>ZipEntry</c> items
-        /// that are subsequently added to the <c>ZipFile</c> instance. In other words,
-        /// if you set this callback after you have added files to the <c>ZipFile</c>,
-        /// but before you have called Save(), those items will not be governed by the
-        /// callback when you do call Save(). Your best bet is to set this callback
-        /// before adding any entries.
+        /// As with many other <c>ZipFile</c> properties (like <see cref="Encryption"/>,
+        /// <see cref="Password"/>, <see cref="WantCompression"/>, <see
+        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        /// <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>), setting
+        /// this property on a <c>ZipFile</c> instance will caused it to be applied to
+        /// all <c>ZipEntry</c> items that are subsequently added to the <c>ZipFile</c>
+        /// instance. In other words, if you set this callback after you have added
+        /// files to the <c>ZipFile</c>, but before you have called Save(), those items
+        /// will not be governed by the callback when you do call Save(). Your best bet
+        /// is to set this callback before adding any entries.
         /// </para>
         ///
         /// <para>
@@ -1814,6 +1858,7 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.WantCompression"/>
         /// <seealso cref="Ionic.Zip.WantCompressionCallback"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.WillReadTwiceOnInflation"/>
+        [Obsolete("This property is no longer necessary.")]
         public ReReadApprovalCallback WillReadTwiceOnInflation
         {
             get;
@@ -1827,20 +1872,11 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// <para>
-        /// In some cases, applying the Deflate compression algorithm to an entry *may*
-        /// result a slight increase in the size of the data.  This "inflation" can
-        /// happen with previously compressed files, such as a zip, jpg, png, mp3, and
-        /// so on; it results from adding DEFLATE framing data around incompressible data.
-        /// Inflation can also happen with very small files. Applications may wish to
-        /// avoid the use of compression in these cases. As well, applications may wish
-        /// to avoid compression to save time.
-        /// </para>
         ///
         /// <para>
         /// By default, the DotNetZip library takes this approach to decide whether to
         /// apply compression: first it applies a heuristic, to determine whether it
-        /// should try to compress a file or not.  The library checks the extension of
+        /// should try to compress a file or not: The library checks the extension of
         /// the entry, and if it is one of a known list of uncompressible file types
         /// (mp3, zip, docx, and others), the library will not attempt to compress the
         /// entry.  The library does not actually check the content of the entry.  If
@@ -1863,12 +1899,11 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// The second option for overriding the default logic regarding whether to
-        /// apply compression is the ForceNoCompression flag.  If this flag is set to
-        /// true, the compress-and-check-sizes process as decribed above, is not done,
-        /// nor is the callback invoked.  In other words, if you set ForceNoCompression
-        /// to true, andalso set the WantCompression callback, only the
-        /// ForceNoCompression flag is considered.
+        /// A second option for overriding the heuristic is to force the use of no
+        /// compression by setting the <see cref="CompressionLevel"/> property to <see
+        /// cref="Ionic.Zlib.CompressionLevel.None">CompressionLevel.None</see>. If the
+        /// property is <c>None</c> the hueristic is not applied, nor is the callback
+        /// invoked.
         /// </para>
         ///
         /// <para>
@@ -3273,14 +3308,12 @@ namespace Ionic.Zip
         private ZipErrorAction _zipErrorAction;
         private bool _disposed;
         private System.Collections.Generic.List<ZipEntry> _entries;
-        private bool _ForceNoCompression;
         private string _name;
         private string _Comment;
         internal string _Password;
         private bool _emitNtfsTimes = true;
         private bool _emitUnixTimes;
         private Ionic.Zlib.CompressionStrategy _Strategy = Ionic.Zlib.CompressionStrategy.Default;
-        //private long _originPosition; // workitem 8098
         private bool _fileAlreadyExists;
         private string _temporaryFileName;
         private bool _contentsChanged;

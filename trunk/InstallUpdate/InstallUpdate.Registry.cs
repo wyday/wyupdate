@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using wyUpdate.Common;
 
 namespace wyUpdate
@@ -33,8 +32,6 @@ namespace wyUpdate
 
         public void RunUpdateRegistry()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             string backupFolder = Path.Combine(TempDirectory, "backup");
             List<RegChange> rollbackRegistry = new List<RegChange>();
 
