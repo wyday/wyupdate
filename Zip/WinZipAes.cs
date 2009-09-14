@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-July-28 23:27:14>
+// Time-stamp: <2009-September-13 16:20:49>
 //
 // ------------------------------------------------------------------
 //
@@ -250,55 +250,71 @@ namespace Ionic.Zip
 #if NO
     internal class Util
     {
-        internal static string FormatByteArray(byte[] b)
+        private static void _Format(System.Text.StringBuilder sb1,
+                                    byte[] b,
+                                    int offset, 
+                                    int length)
         {
-            int actualLimit = 96;
-            System.Text.StringBuilder sb1 = new System.Text.StringBuilder(actualLimit * 2);
-            int i = 0;
 
-            if (actualLimit * 2 > b.Length)
+            System.Text.StringBuilder sb2 = new System.Text.StringBuilder();
+            sb1.Append("0000    ");
+            int i;
+            for (i = 0; i < length; i++)
             {
-                for (i = 0; i < b.Length; i++)
+                int x = offset+i;
+                if (i != 0 && i % 16 == 0)
                 {
-                    if (i != 0 && i % 16 == 0)
-                        sb1.Append("\n");
-                    sb1.Append(System.String.Format("{0:X2} ", b[i]));
+                    sb1.Append("    ")
+                        .Append(sb2)
+                        .Append("\n")
+                        .Append(String.Format("{0:X4}    ", i));
+                    sb2.Remove(0,sb2.Length);
                 }
+                sb1.Append(System.String.Format("{0:X2} ", b[x]));
+                if (b[x] >=32 && b[x] <= 126)
+                    sb2.Append((char)b[x]);
+                else
+                    sb2.Append(".");
+            }
+            if (sb2.Length > 0)
+            {
+                sb1.Append(new String(' ', ((16 - i%16) * 3) + 4))
+                    .Append(sb2);
+            }
+        }
+
+        
+        
+        internal static string FormatByteArray(byte[] b, int limit)
+        {
+            System.Text.StringBuilder sb1 = new System.Text.StringBuilder();
+            
+            if ((limit * 2 > b.Length) || limit == 0)
+            {
+                _Format(sb1, b, 0, b.Length);
             }
             else
             {
                 // first N bytes of the buffer
-                for (i = 0; i < actualLimit; i++)
-                {
-                    if (i != 0 && i % 16 == 0)
-                        sb1.Append("\n");
-                    sb1.Append(System.String.Format("{0:X2} ", b[i]));
-                }
+                _Format(sb1, b, 0, limit);
 
-                if (b.Length > actualLimit * 2)
-                    sb1.Append(String.Format("\n   ...({0} other bytes here)....\n", b.Length - actualLimit * 2));
+                if (b.Length > limit * 2)
+                    sb1.Append(String.Format("\n   ...({0} other bytes here)....\n", b.Length - limit * 2));
 
                 // last N bytes of the buffer
-                for (i = 0; i < actualLimit; i++)
-                {
-                    if (i != 0 && i % 16 == 0)
-                        sb1.Append("\n");
-                    sb1.Append(System.String.Format("{0:X2} ", b[b.Length - actualLimit + i]));
-                }
+                _Format(sb1, b, b.Length - limit, limit);
             }
+
             return sb1.ToString();
         }
 
 
-        internal static string FormatByteArray(byte[] b, int limit)
+        internal static string FormatByteArray(byte[] b)
         {
-            byte[] b2 = new byte[limit];
-
-            Array.Copy(b, 0, b2, 0, limit);
-
-            return FormatByteArray(b2);
+            return FormatByteArray(b, 0);
         }
     }
+
 #endif
     #endregion
 

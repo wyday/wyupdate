@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Threading;
 
 namespace wyUpdate
 {
@@ -10,10 +9,7 @@ namespace wyUpdate
     {
         public void RunProcessesCheck()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             List<FileInfo> files = new List<FileInfo>(new DirectoryInfo(ProgramDirectory).GetFiles("*.exe", SearchOption.AllDirectories));
-            //FileInfo[] files = ;
 
             RemoveSelfFromProcesses(files);
 

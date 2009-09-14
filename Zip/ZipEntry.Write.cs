@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 14:55:43>
+// Time-stamp: <2009-September-13 16:59:20>
 //
 // ------------------------------------------------------------------
 //
@@ -82,8 +82,11 @@ namespace Ionic.Zip
 
             bytes[i++] = (byte)(versionNeededToExtract & 0x00FF);
             bytes[i++] = (byte)((versionNeededToExtract & 0xFF00) >> 8);
-            bytes[i++] = (byte)(_BitField & 0x00FF);
-            bytes[i++] = (byte)((_BitField & 0xFF00) >> 8);
+            Int16 bf2 = _BitField;
+            if (IsDirectory)
+                bf2 &= ~0x08;  // unset bit 3
+            bytes[i++] = (byte)(bf2 & 0x00FF);
+            bytes[i++] = (byte)((bf2 & 0xFF00) >> 8);
 
             bytes[i++] = (byte)(CompressionMethod & 0x00FF);
             bytes[i++] = (byte)((CompressionMethod & 0xFF00) >> 8);
@@ -541,9 +544,8 @@ namespace Ionic.Zip
         {
             if (_UncompressedSize < 0x10) return false;
             if (_CompressionMethod == 0x00) return false;
-            if (_zipfile.CompressionLevel == 0) return false;
+            if (CompressionLevel == Ionic.Zlib.CompressionLevel.None) return false;
             if (_CompressedSize < _UncompressedSize) return false;
-            if (ForceNoCompression) return false;
             
             if (this._Source == ZipEntrySource.Stream && !this._sourceStream.CanSeek) return false;
 
@@ -553,9 +555,11 @@ namespace Ionic.Zip
 
             if (_zipCrypto != null && (CompressedSize - 12) <= UncompressedSize) return false;
 
+#pragma warning disable 618
             // finally, check the delegate 
             if (WillReadTwiceOnInflation != null)
                 return WillReadTwiceOnInflation(_UncompressedSize, _CompressedSize, FileName);
+#pragma warning restore 618
 
             //Console.WriteLine("***WantReadAgain: returning TRUE...");
             return true;
@@ -641,7 +645,7 @@ namespace Ionic.Zip
                     
                 }
 
-                if (_ForceNoCompression)
+                if (CompressionLevel == Ionic.Zlib.CompressionLevel.None)
                 {
                     _CompressionMethod = 0x00;
                     return;
@@ -830,8 +834,11 @@ namespace Ionic.Zip
                 _BitField |= 0x0008;
 
             // (i==6)
-            bytes[i++] = (byte)(_BitField & 0x00FF);
-            bytes[i++] = (byte)((_BitField & 0xFF00) >> 8);
+            Int16 bf2 = _BitField;
+            if (IsDirectory)
+                bf2 &= ~0x08;  // unset bit 3
+            bytes[i++] = (byte)(bf2 & 0x00FF);
+            bytes[i++] = (byte)((bf2 & 0xFF00) >> 8);
 
             // Here, we want to set values for Compressed Size, Uncompressed Size, and CRC.  If
             // we have __FileDataPosition as not -1 (zero is a valid FDP), then that means we
@@ -1004,16 +1011,25 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Stores the position of the entry source stream, or, if the position is
-        /// already stored, seeks to that position.
+        ///   Stores the position of the entry source stream, or, if the position is
+        ///   already stored, seeks to that position.
         /// </summary>
         ///
         /// <remarks>
-        /// This method is called in prep for reading the source stream.  If PKZIP
-        /// encryption is used, then we need to calc the CRC32 before doing the
-        /// encryption.  Hence we need to be able to seek backward in the source when
-        /// saving the ZipEntry. This method is called from the place which calculates
-        /// the CRC, and also from the method that does the encryption of the file data.
+        /// <para>
+        ///   This method is called in prep for reading the source stream.  If PKZIP
+        ///   encryption is used, then we need to calc the CRC32 before doing the
+        ///   encryption, because the CRC is used in the 12th byte of the PKZIP
+        ///   encryption header.  So, we need to be able to seek backward in the source
+        ///   when saving the ZipEntry. This method is called from the place that
+        ///   calculates the CRC, and also from the method that does the encryption of
+        ///   the file data.
+        /// </para>
+        ///
+        /// <para>
+        ///   The first time through, this method sets the _sourceStreamOriginalPosition
+        ///   field. Subsequent calls to this method seek to that position. 
+        /// </para>
         /// </remarks>
         private void PrepSourceStream()
         {
@@ -1031,7 +1047,7 @@ namespace Ionic.Zip
                 this._sourceStreamOriginalPosition = new Nullable<Int64>(this._sourceStream.Position);
             }
             else if (this.Encryption == EncryptionAlgorithm.PkzipWeak)
-                throw new ZipException("It is not possible to use PKZIP encryption on a non-seekable stream");
+                throw new ZipException("It is not possible to use PKZIP encryption on a non-seekable input stream");
         }
 
 
@@ -1140,10 +1156,10 @@ namespace Ionic.Zip
                 // This will happen BEFORE encryption (if any) as we write data out.
                 Stream output2 = null;
                 bool mustCloseDeflateStream = false;
-                if (CompressionMethod == 0x08)
+                if (CompressionMethod == 0x08 && CompressionLevel != Ionic.Zlib.CompressionLevel.None)
                 {
                     var o = new Ionic.Zlib.DeflateStream(output1, Ionic.Zlib.CompressionMode.Compress,
-                                                         _zipfile.CompressionLevel,
+                                                         CompressionLevel,
                                                          true);
                     if (_zipfile.CodecBufferSize > 0)
                         o.BufferSize = _zipfile.CodecBufferSize;
@@ -1186,7 +1202,7 @@ namespace Ionic.Zip
                 }
 #endif
 
-            }
+            } 
             finally
             {
 

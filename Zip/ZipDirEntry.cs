@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-01 13:37:42>
+// Time-stamp: <2009-September-13 22:01:13>
 //
 // ------------------------------------------------------------------
 //
@@ -83,10 +83,11 @@ namespace Ionic.Zip
                     .Append(string.Format("  Relative Offset: 0x{0:X}\n", this._RelativeOffsetOfLocalHeader))
                     .Append(string.Format("  Bit Field: 0x{0:X4}\n", this._BitField))
                     .Append(string.Format("  Encrypted?: {0}\n", this._sourceIsEncrypted))
-                    .Append(string.Format("  Timeblob: 0x{0:X4}\n", this._TimeBlob))
+                    .Append(string.Format("  Timeblob: 0x{0:X8} ({1})\n", this._TimeBlob,
+                                          Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)) )
                     .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
                     .Append(string.Format("  Is Text?: {0}\n", this._IsText))
-                    .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64));
+                    .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64)); 
                 if (!string.IsNullOrEmpty(this._Comment))
                 {
                     builder.Append(string.Format("  Comment: {0}\n", this._Comment));

@@ -268,12 +268,13 @@ namespace wyUpdate
 
                     showProgress = SelfUpdateProgress;
 
-                    installUpdate = new InstallUpdate(Path.Combine(tempDirectory, updateFilename),
-                        tempDirectory, this, showProgress)
-                    {
-                        //location of old "self" to replace
-                        OldIUPClientLoc = oldClientLocation
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            //location of old "self" to replace
+                                            OldIUPClientLoc = oldClientLocation,
+                                            Filename = Path.Combine(tempDirectory, updateFilename),
+                                            OutputDirectory = tempDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunSelfUpdate);
                     break;
@@ -284,19 +285,24 @@ namespace wyUpdate
 
                     SetStepStatus(1, clientLang.Extract);
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
-                    {
-                        Filename = Path.Combine(tempDirectory, updateFilename),
-                        OutputDirectory = tempDirectory
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            Filename = Path.Combine(tempDirectory, updateFilename),
+                                            OutputDirectory = tempDirectory,
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunUnzipProcess);
                     break;
                 case UpdateOn.ClosingProcesses:
                     SetStepStatus(1, clientLang.Processes);
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory,
-                        new CheckProcessesDel(CheckProcess), this);
+                    installUpdate = new InstallUpdate(this, new CheckProcessesDel(CheckProcess))
+                                        {
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunProcessesCheck);
                     break;
@@ -307,42 +313,50 @@ namespace wyUpdate
 
                     SetStepStatus(1, clientLang.PreExec);
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
-                    {
-                        UpdtDetails = updtDetails
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            UpdtDetails = updtDetails,
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunPreExecute);
                     break;
                 case UpdateOn.BackUpInstalling:
                     SetStepStatus(1, clientLang.Files);
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
-                    {
-                        UpdtDetails = updtDetails,
-                        RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate) ChangeRollback,
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunUpdateFiles);
                     break;
                 case UpdateOn.ModifyReg:
                     SetStepStatus(2, clientLang.Registry);
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
-                    {
-                        UpdtDetails = updtDetails,
-                        RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate) ChangeRollback,
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunUpdateRegistry);
                     break;
                 case UpdateOn.OptimizeExecute:
                     SetStepStatus(3, clientLang.Optimize);
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
-                    {
-                        UpdtDetails = updtDetails
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            UpdtDetails = updtDetails,
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunOptimizeExecute);
                     break;
@@ -352,27 +366,35 @@ namespace wyUpdate
                     //Save the client file with the new version
                     update.InstalledVersion = update.NewVersion;
 
-                    installUpdate = new InstallUpdate(tempDirectory, baseDirectory, showProgress, this)
-                    {
-                        Filename = clientFileLoc,
-                        UpdtDetails = updtDetails,
-                        ClientFileType = clientFileType,
-                        ClientFile = update,
-                        SkipProgressReporting = true
-                    };
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            Filename = clientFileLoc,
+                                            UpdtDetails = updtDetails,
+                                            ClientFileType = clientFileType,
+                                            ClientFile = update,
+                                            SkipProgressReporting = true,
+                                            TempDirectory = tempDirectory,
+                                            ProgramDirectory = baseDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunUpdateClientDataFile);
                     break;
                 case UpdateOn.DeletingTemp:
                     SetStepStatus(3, clientLang.TempFiles);
 
-                    installUpdate = new InstallUpdate(tempDirectory, clientFileLoc, showProgress, this);
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            TempDirectory = tempDirectory
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunDeleteTemporary);
                     break;
                 case UpdateOn.Uninstalling:
                     //need to pass: client data file loc, delegate, this
-                    installUpdate = new InstallUpdate(clientFileLoc, new UninstallProgressDel(UninstallProgress), this);
+                    installUpdate = new InstallUpdate(this, new UninstallProgressDel(UninstallProgress))
+                                        {
+                                            Filename = clientFileLoc
+                                        };
 
                     asyncThread = new Thread(installUpdate.RunUninstall);
                     break;

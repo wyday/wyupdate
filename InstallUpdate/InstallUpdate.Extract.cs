@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 using Ionic.Zip;
 using wyUpdate.Common;
 using wyUpdate.Compression.Vcdiff;
@@ -40,8 +39,6 @@ namespace wyUpdate
         // unzip the update to the temp folder
         public void RunUnzipProcess()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             Exception except = null;
 
             string updtDetailsFilename = Path.Combine(TempDirectory, "updtdetails.udt");

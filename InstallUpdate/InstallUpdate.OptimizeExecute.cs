@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using Microsoft.Win32;
 using wyUpdate.Common;
 
@@ -9,11 +8,8 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
-
         public void RunOptimizeExecute()
         {
-            Thread.CurrentThread.IsBackground = true; //make them a daemon
-
             // simply update the progress bar to show the 6th step is entirely complete
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0), 0);
 
@@ -88,40 +84,45 @@ namespace wyUpdate
                 if (frameWorkDirs != null)
                     return frameWorkDirs;
 
-                using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\.NETFramework"))
+                try
                 {
-                    if (key == null)
-                        return null;
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\.NETFramework"))
+                    {
+                        if (key == null)
+                            return null;
 
-                    string installRoot = (string)key.GetValue("InstallRoot", null);
+                        string installRoot = (string)key.GetValue("InstallRoot", null);
 
-                    if (installRoot == null)
-                        return null;
+                        if (installRoot == null)
+                            return null;
 
-                    DirectoryInfo dir = new DirectoryInfo(installRoot);
+                        DirectoryInfo dir = new DirectoryInfo(installRoot);
 
-                    dir = dir.Parent;
+                        dir = dir.Parent;
 
-                    if (dir == null)
-                        return null;
+                        if (dir == null)
+                            return null;
 
-                    List<string> frameworkDirs = new List<string>(2);
+                        List<string> frameworkDirs = new List<string>(2);
 
-                    string frameDir = Path.Combine(dir.FullName, "Framework\\v2.0.50727");
+                        string frameDir = Path.Combine(dir.FullName, "Framework\\v2.0.50727");
 
-                    if (Directory.Exists(frameDir))
-                        frameworkDirs.Add(frameDir);
+                        if (Directory.Exists(frameDir))
+                            frameworkDirs.Add(frameDir);
 
-                    frameDir = Path.Combine(dir.FullName, "Framework64\\v2.0.50727");
+                        frameDir = Path.Combine(dir.FullName, "Framework64\\v2.0.50727");
 
-                    if (Directory.Exists(frameDir))
-                        frameworkDirs.Add(frameDir);
+                        if (Directory.Exists(frameDir))
+                            frameworkDirs.Add(frameDir);
 
-                    if (frameworkDirs.Count == 0)
-                        return null;
+                        if (frameworkDirs.Count == 0)
+                            return null;
 
-                    frameWorkDirs = frameworkDirs.ToArray();
+                        frameWorkDirs = frameworkDirs.ToArray();
+                    }
                 }
+                catch { }
+
 
                 return frameWorkDirs;
             }
@@ -130,6 +131,9 @@ namespace wyUpdate
 
         static void NGenInstall(string filename, CPUVersion cpuVersion)
         {
+            if (FrameworkDirectories == null)
+                return;
+
             Process proc = new Process
             {
                 StartInfo =
@@ -147,6 +151,9 @@ namespace wyUpdate
 
         static void NGenUninstall(string filename, CPUVersion cpuVersion)
         {
+            if (FrameworkDirectories == null)
+                return;
+
             Process proc = new Process
             {
                 StartInfo =
