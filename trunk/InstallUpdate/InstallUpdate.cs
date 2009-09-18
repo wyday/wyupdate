@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -147,18 +148,42 @@ namespace wyUpdate
             }
         }
 
+        static void SetACLOnFolders(string basis, string extracted, string backup)
+        {
+            // get the acl of basis
+            AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+
+            DirectoryInfo infoEx = new DirectoryInfo(extracted);
+            DirectorySecurity dsEx = infoEx.GetAccessControl();
+
+            DirectoryInfo infoBack = new DirectoryInfo(backup);
+            DirectorySecurity dsBack = infoEx.GetAccessControl();
+
+            foreach (FileSystemAccessRule access in acl)
+            {
+                // add proper ACL rules to extracted & backup
+                dsEx.AddAccessRule(access);
+                dsBack.AddAccessRule(access);
+            }
+
+            infoEx.SetAccessControl(dsEx);
+            infoBack.SetAccessControl(dsBack);
+        }
+
         public void RunUpdateFiles()
         {
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
-            string[] backupFolders = new string[6];
-            string[] origFolders = { "base", "system", "appdata", "comappdata", "comdesktop", "comstartmenu" };
+            string[] backupFolders = new string[8];
+            string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu" };
             string[] destFolders = { ProgramDirectory, 
-                Environment.GetFolderPath(Environment.SpecialFolder.System), 
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                SystemFolders.CommonAppData, 
-                SystemFolders.CommonDesktop, 
-                SystemFolders.CommonProgramsStartMenu };
+                SystemFolders.GetSystem32x86(),
+                SystemFolders.GetSystem32x64(),
+                SystemFolders.GetRootDrive(),
+                SystemFolders.GetCurrentUserAppData(),
+                SystemFolders.GetCommonAppData(), 
+                SystemFolders.GetCommonDesktop(), 
+                SystemFolders.GetCommonProgramsStartMenu() };
 
 
             List<FileFolder> rollbackList = new List<FileFolder>();
@@ -179,6 +204,9 @@ namespace wyUpdate
                         backupFolders[i] = Path.Combine(backupFolder, origFolders[i]);
                         origFolders[i] = Path.Combine(TempDirectory, origFolders[i]);
                         Directory.CreateDirectory(backupFolders[i]);
+
+                        // set ACL on the folders so they'll have proper user access properties
+                        SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
 
                         //delete "newer" client, if it will overwrite this client
                         DeleteClientInPath(destFolders[i], origFolders[i]);
@@ -201,7 +229,9 @@ namespace wyUpdate
                     }
                 }
 
-                DeleteFilesAndInstallShortcuts(destFolders, backupFolder, rollbackList);
+                DeleteFiles(backupFolder, rollbackList);
+
+                InstallShortcuts(destFolders, backupFolder, rollbackList);
             }
             catch (Exception ex)
             {
@@ -226,35 +256,9 @@ namespace wyUpdate
             }
         }
 
-        void DeleteFilesAndInstallShortcuts(string[] destFolders, string backupFolder, List<FileFolder> rollbackList)
+        void DeleteFiles(string backupFolder, List<FileFolder> rollbackList)
         {
-            bool installDesktopShortcut = true, installStartMenuShortcut = true;
-
-            //see if at least one previous shortcut on the desktop exists
-            foreach (string shortcut in UpdtDetails.PreviousDesktopShortcuts)
-            {
-                if (File.Exists(Path.Combine(destFolders[4], shortcut.Substring(11))))
-                {
-                    installDesktopShortcut = true;
-                    break;
-                }
-
-                installDesktopShortcut = false;
-            }
-
-            //see if at least one previous shortcut in the start menu folder exists
-            foreach (string shortcut in UpdtDetails.PreviousSMenuShortcuts)
-            {
-                if (File.Exists(Path.Combine(destFolders[5], shortcut.Substring(13))))
-                {
-                    installStartMenuShortcut = true;
-                    break;
-                }
-
-                installStartMenuShortcut = false;
-            }
-
-            string tempPath, tempFile;
+            string tempPath;
 
             // delete the marked files
             foreach (UpdateFile file in UpdtDetails.UpdateFiles)
@@ -267,7 +271,7 @@ namespace wyUpdate
                     if (!Directory.Exists(tempPath))
                         Directory.CreateDirectory(tempPath);
 
-                    tempFile = FixUpdateDetailsPaths(file.RelativePath);
+                    string tempFile = FixUpdateDetailsPaths(file.RelativePath);
 
                     if (File.Exists(tempFile))
                     {
@@ -301,12 +305,41 @@ namespace wyUpdate
                 }
                 catch { }
             }
+        }
+
+        void InstallShortcuts(string[] destFolders, string backupFolder, List<FileFolder> rollbackList)
+        {
+            bool installDesktopShortcut = true, installStartMenuShortcut = true;
+
+            //see if at least one previous shortcut on the desktop exists
+            foreach (string shortcut in UpdtDetails.PreviousDesktopShortcuts)
+            {
+                if (File.Exists(Path.Combine(destFolders[6], shortcut.Substring(11))))
+                {
+                    installDesktopShortcut = true;
+                    break;
+                }
+
+                installDesktopShortcut = false;
+            }
+
+            //see if at least one previous shortcut in the start menu folder exists
+            foreach (string shortcut in UpdtDetails.PreviousSMenuShortcuts)
+            {
+                if (File.Exists(Path.Combine(destFolders[7], shortcut.Substring(13))))
+                {
+                    installStartMenuShortcut = true;
+                    break;
+                }
+
+                installStartMenuShortcut = false;
+            }
 
             // create the shortcuts
             for (int i = 0; i < UpdtDetails.ShortcutInfos.Count; i++)
             {
                 //get the first 4 letters of the shortcut's path
-                tempFile = UpdtDetails.ShortcutInfos[i].RelativeOuputPath.Substring(0, 4);
+                string tempFile = UpdtDetails.ShortcutInfos[i].RelativeOuputPath.Substring(0, 4);
 
                 //if we can't install to that folder then continue to the next shortcut
                 if (tempFile == "comd" && !installDesktopShortcut
@@ -316,6 +349,8 @@ namespace wyUpdate
                 }
 
                 tempFile = FixUpdateDetailsPaths(UpdtDetails.ShortcutInfos[i].RelativeOuputPath);
+
+                string tempPath;
 
                 // see if the shortcut already exists
                 if (File.Exists(tempFile))
@@ -509,7 +544,7 @@ namespace wyUpdate
                 //delete the temp directory
                 Directory.Delete(TempDirectory, true);
             }
-            catch (Exception) { }
+            catch { }
 
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
@@ -622,6 +657,7 @@ namespace wyUpdate
             }
         }
 
+        //TODO: make this function faster (it gets called N times (N files). Store folders in a hash table
         string FixUpdateDetailsPaths(string relPath)
         {
             if (relPath.Length < 4)
@@ -631,18 +667,22 @@ namespace wyUpdate
             {
                 case "base":
                     return Path.Combine(ProgramDirectory, relPath.Substring(5));
-                case "syst": //system
-                    return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), relPath.Substring(7));
+                case "syst": //system (32-bit)
+                    return Path.Combine(SystemFolders.GetSystem32x86(), relPath.Substring(7));
+                case "64sy": //64system (64-bit)
+                    return Path.Combine(SystemFolders.GetSystem32x64(), relPath.Substring(9));
                 case "temp":
                     return Path.Combine(TempDirectory, relPath);
                 case "appd": //appdata
-                    return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), relPath.Substring(8));
+                    return Path.Combine(SystemFolders.GetCurrentUserAppData(), relPath.Substring(8));
                 case "coma": //comappdata
-                    return Path.Combine(SystemFolders.CommonAppData, relPath.Substring(11));
+                    return Path.Combine(SystemFolders.GetCommonAppData(), relPath.Substring(11));
                 case "comd": //comdesktop
-                    return Path.Combine(SystemFolders.CommonDesktop, relPath.Substring(11));
+                    return Path.Combine(SystemFolders.GetCommonDesktop(), relPath.Substring(11));
                 case "coms": //comstartmenu
-                    return Path.Combine(SystemFolders.CommonProgramsStartMenu, relPath.Substring(13));
+                    return Path.Combine(SystemFolders.GetCommonProgramsStartMenu(), relPath.Substring(13));
+                case "root": //root windows (e.g. C:\)
+                    return Path.Combine(SystemFolders.GetRootDrive(), relPath.Substring(5));
             }
 
             return null;

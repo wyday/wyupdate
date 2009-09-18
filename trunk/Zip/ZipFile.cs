@@ -231,11 +231,31 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Indicates whether extracted files should keep their paths as
-        /// stored in the zip archive. 
+        ///   Indicates whether extracted files should keep their paths as
+        ///   stored in the zip archive. 
         /// </summary>
+        ///
         /// <remarks>
-        ///   This property affects Extraction.  It is not used when creating zip archives.
+        ///  <para>
+        ///   This property affects Extraction.  It is not used when creating zip
+        ///   archives.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    With this property set to <c>false</c>, the default, extracting entries
+        ///    from a zip file will create files in the filesystem that have the full
+        ///    path associated to the entry within the zip file.  With this property set
+        ///    to <c>true</c>, extracting entries from the zip file results in files
+        ///    with no path: the folders are "flattened."  
+        ///  </para>
+        ///
+        ///  <para>
+        ///    An example: suppose the zip file contains entries /directory1/file1.txt and
+        ///    /directory2/file2.txt.  With <c>FlattenFoldersOnExtract</c> set to false,
+        ///    the files created will be \directory1\file1.txt and \directory2\file2.txt.
+        ///    With the property set to true, the files created are file1.txt and file2.txt.
+        ///  </para>
+        ///  
         /// </remarks>
         public bool FlattenFoldersOnExtract
         {
