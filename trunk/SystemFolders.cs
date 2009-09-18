@@ -14,9 +14,9 @@ namespace wyUpdate.Common
         static string m_CommonProgramsStartMenu;
         static string m_CommonStartup;
 
-        private static string m_System32x86;
-        private static string m_System32x64;
-        private static string m_RootDrive;
+        static string m_System32x86;
+        static string m_System32x64;
+        static string m_RootDrive;
 
         public static string GetCommonAppData()
         {
