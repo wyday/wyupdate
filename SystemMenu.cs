@@ -23,7 +23,7 @@ public static class SystemMenu
         //mfGrayed = 0x00000001
         //mfByCommand = 0x00000000
         IntPtr SystemMenu = GetSystemMenu(form.Handle, 0);
-        int PreviousState = EnableMenuItem(SystemMenu, 0xF060, 0x00000001);
+        int PreviousState = EnableMenuItem(SystemMenu, 0xF060, 1);
         if (PreviousState == -1)
             throw new Exception("The close menu does not exist");
     }
@@ -35,7 +35,7 @@ public static class SystemMenu
         //mfString = 0x00000000
         //mfByCommand = 0x00000000
         IntPtr SystemMenu = GetSystemMenu(form.Handle, 0);
-        int PreviousState = EnableMenuItem(SystemMenu, 0xF060, 0x00);
+        int PreviousState = EnableMenuItem(SystemMenu, 0xF060, 0);
         if (PreviousState == -1)
             throw new Exception("The close menu does not exist");
     }
