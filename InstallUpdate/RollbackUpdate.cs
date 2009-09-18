@@ -87,7 +87,7 @@ namespace wyUpdate
             {
                 ReadRollbackFiles(Path.Combine(backupFolder, "fileList.bak"), fileList, foldersToDelete, foldersToCreate);
             }
-            catch (Exception) { }
+            catch { }
 
             //delete the files
             foreach (string file in fileList)
@@ -97,42 +97,50 @@ namespace wyUpdate
                     File.SetAttributes(file, FileAttributes.Normal);
                     File.Delete(file);
                 }
-                catch (Exception) { }
+                catch { }
             }
 
             //delete the folders
             foreach (string folder in foldersToDelete)
             {
-
                 //TODO: test rolling back read-only / hidden folders
                 try { Directory.Delete(folder, true); }
-                catch (Exception) { }
+                catch { }
             }
 
             //create the folders
             foreach (string folder in foldersToCreate)
             {
                 try { Directory.CreateDirectory(folder); }
-                catch (Exception) { }
+                catch { }
             }
 
             //restore old versions
-            string[] backupFolders = { Path.Combine(backupFolder, "base"), 
-                 Path.Combine(backupFolder, "system"), 
-                 Path.Combine(backupFolder, "appdata"),
-                 Path.Combine(backupFolder, "comappdata"),
-                 Path.Combine(backupFolder, "comdesktop"),
-                 Path.Combine(backupFolder, "comstartmenu") };
-            string[] destFolders = { m_ProgramDirectory, 
-                Environment.GetFolderPath(Environment.SpecialFolder.System), 
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                SystemFolders.CommonAppData,
-                SystemFolders.CommonDesktop,
-                SystemFolders.CommonProgramsStartMenu};
+            string[] backupFolders = {
+                                         Path.Combine(backupFolder, "base"),
+                                         Path.Combine(backupFolder, "system"),
+                                         Path.Combine(backupFolder, "64system"),
+                                         Path.Combine(backupFolder, "root"),
+                                         Path.Combine(backupFolder, "appdata"),
+                                         Path.Combine(backupFolder, "comappdata"),
+                                         Path.Combine(backupFolder, "comdesktop"),
+                                         Path.Combine(backupFolder, "comstartmenu")
+                                     };
+            string[] destFolders = {
+                                       m_ProgramDirectory,
+                                       SystemFolders.GetSystem32x86(),
+                                       SystemFolders.GetSystem32x64(),
+                                       SystemFolders.GetRootDrive(),
+                                       SystemFolders.GetCurrentUserAppData(),
+                                       SystemFolders.GetCommonAppData(),
+                                       SystemFolders.GetCommonDesktop(),
+                                       SystemFolders.GetCommonProgramsStartMenu()
+                                   };
 
             for (int i = 0; i < backupFolders.Length; i++)
             {
-                if (Directory.Exists(backupFolders[i]))
+                // only backup if the back-folder & dest-folder exists (i.e. the 64-bit system32 folder)
+                if (Directory.Exists(backupFolders[i]) && destFolders[i] != null)
                     RestoreFiles(destFolders[i], backupFolders[i]);
             }
 
@@ -141,7 +149,7 @@ namespace wyUpdate
             {
                 Directory.Delete(m_TempDirectory, true);
             }
-            catch (Exception) { }
+            catch { }
         }
 
         public static void RestoreFiles(string destDir, string backupDir)
@@ -377,7 +385,7 @@ namespace wyUpdate
                 if (File.Exists(uninstallDataFile))
                     ReadUninstallFile(uninstallDataFile, filesToUninstall, foldersToDelete, registryToDelete);
             }
-            catch (Exception) { }
+            catch { }
 
 
             //add files/folders from rollback file
@@ -389,7 +397,7 @@ namespace wyUpdate
                 {
                     ReadRollbackFiles(filesRollbackFile, rollbackFiles, foldersToDelete, null);
                 }
-                catch (Exception) { }
+                catch { }
 
                 //add files to the uninstall list
                 foreach (string filename in rollbackFiles)
@@ -445,7 +453,7 @@ namespace wyUpdate
                         }
                     }
                 }
-                catch (Exception) { }
+                catch { }
             }
 
             //write out the new uninstall data file

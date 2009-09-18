@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 20:49:01>
+// Time-stamp: <2009-September-18 16:23:59>
 //
 // ------------------------------------------------------------------
 //
@@ -931,11 +931,14 @@ namespace Ionic.Zip
         internal void _SetTimes(string fileOrDirectory, bool isFile)
         {
 
-            //             Console.WriteLine("_SetTimeS({0}): m({1}) a({2}) c({3})",
-            //                               fileOrDirectory,
-            //                               Mtime.ToString("yyyy/MM/dd HH:mm:ss"),
-            //                               Atime.ToString("yyyy/MM/dd HH:mm:ss"),
-            //                               Ctime.ToString("yyyy/MM/dd HH:mm:ss"));
+            // workitem 8807: 
+            // Because setting the time is not considered to be a fatal error,
+            // and because other applications can interfere with the setting
+            // of a time on a directory, we're going to swallow IO exceptions
+            // in this method.
+            
+            try
+            {
 
             if (_ntfsTimesAreSet)
             {
@@ -993,6 +996,12 @@ namespace Ionic.Zip
                 else
                     Directory.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
 #endif
+            }
+            }
+            catch (System.IO.IOException ioexc1)
+            {
+                if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("failed to set time on {0}: {1}",
+                                                                                 fileOrDirectory, ioexc1.Message);
             }
         }
 

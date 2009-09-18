@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
@@ -8,6 +9,8 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
+        static string[] frameworkDirs;
+
         public void RunOptimizeExecute()
         {
             // simply update the progress bar to show the 6th step is entirely complete
@@ -72,73 +75,57 @@ namespace wyUpdate
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
 
-
-
-
-        private static string[] frameWorkDirs;
-
-        public static string[] FrameworkDirectories
+        static void GetFrameworkDirectories()
         {
-            get
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\.NETFramework"))
             {
-                if (frameWorkDirs != null)
-                    return frameWorkDirs;
+                if (key == null)
+                    return;
 
-                try
+                string installRoot = (string)key.GetValue("InstallRoot", null);
+
+                if (installRoot != null)
                 {
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\.NETFramework"))
+                    DirectoryInfo dir = new DirectoryInfo(installRoot);
+
+                    dir = dir.Parent;
+
+                    if (dir != null)
                     {
-                        if (key == null)
-                            return null;
-
-                        string installRoot = (string)key.GetValue("InstallRoot", null);
-
-                        if (installRoot == null)
-                            return null;
-
-                        DirectoryInfo dir = new DirectoryInfo(installRoot);
-
-                        dir = dir.Parent;
-
-                        if (dir == null)
-                            return null;
-
-                        List<string> frameworkDirs = new List<string>(2);
+                        List<string> fDirs = new List<string>(2);
 
                         string frameDir = Path.Combine(dir.FullName, "Framework\\v2.0.50727");
 
                         if (Directory.Exists(frameDir))
-                            frameworkDirs.Add(frameDir);
+                            fDirs.Add(frameDir);
 
                         frameDir = Path.Combine(dir.FullName, "Framework64\\v2.0.50727");
 
                         if (Directory.Exists(frameDir))
-                            frameworkDirs.Add(frameDir);
+                            fDirs.Add(frameDir);
 
-                        if (frameworkDirs.Count == 0)
-                            return null;
-
-                        frameWorkDirs = frameworkDirs.ToArray();
+                        if (fDirs.Count != 0)
+                        {
+                            frameworkDirs = fDirs.ToArray();
+                            return;
+                        }
                     }
                 }
-                catch { }
 
-
-                return frameWorkDirs;
+                throw new Exception("Failed to retrieve .NET Framework directories.");
             }
         }
 
-
         static void NGenInstall(string filename, CPUVersion cpuVersion)
         {
-            if (FrameworkDirectories == null)
-                return;
+            if (frameworkDirs == null)
+                GetFrameworkDirectories();
 
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(FrameworkDirectories[cpuVersion == CPUVersion.x86 ? 0 : FrameworkDirectories.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(frameworkDirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkDirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " install \"" + filename + "\"" + " /nologo"
                 }
@@ -151,14 +138,14 @@ namespace wyUpdate
 
         static void NGenUninstall(string filename, CPUVersion cpuVersion)
         {
-            if (FrameworkDirectories == null)
-                return;
+            if (frameworkDirs == null)
+                GetFrameworkDirectories();
 
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(FrameworkDirectories[cpuVersion == CPUVersion.x86 ? 0 : FrameworkDirectories.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(frameworkDirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkDirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " uninstall \"" + filename + "\"" + " /nologo"
                 }
@@ -167,6 +154,114 @@ namespace wyUpdate
             proc.Start();
 
             proc.WaitForExit();
+        }
+
+
+        /// <summary>
+        /// Registers a native dll or ocx using regsvr32.
+        /// </summary>
+        /// <param name="DllPath">The path to the dll or ocx.</param>
+        /// <param name="Uninstall">Are we uninstalling the dll/ocx?</param>
+        static void RegisterDllServer(string DllPath, bool Uninstall)
+        {
+            using (Process p = new Process
+            {
+                StartInfo =
+                {
+                    FileName = "regsvr32.exe",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    Arguments = (Uninstall ? "/s /u" : "/s") + " \"" + DllPath + "\""
+                }
+            })
+            {
+                p.Start();
+
+                p.WaitForExit();
+
+                switch (p.ExitCode)
+                {
+                    case 0:
+                        // (un) installed successfully
+                        break;
+                    case 1:
+                        throw new Exception("RegSvr32 failed - bad arguments. File: " + DllPath);
+                    case 2:
+                        throw new Exception("RegSvr32 failed - OLE initilization failed for " + DllPath);
+                    case 3:
+                        throw new Exception("RegSvr32 failed - Failed to load the module, you may need to check for problems with dependencies. File: " + DllPath);
+                    case 4:
+                        throw new Exception("RegSvr32 failed - Can't find " +
+                                            (Uninstall ? "DllUnregisterServer" : "DllRegisterServer") +
+                                            " entry point in the file, maybe it's not a .DLL or .OCX? File: " + DllPath);
+                    case 5:
+                        throw new Exception("RegSvr32 failed - The assembly was loaded, but the call to " +
+                                            (Uninstall ? "DllUnregisterServer" : "DllRegisterServer") +
+                                            " failed. File: " + DllPath);
+
+                    default:
+                        throw new Exception("Failed to " + (Uninstall ? "unregister" : "register") +
+                                            " dll with RegSvr32. Return code: " + p.ExitCode + ". File: " + DllPath);
+                }
+            }
+        }
+
+        static void RegAsm(string filename, bool Uninstall, CPUVersion cpu)
+        {
+            if (frameworkDirs == null)
+                GetFrameworkDirectories();
+
+            if (cpu == CPUVersion.x64 && frameworkDirs.Length < 2)
+                throw new Exception("Cannot register an x64 DLL on an x86 machine.");
+
+            // call 32-bit regasm
+            if (cpu != CPUVersion.x64)
+            {
+                using (Process p = new Process
+                {
+                    StartInfo =
+                    {
+                        FileName = frameworkDirs[0] + "\\RegAsm.exe",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        Arguments =
+                            "\"" + filename + "\" " +
+                            (Uninstall ? "/nologo /s /u" : "/nologo /s")
+                    }
+                })
+                {
+                    p.Start();
+
+                    p.WaitForExit();
+
+                    if (p.ExitCode != 0)
+                        throw new Exception("Failed to register assembly with RegAsm (return code: " + p.ExitCode +
+                                            "). File: " + filename);
+                }
+            }
+
+            // call 64-bit regasm
+            if (cpu == CPUVersion.x64 || cpu == CPUVersion.AnyCPU && frameworkDirs.Length == 2)
+            {
+                using (Process p = new Process
+                {
+                    StartInfo =
+                    {
+                        FileName = frameworkDirs[1] + "\\RegAsm.exe",
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        Arguments =
+                            "\"" + filename + "\" " +
+                            (Uninstall ? "/nologo /s /u" : "/nologo /s")
+                    }
+                })
+                {
+                    p.Start();
+
+                    p.WaitForExit();
+
+                    if (p.ExitCode != 0)
+                        throw new Exception("Failed to register assembly with RegAsm (return code: " + p.ExitCode +
+                                            "). File: " + filename);
+                }
+            }
         }
     }
 }

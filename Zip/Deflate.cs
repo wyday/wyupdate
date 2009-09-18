@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-09 22:08:55>
+// Time-stamp: <2009-September-15 16:01:48>
 //
 // ------------------------------------------------------------------
 //
@@ -690,18 +690,21 @@ namespace Ionic.Zlib
         {
             pending[pendingCount++] = c;
         }
-        internal void put_short(int w)
+        internal void put_short(int b)
         {
             unchecked
             {
-                put_byte((byte)w);
-                put_byte((byte)(SharedUtils.URShift(w, 8)));
+                put_byte((byte) b);
+                put_byte((byte)(b >> 8));
             }
         }
         internal void putShortMSB(int b)
         {
-            put_byte((byte)(b >> 8));
-            put_byte(unchecked((byte)b));
+            unchecked
+            {
+                put_byte((byte)(b >> 8));
+                put_byte((byte)b);
+            }
         }
 
         internal void send_code(int c, short[] tree)
