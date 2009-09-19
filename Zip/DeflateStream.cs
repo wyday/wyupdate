@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-June-18 16:23:23>
+// Time-stamp: <2009-September-18 20:32:05>
 //
 // ------------------------------------------------------------------
 //
@@ -556,6 +556,66 @@ namespace Ionic.Zlib
             _baseStream.Write(buffer, offset, count);
         }
         #endregion
+
+
+
+
+        /// <summary>
+        /// Compress a string into a byte array.
+        /// </summary>
+        /// <seealso cref="DeflateStream.UncompressString(byte[])"/>
+        /// <param name="s">
+        /// A string to compress.  The string will first be encoded
+        /// using UTF8, then compressed.
+        /// </param>
+        public static byte[] CompressString(String s)
+        {
+            return ZlibBaseStream.CompressString(s, typeof(DeflateStream));
+        }
+
+                    
+        /// <summary>
+        /// Compress a byte array into a new byte array.
+        /// </summary>
+        /// <remarks>
+        /// Uncompress it with <see cref="DeflateStream.UncompressBuffer(byte[])"/>.
+        /// </remarks>
+        /// <seealso cref="DeflateStream.CompressString(string)"/>
+        /// <seealso cref="DeflateStream.UncompressBuffer(byte[])"/>
+        /// <param name="b">
+        /// A buffer to compress. 
+        /// </param>
+        public static byte[] CompressBuffer(byte[] b)
+        {
+            return ZlibBaseStream.CompressBuffer(b, typeof(DeflateStream));
+        }
+
+
+        /// <summary>
+        /// Uncompress a byte array into a single string.
+        /// </summary>
+        /// <seealso cref="DeflateStream.CompressString(String)"/>
+        /// <param name="compressed">
+        /// A buffer containing GZIP-compressed data.  
+        /// </param>
+        public static String UncompressString(byte[] compressed)
+        {
+            return ZlibBaseStream.UncompressString(compressed, typeof(DeflateStream));
+        }
+
+        /// <summary>
+        /// Uncompress a byte array into a byte array.
+        /// </summary>
+        /// <seealso cref="DeflateStream.CompressBuffer(byte[])"/>
+        /// <seealso cref="DeflateStream.UncompressString(byte[])"/>
+        /// <param name="compressed">
+        /// A buffer containing ZLIB-compressed data.  
+        /// </param>
+        public static byte[] UncompressBuffer(byte[] compressed)
+        {
+            return ZlibBaseStream.UncompressBuffer(compressed, typeof(DeflateStream));
+        }
+            
     }
 
 }
