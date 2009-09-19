@@ -42,7 +42,7 @@ namespace wyUpdate.Common
     }
 
     [Flags]
-    public enum InstallingTo { BaseDir = 1, SysDir = 2, CommonDesktop = 4, CommonStartMenu = 8, CommonAppData = 16 }
+    public enum InstallingTo { BaseDir = 1, SysDirx86 = 2, CommonDesktop = 4, CommonStartMenu = 8, CommonAppData = 16, SysDirx64 = 32, WindowsRoot = 64 }
 
     public enum ClientFileType { PreRC2, RC2, Final }
 

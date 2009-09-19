@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-12 15:35:30>
+// Time-stamp: <2009-September-18 20:32:30>
 //
 // ------------------------------------------------------------------
 //
@@ -848,22 +848,12 @@ namespace Ionic.Zlib
         /// </summary>
         /// <seealso cref="GZipStream.UncompressString(byte[])"/>
         /// <param name="s">
-        /// A string to compress.  The string will first be encoded using UTF8, then compressed.
+        /// A string to compress.  The string will first be encoded
+        /// using UTF8, then compressed.
         /// </param>
         public static byte[] CompressString(String s)
         {
-            // workitem 8460
-            var encoding = System.Text.Encoding.UTF8;
-            byte[] uncompressed = encoding.GetBytes(s);
-
-            using (var ms = new MemoryStream())
-            {
-                using (Stream compressor = new GZipStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression))
-                {
-                    compressor.Write(uncompressed, 0, uncompressed.Length);
-                }
-                return ms.ToArray();
-            }
+            return ZlibBaseStream.CompressString(s, typeof(GZipStream));
         }
 
                     
@@ -880,17 +870,8 @@ namespace Ionic.Zlib
         /// </param>
         public static byte[] CompressBuffer(byte[] b)
         {
-            // workitem 8460
-            using (var ms = new MemoryStream())
-            {
-                using (Stream compressor = new GZipStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression))
-                {
-                    compressor.Write(b, 0, b.Length);
-                }
-                return ms.ToArray();
-            }
+            return ZlibBaseStream.CompressBuffer(b, typeof(GZipStream));
         }
-
 
 
         /// <summary>
@@ -902,27 +883,7 @@ namespace Ionic.Zlib
         /// </param>
         public static String UncompressString(byte[] compressed)
         {
-            // workitem 8460
-            byte[] working = new byte[1024];
-            var encoding = System.Text.Encoding.UTF8;
-            using (var output = new MemoryStream())
-            {
-                using (var input = new MemoryStream(compressed))
-                {
-                    using (Stream decompressor = new GZipStream(input, CompressionMode.Decompress))
-                    {
-                        int n;
-                        while ((n= decompressor.Read(working, 0, working.Length)) !=0)
-                        {
-                            output.Write(working, 0, n);
-                        }
-                    }
-                    // reset to allow read from start
-                    output.Seek(0, SeekOrigin.Begin);
-                    var sr = new StreamReader(output, encoding);
-                    return sr.ReadToEnd();
-                }
-            }
+            return ZlibBaseStream.UncompressString(compressed, typeof(GZipStream));
         }
 
         /// <summary>
@@ -935,23 +896,7 @@ namespace Ionic.Zlib
         /// </param>
         public static byte[] UncompressBuffer(byte[] compressed)
         {
-            // workitem 8460
-            byte[] working = new byte[1024];
-            using (var output = new MemoryStream())
-            {
-                using (var input = new MemoryStream(compressed))
-                {
-                    using (Stream decompressor = new GZipStream(input, CompressionMode.Decompress))
-                    {
-                        int n;
-                        while ((n= decompressor.Read(working, 0, working.Length)) !=0)
-                        {
-                            output.Write(working, 0, n);
-                        }
-                    }
-                    return output.ToArray();
-                }
-            }
+            return ZlibBaseStream.UncompressBuffer(compressed, typeof(GZipStream));
         }
         
         

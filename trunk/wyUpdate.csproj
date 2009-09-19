@@ -219,6 +219,7 @@
     <Compile Include="Zip\ZipFile.x-IEnumerable.cs" />
     <Compile Include="Zip\ZipSegmentedStream.cs" />
     <Compile Include="Zip\Zlib.cs" />
+    <Compile Include="Zip\ZlibBaseStream.cs" />
     <Compile Include="Zip\ZlibCodec.cs" />
     <Compile Include="Zip\ZlibConstants.cs" />
     <Compile Include="Zip\ZlibStream.cs" />
