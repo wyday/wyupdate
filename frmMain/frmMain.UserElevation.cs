@@ -17,19 +17,19 @@ namespace wyUpdate
                 ErrorDialogParentHandle = Handle
             };
 
-            if (willSelfUpdate)
+            //TODO: fix this for automatic update - selfupdate. (The new wyUpdate should already exist - don't copy slef over, just use the new wyUpdate)
+            if (SelfUpdateState == SelfUpdateState.WillUpdate)
             {
                 //create the filename for the newly copied client
-                psi.FileName = Path.Combine(tempDirectory,
-                        Path.GetFileName(Application.ExecutablePath));
+                psi.FileName = Path.Combine(tempDirectory, Path.GetFileName(Application.ExecutablePath));
 
                 //copy self to the temp folder
                 File.Copy(Application.ExecutablePath, psi.FileName, true);
             }
-            else if (SelfUpdating)
+            else if (SelfUpdateState == SelfUpdateState.FullUpdate)
             {
                 //launch the newly updated self
-                psi.FileName = oldClientLocation;
+                psi.FileName = oldSelfLocation;
             }
             else
                 psi.FileName = Application.ExecutablePath;
@@ -40,6 +40,8 @@ namespace wyUpdate
             try
             {
                 //write necessary info (base/temp dirs, new client files, etc.) to a file
+                // TODO: fix this - it save oldSelfLocation as "Application.ExecutablePath" whether or not that is right
+                // i.e. the new client is elevated in autoupdate mode
                 SaveSelfUpdateData(Path.Combine(tempDirectory, "selfUpdate.sup"));
 
                 psi.Arguments = "-supdf:\"" + Path.Combine(tempDirectory, "selfUpdate.sup") + "\"";
@@ -107,7 +109,7 @@ namespace wyUpdate
                 return false;
 
             //when self-updating, if this client is'nt in the userprofile folder
-            if ((willSelfUpdate || SelfUpdating) && !IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
+            if ((SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate) && !IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
                 return false;
 
             //it's not changing anything outside the user profile folder

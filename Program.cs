@@ -20,12 +20,12 @@ namespace wyUpdate
 
             frmMain mainForm = new frmMain(args);
 
-            StringBuilder mutexName = new StringBuilder("Local\\wyUpdate-" + mainForm.update.ProductName);
+            StringBuilder mutexName = new StringBuilder("Local\\wyUpdate-" + mainForm.update.GUID);
 
             if (mainForm.IsAdmin)
                 mutexName.Append('a');
 
-            if (mainForm.SelfUpdating)
+            if (mainForm.SelfUpdateState == SelfUpdateState.FullUpdate)
                 mutexName.Append('s');
 
             Mutex mutex = new Mutex(true, mutexName.ToString());

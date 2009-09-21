@@ -14,10 +14,10 @@ namespace wyUpdate.Common
 
     public enum UpdateOn 
     { 
-        DownloadingClientUpdt = 0, SelfUpdating = 1,
-        DownloadingUpdate = 2, Extracting = 3, ClosingProcesses = 4, 
-        PreExecute = 5, BackUpInstalling = 6, ModifyReg = 7, 
-        OptimizeExecute = 8, WriteClientFile = 9, DeletingTemp = 10, Uninstalling = 11
+        DownloadingSelfUpdate = 0, FullSelfUpdate = 1, ExtractSelfUpdate = 2, InstallSelfUpdate = 3,
+        DownloadingUpdate = 4, Extracting = 5, ClosingProcesses = 6, 
+        PreExecute = 7, BackUpInstalling = 8, ModifyReg = 9, 
+        OptimizeExecute = 10, WriteClientFile = 11, DeletingTemp = 12, Uninstalling = 13
     }
 
     public class VersionChoice

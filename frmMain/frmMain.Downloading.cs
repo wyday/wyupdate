@@ -7,22 +7,6 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        void DownloadUpdate()
-        {
-            if (SelfUpdating)
-            {
-                //download self update
-                update.CurrentlyUpdating = UpdateOn.DownloadingClientUpdt;
-                BeginSelfUpdateDownload(updateFrom.FileSites, updateFrom.Adler32);
-            }
-            else
-            {
-                //download the update file
-                update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
-                BeginDownload(updateFrom.FileSites, updateFrom.Adler32, true);
-            }
-        }
-
         void CheckForUpdate()
         {
             if (!string.IsNullOrEmpty(serverOverwrite))
@@ -35,6 +19,22 @@ namespace wyUpdate
             {
                 //download the server file
                 BeginDownload(update.ServerFileSites, 0, false);
+            }
+        }
+
+        void DownloadUpdate()
+        {
+            if (SelfUpdateState == SelfUpdateState.FullUpdate)
+            {
+                //download self update
+                update.CurrentlyUpdating = UpdateOn.DownloadingSelfUpdate;
+                BeginSelfUpdateDownload(updateFrom.FileSites, updateFrom.Adler32);
+            }
+            else
+            {
+                //download the update file
+                update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
+                BeginDownload(updateFrom.FileSites, updateFrom.Adler32, true);
             }
         }
 
@@ -84,7 +84,8 @@ namespace wyUpdate
             LoadClientServerFile(clientSF);
 
             //check if the client is new enough.
-            willSelfUpdate = VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1;
+            if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1)
+                SelfUpdateState = SelfUpdateState.WillUpdate;
 
             //Show update info page
             ShowFrame(Frame.UpdateInfo);

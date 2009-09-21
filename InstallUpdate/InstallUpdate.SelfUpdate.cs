@@ -9,8 +9,8 @@ namespace wyUpdate
     partial class InstallUpdate
     {
         //for self update
-        public string NewIUPClientLoc;
-        public string OldIUPClientLoc;
+        public string NewSelfLoc;
+        public string OldSelfLoc;
 
         public void RunSelfUpdate()
         {
@@ -30,7 +30,7 @@ namespace wyUpdate
 
 
                 //find and forcibly close oldClientLocation
-                KillProcess(OldIUPClientLoc);
+                KillProcess(OldSelfLoc);
 
                 string updtDetailsFilename = Path.Combine(OutputDirectory, "updtdetails.udt");
 
@@ -51,15 +51,15 @@ namespace wyUpdate
                 UpdateFile updateFile = FindNewClient();
 
 
-                //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
-                File.Copy(NewIUPClientLoc, OldIUPClientLoc, true);
+                //transfer new client to the directory (Note: this assumes a standalone wyUpdate - i.e. no dependencies)
+                File.Copy(NewSelfLoc, OldSelfLoc, true);
 
                 //Optimize client if necessary
                 if (updateFile != null)
-                    NGenInstall(OldIUPClientLoc, updateFile.CPUVersion);
+                    NGenInstall(OldSelfLoc, updateFile.CPUVersion);
 
                 //cleanup the client update files to prevent conflicts with the product update
-                File.Delete(NewIUPClientLoc);
+                File.Delete(NewSelfLoc);
                 Directory.Delete(Path.Combine(OutputDirectory, "base"));
             }
             catch (Exception ex)
@@ -112,6 +112,9 @@ namespace wyUpdate
 
             try
             {
+                if (!Directory.Exists(OutputDirectory))
+                    Directory.CreateDirectory(OutputDirectory);
+
                 //extract downloaded self update
                 ExtractUpdateFile();
 
@@ -123,8 +126,7 @@ namespace wyUpdate
                 catch { }
 
 
-                //find and forcibly close oldClientLocation
-                KillProcess(OldIUPClientLoc);
+
 
                 string updtDetailsFilename = Path.Combine(OutputDirectory, "updtdetails.udt");
 
@@ -147,14 +149,14 @@ namespace wyUpdate
             }
 
 
-
+            //TODO: test self-update failure: shouldn't wipe out server & autoupdate files
             if (canceled || except != null)
             {
                 //report cancellation
                 ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
 
                 //Delete temporary files
-                if (except != null && except.GetType() != typeof(PatchApplicationException))
+                if (except != null)
                 {
                     // remove the entire temp directory
                     try
@@ -162,21 +164,6 @@ namespace wyUpdate
                         Directory.Delete(OutputDirectory, true);
                     }
                     catch { }
-                }
-                else
-                {
-                    //only 'gut' the folder leaving the server file
-
-                    string[] dirs = Directory.GetDirectories(TempDirectory);
-
-                    foreach (string dir in dirs)
-                    {
-                        try
-                        {
-                            Directory.Delete(dir, true);
-                        }
-                        catch { }
-                    }
                 }
 
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
@@ -189,26 +176,27 @@ namespace wyUpdate
 
         public void JustInstallSelfUpdate()
         {
-            //TODO: 
-
             Exception except = null;
-
 
             try
             {
                 //find self in Path.Combine(OutputDirectory, "base")
                 UpdateFile updateFile = FindNewClient();
 
+                //find and forcibly close oldClientLocation
+                KillProcess(OldSelfLoc);
 
                 //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
-                File.Copy(NewIUPClientLoc, OldIUPClientLoc, true);
+                File.Copy(NewSelfLoc, OldSelfLoc, true);
 
                 //Optimize client if necessary
                 if (updateFile != null)
-                    NGenInstall(OldIUPClientLoc, updateFile.CPUVersion);
+                    NGenInstall(OldSelfLoc, updateFile.CPUVersion);
 
+
+                //TODO: delete full self update folder
                 //cleanup the client update files to prevent conflicts with the product update
-                File.Delete(NewIUPClientLoc);
+                File.Delete(NewSelfLoc);
                 Directory.Delete(Path.Combine(OutputDirectory, "base"));
             }
             catch (Exception ex)
@@ -249,7 +237,7 @@ namespace wyUpdate
             if (Directory.Exists(Path.Combine(OutputDirectory, "patches")))
             {
                 // set the base directory to the home of the client file
-                ProgramDirectory = Path.GetDirectoryName(OldIUPClientLoc);
+                ProgramDirectory = Path.GetDirectoryName(OldSelfLoc);
                 TempDirectory = OutputDirectory;
 
                 // patch the file (assume only one - wyUpdate.exe)
@@ -264,7 +252,7 @@ namespace wyUpdate
 
                     try
                     {
-                        using (FileStream original = File.OpenRead(OldIUPClientLoc))
+                        using (FileStream original = File.OpenRead(OldSelfLoc))
                         using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)))
                         using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                         {
@@ -298,7 +286,7 @@ namespace wyUpdate
                 if (UpdtDetails.UpdateFiles[i].IsNETAssembly)
                 {
                     //optimize (ngen) the file
-                    NewIUPClientLoc = Path.Combine(OutputDirectory, UpdtDetails.UpdateFiles[i].RelativePath);
+                    NewSelfLoc = Path.Combine(OutputDirectory, UpdtDetails.UpdateFiles[i].RelativePath);
 
                     return UpdtDetails.UpdateFiles[i];
                 }
@@ -310,7 +298,7 @@ namespace wyUpdate
 
             if (files.Length > 0)
             {
-                NewIUPClientLoc = files[0];
+                NewSelfLoc = files[0];
             }
             else
             {

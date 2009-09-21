@@ -7,10 +7,11 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        public bool SelfUpdating;
         string selfUpdateFileLoc;
-        string oldClientLocation;
         string clientSFLoc;
+
+        string oldSelfLocation;
+        string newSelfLocation;
 
         void SaveSelfUpdateData(string fileName)
         {
@@ -38,7 +39,7 @@ namespace wyUpdate
             WriteFiles.WriteDeprecatedString(fs, 0x06, Application.ExecutablePath);
 
             //self update needed
-            WriteFiles.WriteBool(fs, 0x07, willSelfUpdate);
+            WriteFiles.WriteBool(fs, 0x07, SelfUpdateState == SelfUpdateState.WillUpdate);
 
             //check if the new client really has been elevated
             WriteFiles.WriteBool(fs, 0x08, needElevation);
@@ -106,14 +107,13 @@ namespace wyUpdate
                         tempDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://Read Old client file location
-                        oldClientLocation = ReadFiles.ReadDeprecatedString(fs);
+                        oldSelfLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x07: //true=Self Update, false=Continue update
 
-                        if (ReadFiles.ReadBool(fs))
-                            SelfUpdating = true;
-                        else
-                            continuingUpdate = true;
+                        SelfUpdateState = ReadFiles.ReadBool(fs)
+                                              ? SelfUpdateState.FullUpdate
+                                              : SelfUpdateState.ContinuingRegularUpdate;
 
                         break;
                     case 0x08: //is elevation required
@@ -163,13 +163,14 @@ namespace wyUpdate
                         tempDirectory = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x05://Read Old client file location
-                        oldClientLocation = ReadFiles.ReadDeprecatedString(fs);
+                        oldSelfLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://Read New client file location
                         newClientLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x07:
-                        SelfUpdating = ReadFiles.ReadBool(fs);
+                        if (ReadFiles.ReadBool(fs))
+                            SelfUpdateState = SelfUpdateState.FullUpdate;
                         break;
                     case 0x08:
                         needElevation = ReadFiles.ReadBool(fs);

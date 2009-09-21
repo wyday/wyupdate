@@ -51,9 +51,11 @@ namespace wyUpdate
         // the first step wyUpdate should take
         UpdateStepOn startStep = UpdateStepOn.Nothing;
 
+        // for self update
+        public SelfUpdateState SelfUpdateState;
+
         //does the client need elevation?
         bool needElevation;
-        bool willSelfUpdate;
 
         //--Uninstalling
         bool uninstalling;
@@ -61,10 +63,6 @@ namespace wyUpdate
         //--Silent updating/uninstalling
         bool isSilent;
         public int ReturnCode { get; set; }
-
-
-        //used after a self update or elevation
-        bool continuingUpdate; 
 
         //Pre-RC2 compatability:
         ClientFileType clientFileType;
@@ -138,7 +136,7 @@ namespace wyUpdate
                             needElevation = false;
 
                             //Install the new client
-                            File.Copy(newClientLocation, oldClientLocation, true);
+                            File.Copy(newClientLocation, oldSelfLocation, true);
 
                             //Relaunch self in OnLoad()
                         }
@@ -205,7 +203,7 @@ namespace wyUpdate
                     startStep = UpdateStepOn.Checking;
                 }
             }
-            else if (SelfUpdating)
+            else if (SelfUpdateState == SelfUpdateState.FullUpdate)
             {
                 try
                 {
@@ -238,7 +236,8 @@ namespace wyUpdate
                     ShowFrame(Frame.InstallUpdates);
                 }
             }
-            else if (continuingUpdate) //continuing from elevation or self update (or both)
+            //continuing from elevation or self update (or both)
+            else if (SelfUpdateState == SelfUpdateState.ContinuingRegularUpdate)
             {
                 try
                 {
@@ -443,7 +442,7 @@ namespace wyUpdate
         {
             //only warn if after the welcome page
             //and not self updating/elevating
-            if (needElevation || willSelfUpdate || SelfUpdating || isSilent || isAutoUpdateMode ||
+            if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate || isSilent || isAutoUpdateMode ||
                 isCancelled || panelDisplaying.TypeofFrame == FrameType.WelcomeFinish)
             {
                 //close the form
@@ -464,7 +463,7 @@ namespace wyUpdate
         protected override void OnClosed(EventArgs e)
         {
             //if not self updating, then delete temp files.
-            if (!(needElevation || willSelfUpdate || SelfUpdating || isAutoUpdateMode))
+            if (!(needElevation || SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate || isAutoUpdateMode))
             {
                 //if the temp directory exists, remove it
                 if (Directory.Exists(tempDirectory))
