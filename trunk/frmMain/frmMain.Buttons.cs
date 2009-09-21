@@ -14,7 +14,7 @@ namespace wyUpdate
             }
             else
             {
-                if (needElevation || willSelfUpdate)
+                if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate)
                     StartSelfElevated();
                 else
                     ShowFrame(frameOn + 1);
@@ -70,7 +70,7 @@ namespace wyUpdate
         {
             //if downloading in anything, return true
             return frameOn == Frame.Checking || frameOn == Frame.InstallUpdates && downloader != null &&
-                (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.DownloadingClientUpdt);
+                (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.DownloadingSelfUpdate);
         }
 
 

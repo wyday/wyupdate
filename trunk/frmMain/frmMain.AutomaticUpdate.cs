@@ -81,7 +81,9 @@ namespace wyUpdate
                     TopMost = true;
                     TopMost = false;
 
-                    if (needElevation || willSelfUpdate)
+                    //TODO: do we really need to start elevate if updating self?
+                    //TODO: the need elevation algorithm should check if elevation is needed to update self
+                    if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate)
                     {
                         StartSelfElevated();
                         return;
@@ -346,31 +348,37 @@ namespace wyUpdate
             // Step on {Checked = 2, Downloaded = 4, Extracted = 6}
             WriteFiles.WriteInt(fs, 0x01, (int)updateStepOn);
 
-            // DateTime when the last step was taken.
-            WriteFiles.WriteLong(fs, 0x02, DateTime.Now.ToBinary());
-
             // file to execute
             if (updateHelper.FileToExecuteAfterUpdate != null)
-                WriteFiles.WriteString(fs, 0x03, updateHelper.FileToExecuteAfterUpdate);
+                WriteFiles.WriteString(fs, 0x02, updateHelper.FileToExecuteAfterUpdate);
 
             if (updateHelper.AutoUpdateID != null)
-                WriteFiles.WriteString(fs, 0x04, updateHelper.AutoUpdateID);
+                WriteFiles.WriteString(fs, 0x03, updateHelper.AutoUpdateID);
 
             // Server data file location
             if (!string.IsNullOrEmpty(serverFileLoc))
-                WriteFiles.WriteString(fs, 0x05, serverFileLoc);
+                WriteFiles.WriteString(fs, 0x04, serverFileLoc);
 
             // Client's server file location (self update server file)
             if (!string.IsNullOrEmpty(clientSFLoc))
-                WriteFiles.WriteString(fs, 0x06, clientSFLoc);
+                WriteFiles.WriteString(fs, 0x05, clientSFLoc);
 
             // temp directory
             if (!string.IsNullOrEmpty(tempDirectory))
-                WriteFiles.WriteString(fs, 0x07, tempDirectory);
+                WriteFiles.WriteString(fs, 0x06, tempDirectory);
 
             // the update filename
             if (!string.IsNullOrEmpty(updateFilename))
-                WriteFiles.WriteString(fs, 0x08, updateFilename);
+                WriteFiles.WriteString(fs, 0x07, updateFilename);
+
+            if(SelfUpdateState != SelfUpdateState.None)
+            {
+                WriteFiles.WriteInt(fs, 0x08, (int) SelfUpdateState);
+
+                // TODO: save the new wyUpdate location
+                if (SelfUpdateState == SelfUpdateState.Downloaded)
+                    WriteFiles.WriteString(fs, 0x09, updateFilename);
+            }
 
             fs.WriteByte(0xFF);
             fs.Close();
@@ -397,20 +405,15 @@ namespace wyUpdate
                             startStep = (UpdateStepOn) ReadFiles.ReadInt(fs);
 
                             break;
-                        //case 0x02:
-
-                            //TODO: use the DateTime for something
-
-                            //break;
-                        case 0x03: // file to execute
+                        case 0x02: // file to execute
                             updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
                             break;
 
-                        case 0x04: // autoupdate ID
+                        case 0x03: // autoupdate ID
                             updateHelper.AutoUpdateID = ReadFiles.ReadString(fs);
                             break;
 
-                        case 0x05: // Server data file location
+                        case 0x04: // Server data file location
                             serverFileLoc = ReadFiles.ReadString(fs);
 
                             if (!File.Exists(serverFileLoc))
@@ -418,18 +421,18 @@ namespace wyUpdate
 
                             break;
 
-                        case 0x06: // Client's server file location (self update server file)
+                        case 0x05: // Client's server file location (self update server file)
                             clientSFLoc = ReadFiles.ReadString(fs);
 
                             if (!File.Exists(clientSFLoc))
                                 clientSFLoc = null;
                             break;
 
-                        case 0x07: // Temp directory
+                        case 0x06: // Temp directory
                             tempDirectory = ReadFiles.ReadString(fs);
                             break;
 
-                        case 0x08: // update filename
+                        case 0x07: // update filename
                             updateFilename = ReadFiles.ReadString(fs);
                             break;
 

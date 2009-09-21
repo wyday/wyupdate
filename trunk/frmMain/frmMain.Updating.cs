@@ -70,7 +70,7 @@ namespace wyUpdate
                         clientLang.DownInstall.Content,
                         "");
 
-                    if (SelfUpdating)
+                    if (SelfUpdateState == SelfUpdateState.FullUpdate)
                     {
                         //show status for downloading self
                         SetStepStatus(0, clientLang.DownloadingSelfUpdate);
@@ -263,7 +263,7 @@ namespace wyUpdate
 
             switch (CurrentlyUpdating)
             {
-                case UpdateOn.SelfUpdating:
+                case UpdateOn.FullSelfUpdate:
                     SetStepStatus(1, clientLang.SelfUpdate);
 
                     showProgress = SelfUpdateProgress;
@@ -271,12 +271,43 @@ namespace wyUpdate
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {
                                             //location of old "self" to replace
-                                            OldIUPClientLoc = oldClientLocation,
+                                            OldSelfLoc = oldSelfLocation,
                                             Filename = Path.Combine(tempDirectory, updateFilename),
                                             OutputDirectory = tempDirectory
                                         };
 
                     asyncThread = new Thread(installUpdate.RunSelfUpdate);
+                    break;
+                case UpdateOn.ExtractSelfUpdate:
+                    SetStepStatus(1, clientLang.SelfUpdate);
+
+                    showProgress = SelfUpdateProgress;
+
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            Filename = Path.Combine(tempDirectory, updateFilename),
+                                            OutputDirectory = Path.Combine(tempDirectory, "selfupdate")
+                                        };
+
+                    asyncThread = new Thread(installUpdate.JustExtractSelfUpdate);
+                    break;
+                case UpdateOn.InstallSelfUpdate:
+                    SetStepStatus(1, clientLang.SelfUpdate);
+
+                    showProgress = SelfUpdateProgress;
+
+                    //TODO: pass in the new self-update filename
+                    //TODO: pass in correct old self location
+
+                    installUpdate = new InstallUpdate(this, showProgress)
+                                        {
+                                            //location of old "self" to replace
+                                            OldSelfLoc = oldSelfLocation,
+                                            Filename = Path.Combine(tempDirectory, updateFilename),
+                                            OutputDirectory = Path.Combine(tempDirectory, "selfupdate")
+                                        };
+
+                    asyncThread = new Thread(installUpdate.JustInstallSelfUpdate);
                     break;
                 case UpdateOn.Extracting:
 

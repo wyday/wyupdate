@@ -151,23 +151,44 @@ namespace wyUpdate
                 }
                 else
                 {
-                    if (update.CurrentlyUpdating == UpdateOn.DownloadingClientUpdt)
+                    switch (update.CurrentlyUpdating)
                     {
-                        panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
+                        case UpdateOn.DownloadingSelfUpdate:
 
-                        //set the filename of the downloaded client update file
-                        updateFilename = downloader.DownloadingTo;
+                            panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
 
-                        //begin extracting and installing the update
-                        update.CurrentlyUpdating = UpdateOn.SelfUpdating;
-                        InstallUpdates(update.CurrentlyUpdating);
-                    }
-                    else if (update.CurrentlyUpdating == UpdateOn.SelfUpdating)
-                    {
-                        panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Success;
+                            //set the filename of the downloaded client update file
+                            updateFilename = downloader.DownloadingTo;
 
-                        //start the newly installed client and resume "normal" downloading & updating
-                        StartSelfElevated();
+                            //begin extracting and installing the update
+                            update.CurrentlyUpdating = UpdateOn.FullSelfUpdate;
+                            InstallUpdates(update.CurrentlyUpdating);
+                            break;
+
+                        case UpdateOn.FullSelfUpdate:
+
+                            panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Success;
+
+                            //start the newly installed client and resume "normal" downloading & updating
+                            StartSelfElevated();
+                            break;
+
+                        case UpdateOn.ExtractSelfUpdate:
+
+                            //TODO: save autoupdate state (selfupdate downloaded)
+                            //TODO: start new wyUpdate in "master mode" (switch this to "slave" mode)
+                            //TODO: Tell master to begin downloading the update
+
+                            break;
+
+                        case UpdateOn.InstallSelfUpdate:
+
+                            //TODO: install self update should be called first
+                            //TODO: then this deletes self-update details & self backup (no longer need self update even if main update fails)
+                            //TODO: save autoupdate file (no longer need self update)
+                            //TODO: begin main update install
+
+                            break;
                     }
                 }
             }
@@ -175,8 +196,23 @@ namespace wyUpdate
 
             if (ex != null)
             {
+                bool selfUpdateRequired =
+                    VersionTools.Compare(VersionTools.FromExecutingAssembly(), update.MinClientVersion) == -1;
+
+                bool canTryCatchAllUpdate = frameOn != Frame.Checking
+
+                                            // patch failed
+                                            && ex.GetType() == typeof (PatchApplicationException)
+
+                                            // if the catch-all update isn't the one that failed
+                                            && updateFrom != update.VersionChoices[update.VersionChoices.Count - 1]
+
+                                            // and there is a catch-all update
+                                            && update.VersionChoices[update.VersionChoices.Count - 1].Version == update.NewVersion;
+                
+
                 // if a new client is *required* to install the update...
-                if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), update.MinClientVersion) == -1)
+                if (selfUpdateRequired && !canTryCatchAllUpdate)
                 {
                     //show an error and bail out
                     error = clientLang.SelfUpdateInstallError;
@@ -184,42 +220,37 @@ namespace wyUpdate
 
                     ShowFrame(Frame.Error);
                 }
-                else //self update isn't necessary, so handle gracefully
+                else if (frameOn == Frame.Checking)
                 {
-                    if (frameOn == Frame.Checking)
+                    //client server file failed to download, continue as usual:
+                    SelfUpdateState = SelfUpdateState.None;
+
+                    //Show update info page
+                    ShowFrame(Frame.UpdateInfo);
+                }
+                else
+                {
+                    if (canTryCatchAllUpdate)
                     {
-                        //client server file failed to download, continue as usual:
+                        // select the catch all update
+                        updateFrom = update.VersionChoices[update.VersionChoices.Count - 1];
 
-                        willSelfUpdate = false;
+                        // clear errors
+                        error = null;
+                        errorDetails = null;
 
-                        //Show update info page
-                        ShowFrame(Frame.UpdateInfo);
+                        panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Nothing;
+
+                        // download the catch-all update
+                        DownloadUpdate();
+
+                        return;
                     }
-                    else
-                    {
-                        // if the exception was PatchApplicationException, then
-                        //see if a catch-all update exists (and the catch-all update isn't the one that failed)
-                        if (ex.GetType() == typeof(PatchApplicationException) &&
-                            updateFrom != update.VersionChoices[update.VersionChoices.Count - 1] &&
-                            update.VersionChoices[update.VersionChoices.Count - 1].Version == update.NewVersion)
-                        {
-                            updateFrom = update.VersionChoices[update.VersionChoices.Count - 1];
-
-                            error = null;
-
-                            panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Nothing;
-
-                            // download the catch-all update
-                            DownloadUpdate();
-
-                            return;
-                        }
 
 
-                        //self-update failed to download or install
-                        //just relaunch old client and continue with update
-                        StartSelfElevated();
-                    }
+                    //self-update failed to download or install
+                    //just relaunch old client and continue with update
+                    StartSelfElevated();
                 }
             }
         }
