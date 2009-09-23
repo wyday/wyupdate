@@ -54,7 +54,7 @@ namespace wyUpdate.Common
 
         public List<string> ServerFileSites { get; set; }
 
-
+#if DESIGNER
         public void Save(string fileName)
         {
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
@@ -168,11 +168,6 @@ namespace wyUpdate.Common
                 }
             }
 
-
-
-
-
-
             foreach (string site in ClientServerSites)
             {
                 //Client server site
@@ -191,6 +186,7 @@ namespace wyUpdate.Common
 
             fs.Close();
         }
+#endif
 
         public static ServerFile Load(string fileName)
         {
