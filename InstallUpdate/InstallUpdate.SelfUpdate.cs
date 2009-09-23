@@ -194,10 +194,10 @@ namespace wyUpdate
                     NGenInstall(OldSelfLoc, updateFile.CPUVersion);
 
 
-                //TODO: delete full self update folder
+                //TODO: we'll still be running NewSelfLoc when this replacement takes place.
                 //cleanup the client update files to prevent conflicts with the product update
-                File.Delete(NewSelfLoc);
-                Directory.Delete(Path.Combine(OutputDirectory, "base"));
+                //File.Delete(NewSelfLoc);
+                //Directory.Delete(Path.Combine(OutputDirectory, "base"));
             }
             catch (Exception ex)
             {
@@ -315,12 +315,14 @@ namespace wyUpdate
 
             foreach (Process proc in aProcess)
             {
+                //The Try{} block needs to be outside the if statement because 'proc.MainModule'
+                // can throw an exception in more than one case (x64 processes for x86 wyUpdate, 
+                // permissions for Vista / 7, etc.) wyUpdate will be detected despite the try/catch block.
                 try
                 {
                     if (proc.MainModule.FileName.ToLower() == filename.ToLower())
                     {
                         proc.Kill();
-
                     }
                 }
                 catch { }
