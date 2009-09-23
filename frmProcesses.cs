@@ -69,7 +69,7 @@ namespace wyUpdate
 
 
 
-            if (CheckProcesses() == 0)
+            if (!CheckProcesses())
             {
                 //exit, return OK
                 DialogResult = DialogResult.OK;
@@ -83,7 +83,7 @@ namespace wyUpdate
                 proc.CloseMainWindow();
             }
 
-            if (CheckProcesses() == 0)
+            if (!CheckProcesses())
             {
                 //exit, return OK
                 DialogResult = DialogResult.OK;
@@ -105,7 +105,7 @@ namespace wyUpdate
             }
         }
 
-        int CheckProcesses()
+        bool CheckProcesses()
         {
             Process[] aProcess = Process.GetProcesses();
 
@@ -153,10 +153,7 @@ namespace wyUpdate
                 }
             }
 
-
-
-            //return 0 if there are no processes that need to be closed
-            return procLeft ? 1 : 0;
+            return procLeft;
         }
 
         static bool SameProcs(List<Process> procs1, List<Process> procs2)
@@ -175,7 +172,7 @@ namespace wyUpdate
 
         void chkProc_Tick(object sender, EventArgs e)
         {
-            if (CheckProcesses() == 0)
+            if (!CheckProcesses())
             {
                 DialogResult = DialogResult.OK;
                 chkProc.Enabled = false;
