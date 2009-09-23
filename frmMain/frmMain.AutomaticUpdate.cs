@@ -131,7 +131,7 @@ namespace wyUpdate
                     if (frameOn != Frame.Checking)
                     {
                         // report UpdateAvailable, with changes
-                        updateHelper.SendSuccess(update.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
+                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
 
                         return true;
                     }
@@ -375,9 +375,14 @@ namespace wyUpdate
             {
                 WriteFiles.WriteInt(fs, 0x08, (int) SelfUpdateState);
 
-                // TODO: save the new wyUpdate location
                 if (SelfUpdateState == SelfUpdateState.Downloaded)
                     WriteFiles.WriteString(fs, 0x09, updateFilename);
+                else // SelfUpdateState.Extracted
+                {
+                    WriteFiles.WriteString(fs, 0x09, newSelfLocation);
+
+                    WriteFiles.WriteString(fs, 0x0A, oldSelfLocation);
+                }
             }
 
             fs.WriteByte(0xFF);
@@ -436,6 +441,22 @@ namespace wyUpdate
                             updateFilename = ReadFiles.ReadString(fs);
                             break;
 
+                        case 0x08:
+                            SelfUpdateState = (SelfUpdateState) ReadFiles.ReadInt(fs);
+                            break;
+
+                        case 0x09:
+                            if (SelfUpdateState == SelfUpdateState.Downloaded)
+                                updateFilename = ReadFiles.ReadString(fs);
+                            else
+                                newSelfLocation = ReadFiles.ReadString(fs);
+
+                            break;
+
+                        case 0x0A:
+                            oldSelfLocation = ReadFiles.ReadString(fs);
+                            break;
+
                         default:
                             ReadFiles.SkipField(fs, bType);
                             break;
@@ -452,10 +473,9 @@ namespace wyUpdate
             {
                 // load the server file
                 LoadServerFile(true);
+
+                //TODO: load self update details (exe location - etc.)
             }
-
-            //TODO: load self update details (exe location - etc.)
         }
-
     }
 }

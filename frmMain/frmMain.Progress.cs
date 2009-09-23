@@ -87,10 +87,10 @@ namespace wyUpdate
                         // if the exception was PatchApplicationException, then
                         //see if a catch-all update exists (and the catch-all update isn't the one that failed)
                         if (ex.GetType() == typeof(PatchApplicationException) &&
-                            updateFrom != update.VersionChoices[update.VersionChoices.Count - 1] &&
-                            update.VersionChoices[update.VersionChoices.Count - 1].Version == update.NewVersion)
+                            updateFrom != ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1] &&
+                            ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion)
                         {
-                            updateFrom = update.VersionChoices[update.VersionChoices.Count - 1];
+                            updateFrom = ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1];
 
                             error = null;
 
@@ -155,14 +155,23 @@ namespace wyUpdate
                     {
                         case UpdateOn.DownloadingSelfUpdate:
 
-                            panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
-
                             //set the filename of the downloaded client update file
                             updateFilename = downloader.DownloadingTo;
 
-                            //begin extracting and installing the update
-                            update.CurrentlyUpdating = UpdateOn.FullSelfUpdate;
-                            InstallUpdates(update.CurrentlyUpdating);
+                            if (isAutoUpdateMode)
+                            {
+                                SelfUpdateState = SelfUpdateState.Downloaded;
+                                //TODO: save autoupdate file
+                            }
+                            else // regular self update mode
+                            {
+                                panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
+
+                                //begin extracting and installing the update
+                                update.CurrentlyUpdating = UpdateOn.FullSelfUpdate;
+                                InstallUpdates(update.CurrentlyUpdating);
+                            }
+
                             break;
 
                         case UpdateOn.FullSelfUpdate:
@@ -175,6 +184,11 @@ namespace wyUpdate
 
                         case UpdateOn.ExtractSelfUpdate:
 
+                            SelfUpdateState = SelfUpdateState.Extracted;
+
+                            newSelfLocation = installUpdate.NewSelfLoc;
+                            oldSelfLocation = Application.ExecutablePath;
+
                             //TODO: save autoupdate state (selfupdate downloaded)
                             //TODO: start new wyUpdate in "master mode" (switch this to "slave" mode)
                             //TODO: Tell master to begin downloading the update
@@ -183,6 +197,7 @@ namespace wyUpdate
 
                         case UpdateOn.InstallSelfUpdate:
 
+                            SelfUpdateState = SelfUpdateState.None;
                             //TODO: install self update should be called first
                             //TODO: then this deletes self-update details & self backup (no longer need self update even if main update fails)
                             //TODO: save autoupdate file (no longer need self update)
@@ -196,8 +211,11 @@ namespace wyUpdate
 
             if (ex != null)
             {
+                //TODO: this is using the correct "update.MinClientVersion" when downloading the client sever file,
+                // however when failing to either (1) download the update or (2) install the update, the wyUpdate's
+                // "update.MinClientVersion" is used (which will always be the maximum client version).
                 bool selfUpdateRequired =
-                    VersionTools.Compare(VersionTools.FromExecutingAssembly(), update.MinClientVersion) == -1;
+                    VersionTools.Compare(VersionTools.FromExecutingAssembly(), ServerFile.MinClientVersion) == -1;
 
                 bool canTryCatchAllUpdate = frameOn != Frame.Checking
 
@@ -205,10 +223,10 @@ namespace wyUpdate
                                             && ex.GetType() == typeof (PatchApplicationException)
 
                                             // if the catch-all update isn't the one that failed
-                                            && updateFrom != update.VersionChoices[update.VersionChoices.Count - 1]
+                                            && updateFrom != SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1]
 
                                             // and there is a catch-all update
-                                            && update.VersionChoices[update.VersionChoices.Count - 1].Version == update.NewVersion;
+                                            && SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1].Version == SelfServerFile.NewVersion;
                 
 
                 // if a new client is *required* to install the update...
@@ -233,7 +251,7 @@ namespace wyUpdate
                     if (canTryCatchAllUpdate)
                     {
                         // select the catch all update
-                        updateFrom = update.VersionChoices[update.VersionChoices.Count - 1];
+                        updateFrom = SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1];
 
                         // clear errors
                         error = null;

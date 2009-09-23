@@ -15,7 +15,8 @@ namespace wyUpdate
 
         public bool IsAdmin;
 
-        public readonly UpdateEngine update = new UpdateEngine();
+        public readonly ClientFile update = new ClientFile();
+        ServerFile ServerFile;
         VersionChoice updateFrom;
 
         UpdateDetails updtDetails;
@@ -66,9 +67,6 @@ namespace wyUpdate
 
         //Pre-RC2 compatability:
         ClientFileType clientFileType;
-
-        bool selfUpdateFromRC1;
-        string newClientLocation; //self update from RC1
 
         // handle hidden form
         bool _isApplicationRun = true;
@@ -136,7 +134,7 @@ namespace wyUpdate
                             needElevation = false;
 
                             //Install the new client
-                            File.Copy(newClientLocation, oldSelfLocation, true);
+                            File.Copy(newSelfLocation, oldSelfLocation, true);
 
                             //Relaunch self in OnLoad()
                         }
@@ -207,9 +205,12 @@ namespace wyUpdate
             {
                 try
                 {
+                    // load the server file for MinClient needed details (i.e. failure case)
+                    ServerFile = ServerFile.Load(serverFileLoc);
+
                     //load the self-update server file
-                    LoadClientServerFile(null);
-                    clientLang.NewVersion = update.NewVersion;
+                    LoadClientServerFile();
+                    clientLang.NewVersion = SelfServerFile.NewVersion;
                 }
                 catch (Exception ex)
                 {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using wyUpdate.Common;
 using wyUpdate.Downloader;
@@ -24,8 +25,26 @@ namespace wyUpdate
 
         void DownloadUpdate()
         {
-            if (SelfUpdateState == SelfUpdateState.FullUpdate)
+            if (SelfUpdateState == SelfUpdateState.FullUpdate || isAutoUpdateMode && SelfUpdateState == SelfUpdateState.WillUpdate)
             {
+                // load the self update details (only for autoupdate mode)
+                if (isAutoUpdateMode)
+                {
+                    try
+                    {
+                        //load the self-update server file
+                        LoadClientServerFile();
+                    }
+                    catch (Exception ex)
+                    {
+                        error = clientLang.ServerError;
+                        errorDetails = ex.Message;
+
+                        ShowFrame(Frame.Error);
+                        return;
+                    }
+                }
+
                 //download self update
                 update.CurrentlyUpdating = UpdateOn.DownloadingSelfUpdate;
                 BeginSelfUpdateDownload(updateFrom.FileSites, updateFrom.Adler32);
@@ -79,9 +98,7 @@ namespace wyUpdate
         void DownloadClientSFSuccess()
         {
             //load the client server file, and see if a new version is availiable
-            UpdateEngine clientSF = new UpdateEngine();
-
-            LoadClientServerFile(clientSF);
+            ServerFile clientSF = ServerFile.Load(clientSFLoc);
 
             //check if the client is new enough.
             if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1)
@@ -91,33 +108,27 @@ namespace wyUpdate
             ShowFrame(Frame.UpdateInfo);
         }
 
-        void LoadClientServerFile(UpdateEngine updateEngine)
+        void LoadClientServerFile()
         {
-            //load the client server file
-            if (updateEngine == null)
+            SelfServerFile = ServerFile.Load(clientSFLoc);
+
+            //get the current version of the Client
+            string currentClientVersion = VersionTools.FromExecutingAssembly();
+
+            foreach (VersionChoice vChoice in SelfServerFile.VersionChoices)
             {
-                update.LoadServerDatav2(clientSFLoc);
-
-                //get the current version of the Client
-                string currentClientVersion = VersionTools.FromExecutingAssembly();
-
-                foreach (VersionChoice vChoice in update.VersionChoices)
+                // select the correct delta-patch version choice
+                // using fuzzy equality (i.e. 1.1 == 1.1.0.0)
+                if (VersionTools.Compare(vChoice.Version, currentClientVersion) == 0)
                 {
-                    // select the correct delta-patch version choice
-                    // using fuzzy equality (i.e. 1.1 == 1.1.0.0)
-                    if (VersionTools.Compare(vChoice.Version, currentClientVersion) == 0)
-                    {
-                        updateFrom = vChoice;
-                        break;
-                    }
+                    updateFrom = vChoice;
+                    break;
                 }
-
-                //if no delta-patch update has been selected, use the catch-all update
-                if (updateFrom == null)
-                    updateFrom = update.VersionChoices[update.VersionChoices.Count - 1];
             }
-            else
-                updateEngine.LoadServerDatav2(clientSFLoc);
+
+            //if no delta-patch update has been selected, use the catch-all update
+            if (updateFrom == null)
+                updateFrom = SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1];
         }
 
         void ServerDownloadedSuccessfully()
@@ -151,12 +162,12 @@ namespace wyUpdate
         void LoadServerFile(bool setChangesText)
         {
             //load the server file
-            update.LoadServerDatav2(serverFileLoc);
+            ServerFile = ServerFile.Load(serverFileLoc);
 
-            clientLang.NewVersion = update.NewVersion;
+            clientLang.NewVersion = ServerFile.NewVersion;
 
             // if no update is needed...
-            if (VersionTools.Compare(update.InstalledVersion, update.NewVersion) > -1)
+            if (VersionTools.Compare(update.InstalledVersion, ServerFile.NewVersion) > -1)
             {
                 if (isAutoUpdateMode)
                 {
@@ -184,20 +195,19 @@ namespace wyUpdate
 
             int i;
 
-            for (i = 0; i < update.VersionChoices.Count; i++)
+            for (i = 0; i < ServerFile.VersionChoices.Count; i++)
             {
                 // select the correct delta-patch version choice
-                if (VersionTools.Compare(update.VersionChoices[i].Version, update.InstalledVersion) == 0)
+                if (VersionTools.Compare(ServerFile.VersionChoices[i].Version, update.InstalledVersion) == 0)
                 {
-                    updateFrom = update.VersionChoices[i];
+                    updateFrom = ServerFile.VersionChoices[i];
                     break;
                 }
             }
 
-
             //if no delta-patch update has been selected, use the catch-all update (if it exists)
-            if (updateFrom == null && update.VersionChoices[update.VersionChoices.Count - 1].Version == update.NewVersion)
-                updateFrom = update.VersionChoices[update.VersionChoices.Count - 1];
+            if (updateFrom == null && ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion)
+                updateFrom = ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1];
 
             if (updateFrom == null)
                 throw new NoUpdatePathToNewestException();
@@ -207,23 +217,23 @@ namespace wyUpdate
             {
                 //if there's a catch-all update start with one less than "update.VersionChoices.Count - 1"
 
-                bool catchAllExists = update.VersionChoices[update.VersionChoices.Count - 1].Version == update.NewVersion;
+                bool catchAllExists = ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion;
 
 
                 //build the changes from all previous versions
-                for (int j = update.VersionChoices.Count - 1; j >= i; j--)
+                for (int j = ServerFile.VersionChoices.Count - 1; j >= i; j--)
                 {
                     //show the version number for previous updates we may have missed
-                    if (j != update.VersionChoices.Count - 1 && (!catchAllExists || catchAllExists && j != update.VersionChoices.Count - 2))
-                        panelDisplaying.AppendAndBoldText("\r\n\r\n" + update.VersionChoices[j + 1].Version + ":\r\n\r\n");
+                    if (j != ServerFile.VersionChoices.Count - 1 && (!catchAllExists || catchAllExists && j != ServerFile.VersionChoices.Count - 2))
+                        panelDisplaying.AppendAndBoldText("\r\n\r\n" + ServerFile.VersionChoices[j + 1].Version + ":\r\n\r\n");
 
                     // append the changes to the total changes list
-                    if (!catchAllExists || catchAllExists && j != update.VersionChoices.Count - 2)
+                    if (!catchAllExists || catchAllExists && j != ServerFile.VersionChoices.Count - 2)
                     {
-                        if (update.VersionChoices[j].RTFChanges)
-                            panelDisplaying.AppendRichText(update.VersionChoices[j].Changes);
+                        if (ServerFile.VersionChoices[j].RTFChanges)
+                            panelDisplaying.AppendRichText(ServerFile.VersionChoices[j].Changes);
                         else
-                            panelDisplaying.AppendText(update.VersionChoices[j].Changes);
+                            panelDisplaying.AppendText(ServerFile.VersionChoices[j].Changes);
                     }
                 }
             }
