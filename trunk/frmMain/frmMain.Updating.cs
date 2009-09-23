@@ -57,7 +57,7 @@ namespace wyUpdate
                         // save the automatic updater file
                         SaveAutoUpdateData(UpdateStepOn.UpdateAvailable);
 
-                        updateHelper.SendSuccess(update.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
+                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
                     }
 
                     break;
@@ -112,8 +112,8 @@ namespace wyUpdate
 
                     break;
                 case Frame.NoUpdatePathAvailable: //No update to the latest version is available
-                    if (!string.IsNullOrEmpty(update.NoUpdateToLatestLinkText))
-                        panelDisplaying.SetNoUpdateAvailableLink(update.NoUpdateToLatestLinkText, update.NoUpdateToLatestLinkURL);
+                    if (!string.IsNullOrEmpty(ServerFile.NoUpdateToLatestLinkText))
+                        panelDisplaying.SetNoUpdateAvailableLink(ServerFile.NoUpdateToLatestLinkText, ServerFile.NoUpdateToLatestLinkURL);
 
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.NoUpdateToLatest.Title,
@@ -205,21 +205,21 @@ namespace wyUpdate
                         if (frameNum == Frame.Error)
                         {
                             auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID)
-                            {
-                                AutoUpdaterStatus = AutoUpdaterStatus.UpdateFailed,
-                                ErrorTitle = error,
-                                ErrorMessage = errorDetails
-                            };
+                                         {
+                                             AutoUpdaterStatus = AutoUpdaterStatus.UpdateFailed,
+                                             ErrorTitle = error,
+                                             ErrorMessage = errorDetails
+                                         };
                         }
                         else
                         {
                             auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID)
-                            {
-                                AutoUpdaterStatus = AutoUpdaterStatus.UpdateSucceeded,
-                                UpdateVersion = update.NewVersion,
-                                ChangesInLatestVersion = panelDisplaying.GetChangesRTF(),
-                                ChangesIsRTF = true
-                            };
+                                         {
+                                             AutoUpdaterStatus = AutoUpdaterStatus.UpdateSucceeded,
+                                             UpdateVersion = ServerFile.NewVersion,
+                                             ChangesInLatestVersion = panelDisplaying.GetChangesRTF(),
+                                             ChangesIsRTF = true
+                                         };
                         }
 
                         auInfo.Save();
@@ -296,13 +296,11 @@ namespace wyUpdate
 
                     showProgress = SelfUpdateProgress;
 
-                    //TODO: pass in the new self-update filename
-                    //TODO: pass in correct old self location
-
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {
                                             //location of old "self" to replace
                                             OldSelfLoc = oldSelfLocation,
+                                            NewSelfLoc = newSelfLocation,
                                             Filename = Path.Combine(tempDirectory, updateFilename),
                                             OutputDirectory = Path.Combine(tempDirectory, "selfupdate")
                                         };
@@ -395,7 +393,7 @@ namespace wyUpdate
                     //don't show any status, but begin the thread to being updating the client file
 
                     //Save the client file with the new version
-                    update.InstalledVersion = update.NewVersion;
+                    update.InstalledVersion = ServerFile.NewVersion;
 
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {

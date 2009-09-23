@@ -13,6 +13,10 @@ namespace wyUpdate
         string oldSelfLocation;
         string newSelfLocation;
 
+        bool selfUpdateFromRC1;
+
+        ServerFile SelfServerFile;
+
         void SaveSelfUpdateData(string fileName)
         {
             FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
@@ -166,7 +170,7 @@ namespace wyUpdate
                         oldSelfLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x06://Read New client file location
-                        newClientLocation = ReadFiles.ReadDeprecatedString(fs);
+                        newSelfLocation = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x07:
                         if (ReadFiles.ReadBool(fs))

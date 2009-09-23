@@ -20,33 +20,9 @@ namespace wyUpdate.Common
         OptimizeExecute = 10, WriteClientFile = 11, DeletingTemp = 12, Uninstalling = 13
     }
 
-    public class VersionChoice
-    {
-        public string Version;
-        public string Changes;
-        public bool RTFChanges;
-        public List<string> FileSites = new List<string>();
-        public long FileSize;
-        public long Adler32;
-
-        //Determine if client elevation is needed (Vista & non-admin users)
-        public InstallingTo InstallingTo = 0;
-        public List<RegChange> RegChanges = new List<RegChange>();
-    }
-
-    public class NoUpdatePathToNewestException : Exception { }
-
-    public class PatchApplicationException : Exception 
-    {
-        public PatchApplicationException(string message) : base(message) { }
-    }
-
-    [Flags]
-    public enum InstallingTo { BaseDir = 1, SysDirx86 = 2, CommonDesktop = 4, CommonStartMenu = 8, CommonAppData = 16, SysDirx64 = 32, WindowsRoot = 64 }
-
     public enum ClientFileType { PreRC2, RC2, Final }
 
-    public class UpdateEngine
+    public class ClientFile
     {
         #region Private Variables
         
@@ -55,10 +31,7 @@ namespace wyUpdate.Common
         public Hashtable Languages = new Hashtable();
         string m_GUID;
 
-        //Server Side Information
-        public List<VersionChoice> VersionChoices = new List<VersionChoice>();
-
-        public UpdateEngine()
+        public ClientFile()
         {
             CurrentlyUpdating = UpdateOn.DownloadingUpdate;
             ServerFileSites = new List<string>(1);
@@ -139,18 +112,8 @@ namespace wyUpdate.Common
 
         public List<string> ClientServerSites { get; set; }
 
-        public string NewVersion { get; set; }
-
-        public string MinClientVersion { get; set; }
-
-        public string NoUpdateToLatestLinkText { get; set; }
-
-        public string NoUpdateToLatestLinkURL { get; set; }
 
         #endregion Properties
-
-
-        #region Client Data
 
 #if CLIENT
 
@@ -531,279 +494,7 @@ namespace wyUpdate.Common
             return ms;
         }
 
-        #endregion Client Data
-
-
-        #region Server Data
-
-        public void SaveServerDatav2(string fileName)
-        {
-            FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
-
-            // Write any file-identification data you want to here
-            fs.Write(Encoding.UTF8.GetBytes("IUSDFV2"), 0, 7);
-
-            //Current Version
-            WriteFiles.WriteDeprecatedString(fs, 0x01, NewVersion);
-
-            foreach (string site in ServerFileSites)
-            {
-                //Server File Site
-                WriteFiles.WriteDeprecatedString(fs, 0x02, site);
-            }
-
-            //Minimum client version needed to install update
-            WriteFiles.WriteDeprecatedString(fs, 0x07, MinClientVersion);
-
-            
-            MemoryStream ms = new MemoryStream();
-
-            // write all but the last versionChoice (usually the catch-all update)
-
-            for (int i = 0; i < VersionChoices.Count - 1; i++)
-            {
-                //Version to update from
-                WriteFiles.WriteDeprecatedString(ms, 0x0B, VersionChoices[i].Version);
-
-                foreach (string site in VersionChoices[i].FileSites)
-                {
-                    //Update File Site
-                    WriteFiles.WriteDeprecatedString(ms, 0x03, site);
-                }
-
-                // put the marker for RTF text data
-                if (VersionChoices[i].RTFChanges)
-                    ms.WriteByte(0x80);
-
-                //Changes
-                WriteFiles.WriteDeprecatedString(ms, 0x04, VersionChoices[i].Changes);
-
-                //Filesize for the update file
-                WriteFiles.WriteLong(ms, 0x09, VersionChoices[i].FileSize);
-
-                //Update file's Adler32 checksum
-                WriteFiles.WriteLong(ms, 0x08, VersionChoices[i].Adler32);
-
-
-                //Installing to directories
-                WriteFiles.WriteInt(ms, 0x0A, (int)VersionChoices[i].InstallingTo);
-
-                //Representative reg changes to check if elevation
-                //is needed for Vista and non-admins
-                if (VersionChoices[i].RegChanges.Count > 0)
-                {
-                    WriteFiles.WriteInt(ms, 0x12, VersionChoices[i].RegChanges.Count);
-
-                    foreach (RegChange reg in VersionChoices[i].RegChanges)
-                    {
-                        reg.WriteToStream(ms, true);
-                    }
-                }
-            }
-
-            // write out the ms data as a 'skip region' for 1.0RC1 & 1.0RC2
-            WriteFiles.WriteByteArray(fs, 0x0F, ms.ToArray());
-
-            // close the stream
-            ms.Close();
-
-
-
-            // write out the last VersionChoice
-
-            //Version to update from
-            WriteFiles.WriteDeprecatedString(fs, 0x0B, VersionChoices[VersionChoices.Count - 1].Version);
-
-            foreach (string site in VersionChoices[VersionChoices.Count - 1].FileSites)
-            {
-                //Update File Site
-                WriteFiles.WriteDeprecatedString(fs, 0x03, site);
-            }
-
-            // put the marker for RTF text data
-            if (VersionChoices[VersionChoices.Count - 1].RTFChanges)
-                fs.WriteByte(0x80);
-
-            //Changes
-            WriteFiles.WriteDeprecatedString(fs, 0x04, VersionChoices[VersionChoices.Count - 1].Changes);
-
-            //Filesize for the update file
-            WriteFiles.WriteLong(fs, 0x09, VersionChoices[VersionChoices.Count - 1].FileSize);
-
-            //Update file's Adler32 checksum
-            WriteFiles.WriteLong(fs, 0x08, VersionChoices[VersionChoices.Count - 1].Adler32);
-
-
-            //Installing to directories
-            WriteFiles.WriteInt(fs, 0x0A, (int)VersionChoices[VersionChoices.Count - 1].InstallingTo);
-
-            //Representative reg changes to check if elevation
-            //is needed for Vista and non-admins
-            if (VersionChoices[VersionChoices.Count - 1].RegChanges.Count > 0)
-            {
-                WriteFiles.WriteInt(fs, 0x12, VersionChoices[VersionChoices.Count - 1].RegChanges.Count);
-
-                foreach (RegChange reg in VersionChoices[VersionChoices.Count - 1].RegChanges)
-                {
-                    reg.WriteToStream(fs, true);
-                }
-            }
-
-
-
-
-
-
-            foreach (string site in ClientServerSites)
-            {
-                //Client server site
-                WriteFiles.WriteDeprecatedString(fs, 0x13, site);
-            }
-
-            // link to show when there is no update patch available
-
-            if (!string.IsNullOrEmpty(NoUpdateToLatestLinkText))
-                WriteFiles.WriteDeprecatedString(fs, 0x20, NoUpdateToLatestLinkText);
-
-            if (!string.IsNullOrEmpty(NoUpdateToLatestLinkURL))
-                WriteFiles.WriteDeprecatedString(fs, 0x21, NoUpdateToLatestLinkURL);
-
-            fs.WriteByte(0xFF);
-
-            fs.Close();
-        }
-
-        public void LoadServerDatav2(string fileName)
-        {
-            byte[] fileIDBytes = new byte[7];
-
-            Stream fs = null;
-
-            try
-            {
-                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-
-                // Read the first 7 bytes of identification data
-                fs.Read(fileIDBytes, 0, 7);
-            }
-            catch (Exception)
-            {
-                if (fs != null)
-                    fs.Close();
-
-                throw;
-            }
-
-            // check for compression (see if PKZip header is there)
-            if (fileIDBytes[0] == 0x50 && fileIDBytes[1] == 0x4B && fileIDBytes[2] == 0x03 && fileIDBytes[3] == 0x04)
-            {
-                // decompress the "actual" server file to memory
-                fs.Close();
-
-                using (ZipFile zip = ZipFile.Read(fileName))
-                {
-                    fs = new MemoryStream();
-
-                    zip["0"].Extract(fs);
-                }
-
-
-                fs.Position = 0;
-
-                // Read the first 7 bytes of identification data
-                fs.Read(fileIDBytes, 0, 7);
-            }
-
-
-            // see if the file is in the correct server format
-
-            string fileID = Encoding.UTF8.GetString(fileIDBytes);
-
-            if (fileID != "IUSDFV2")
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("The downloaded server file does not have the correct identifier. This is usually caused by file corruption.");
-            }
-
-
-
-            VersionChoices.Add(new VersionChoice());
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
-                {
-                    case 0x01://Read New Version
-                        NewVersion = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x02://Add server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ServerFileSites);
-                        break;
-                    case 0x07: //Min Client version
-                        MinClientVersion = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x0B: //The version to update from
-                        if (VersionChoices.Count > 1 || VersionChoices[0].Version != null)
-                            VersionChoices.Add(new VersionChoice());
-
-                        VersionChoices[VersionChoices.Count - 1].Version = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x03://Add update file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), VersionChoices[VersionChoices.Count - 1].FileSites);
-                        break;
-                    case 0x80: //the changes text is in RTF format
-                        VersionChoices[VersionChoices.Count - 1].RTFChanges = true;
-                        break;
-                    case 0x04://Read Changes
-                         VersionChoices[VersionChoices.Count - 1].Changes = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x09://update's filesize
-                        VersionChoices[VersionChoices.Count - 1].FileSize = ReadFiles.ReadLong(fs);
-                        break;
-                    case 0x08://update's Adler32 checksum
-                        VersionChoices[VersionChoices.Count - 1].Adler32 = ReadFiles.ReadLong(fs);
-                        break;
-                    case 0x0A: //Installing to which directories?
-                        VersionChoices[VersionChoices.Count - 1].InstallingTo = (InstallingTo)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x12: //how many regchanges to test
-                         VersionChoices[VersionChoices.Count - 1].RegChanges.Capacity = ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x8E: //the RegChanges
-                        VersionChoices[VersionChoices.Count - 1].RegChanges.Add(RegChange.ReadFromStream(fs));
-                        break;
-                    case 0x13://add client server sites
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ClientServerSites);
-                        break;
-                    case 0x20:
-                        NoUpdateToLatestLinkText = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x21:
-                        NoUpdateToLatestLinkURL = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x0F:
-                        //skip over the integer (4 bytes) length
-                        //this is just used to trick pre-1.0 Final versions
-                        //of wyUpdate to correctly read the server file correctly
-                        fs.Position += 4;
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
-                }
-
-                bType = (byte)fs.ReadByte();
-            }
-
-            fs.Close();
-        }
-
-        #endregion Server Data
-
-
-        public void AddUniqueSite(string newSite, List<string> sites)
+        public static void AddUniqueSite(string newSite, List<string> sites)
         {
             //if the site already exists, bail out
             foreach (string site in sites)

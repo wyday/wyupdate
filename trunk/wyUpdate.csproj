@@ -158,6 +158,7 @@
     <Compile Include="RegChange.cs" />
     <Compile Include="InstallUpdate\RollbackUpdate.cs" />
     <Compile Include="SelfUpdateState.cs" />
+    <Compile Include="ServerFile.cs" />
     <Compile Include="Shortcuts\ShellLinkNative.cs" />
     <Compile Include="Shortcuts\ShellShortcut.cs" />
     <Compile Include="Shortcuts\ShortcutInfo.cs" />
@@ -175,7 +176,7 @@
     <Compile Include="UpdateHelper\UpdateStepOn.cs" />
     <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails\UpdateDetails.cs" />
-    <Compile Include="UpdateEngine.cs" />
+    <Compile Include="ClientFile.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.cs" />
     <Compile Include="Util\Arguments.cs" />
     <Compile Include="VCDiff\AddressCache.cs" />

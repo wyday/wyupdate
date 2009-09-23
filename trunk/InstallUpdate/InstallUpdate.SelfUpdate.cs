@@ -315,14 +315,15 @@ namespace wyUpdate
 
             foreach (Process proc in aProcess)
             {
-                if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.ToLower())
+                try
                 {
-                    try
+                    if (proc.MainModule.FileName.ToLower() == filename.ToLower())
                     {
                         proc.Kill();
+
                     }
-                    catch { }
                 }
+                catch { }
             }
         }
     }

@@ -36,7 +36,7 @@ namespace wyUpdate
 
         public ClientFileType ClientFileType;
 
-        public UpdateEngine ClientFile;
+        public ClientFile ClientFile;
 
         public bool SkipProgressReporting;
 
@@ -456,7 +456,7 @@ namespace wyUpdate
                     {
                         // load and merge the existing file
 
-                        UpdateEngine tempClientFile = new UpdateEngine();
+                        ClientFile tempClientFile = new ClientFile();
                         tempClientFile.LoadClientData(Path.Combine(OutputDirectory, "iuclient.iuc"));
                         tempClientFile.InstalledVersion = ClientFile.InstalledVersion;
                         ClientFile = tempClientFile;
