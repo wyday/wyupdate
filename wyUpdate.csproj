@@ -159,6 +159,7 @@
     <Compile Include="InstallUpdate\RollbackUpdate.cs" />
     <Compile Include="SelfUpdateState.cs" />
     <Compile Include="ServerFile.cs" />
+    <Compile Include="ServerFile.Load.cs" />
     <Compile Include="Shortcuts\ShellLinkNative.cs" />
     <Compile Include="Shortcuts\ShellShortcut.cs" />
     <Compile Include="Shortcuts\ShortcutInfo.cs" />
