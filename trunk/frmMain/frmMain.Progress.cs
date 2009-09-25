@@ -161,7 +161,15 @@ namespace wyUpdate
                             if (isAutoUpdateMode)
                             {
                                 SelfUpdateState = SelfUpdateState.Downloaded;
-                                //TODO: save autoupdate file
+
+                                // save autoupdate file (new selfupdate state is saved)
+                                SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
+
+                                oldSelfLocation = Application.ExecutablePath;
+
+                                // begin extracting self
+                                update.CurrentlyUpdating = UpdateOn.ExtractSelfUpdate;
+                                InstallUpdates(update.CurrentlyUpdating);
                             }
                             else // regular self update mode
                             {
@@ -189,7 +197,10 @@ namespace wyUpdate
                             newSelfLocation = installUpdate.NewSelfLoc;
                             oldSelfLocation = Application.ExecutablePath;
 
-                            //TODO: save autoupdate state (selfupdate downloaded)
+                            // save autoupdate file (new selfupdate state is saved)
+                            SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
+
+
                             //TODO: start new wyUpdate in "master mode" (switch this to "slave" mode)
                             //TODO: Tell master to begin downloading the update
 
@@ -198,9 +209,16 @@ namespace wyUpdate
                         case UpdateOn.InstallSelfUpdate:
 
                             SelfUpdateState = SelfUpdateState.None;
+
+
                             //TODO: install self update should be called first
                             //TODO: then this deletes self-update details & self backup (no longer need self update even if main update fails)
-                            //TODO: save autoupdate file (no longer need self update)
+                            
+
+                            //TODO:  save autoupdate file (new selfupdate state is saved)
+                            // will probably be UpdateStepOn.Extracted
+                            // SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
+
                             //TODO: begin main update install
 
                             break;
@@ -211,9 +229,6 @@ namespace wyUpdate
 
             if (ex != null)
             {
-                //TODO: this is using the correct "update.MinClientVersion" when downloading the client sever file,
-                // however when failing to either (1) download the update or (2) install the update, the wyUpdate's
-                // "update.MinClientVersion" is used (which will always be the maximum client version).
                 bool selfUpdateRequired =
                     VersionTools.Compare(VersionTools.FromExecutingAssembly(), ServerFile.MinClientVersion) == -1;
 
@@ -258,6 +273,15 @@ namespace wyUpdate
                         errorDetails = null;
 
                         panelDisplaying.UpdateItems[1].Status = UpdateItemStatus.Nothing;
+
+                        if (isAutoUpdateMode)
+                        {
+                            // change update state from Downloaded to WillUpdate (just autoupdate)
+                            SelfUpdateState = SelfUpdateState.WillUpdate;
+
+                            // save the fact that there's no longer an update file
+                            SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
+                        }
 
                         // download the catch-all update
                         DownloadUpdate();

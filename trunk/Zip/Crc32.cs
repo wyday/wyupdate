@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-18 21:04:21>
+// Time-stamp: <2009-September-23 14:32:46>
 //
 // ------------------------------------------------------------------
 //
@@ -197,7 +197,7 @@ namespace Ionic.Zlib
 
         // private member vars
         private Int64 _TotalBytesRead;
-        private static UInt32[] crc32Table;
+        private static readonly UInt32[] crc32Table;
         private const int BUFFER_SIZE = 8192;
         private UInt32 _RunningCrc32Result = 0xFFFFFFFF;
 

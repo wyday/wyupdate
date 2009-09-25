@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-18 15:54:45>
+// Time-stamp: <2009-September-23 13:07:09>
 //
 // ------------------------------------------------------------------
 //
@@ -679,44 +679,6 @@ namespace Ionic.Zip
                 _metadataChanged = true;
             }
         }
-
-
-        /// <summary>
-        /// Disables compression for the entry when calling ZipFile.Save().
-        /// </summary>
-        ///
-        /// <remarks>
-        /// <para>
-        /// By default, the library compresses entries when saving them to archives. 
-        /// When this property is set to true, the entry is not compressed when written to 
-        /// the archive.  For example, the application might want to set flag to <c>true</c>
-        /// this when zipping up JPG or MP3 files, which are already compressed.  The application
-        /// may also want to turn off compression for other reasons.
-        /// </para>
-        ///
-        /// <para> When updating a ZipFile, you may not turn off compression on an entry
-        /// that has been encrypted.  In other words, if you read an existing <c>ZipFile</c> with
-        /// one of the <c>ZipFile.Read()</c> methods, and then change the
-        /// <c>CompressionMethod</c> on an entry that has <c>Encryption</c> not equal to
-        /// <c>None</c>, you will receive an exception.  There is no way to modify the
-        /// compression on an encrypted entry, without extracting it and re-adding it into
-        /// the ZipFile.  </para> </remarks>
-        ///
-        /// <seealso cref="Ionic.Zip.ZipFile.ForceNoCompression"/>
-        /// <seealso cref="CompressionMethod"/>
-        /// <seealso cref="CompressionLevel"/>
-        [Obsolete("Set the CompressionLevel property to None")]
-        public bool ForceNoCompression
-        {
-            get { return (CompressionLevel == Ionic.Zlib.CompressionLevel.None); }
-            set {
-                if (value)
-                    CompressionLevel = Ionic.Zlib.CompressionLevel.None;
-                else
-                    CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
-            }
-        }
-
 
 
         
@@ -2000,79 +1962,18 @@ namespace Ionic.Zip
             }
         }
 
-        
+
         /// <summary>
-        /// A callback that allows the application to specify whether multiple reads of the
-        /// stream should be performed, in the case that a compression operation actually
-        /// inflates the size of the file data.  
+        /// A callback that allows the application to specify the compression to use
+        /// for a given entry that is about to be added to the zip archive.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        ///   <em>This property is obsolete.</em> It will be removed in a future release
-        ///   of this library.  It was originally included in DotNetZip to work around a
-        ///   problem in the BCL <see cref="System.IO.Compression.DeflateStream"/>
-        ///   class. DotNetZip no longer uses the BCL class, and therefore no longer
-        ///   needs the work-around..
-        /// </para>
-        ///
-        /// <para>
-        /// In some cases, applying the Deflate compression algorithm in DeflateStream can
-        /// result an increase in the size of the data.  This "inflation" can happen with
-        /// previously compressed files, such as a zip, jpg, png, mp3, and so on.  In a few
-        /// tests, inflation on zip files can be as large as 60%!  Inflation can also happen
-        /// with very small files.  In these cases, by default, the DotNetZip library
-        /// discards the compressed bytes, and stores the uncompressed file data into the
-        /// zip archive.  This is an optimization where smaller size is preferred over
-        /// longer run times.
-        /// </para>
-        ///
-        /// <para>
-        /// The application can specify that compression is not even tried, by setting
-        /// the <see cref="CompressionLevel"/> property to <see
-        /// cref="Ionic.Zlib.CompressionLevel.None">Ionic.Zlib.CompressionLevel.None</see>.
-        /// If you do this, the compress-and-check-sizes process as decribed above, is
-        /// not done.
-        /// </para>
-        ///
-        /// <para>
-        /// In some cases, neither choice is optimal.  The application wants compression,
-        /// but in some cases also wants to avoid reading the stream more than once.  This
-        /// may happen when the stream is very large, or when the read is very expensive, or
-        /// when the difference between the compressed and uncompressed sizes is not
-        /// significant.
-        /// </para>
-        ///
-        /// <para>
-        /// To satisfy these applications, this delegate allows the DotNetZip library to
-        /// ask the application to for approval for re-reading the stream.  Setting the
-        /// corresponding delegate on the <c>ZipFile</c> class itself will set it on all
-        /// <c>ZipEntry</c> items that are subsequently added to the <c>ZipFile</c>
-        /// instance.
-        /// </para>
-        ///
-        /// </remarks>
-        /// <seealso cref="Ionic.Zip.ZipFile.WillReadTwiceOnInflation"/>
-        /// <seealso cref="Ionic.Zip.ReReadApprovalCallback"/>
-        [Obsolete("This property is no longer necessary.")]
-        public ReReadApprovalCallback WillReadTwiceOnInflation
-        {
-            get;
-            set;
-        }
-
-
-        /// <summary>
-        /// A callback that allows the application to specify whether compression should
-        /// be used for a given entry that is about to be added to the zip archive.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// <para>
-        ///   See <see cref="ZipFile.WantCompression" />
+        ///   See <see cref="ZipFile.SetCompression" />
         /// </para>
         /// </remarks>
-        public WantCompressionCallback WantCompression
+        public SetCompressionCallback SetCompression
         {
             get;
             set;

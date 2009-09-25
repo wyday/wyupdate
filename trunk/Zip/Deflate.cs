@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-15 16:01:48>
+// Time-stamp: <2009-September-23 15:32:37>
 //
 // ------------------------------------------------------------------
 //
@@ -189,7 +189,7 @@ namespace Ionic.Zlib
                 };
             }
 
-            private static Config[] Table;
+            private static readonly Config[] Table;
         }
 
 
@@ -230,31 +230,14 @@ namespace Ionic.Zlib
 
         private const int Buf_size                = 8 * 2;
 
-        // repeat previous bit length 3-6 times (2 bits of repeat count)
-        private const int REP_3_6                 = 16;
-
-        // repeat a zero length 3-10 times  (3 bits of repeat count)
-        private const int REPZ_3_10               = 17;
-
-        // repeat a zero length 11-138 times  (7 bits of repeat count)
-        private const int REPZ_11_138             = 18;
-
         private const int MIN_MATCH               = 3;
         private const int MAX_MATCH               = 258;
 
         private static readonly int MIN_LOOKAHEAD = (MAX_MATCH + MIN_MATCH + 1);
 
-        private const int MAX_BITS                = 15;
-        private const int D_CODES                 = 30;
-        private const int BL_CODES                = 19;
-        private const int LENGTH_CODES            = 29;
-        private const int LITERALS                = 256;
+        private static readonly int HEAP_SIZE     = (2 * InternalConstants.L_CODES + 1);
 
-        private static readonly int L_CODES = (LITERALS + 1 + LENGTH_CODES);
-
-        private static readonly int HEAP_SIZE = (2 * L_CODES + 1);
-
-        private const int END_BLOCK = 256;
+        private const int END_BLOCK               = 256;
 
         internal ZlibCodec _codec; // the zlib encoder/decoder
         internal int status;       // as the name implies
@@ -263,7 +246,6 @@ namespace Ionic.Zlib
         internal int pendingCount; // number of bytes in the pending buffer
 
         internal sbyte data_type;  // UNKNOWN, BINARY or ASCII
-        //internal sbyte method;     // STORED (for zip only) or DEFLATED
         internal int last_flush;   // value of flush param for previous deflate call
 
         internal int w_size;       // LZ77 window size (32K by default)
@@ -332,15 +314,15 @@ namespace Ionic.Zlib
         internal short[] dyn_dtree;         // distance tree
         internal short[] bl_tree;           // Huffman tree for bit lengths
 
-        internal Tree l_desc = new Tree();  // desc for literal tree
-        internal Tree d_desc = new Tree();  // desc for distance tree
-        internal Tree bl_desc = new Tree(); // desc for bit length tree
+        internal Tree treeLiterals = new Tree();  // desc for literal tree
+        internal Tree treeDistances = new Tree();  // desc for distance tree
+        internal Tree treeBitLengths = new Tree(); // desc for bit length tree
 
         // number of codes at each bit length for an optimal tree
-        internal short[] bl_count = new short[MAX_BITS + 1];
+        internal short[] bl_count = new short[InternalConstants.MAX_BITS + 1];
 
         // heap used to build the Huffman trees
-        internal int[] heap = new int[2 * L_CODES + 1];
+        internal int[] heap = new int[2 * InternalConstants.L_CODES + 1];
 
         internal int heap_len;              // number of elements in the heap
         internal int heap_max;              // element of largest frequency
@@ -349,7 +331,7 @@ namespace Ionic.Zlib
         // The same heap array is used to build all trees.
 
         // Depth of each subtree used as tie breaker for trees of equal frequency
-        internal sbyte[] depth = new sbyte[2 * L_CODES + 1];
+        internal sbyte[] depth = new sbyte[2 * InternalConstants.L_CODES + 1];
 
         internal int _lengthOffset;                 // index for literals or lengths 
 
@@ -398,8 +380,8 @@ namespace Ionic.Zlib
         internal DeflateManager()
         {
             dyn_ltree = new short[HEAP_SIZE * 2];
-            dyn_dtree = new short[(2 * D_CODES + 1) * 2]; // distance tree
-            bl_tree = new short[(2 * BL_CODES + 1) * 2]; // Huffman tree for bit lengths
+            dyn_dtree = new short[(2 * InternalConstants.D_CODES + 1) * 2]; // distance tree
+            bl_tree = new short[(2 * InternalConstants.BL_CODES + 1) * 2]; // Huffman tree for bit lengths
         }
 
         
@@ -436,15 +418,14 @@ namespace Ionic.Zlib
         // Initialize the tree data structures for a new zlib stream.
         private void _InitializeTreeData()
         {
+            treeLiterals.dyn_tree = dyn_ltree;
+            treeLiterals.staticTree = StaticTree.Literals;
 
-            l_desc.dyn_tree = dyn_ltree;
-            l_desc.stat_desc = StaticTree.static_l_desc;
+            treeDistances.dyn_tree = dyn_dtree;
+            treeDistances.staticTree = StaticTree.Distances;
 
-            d_desc.dyn_tree = dyn_dtree;
-            d_desc.stat_desc = StaticTree.static_d_desc;
-
-            bl_desc.dyn_tree = bl_tree;
-            bl_desc.stat_desc = StaticTree.static_bl_desc;
+            treeBitLengths.dyn_tree = bl_tree;
+            treeBitLengths.staticTree = StaticTree.BitLengths;
 
             bi_buf = 0;
             bi_valid = 0;
@@ -457,11 +438,11 @@ namespace Ionic.Zlib
         internal void _InitializeBlocks()
         {
             // Initialize the trees.
-            for (int i = 0; i < L_CODES; i++)
+            for (int i = 0; i < InternalConstants.L_CODES; i++)
                 dyn_ltree[i * 2] = 0;
-            for (int i = 0; i < D_CODES; i++)
+            for (int i = 0; i < InternalConstants.D_CODES; i++)
                 dyn_dtree[i * 2] = 0;
-            for (int i = 0; i < BL_CODES; i++)
+            for (int i = 0; i < InternalConstants.BL_CODES; i++)
                 bl_tree[i * 2] = 0;
 
             dyn_ltree[END_BLOCK * 2] = 1;
@@ -537,15 +518,15 @@ namespace Ionic.Zlib
                 {
                     if (curlen != prevlen)
                         bl_tree[curlen * 2]++;
-                    bl_tree[REP_3_6 * 2]++;
+                    bl_tree[InternalConstants.REP_3_6 * 2]++;
                 }
                 else if (count <= 10)
                 {
-                    bl_tree[REPZ_3_10 * 2]++;
+                    bl_tree[InternalConstants.REPZ_3_10 * 2]++;
                 }
                 else
                 {
-                    bl_tree[REPZ_11_138 * 2]++;
+                    bl_tree[InternalConstants.REPZ_11_138 * 2]++;
                 }
                 count = 0; prevlen = curlen;
                 if (nextlen == 0)
@@ -570,18 +551,18 @@ namespace Ionic.Zlib
             int max_blindex; // index of last bit length code of non zero freq
 
             // Determine the bit length frequencies for literal and distance trees
-            scan_tree(dyn_ltree, l_desc.max_code);
-            scan_tree(dyn_dtree, d_desc.max_code);
+            scan_tree(dyn_ltree, treeLiterals.max_code);
+            scan_tree(dyn_dtree, treeDistances.max_code);
 
             // Build the bit length tree:
-            bl_desc.build_tree(this);
+            treeBitLengths.build_tree(this);
             // opt_len now includes the length of the tree representations, except
             // the lengths of the bit lengths codes and the 5+5+4 bits for the counts.
 
             // Determine the number of bit length codes to send. The pkzip format
             // requires that at least 4 bit length codes be sent. (appnote.txt says
             // 3 but the actual value used is 4.)
-            for (max_blindex = BL_CODES - 1; max_blindex >= 3; max_blindex--)
+            for (max_blindex = InternalConstants.BL_CODES - 1; max_blindex >= 3; max_blindex--)
             {
                 if (bl_tree[Tree.bl_order[max_blindex] * 2 + 1] != 0)
                     break;
@@ -649,17 +630,17 @@ namespace Ionic.Zlib
                     {
                         send_code(curlen, bl_tree); count--;
                     }
-                    send_code(REP_3_6, bl_tree);
+                    send_code(InternalConstants.REP_3_6, bl_tree);
                     send_bits(count - 3, 2);
                 }
                 else if (count <= 10)
                 {
-                    send_code(REPZ_3_10, bl_tree);
+                    send_code(InternalConstants.REPZ_3_10, bl_tree);
                     send_bits(count - 3, 3);
                 }
                 else
                 {
-                    send_code(REPZ_11_138, bl_tree);
+                    send_code(InternalConstants.REPZ_11_138, bl_tree);
                     send_bits(count - 11, 7);
                 }
                 count = 0; prevlen = curlen;
@@ -749,7 +730,7 @@ namespace Ionic.Zlib
         internal void _tr_align()
         {
             send_bits(STATIC_TREES << 1, 3);
-            send_code(END_BLOCK, StaticTree.static_ltree);
+            send_code(END_BLOCK, StaticTree.lengthAndLiteralsTreeCodes);
 
             bi_flush();
 
@@ -760,7 +741,7 @@ namespace Ionic.Zlib
             if (1 + last_eob_len + 10 - bi_valid < 9)
             {
                 send_bits(STATIC_TREES << 1, 3);
-                send_code(END_BLOCK, StaticTree.static_ltree);
+                send_code(END_BLOCK, StaticTree.lengthAndLiteralsTreeCodes);
                 bi_flush();
             }
             last_eob_len = 7;
@@ -786,7 +767,7 @@ namespace Ionic.Zlib
                 matches++;
                 // Here, lc is the match length - MIN_MATCH
                 dist--; // dist = match distance - 1
-                dyn_ltree[(Tree.LengthCode[lc] + LITERALS + 1) * 2]++;
+                dyn_ltree[(Tree.LengthCode[lc] + InternalConstants.LITERALS + 1) * 2]++;
                 dyn_dtree[Tree.DistanceCode(dist) * 2]++;
             }
 
@@ -796,7 +777,7 @@ namespace Ionic.Zlib
                 int out_length = last_lit * 8;
                 int in_length = strstart - block_start;
                 int dcode;
-                for (dcode = 0; dcode < D_CODES; dcode++)
+                for (dcode = 0; dcode < InternalConstants.D_CODES; dcode++)
                 {
                     out_length = (int)(out_length + (int)dyn_dtree[dcode * 2] * (5L + Tree.ExtraDistanceBits[dcode]));
                 }
@@ -844,7 +825,7 @@ namespace Ionic.Zlib
                         code = Tree.LengthCode[lc];
 
                         // send the length code
-                        send_code(code + LITERALS + 1, ltree);
+                        send_code(code + InternalConstants.LITERALS + 1, ltree);
                         extra = Tree.ExtraLengthBits[code];
                         if (extra != 0)
                         {
@@ -895,7 +876,7 @@ namespace Ionic.Zlib
             {
                 ascii_freq += dyn_ltree[n * 2]; n++;
             }
-            while (n < LITERALS)
+            while (n < InternalConstants.LITERALS)
             {
                 bin_freq += dyn_ltree[n * 2]; n++;
             }
@@ -1053,9 +1034,9 @@ namespace Ionic.Zlib
                     set_data_type();
 
                 // Construct the literal and distance trees
-                l_desc.build_tree(this);
+                treeLiterals.build_tree(this);
 
-                d_desc.build_tree(this);
+                treeDistances.build_tree(this);
 
                 // At this point, opt_len and static_len are the total bit lengths of
                 // the compressed block data, excluding the tree representations.
@@ -1089,12 +1070,12 @@ namespace Ionic.Zlib
             else if (static_lenb == opt_lenb)
             {
                 send_bits((STATIC_TREES << 1) + (eof ? 1 : 0), 3);
-                send_compressed_block(StaticTree.static_ltree, StaticTree.static_dtree);
+                send_compressed_block(StaticTree.lengthAndLiteralsTreeCodes, StaticTree.distTreeCodes);
             }
             else
             {
                 send_bits((DYN_TREES << 1) + (eof ? 1 : 0), 3);
-                send_all_trees(l_desc.max_code + 1, d_desc.max_code + 1, max_blindex + 1);
+                send_all_trees(treeLiterals.max_code + 1, treeDistances.max_code + 1, max_blindex + 1);
                 send_compressed_block(dyn_ltree, dyn_dtree);
             }
 
@@ -1635,7 +1616,6 @@ namespace Ionic.Zlib
             
             this.compressionLevel = level;
             this.compressionStrategy = strategy;
-            //this.method = 0x08;  // (sbyte) method;
 
             Reset();
             return ZlibConstants.Z_OK;

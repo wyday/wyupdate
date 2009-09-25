@@ -188,7 +188,7 @@ namespace wyUpdate.Common
         }
     }
 
-    internal enum Action { UpdateStep = 0, GetwyUpdateProcessID = 1, Cancel = 2, wyUpdateSlave = 3 }
+    internal enum Action { UpdateStep = 0, GetwyUpdateProcessID = 1, Cancel = 2, NewWyUpdateProcess = 3 }
     internal enum UpdateStep { CheckForUpdate = 0, DownloadUpdate = 1, BeginExtraction = 2, RestartInfo = 3, Install = 4 }
     internal enum Response { Failed = -1, Nothing = 0, Succeeded = 1, Progress = 2 }
 }

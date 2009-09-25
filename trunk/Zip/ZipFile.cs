@@ -1228,88 +1228,6 @@ namespace Ionic.Zip
         }
 
         
-        /// <summary>
-        ///   Gets or sets the flag that indicates whether the <c>ZipFile</c> should use
-        ///   compression for subsequently added entries in the <c>ZipFile</c> instance.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// <para>
-        ///   <em>This property is obsolete.</em> It will be removed in
-        ///   a future release of this library.  If you want to force
-        ///   "no compression", set the <see cref="CompressionLevel"/>
-        ///   property to <c>Ionic.Zlib.CompressionLevel.None</c>.
-        /// </para>
-        ///
-        /// <para>
-        ///   When saving an entry into a zip archive, the DotNetZip by default
-        ///   compresses the file. That's what a ZIP archive is all about, isn't it?
-        ///   For files that are already compressed, like MP3's or JPGs, the deflate
-        ///   algorithm can actually slightly expand the size of the data.  Setting this
-        ///   property to true allows you to specify that compression should not be
-        ///   used. The default value is false.  
-        /// </para>
-        ///
-        /// <para>
-        ///   Do not construe setting this flag to false as "Force Compression".
-        ///   Setting it to false merely does NOT force No compression.  If you want to
-        ///   force the use of the deflate algorithm when storing each entry into the
-        ///   zip archive, define a <see cref="WillReadTwiceOnInflation"/> callback,
-        ///   which always returns false, and a <see cref="WantCompression" /> callback
-        ///   that always returns true.  This is probably the wrong thing to do, but you
-        ///   could do it. Forcing the use of the Deflate algorithm when storing an
-        ///   entry does not guarantee that the data size will get smaller. It could
-        ///   increase, as described above.
-        /// </para>
-        ///
-        /// <para>
-        ///   Changes to this flag apply to all entries subsequently added to the
-        ///   archive.  The application can also set the <see
-        ///   cref="ZipEntry.CompressionMethod"/> property on each <c>ZipEntry</c>, for
-        ///   more granular control of this capability.
-        /// </para>
-        ///
-        /// </remarks>
-        ///
-        /// <seealso cref="Ionic.Zip.ZipEntry.CompressionMethod"/>
-        /// <seealso cref="Ionic.Zip.ZipFile.CompressionLevel"/>
-        /// <seealso cref="Ionic.Zip.ZipFile.WantCompression"/>
-        ///
-        /// <example>
-        /// This example shows how to specify that Compression will not be used when
-        /// adding files to the zip archive. None of the files added to the archive in
-        /// this example will use compression.
-        /// <code>
-        /// using (ZipFile zip = new ZipFile())
-        /// {
-        ///   zip.ForceNoCompression = true;
-        ///   zip.AddDirectory(@"c:\reports\January");
-        ///   zip.Comment = "All files in this archive will be uncompressed.";
-        ///   zip.Save(ZipFileToCreate);
-        /// }
-        /// </code>
-        ///
-        /// <code lang="VB">
-        /// Using zip As New ZipFile()
-        ///   zip.ForceNoCompression = true
-        ///   zip.AddDirectory("c:\reports\January")
-        ///   zip.Comment = "All files in this archive will be uncompressed."
-        ///   zip.Save(ZipFileToCreate)
-        /// End Using
-        /// </code>
-        ///
-        /// </example>
-        [Obsolete("Set the CompressionLevel property to None")]
-        public bool ForceNoCompression
-        {
-            get { return (CompressionLevel == Ionic.Zlib.CompressionLevel.None); }
-            set {
-                if (value)
-                    CompressionLevel = Ionic.Zlib.CompressionLevel.None;
-                else
-                    CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
-            }
-        }
 
 
         /// <summary>
@@ -1394,7 +1312,7 @@ namespace Ionic.Zip
         /// When writing a zip archive, keep this in mind: though the password is set on the
         /// ZipFile object, according to the Zip spec, the "directory" of the archive - in
         /// other words the list of entries contained in the archive - is not encrypted with
-        /// the password, or protected in any way.  if you set the Password property, the
+        /// the password, or protected in any way.  If you set the Password property, the
         /// password actually applies to individual entries that are added to the archive,
         /// subsequent to the setting of this property.  The list of filenames in the
         /// archive that is eventually created will appear in clear text, but the contents
@@ -1434,10 +1352,10 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// If you set the Password property on the <c>ZipFile</c>, then call Extract()
-        /// an entry that has not been encrypted with a password, the password is not
-        /// used for that entry, and the <c>ZipEntry</c> is extracted as normal. In
-        /// other words, the password is used only if necessary.
+        /// If you set the Password property on the <c>ZipFile</c>, then call
+        /// <c>Extract()</c> an entry that has not been encrypted with a password, the
+        /// password is not used for that entry, and the <c>ZipEntry</c> is extracted as
+        /// normal. In other words, the password is used only if necessary.
         /// </para>
         /// 
         /// <para>
@@ -1780,182 +1698,50 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// A callback that allows the application to specify whether multiple reads of the
-        /// stream should be performed, in the case that a compression operation actually
-        /// inflates the size of the file data.  
-        /// </summary>
-        ///
-        /// <remarks>
-        /// <para>
-        ///   <em>This property is obsolete.</em> It will be removed in a future release
-        ///   of this library.  It was originally included in DotNetZip to work around a
-        ///   problem in the BCL <see cref="System.IO.Compression.DeflateStream"/>
-        ///   class. DotNetZip no longer uses the BCL class, and therefore no longer
-        ///   needs the work-around.
-        /// </para>
-        ///
-        /// <para>
-        /// In some cases, applying the Deflate compression algorithm in
-        /// <c>DeflateStream</c> can result an increase in the size of the data.  This
-        /// "inflation" can happen with previously compressed files, such as a zip, jpg,
-        /// png, mp3, and so on.  In a few tests, inflation on zip files can be as large
-        /// as 60%!  Inflation can also happen with very small files.  In these cases,
-        /// by default, the DotNetZip library discards the compressed bytes, and stores
-        /// the uncompressed file data into the zip archive.  This is an optimization
-        /// where smaller size is preferred over longer run times.
-        /// </para>
-        ///
-        /// <para>
-        /// The application can specify that compression is not even tried, by setting the
-        /// <see cref="CompressionLevel"/> property to <see cref="Ionic.Zlib.CompressionLevel.None"/>.
-        /// In this case, the compress-and-check-sizes process as
-        /// decribed above, is not done.
-        /// </para>
-        ///
-        /// <para>
-        /// In some cases, neither choice is optimal.  The application wants compression,
-        /// but in some cases also wants to avoid reading the stream more than once.  This
-        /// may happen when the stream is very large, or when the read is very expensive, or
-        /// when the difference between the compressed and uncompressed sizes is not
-        /// significant.
-        /// </para>
-        ///
-        /// <para>
-        /// To satisfy these applications, this delegate allows the DotNetZip library to ask
-        /// the application to for approval for re-reading the stream, in the case where
-        /// inflation occurs.  The callback is invoked only in the case of inflation; that
-        /// is to say when the uncompressed stream is smaller than the compressed stream.
-        /// </para>
-        ///
-        /// <para>
-        /// As with many other <c>ZipFile</c> properties (like <see cref="Encryption"/>,
-        /// <see cref="Password"/>, <see cref="WantCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>), setting
-        /// this property on a <c>ZipFile</c> instance will caused it to be applied to
-        /// all <c>ZipEntry</c> items that are subsequently added to the <c>ZipFile</c>
-        /// instance. In other words, if you set this callback after you have added
-        /// files to the <c>ZipFile</c>, but before you have called Save(), those items
-        /// will not be governed by the callback when you do call Save(). Your best bet
-        /// is to set this callback before adding any entries.
-        /// </para>
-        ///
-        /// <para>
-        /// Of course, if you want to have different callbacks for different entries,
-        /// you may do so.
-        /// </para>
-        ///
-        /// </remarks>
-        /// <example>
-        /// <para>
-        /// In this example, the application callback checks to see if the difference
-        /// between the compressed and uncompressed data is greater than 25%.  If it is,
-        /// then the callback returns true, and the application tells the library to
-        /// re-read the stream.  If not, then the callback returns false, and the
-        /// library just keeps the "inflated" file data.
-        /// </para>
-        ///
-        /// <code>
-        ///
-        /// public bool ReadTwiceCallback(long uncompressed, long compressed, string filename)
-        /// {
-        ///     return ((uncompressed * 1.0/compressed) > 1.25);
-        /// }
-        /// 
-        /// public void CreateTheZip()
-        /// {
-        ///     using (ZipFile zip = new ZipFile())
-        ///     {
-        ///         // set the callback before adding files to the zip
-        ///         zip2.WillReadTwiceOnInflation = ReadTwiceCallback;
-        ///         zip2.AddFile(filename1);
-        ///         zip2.AddFile(filename2);
-        ///         zip2.Save(ZipFileToCreate);
-        ///     }
-        /// }
-        /// </code>
-        /// </example>
-        /// <seealso cref="Ionic.Zip.ZipFile.WantCompression"/>
-        /// <seealso cref="Ionic.Zip.WantCompressionCallback"/>
-        /// <seealso cref="Ionic.Zip.ZipEntry.WillReadTwiceOnInflation"/>
-        [Obsolete("This property is no longer necessary.")]
-        public ReReadApprovalCallback WillReadTwiceOnInflation
-        {
-            get;
-            set;
-        }
-
-
-        /// <summary>
-        /// A callback that allows the application to specify whether compression should
-        /// be used for entries subsequently added to the zip archive.
+        ///   A callback that allows the application to specify the compression level
+        ///   to use for entries subsequently added to the zip archive.
         /// </summary>
         ///
         /// <remarks>
         ///
         /// <para>
-        /// By default, the DotNetZip library takes this approach to decide whether to
-        /// apply compression: first it applies a heuristic, to determine whether it
-        /// should try to compress a file or not: The library checks the extension of
-        /// the entry, and if it is one of a known list of uncompressible file types
-        /// (mp3, zip, docx, and others), the library will not attempt to compress the
-        /// entry.  The library does not actually check the content of the entry.  If
-        /// you name a text file "Text.mp3", and then attempt to add it to a zip
-        /// archive, this library will, by default, not attempt to compress the entry,
-        /// based on the extension of the filename.
+        ///   With this callback, the DotNetZip library allows the application to
+        ///   determine whether compression will be used, at the time of the <c>Save</c>. This
+        ///   may be useful if the application wants to favor speed over size, and wants
+        ///   to defer the decision until the time of <c>Save</c>.
         /// </para>
         ///
         /// <para>
-        /// If this default behavior is not satisfactory, there are two options. First,
-        /// the application can override it by setting this <see
-        /// cref="ZipFile.WantCompression"/> callback.  This affords maximum control to
-        /// the application.  With this callback, the application can supply its own
-        /// logic for determining whether to apply the Deflate algorithm or not.  For
-        /// example, an application may desire that files over 40mb in size are never
-        /// compressed, or always compressed.  An application may desire that the first
-        /// 7 entries added to an archive are compressed, and the remaining ones are
-        /// not.  The WantCompression callback allows the application full control, on
-        /// an entry-by-entry basis.
+        ///   Typically applications set the <see cref="CompressionLevel"/> property on
+        ///   the <c>ZipFile</c> or on each <c>ZipEntry</c> to determine the level of
+        ///   compression used. This is done at the time the entry is added to the
+        ///   <c>ZipFile</c>. Setting the property to
+        ///   <c>Ionic.Zlib.CompressionLevel.None</c> means no compression will be used.
         /// </para>
         ///
         /// <para>
-        /// A second option for overriding the heuristic is to force the use of no
-        /// compression by setting the <see cref="CompressionLevel"/> property to <see
-        /// cref="Ionic.Zlib.CompressionLevel.None">CompressionLevel.None</see>. If the
-        /// property is <c>None</c> the hueristic is not applied, nor is the callback
-        /// invoked.
+        ///   This callback allows the application to defer the decision on the
+        ///   <c>CompressionLevel</c> to use, until the time of the call to
+        ///   <c>ZipFile.Save()</c>. The callback is invoked once per <c>ZipEntry</c>,
+        ///   at the time the data for the entry is being written out as part of a
+        ///   <c>Save()</c> operation. The application can use whatever criteria it
+        ///   likes in determining the level to return.  For example, an application may
+        ///   wish that no .mp3 files should be compressed, because they are already
+        ///   compressed and the extra compression is not worth the CPU time incurred,
+        ///   and so can return <c>None</c> for all .mp3 entries.
         /// </para>
         ///
         /// <para>
-        /// This is how the library determines whether compression will be attempted for
-        /// an entry.  If it is to be attempted, the library reads the entry, runs it
-        /// through the deflate algorithm, and then checks the size of the result.  If
-        /// applying the Deflate algorithm increases the size of the data, then the
-        /// library discards the compressed bytes, re-reads the raw entry data, and
-        /// stores the uncompressed file data into the zip archive, in compliance with
-        /// the zip spec.  This is an optimization where smaller size is preferred over
-        /// longer run times. The re-reading is gated on the <see
-        /// cref="WillReadTwiceOnInflation"/> callback, if it is set. This callback
-        /// applies independently of the WantCompression callback.
-        /// </para>
-        ///
-        /// <para>
-        /// If by the logic described above, compression is not to be attempted for an
-        /// entry, the library reads the entry, and simply stores the entry data
-        /// uncompressed.
-        /// </para>
-        ///
-        /// <para>
-        /// And, if you have read this far, I would like to point out that a single
-        /// person wrote all the code that does what is described above, and also wrote
-        /// the description.  Isn't it about time you <see
-        /// href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">donated $5 in
-        /// appreciation?</see> The money goes to a charity.
+        ///   The library determines whether compression will be attempted for an entry
+        ///   this way: If the entry is a zero length file, or a directory, no
+        ///   compression is used.  Otherwise, if this callback is set, it is invoked
+        ///   and the <c>CompressionLevel</c> is set to the return value. If this
+        ///   callback has not been set, then the previously set value for
+        ///   <c>CompressionLevel</c> is used.
         /// </para>
         ///
         /// </remarks>
-        /// <seealso cref="Ionic.Zip.ZipFile.WillReadTwiceOnInflation"/>
-        public WantCompressionCallback WantCompression
+        public SetCompressionCallback SetCompression
         {
             get;
             set;

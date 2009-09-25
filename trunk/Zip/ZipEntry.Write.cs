@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-13 16:59:20>
+// Time-stamp: <2009-September-23 13:06:14>
 //
 // ------------------------------------------------------------------
 //
@@ -555,34 +555,6 @@ namespace Ionic.Zip
 
             if (_zipCrypto != null && (CompressedSize - 12) <= UncompressedSize) return false;
 
-#pragma warning disable 618
-            // finally, check the delegate 
-            if (WillReadTwiceOnInflation != null)
-                return WillReadTwiceOnInflation(_UncompressedSize, _CompressedSize, FileName);
-#pragma warning restore 618
-
-            //Console.WriteLine("***WantReadAgain: returning TRUE...");
-            return true;
-        }
-
-        // heuristic - if the filename is one of a known list of non-compressible files, 
-        // return false. else true.  We apply this by just checking the extension. 
-        // (?i) = use case-insensitive matching
-        private static RE.Regex _IncompressibleRegex = new RE.Regex("(?i)^(.+)\\.(mp3|png|docx|xlsx|pptx|jpg|zip)$");
-        private static bool SeemsCompressible(string filename)
-        {
-            return !_IncompressibleRegex.IsMatch(filename);
-        }
-
-
-        private bool DefaultWantCompression()
-        {
-            if (_LocalFileName != null)
-                return SeemsCompressible(_LocalFileName);
-
-            if (_FileNameInArchive != null)
-                return SeemsCompressible(_FileNameInArchive);
-
             return true;
         }
 
@@ -594,13 +566,16 @@ namespace Ionic.Zip
             if (cycle > 1)
             {
                 _CompressionMethod = 0x0;
+                return;
             }
             // compression for directories = 0x00 (No Compression)
-            else if (IsDirectory)
+            if (IsDirectory)
             {
                 _CompressionMethod = 0x0;
+                return;
             }
-            else if (__FileDataPosition != -1)
+
+            if (__FileDataPosition != -1)
             {
                 // If at this point, __FileDataPosition is non-zero, that means we've read this
                 // entry from an existing zip archive. 
@@ -609,64 +584,50 @@ namespace Ionic.Zip
                 // CompressionMethod, CRC, compressed size, uncompressed size, etc).
                 // 
                 // All those member variables have been set during read! 
-                // 
+                //
+                return;
             }
-            else
+
+            
+            // If __FileDataPosition is zero, then that means we will get the data
+            // from a file or stream.
+
+            // It is never possible to compress a zero-length file, so we check for 
+            // this condition. 
+
+            if (this._Source == ZipEntrySource.Stream)
             {
-                // If __FileDataPosition is zero, then that means we will get the data
-                // from a file or stream.
-
-                // It is never possible to compress a zero-length file, so we check for 
-                // this condition. 
-
-                if (this._Source == ZipEntrySource.Stream)
+                // workitem 7742
+                if (_sourceStream != null && _sourceStream.CanSeek)
                 {
-                    // workitem 7742
-                    if (_sourceStream != null && _sourceStream.CanSeek)
-                    {
-                        // Length prop will throw if CanSeek is false
-                        long fileLength = _sourceStream.Length;
-                        if (fileLength == 0)
-                        {
-                            _CompressionMethod = 0x00;
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    // special case zero-length files
-                    // workitem 8423
-                    if (SharedUtilities.GetFileLength(LocalFileName) == 0L)
+                    // Length prop will throw if CanSeek is false
+                    long fileLength = _sourceStream.Length;
+                    if (fileLength == 0)
                     {
                         _CompressionMethod = 0x00;
                         return;
                     }
-                    
                 }
-
-                if (CompressionLevel == Ionic.Zlib.CompressionLevel.None)
-                {
-                    _CompressionMethod = 0x00;
-                    return;
-                }
-
-                // Ok, we're getting the data to be compressed from a non-zero length file
-                // or stream.  In that case we check the callback to see if the app
-                // wants to tell us whether to compress or not.  
-
-                if (WantCompression != null)
-                {
-                    _CompressionMethod = (short)(WantCompression(LocalFileName, _FileNameInArchive)
-                                                 ? 0x08 : 0x00);
-                    return;
-                }
-
-                // if there is no callback set, we use the default behavior.
-                _CompressionMethod = (short)(DefaultWantCompression()
-                                             ? 0x08 : 0x00);
+            }
+            // special case zero-length files
+            // workitem 8423
+            else if (SharedUtilities.GetFileLength(LocalFileName) == 0L)
+            {
+                _CompressionMethod = 0x00;
                 return;
             }
+
+            // Ok, we're getting the data to be compressed from a non-zero length file
+            // or stream.  In that case we check the callback to see if the app
+            // wants to tell us whether to compress or not.  
+            if (SetCompression != null)
+                CompressionLevel = SetCompression(LocalFileName, _FileNameInArchive);
+
+            _CompressionMethod = (short) ((CompressionLevel == Ionic.Zlib.CompressionLevel.None)
+                                          ? 0x00
+                                          : 0x08);
+            return;
+            
         }
 
 

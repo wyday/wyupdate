@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using wyUpdate.Common;
 using wyUpdate.Downloader;
@@ -27,24 +26,6 @@ namespace wyUpdate
         {
             if (SelfUpdateState == SelfUpdateState.FullUpdate || isAutoUpdateMode && SelfUpdateState == SelfUpdateState.WillUpdate)
             {
-                // load the self update details (only for autoupdate mode)
-                if (isAutoUpdateMode)
-                {
-                    try
-                    {
-                        //load the self-update server file
-                        LoadClientServerFile();
-                    }
-                    catch (Exception ex)
-                    {
-                        error = clientLang.ServerError;
-                        errorDetails = ex.Message;
-
-                        ShowFrame(Frame.Error);
-                        return;
-                    }
-                }
-
                 //download self update
                 update.CurrentlyUpdating = UpdateOn.DownloadingSelfUpdate;
                 BeginSelfUpdateDownload(updateFrom.FileSites, updateFrom.Adler32);
@@ -102,7 +83,16 @@ namespace wyUpdate
 
             //check if the client is new enough.
             if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1)
+            {
                 SelfUpdateState = SelfUpdateState.WillUpdate;
+
+                // autoupdate will need this SF
+                if (isAutoUpdateMode)
+                {
+                    SelfServerFile = clientSF;
+                    LoadClientServerFile();
+                }
+            }
 
             //Show update info page
             ShowFrame(Frame.UpdateInfo);
@@ -110,25 +100,11 @@ namespace wyUpdate
 
         void LoadClientServerFile()
         {
-            SelfServerFile = ServerFile.Load(clientSFLoc);
+            // load the self server file if it doesn't already exist
+            if (SelfServerFile == null)
+                SelfServerFile = ServerFile.Load(clientSFLoc);
 
-            //get the current version of the Client
-            string currentClientVersion = VersionTools.FromExecutingAssembly();
-
-            foreach (VersionChoice vChoice in SelfServerFile.VersionChoices)
-            {
-                // select the correct delta-patch version choice
-                // using fuzzy equality (i.e. 1.1 == 1.1.0.0)
-                if (VersionTools.Compare(vChoice.Version, currentClientVersion) == 0)
-                {
-                    updateFrom = vChoice;
-                    break;
-                }
-            }
-
-            //if no delta-patch update has been selected, use the catch-all update
-            if (updateFrom == null)
-                updateFrom = SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1];
+            updateFrom = SelfServerFile.GetVersionChoice(VersionTools.FromExecutingAssembly());
         }
 
         void ServerDownloadedSuccessfully()
@@ -193,42 +169,27 @@ namespace wyUpdate
                 return;
             }
 
-            int i;
+            // get the correct update file to download
+            updateFrom = ServerFile.GetVersionChoice(update.InstalledVersion);
 
-            for (i = 0; i < ServerFile.VersionChoices.Count; i++)
-            {
-                // select the correct delta-patch version choice
-                if (VersionTools.Compare(ServerFile.VersionChoices[i].Version, update.InstalledVersion) == 0)
-                {
-                    updateFrom = ServerFile.VersionChoices[i];
-                    break;
-                }
-            }
 
-            //if no delta-patch update has been selected, use the catch-all update (if it exists)
-            if (updateFrom == null && ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion)
-                updateFrom = ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1];
-
-            if (updateFrom == null)
-                throw new NoUpdatePathToNewestException();
 
             // set the changes text
             if (setChangesText || isAutoUpdateMode)
             {
+                int i = ServerFile.VersionChoices.IndexOf(updateFrom);
+
                 //if there's a catch-all update start with one less than "update.VersionChoices.Count - 1"
-
-                bool catchAllExists = ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion;
-
 
                 //build the changes from all previous versions
                 for (int j = ServerFile.VersionChoices.Count - 1; j >= i; j--)
                 {
                     //show the version number for previous updates we may have missed
-                    if (j != ServerFile.VersionChoices.Count - 1 && (!catchAllExists || catchAllExists && j != ServerFile.VersionChoices.Count - 2))
+                    if (j != ServerFile.VersionChoices.Count - 1 && (!ServerFile.CatchAllUpdateExists || ServerFile.CatchAllUpdateExists && j != ServerFile.VersionChoices.Count - 2))
                         panelDisplaying.AppendAndBoldText("\r\n\r\n" + ServerFile.VersionChoices[j + 1].Version + ":\r\n\r\n");
 
                     // append the changes to the total changes list
-                    if (!catchAllExists || catchAllExists && j != ServerFile.VersionChoices.Count - 2)
+                    if (!ServerFile.CatchAllUpdateExists || ServerFile.CatchAllUpdateExists && j != ServerFile.VersionChoices.Count - 2)
                     {
                         if (ServerFile.VersionChoices[j].RTFChanges)
                             panelDisplaying.AppendRichText(ServerFile.VersionChoices[j].Changes);
