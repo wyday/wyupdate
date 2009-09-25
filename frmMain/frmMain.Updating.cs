@@ -279,12 +279,12 @@ namespace wyUpdate
                     asyncThread = new Thread(installUpdate.RunSelfUpdate);
                     break;
                 case UpdateOn.ExtractSelfUpdate:
-                    SetStepStatus(1, clientLang.SelfUpdate);
-
                     showProgress = SelfUpdateProgress;
 
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {
+                                            // old self is needed for patching
+                                            OldSelfLoc = oldSelfLocation,
                                             Filename = Path.Combine(tempDirectory, updateFilename),
                                             OutputDirectory = Path.Combine(tempDirectory, "selfupdate")
                                         };
@@ -292,8 +292,6 @@ namespace wyUpdate
                     asyncThread = new Thread(installUpdate.JustExtractSelfUpdate);
                     break;
                 case UpdateOn.InstallSelfUpdate:
-                    SetStepStatus(1, clientLang.SelfUpdate);
-
                     showProgress = SelfUpdateProgress;
 
                     installUpdate = new InstallUpdate(this, showProgress)

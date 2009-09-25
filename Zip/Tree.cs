@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-09 22:13:11>
+// Time-stamp: <2009-September-23 15:16:09>
 //
 // ------------------------------------------------------------------
 //
@@ -65,33 +65,9 @@ using System;
 
 namespace Ionic.Zlib
 {
-        
     sealed class Tree
     {
-        private const int MAX_BITS          = 15;
-        private const int BL_CODES          = 19;
-        private const int D_CODES           = 30;
-        private const int LITERALS          = 256;
-        private const int LENGTH_CODES      = 29;
-
-        private static readonly int L_CODES = (LITERALS + 1 + LENGTH_CODES);
-
-        private static readonly int HEAP_SIZE = (2 * L_CODES + 1);
-                
-        // Bit length codes must not exceed MAX_BL_BITS bits
-        internal const int MAX_BL_BITS = 7;
-                
-        // end of block literal code
-        internal const int END_BLOCK = 256;
-                
-        // repeat previous bit length 3-6 times (2 bits of repeat count)
-        internal const int REP_3_6 = 16;
-                
-        // repeat a zero length 3-10 times  (3 bits of repeat count)
-        internal const int REPZ_3_10 = 17;
-                
-        // repeat a zero length 11-138 times  (7 bits of repeat count)
-        internal const int REPZ_11_138 = 18;
+        private static readonly int HEAP_SIZE = (2 * InternalConstants.L_CODES + 1);
                 
         // extra bits for each length code
         internal static readonly int[] ExtraLengthBits = new int[]
@@ -208,7 +184,7 @@ namespace Ionic.Zlib
 
         internal short[] dyn_tree; // the dynamic tree
         internal int max_code; // largest code with non zero frequency
-        internal StaticTree stat_desc; // the corresponding static tree
+        internal StaticTree staticTree; // the corresponding static tree
                 
         // Compute the optimal bit lengths for a tree and update the total bit length
         // for the current block.
@@ -221,10 +197,10 @@ namespace Ionic.Zlib
         internal void  gen_bitlen(DeflateManager s)
         {
             short[] tree = dyn_tree;
-            short[] stree = stat_desc.static_tree;
-            int[] extra = stat_desc.extra_bits;
-            int base_Renamed = stat_desc.extra_base;
-            int max_length = stat_desc.max_length;
+            short[] stree = staticTree.treeCodes;
+            int[] extra = staticTree.extraBits;
+            int base_Renamed = staticTree.extraBase;
+            int max_length = staticTree.maxLength;
             int h; // heap index
             int n, m; // iterate over the tree elements
             int bits; // bit length
@@ -232,7 +208,7 @@ namespace Ionic.Zlib
             short f; // frequency
             int overflow = 0; // number of elements with bit length too large
                         
-            for (bits = 0; bits <= MAX_BITS; bits++)
+            for (bits = 0; bits <= InternalConstants.MAX_BITS; bits++)
                 s.bl_count[bits] = 0;
                         
             // In a first pass, compute the optimal bit lengths (which may
@@ -308,8 +284,8 @@ namespace Ionic.Zlib
         internal void  build_tree(DeflateManager s)
         {
             short[] tree = dyn_tree;
-            short[] stree = stat_desc.static_tree;
-            int elems = stat_desc.elems;
+            short[] stree = staticTree.treeCodes;
+            int elems = staticTree.elems;
             int n, m; // iterate over heap elements
             int max_code = - 1; // largest code with non zero frequency
             int node; // new node being created
@@ -400,14 +376,14 @@ namespace Ionic.Zlib
         //     zero code length.
         internal static void  gen_codes(short[] tree, int max_code, short[] bl_count)
         {
-            short[] next_code = new short[MAX_BITS + 1]; // next code value for each bit length
+            short[] next_code = new short[InternalConstants.MAX_BITS + 1]; // next code value for each bit length
             short code = 0; // running code value
             int bits; // bit index
             int n; // code index
                         
             // The distribution counts are first used to generate the code values
             // without bit reversal.
-            for (bits = 1; bits <= MAX_BITS; bits++)
+            for (bits = 1; bits <= InternalConstants.MAX_BITS; bits++)
                 unchecked {
                     next_code[bits] = code = (short) ((code + bl_count[bits - 1]) << 1);
                 }

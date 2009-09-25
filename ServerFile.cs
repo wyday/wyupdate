@@ -318,5 +318,47 @@ namespace wyUpdate.Common
 
             return serv;
         }
+
+#if CLIENT
+        public VersionChoice GetVersionChoice(string installedVersion)
+        {
+            VersionChoice updateFrom = null;
+
+            for (int i = 0; i < VersionChoices.Count; i++)
+            {
+                // select the correct delta-patch version choice
+                if (VersionTools.Compare(VersionChoices[i].Version, installedVersion) == 0)
+                {
+                    updateFrom = VersionChoices[i];
+                    break;
+                }
+            }
+
+            // if no delta-patch update has been selected, use the catch-all update (if it exists)
+            if (updateFrom == null && CatchAllUpdateExists)
+                updateFrom = VersionChoices[VersionChoices.Count - 1];
+
+            if (updateFrom == null)
+                throw new NoUpdatePathToNewestException();
+
+            return updateFrom;
+        }
+
+        private bool? catchAllExists;
+
+        public bool CatchAllUpdateExists
+        {
+            get
+            {
+                if (catchAllExists == null)
+                {
+                    catchAllExists = VersionChoices.Count > 0 &&
+                                     VersionTools.Compare(VersionChoices[VersionChoices.Count - 1].Version, NewVersion) == 0;
+                }
+
+                return catchAllExists.Value;
+            }
+        }
+#endif
     }
 }

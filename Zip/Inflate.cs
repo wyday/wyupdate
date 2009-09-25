@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-31 09:15:22>
+// Time-stamp: <2009-September-23 15:25:56>
 //
 // ------------------------------------------------------------------
 //
@@ -69,51 +69,46 @@ namespace Ionic.Zlib
     {
         private const int MANY = 1440;
 
-        // And'ing with mask[n] masks the lower n bits
-        //UPGRADE_NOTE: Final was removed from the declaration of 'inflate_mask'. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
-        private static readonly int[] inflate_mask = new int[] { 0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff };
-
         // Table for deflate from PKZIP's appnote.txt.
-        //UPGRADE_NOTE: Final was removed from the declaration of 'border'. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
         internal static readonly int[] border = new int[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
 
-        private const int TYPE = 0; // get type bits (3, including end bit)
-        private const int LENS = 1; // get lengths for stored
-        private const int STORED = 2; // processing stored block
-        private const int TABLE = 3; // get table lengths
-        private const int BTREE = 4; // get bit lengths tree for a dynamic block
-        private const int DTREE = 5; // get length, distance trees for a dynamic block
-        private const int CODES = 6; // processing fixed or dynamic block
-        private const int DRY = 7; // output remaining window bytes
-        private const int DONE = 8; // finished last block, done
-        private const int BAD = 9; // ot a data error--stuck here
+        private const int TYPE   = 0;                     // get type bits (3, including end bit)
+        private const int LENS   = 1;                     // get lengths for stored
+        private const int STORED = 2;                     // processing stored block
+        private const int TABLE  = 3;                     // get table lengths
+        private const int BTREE  = 4;                     // get bit lengths tree for a dynamic block
+        private const int DTREE  = 5;                     // get length, distance trees for a dynamic block
+        private const int CODES  = 6;                     // processing fixed or dynamic block
+        private const int DRY    = 7;                     // output remaining window bytes
+        private const int DONE   = 8;                     // finished last block, done
+        private const int BAD    = 9;                     // ot a data error--stuck here
 
-        internal int mode; // current inflate_block mode 
+        internal int mode;                                // current inflate_block mode 
 
-        internal int left; // if STORED, bytes left to copy 
+        internal int left;                                // if STORED, bytes left to copy 
 
-        internal int table; // table lengths (14 bits) 
-        internal int index; // index into blens (or border) 
-        internal int[] blens; // bit lengths of codes 
-        internal int[] bb = new int[1]; // bit length tree depth 
-        internal int[] tb = new int[1]; // bit length decoding tree 
+        internal int table;                               // table lengths (14 bits) 
+        internal int index;                               // index into blens (or border) 
+        internal int[] blens;                             // bit lengths of codes 
+        internal int[] bb = new int[1];                   // bit length tree depth 
+        internal int[] tb = new int[1];                   // bit length decoding tree 
 
         internal InflateCodes codes = new InflateCodes(); // if CODES, current state 
 
-        internal int last; // true if this block is the last block 
+        internal int last;                                // true if this block is the last block 
 
-        internal ZlibCodec _codec; // pointer back to this zlib stream
+        internal ZlibCodec _codec;                        // pointer back to this zlib stream
 
-        // mode independent information 
-        internal int bitk; // bits in bit buffer 
-        internal int bitb; // bit buffer 
-        internal int[] hufts; // single malloc for tree space 
-        internal byte[] window; // sliding window 
-        internal int end; // one byte after sliding window 
-        internal int read; // window read pointer 
-        internal int write; // window write pointer 
-        internal System.Object checkfn; // check function 
-        internal long check; // check on output 
+                                                          // mode independent information 
+        internal int bitk;                                // bits in bit buffer 
+        internal int bitb;                                // bit buffer 
+        internal int[] hufts;                             // single malloc for tree space 
+        internal byte[] window;                           // sliding window 
+        internal int end;                                 // one byte after sliding window 
+        internal int read;                                // window read pointer 
+        internal int write;                               // window write pointer 
+        internal System.Object checkfn;                   // check function 
+        internal long check;                              // check on output 
 
         internal InfTree inftree = new InfTree();
 
@@ -486,8 +481,8 @@ namespace Ionic.Zlib
                                 //System.err.println("null...");
                             }
 
-                            t = hufts[(tb[0] + (b & inflate_mask[t])) * 3 + 1];
-                            c = hufts[(tb[0] + (b & inflate_mask[t])) * 3 + 2];
+                            t = hufts[(tb[0] + (b & InternalInflateConstants.InflateMask[t])) * 3 + 1];
+                            c = hufts[(tb[0] + (b & InternalInflateConstants.InflateMask[t])) * 3 + 2];
 
                             if (c < 16)
                             {
@@ -523,7 +518,7 @@ namespace Ionic.Zlib
 
                                 b = SharedUtils.URShift(b, (t)); k -= (t);
 
-                                j += (b & inflate_mask[i]);
+                                j += (b & InternalInflateConstants.InflateMask[i]);
 
                                 b = SharedUtils.URShift(b, (i)); k -= (i);
 
@@ -750,46 +745,53 @@ namespace Ionic.Zlib
             return r;
         }
     }
-
+    
+    internal static class InternalInflateConstants
+    {
+        // And'ing with mask[n] masks the lower n bits
+        internal static readonly int[] InflateMask = new int[] {
+            0x00000000, 0x00000001, 0x00000003, 0x00000007,
+            0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,
+            0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff,
+            0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff };
+    }
+    
     sealed class InflateCodes
     {
-        //UPGRADE_NOTE: Final was removed from the declaration of 'inflate_mask'. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1003'"
-        private static readonly int[] inflate_mask = new int[] { 0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff };
-
         // waiting for "i:"=input,
         //             "o:"=output,
         //             "x:"=nothing
-        private const int START = 0; // x: set up for LEN
-        private const int LEN = 1; // i: get length/literal/eob next
-        private const int LENEXT = 2; // i: getting length extra (have base)
-        private const int DIST = 3; // i: get distance next
+        private const int START   = 0; // x: set up for LEN
+        private const int LEN     = 1; // i: get length/literal/eob next
+        private const int LENEXT  = 2; // i: getting length extra (have base)
+        private const int DIST    = 3; // i: get distance next
         private const int DISTEXT = 4; // i: getting distance extra
-        private const int COPY = 5; // o: copying bytes in window, waiting for space
-        private const int LIT = 6; // o: got literal, waiting for output space
-        private const int WASH = 7; // o: got eob, possibly still output waiting
-        private const int END = 8; // x: got eob and all data flushed
+        private const int COPY    = 5; // o: copying bytes in window, waiting for space
+        private const int LIT     = 6; // o: got literal, waiting for output space
+        private const int WASH    = 7; // o: got eob, possibly still output waiting
+        private const int END     = 8; // x: got eob and all data flushed
         private const int BADCODE = 9; // x: got error
 
-        internal int mode; // current inflate_codes mode
+        internal int mode;        // current inflate_codes mode
 
         // mode dependent information
         internal int len;
 
-        internal int[] tree; // pointer into tree
+        internal int[] tree;      // pointer into tree
         internal int tree_index = 0;
-        internal int need; // bits needed
+        internal int need;        // bits needed
 
         internal int lit;
 
         // if EXT or COPY, where and how much
-        internal int get_Renamed; // bits to get for extra
-        internal int dist; // distance back to copy from
+        internal int bitsToGet;   // bits to get for extra
+        internal int dist;        // distance back to copy from
 
-        internal byte lbits; // ltree bits decoded per branch
-        internal byte dbits; // dtree bits decoder per branch
-        internal int[] ltree; // literal/length/eob tree
+        internal byte lbits;      // ltree bits decoded per branch
+        internal byte dbits;      // dtree bits decoder per branch
+        internal int[] ltree;     // literal/length/eob tree
         internal int ltree_index; // literal/length/eob tree
-        internal int[] dtree; // distance tree
+        internal int[] dtree;     // distance tree
         internal int dtree_index; // distance tree
 
         internal InflateCodes()
@@ -887,7 +889,7 @@ namespace Ionic.Zlib
                             k += 8;
                         }
 
-                        tindex = (tree_index + (b & inflate_mask[j])) * 3;
+                        tindex = (tree_index + (b & InternalInflateConstants.InflateMask[j])) * 3;
 
                         b = SharedUtils.URShift(b, (tree[tindex + 1]));
                         k -= (tree[tindex + 1]);
@@ -904,7 +906,7 @@ namespace Ionic.Zlib
                         if ((e & 16) != 0)
                         {
                             // length
-                            get_Renamed = e & 15;
+                            bitsToGet = e & 15;
                             len = tree[tindex + 2];
                             mode = LENEXT;
                             break;
@@ -935,7 +937,7 @@ namespace Ionic.Zlib
 
 
                     case LENEXT:  // i: getting length extra (have base)
-                        j = get_Renamed;
+                        j = bitsToGet;
 
                         while (k < (j))
                         {
@@ -953,7 +955,7 @@ namespace Ionic.Zlib
                             k += 8;
                         }
 
-                        len += (b & inflate_mask[j]);
+                        len += (b & InternalInflateConstants.InflateMask[j]);
 
                         b >>= j;
                         k -= j;
@@ -983,7 +985,7 @@ namespace Ionic.Zlib
                             k += 8;
                         }
 
-                        tindex = (tree_index + (b & inflate_mask[j])) * 3;
+                        tindex = (tree_index + (b & InternalInflateConstants.InflateMask[j])) * 3;
 
                         b >>= tree[tindex + 1];
                         k -= tree[tindex + 1];
@@ -992,7 +994,7 @@ namespace Ionic.Zlib
                         if ((e & 16) != 0)
                         {
                             // distance
-                            get_Renamed = e & 15;
+                            bitsToGet = e & 15;
                             dist = tree[tindex + 2];
                             mode = DISTEXT;
                             break;
@@ -1015,7 +1017,7 @@ namespace Ionic.Zlib
 
 
                     case DISTEXT:  // i: getting distance extra
-                        j = get_Renamed;
+                        j = bitsToGet;
 
                         while (k < (j))
                         {
@@ -1033,7 +1035,7 @@ namespace Ionic.Zlib
                             k += 8;
                         }
 
-                        dist += (b & inflate_mask[j]);
+                        dist += (b & InternalInflateConstants.InflateMask[j]);
 
                         b >>= j;
                         k -= j;
@@ -1203,8 +1205,8 @@ namespace Ionic.Zlib
             q = s.write; m = q < s.read ? s.read - q - 1 : s.end - q;
 
             // initialize masks
-            ml = inflate_mask[bl];
-            md = inflate_mask[bd];
+            ml = InternalInflateConstants.InflateMask[bl];
+            md = InternalInflateConstants.InflateMask[bd];
 
             // do until not enough input or output space for fast loop
             do
@@ -1238,7 +1240,7 @@ namespace Ionic.Zlib
                     if ((e & 16) != 0)
                     {
                         e &= 15;
-                        c = tp[tp_index_t_3 + 2] + ((int)b & inflate_mask[e]);
+                        c = tp[tp_index_t_3 + 2] + ((int)b & InternalInflateConstants.InflateMask[e]);
 
                         b >>= e; k -= e;
 
@@ -1272,7 +1274,7 @@ namespace Ionic.Zlib
                                     b |= (z.InputBuffer[p++] & 0xff) << k; k += 8;
                                 }
 
-                                d = tp[tp_index_t_3 + 2] + (b & inflate_mask[e]);
+                                d = tp[tp_index_t_3 + 2] + (b & InternalInflateConstants.InflateMask[e]);
 
                                 b >>= (e); k -= (e);
 
@@ -1345,7 +1347,7 @@ namespace Ionic.Zlib
                             else if ((e & 64) == 0)
                             {
                                 t += tp[tp_index_t_3 + 2];
-                                t += (b & inflate_mask[e]);
+                                t += (b & InternalInflateConstants.InflateMask[e]);
                                 tp_index_t_3 = (tp_index + t) * 3;
                                 e = tp[tp_index_t_3];
                             }
@@ -1369,7 +1371,7 @@ namespace Ionic.Zlib
                     if ((e & 64) == 0)
                     {
                         t += tp[tp_index_t_3 + 2];
-                        t += (b & inflate_mask[e]);
+                        t += (b & InternalInflateConstants.InflateMask[e]);
                         tp_index_t_3 = (tp_index + t) * 3;
                         if ((e = tp[tp_index_t_3]) == 0)
                         {
@@ -1756,7 +1758,7 @@ namespace Ionic.Zlib
             return ZlibConstants.Z_OK;
         }
 
-        private static byte[] mark = new byte[] { 0, 0, 0xff, 0xff };
+        private static readonly byte[] mark = new byte[] { 0, 0, 0xff, 0xff };
 
         internal int Sync()
         {

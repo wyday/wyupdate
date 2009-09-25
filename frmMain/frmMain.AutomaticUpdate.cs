@@ -26,15 +26,6 @@ namespace wyUpdate
             updateHelper.RequestReceived += UpdateHelper_RequestReceived;
         }
 
-        void SetupSelfAutoupdateMode(string pipeName)
-        {
-            isAutoUpdateMode = true;
-
-            updateHelper = new UpdateHelper(this, pipeName);
-            updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
-            updateHelper.RequestReceived += UpdateHelper_RequestReceived;
-        }
-
         void UpdateHelper_RequestReceived(object sender, Action a, UpdateStep s)
         {
             if (a == Action.Cancel)
@@ -377,7 +368,7 @@ namespace wyUpdate
 
                 if (SelfUpdateState == SelfUpdateState.Downloaded)
                     WriteFiles.WriteString(fs, 0x09, updateFilename);
-                else // SelfUpdateState.Extracted
+                else if (SelfUpdateState == SelfUpdateState.Extracted)
                 {
                     WriteFiles.WriteString(fs, 0x09, newSelfLocation);
 

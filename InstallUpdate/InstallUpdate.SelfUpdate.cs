@@ -126,8 +126,6 @@ namespace wyUpdate
                 catch { }
 
 
-
-
                 string updtDetailsFilename = Path.Combine(OutputDirectory, "updtdetails.udt");
 
                 if (File.Exists(updtDetailsFilename))

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-18 20:32:30>
+// Time-stamp: <2009-September-23 14:33:56>
 //
 // ------------------------------------------------------------------
 //
@@ -774,8 +774,8 @@ namespace Ionic.Zlib
         #endregion
 
 
-        internal static System.DateTime _unixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        internal static System.Text.Encoding iso8859dash1 = System.Text.Encoding.GetEncoding("iso-8859-1");
+        internal static readonly System.DateTime _unixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        internal static readonly System.Text.Encoding iso8859dash1 = System.Text.Encoding.GetEncoding("iso-8859-1");
 
 
         private int EmitHeader()

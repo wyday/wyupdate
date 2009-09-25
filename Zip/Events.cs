@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-25 13:35:37>
+// Time-stamp: <2009-September-23 13:02:08>
 //
 // ------------------------------------------------------------------
 //
@@ -38,20 +38,20 @@ namespace Ionic.Zip
     public delegate bool ReReadApprovalCallback(Int64 uncompressedSize, Int64 compressedSize, string fileName);
 
     /// <summary>
-    /// Delegate for the callback by which the application tells the libraary whether
-    /// to use compression on the file or not.  
+    ///   Delegate for the callback by which the application tells the
+    ///   library the CompressionLevel to use for a file.
     /// </summary>
+    ///
     /// <remarks>
     /// <para>
-    /// Using this callback, the application can 
-    /// specify that previously-compressed files (.mp3, .png, .docx, etc) should 
-    /// not be compressed, for example, or can turn on or off compression based on any 
-    /// other factor.
+    ///   Using this callback, the application can, for example, specify
+    ///   that previously-compressed files (.mp3, .png, .docx, etc)
+    ///   should not be compressed, or can set the compression level
+    ///   based on any other factor.
     /// </para>
     /// </remarks>
-    /// <seealso cref="Ionic.Zip.ZipFile.WantCompression"/>
-
-    public delegate bool WantCompressionCallback(string localFileName, string fileNameInArchive);
+    /// <seealso cref="Ionic.Zip.ZipFile.SetCompression"/>
+    public delegate Ionic.Zlib.CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
 
 
     /// <summary>
