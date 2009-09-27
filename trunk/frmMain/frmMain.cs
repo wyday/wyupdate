@@ -353,6 +353,10 @@ namespace wyUpdate
                 if (commands["autoupdate"] != null)
                 {
                     SetupAutoupdateMode();
+
+                    // check if this instance is the "new self"
+                    if (commands["ns"] != null)
+                        IsNewSelf = true;
                 }
 
                 if (commands["quickcheck"] != null)

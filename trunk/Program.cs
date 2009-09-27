@@ -20,6 +20,10 @@ namespace wyUpdate
 
             frmMain mainForm = new frmMain(args);
 
+            // if the mainForm has been closed, return 0 (Note: we'll eventually need good return codes)
+            if (mainForm.IsDisposed)
+                return 0;
+
             StringBuilder mutexName = new StringBuilder("Local\\wyUpdate-" + mainForm.update.GUID);
 
             if (mainForm.IsAdmin)
@@ -27,6 +31,9 @@ namespace wyUpdate
 
             if (mainForm.SelfUpdateState == SelfUpdateState.FullUpdate)
                 mutexName.Append('s');
+
+            if (mainForm.IsNewSelf)
+                mutexName.Append('n');
 
             Mutex mutex = new Mutex(true, mutexName.ToString());
 

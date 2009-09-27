@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using wyDay.Controls;
 using wyUpdate.Common;
@@ -17,6 +18,10 @@ namespace wyUpdate
 
         bool currentlyExtracting;
 
+        // is this instance of wyUpdate the New Self
+        //TODO: this probably is being handled right in StartSelfElevated()  -the self update state will still be Extracted, but the isNewSelf will be false, thus a new hidden wyUpdate will be started - this is bad
+        public bool IsNewSelf;
+
         void SetupAutoupdateMode()
         {
             isAutoUpdateMode = true;
@@ -24,6 +29,32 @@ namespace wyUpdate
             updateHelper = new UpdateHelper(this);
             updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
             updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+        }
+
+        void StartNewSelfAndClose()
+        {
+            Process clientProcess = new Process
+            {
+                StartInfo =
+                {
+                    FileName = newSelfLocation,
+
+                    // start the client in automatic update mode (a.k.a. wait mode)
+                    Arguments = "-cdata:\"" + clientFileLoc + "\" -basedir:\"" +  baseDirectory + "\" /autoupdate /ns",
+
+                    //TODO: Re-enable once finished debugging
+                    //WindowStyle = ProcessWindowStyle.Hidden
+                }
+            };
+
+            clientProcess.Start();
+
+            clientProcess.WaitForInputIdle();
+
+            // tell all the clients that there's a new wyUpdate
+            updateHelper.SendNewWyUpdate(UpdateHelperData.PipenameFromFilename(newSelfLocation), clientProcess.Id);
+
+            CancelUpdate(true);
         }
 
         void UpdateHelper_RequestReceived(object sender, Action a, UpdateStep s)
@@ -74,14 +105,21 @@ namespace wyUpdate
 
                     //TODO: do we really need to start elevate if updating self?
                     //TODO: the need elevation algorithm should check if elevation is needed to update self
-                    if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate)
+                    if (needElevation)
                     {
                         StartSelfElevated();
                         return;
                     }
 
-                    update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
-                    InstallUpdates(update.CurrentlyUpdating);
+                    if (SelfUpdateState == SelfUpdateState.Extracted)
+                    {
+                        //TODO: install the self update
+                    }
+                    else
+                    {
+                        update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
+                        InstallUpdates(update.CurrentlyUpdating);
+                    }
 
                     break;
             }
@@ -101,9 +139,8 @@ namespace wyUpdate
         /// <returns>True if a bad request has been filtered, false otherwise</returns>
         bool FilterBadRequest(UpdateStep s)
         {
-            // for example if they try to check for updates when already checking for updates the request should be rejected.
-
-            // Or: if they request "CheckForUpdate" when showing the update info page we should respond with RequestSucceeded(), and provide the update info
+            //TODO: begin selfupdate extraction: if the selfupdate has been downloaded, but it's not currently being extracted
+            //if(SelfUpdateState == SelfUpdateState.Downloaded && NotCurrentlyExtracting && s != UpdateStep.CheckForUpdate) {}
 
 
             switch (s)
@@ -465,7 +502,11 @@ namespace wyUpdate
                 // load the server file
                 LoadServerFile(true);
 
-                //TODO: load self update details (exe location - etc.)
+                if(SelfUpdateState == SelfUpdateState.Extracted && !IsNewSelf)
+                {
+                    // launch new wyUpdate
+                    StartNewSelfAndClose();
+                }
             }
         }
     }

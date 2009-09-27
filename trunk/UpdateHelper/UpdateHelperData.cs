@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using wyDay.Controls;
 
@@ -185,6 +186,14 @@ namespace wyUpdate.Common
             ms.Close();
 
             return uhData;
+        }
+
+        public static string PipenameFromFilename(string filename)
+        {
+            // get the unique pipe name (the last 246 chars of the complete path)
+            string pipeName = filename.Replace("\\", "").ToLower();
+            int pipeNameL = pipeName.Length;
+            return "\\\\.\\pipe\\" + pipeName.Substring(Math.Max(0, pipeNameL - 246), Math.Min(246, pipeNameL));
         }
     }
 

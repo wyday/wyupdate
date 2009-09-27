@@ -34,10 +34,8 @@ namespace wyUpdate
             //WM_ENDSESSION = 0x0016
             if (logOffBlocked && (aMessage.Msg == 0x0011 || aMessage.Msg == 0x0016))
             {
-                //TODO: show window, bring to front
                 return;
             }
-
 
             base.WndProc(ref aMessage);
         }
