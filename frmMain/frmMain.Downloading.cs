@@ -118,16 +118,8 @@ namespace wyUpdate
 
             if (isAutoUpdateMode)
             {
-                //TODO: create a new folder to store the downloaded & extracted folder
-                try
-                {
-                    //TODO: delete existing update folders
-
-
-                    // TODO: set the autoupdate filename
-                    autoUpdateStateFile = Path.Combine(tempDirectory, "autoupdate");
-                }
-                catch { }
+                // set the autoupdate filename
+                autoUpdateStateFile = Path.Combine(tempDirectory, "autoupdate");
             }
 
             //download the client server file and see if the client is new enough

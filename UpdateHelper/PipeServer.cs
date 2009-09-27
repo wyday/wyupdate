@@ -237,42 +237,5 @@ namespace wyUpdate
                 }
             }
         }
-
-        public void SendMessageExclude(byte[] message, Client clientToExclude)
-        {
-            lock (clients)
-            {
-                //get the entire stream length
-                byte[] messageLength = BitConverter.GetBytes(message.Length);
-
-                foreach (Client client in clients)
-                {
-                    if (client == clientToExclude)
-                        continue;
-
-                    // length
-                    client.stream.Write(messageLength, 0, 4);
-
-                    // data
-                    client.stream.Write(message, 0, message.Length);
-                    client.stream.Flush();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sends a message to a single connected client.
-        /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <param name="client">The client to send the message to.</param>
-        public void SendMessage(byte[] message, Client client)
-        {
-            // length
-            client.stream.Write(BitConverter.GetBytes(message.Length), 0, 4);
-
-            // data
-            client.stream.Write(message, 0, message.Length);
-            client.stream.Flush();
-        }
     }
 }

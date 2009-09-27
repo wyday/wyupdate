@@ -200,26 +200,24 @@ namespace wyUpdate
                             // save autoupdate file (new selfupdate state is saved)
                             SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
 
-
-                            //TODO: start new wyUpdate in "master mode" (switch this to "slave" mode)
-                            //TODO: Tell master to begin downloading the update
-
-                            break;
+                            // start the new client
+                            StartNewSelfAndClose();
+                            
+                            return;
 
                         case UpdateOn.InstallSelfUpdate:
 
                             SelfUpdateState = SelfUpdateState.None;
 
+                            // save autoupdate file (new selfupdate state is saved)
+                            SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
 
-                            //TODO: install self update should be called first
-                            //TODO: then this deletes self-update details & self backup (no longer need self update even if main update fails)
-                            
+                            // begin main update install
+                            //update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
+                            //InstallUpdates(update.CurrentlyUpdating);
 
-                            //TODO:  save autoupdate file (new selfupdate state is saved)
-                            // will probably be UpdateStepOn.Extracted
-                            // SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
-
-                            //TODO: begin main update install
+                            //TODO: actually, relaunch newly installed self to do regular update
+                            // (This way the temp folder can be deleted properly)
 
                             break;
                     }
@@ -290,9 +288,22 @@ namespace wyUpdate
                     }
 
 
-                    //self-update failed to download or install
-                    //just relaunch old client and continue with update
-                    StartSelfElevated();
+                    if(isAutoUpdateMode)
+                    {
+                        SelfUpdateState = SelfUpdateState.None;
+
+
+                        //TODO: failure in isAutoUpdate mode shouldn't launch a new instance of wyUpdate
+                        //TODO: (we could get this error from Download error, Extraction error or Installation error
+                        //TODO:  thus we could be either UpdateStepOn.UpdateAvailable or UpdateStepOn.UpdateReadyToInstall
+                        //TODO: instead mark  SelfUpdateState = None, SaveAutoUpdateData(), and continue by downloading the main update
+                    }
+                    else
+                    {
+                        //self-update failed to download or install
+                        //just relaunch old client and continue with update
+                        StartSelfElevated();
+                    }
                 }
             }
         }

@@ -18,28 +18,7 @@ namespace wyUpdate.Common
         public event EventHandler SenderProcessClosed;
         public event RequestHandler RequestReceived;
 
-
         Control owner;
-
-        string m_PipeName;
-
-        string PipeName
-        {
-            get
-            {
-                if(m_PipeName == null)
-                {
-                    // get the unique pipe name (the last 246 chars of the complete path)
-                    string pipeName = Application.ExecutablePath.Replace("\\", "").ToLower();
-                    int pipeNameL = pipeName.Length;
-
-                    // store the pipename for communicating with Self-update
-                    m_PipeName = "\\\\.\\pipe\\" + pipeName.Substring(Math.Max(0, pipeNameL - 246), Math.Min(246, pipeNameL));
-                }
-
-                return m_PipeName;
-            }
-        }
 
         public UpdateHelper(Control OwnerHandle)
         {
@@ -50,7 +29,7 @@ namespace wyUpdate.Common
             pipeServer.MessageReceived += pipeServer_MessageReceived;
             pipeServer.ClientDisconnected += pipeServer_ClientDisconnected;
 
-            pipeServer.Start(PipeName);
+            pipeServer.Start(UpdateHelperData.PipenameFromFilename(Application.ExecutablePath));
         }
 
         void pipeServer_ClientDisconnected(PipeServer.Client client)
@@ -65,9 +44,6 @@ namespace wyUpdate.Common
 
         void ClientDisconnected(PipeServer.Client client)
         {
-            //TODO: the SelfMaster needs to be notified if all the REAL clients are disconnected (i.e. SelfMaster != null && TotalConnectedClients == 1)
-            // or better yet, just close this, and when the SelfMaster detects we've close, have it close.
-
             if (SenderProcessClosed != null && pipeServer.TotalConnectedClients == 0)
                 SenderProcessClosed(this, EventArgs.Empty);
         }
@@ -139,6 +115,16 @@ namespace wyUpdate.Common
         public void SendFailed(string messageTitle, string messageBody, UpdateStep step)
         {
             pipeServer.SendMessage(new UpdateHelperData(Response.Failed, step, messageTitle, messageBody).GetByteArray());
+        }
+
+        public void SendNewWyUpdate(string pipeName, int processID)
+        {
+            UpdateHelperData uh = new UpdateHelperData(Action.NewWyUpdateProcess) {ProcessID = processID};
+
+            uh.ExtraData.Add(pipeName);
+            uh.ExtraDataIsRTF.Add(false);
+
+            pipeServer.SendMessage(uh.GetByteArray());
         }
     }
 

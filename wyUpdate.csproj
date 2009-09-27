@@ -170,7 +170,6 @@
     <Compile Include="UpdateDetails\CPUVersion.cs" />
     <Compile Include="UpdateDetails\UpdateFile.cs" />
     <Compile Include="UpdateHelper\AutoUpdaterInfo.cs" />
-    <Compile Include="UpdateHelper\PipeClient.cs" />
     <Compile Include="UpdateHelper\PipeServer.cs" />
     <Compile Include="UpdateHelper\UpdateHelper.cs" />
     <Compile Include="UpdateHelper\UpdateHelperData.cs" />

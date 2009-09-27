@@ -17,7 +17,7 @@ namespace wyUpdate
                 ErrorDialogParentHandle = Handle
             };
 
-            //TODO: fix this for automatic update - selfupdate. (The new wyUpdate should already exist - don't copy slef over, just use the new wyUpdate)
+            //TODO: fix this for automatic update - selfupdate. (The new wyUpdate should already exist - don't copy self over, just use the new wyUpdate)
             if (SelfUpdateState == SelfUpdateState.WillUpdate)
             {
                 //create the filename for the newly copied client
@@ -54,7 +54,7 @@ namespace wyUpdate
                 //the process couldn't be started, throw an error  
                 //Note: this error even occurs when the administrator is using
                 // a blank password
-                //Note2: Can't run as a Guest account
+                //Note 2: Can't run as a Guest account
                 error = clientLang.AdminError;
                 errorDetails = ex.Message;
 

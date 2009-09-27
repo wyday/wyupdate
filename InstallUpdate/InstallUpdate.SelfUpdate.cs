@@ -146,8 +146,6 @@ namespace wyUpdate
                 except = ex;
             }
 
-
-            //TODO: test self-update failure: shouldn't wipe out server & autoupdate files
             if (canceled || except != null)
             {
                 //report cancellation
