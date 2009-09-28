@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using wyDay.Controls;
 using wyUpdate.Common;
-using System.Windows.Forms;
 
 namespace wyUpdate
 {
@@ -37,18 +36,19 @@ namespace wyUpdate
         void StartNewSelfAndClose()
         {
             Process clientProcess = new Process
-            {
-                StartInfo =
-                {
-                    FileName = newSelfLocation,
+                                        {
+                                            StartInfo =
+                                                {
+                                                    FileName = newSelfLocation,
 
-                    // start the client in automatic update mode (a.k.a. wait mode)
-                    Arguments = "-cdata:\"" + clientFileLoc + "\" -basedir:\"" +  baseDirectory + "\" /autoupdate /ns",
+                                                    // start the client in automatic update mode (a.k.a. wait mode)
+                                                    Arguments =
+                                                        "-cdata:\"" + clientFileLoc + "\" -basedir:\"" + baseDirectory +
+                                                        "\" /autoupdate /ns",
 
-                    //TODO: Re-enable once finished debugging
-                    WindowStyle = ProcessWindowStyle.Hidden
-                }
-            };
+                                                    WindowStyle = ProcessWindowStyle.Hidden
+                                                }
+                                        };
 
             clientProcess.Start();
 
