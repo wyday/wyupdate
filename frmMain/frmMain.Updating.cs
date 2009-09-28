@@ -226,12 +226,12 @@ namespace wyUpdate
 
                         // start the updated program
                         Process start = new Process
-                        {
-                            StartInfo =
-                            {
-                                FileName = updateHelper.FileToExecuteAfterUpdate
-                            }
-                        };
+                                            {
+                                                StartInfo =
+                                                    {
+                                                        FileName = updateHelper.FileToExecuteAfterUpdate
+                                                    }
+                                            };
 
                         start.Start();
                     }

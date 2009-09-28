@@ -12,12 +12,11 @@ namespace wyUpdate
         void StartSelfElevated()
         {
             ProcessStartInfo psi = new ProcessStartInfo
-            {
-                ErrorDialog = true,
-                ErrorDialogParentHandle = Handle
-            };
+                                       {
+                                           ErrorDialog = true,
+                                           ErrorDialogParentHandle = Handle
+                                       };
 
-            //TODO: fix this for automatic update - selfupdate. (The new wyUpdate should already exist - don't copy self over, just use the new wyUpdate)
             if (SelfUpdateState == SelfUpdateState.WillUpdate)
             {
                 //create the filename for the newly copied client
@@ -31,6 +30,14 @@ namespace wyUpdate
                 //launch the newly updated self
                 psi.FileName = oldSelfLocation;
             }
+            else if (isAutoUpdateMode)
+            {
+                psi.FileName = IsNewSelf ? newSelfLocation : oldSelfLocation;
+
+                // oldSelfLocation is null when elevation is needed, but no self update is taking place
+                if (string.IsNullOrEmpty(psi.FileName))
+                    psi.FileName = Application.ExecutablePath;
+            }
             else
                 psi.FileName = Application.ExecutablePath;
 
@@ -39,9 +46,7 @@ namespace wyUpdate
 
             try
             {
-                //write necessary info (base/temp dirs, new client files, etc.) to a file
-                // TODO: fix this - it save oldSelfLocation as "Application.ExecutablePath" whether or not that is right
-                // i.e. the new client is elevated in autoupdate mode
+                // write necessary info (base/temp dirs, new client files, etc.) to a file
                 SaveSelfUpdateData(Path.Combine(tempDirectory, "selfUpdate.sup"));
 
                 psi.Arguments = "-supdf:\"" + Path.Combine(tempDirectory, "selfUpdate.sup") + "\"";
@@ -51,10 +56,11 @@ namespace wyUpdate
             }
             catch (Exception ex)
             {
-                //the process couldn't be started, throw an error  
-                //Note: this error even occurs when the administrator is using
-                // a blank password
-                //Note 2: Can't run as a Guest account
+                // the process couldn't be started. This happens for 1 of 3 reasons:
+
+                // 1. The user cancelled the UAC box
+                // 2. The limited user tried to elevate to an Admin that has a blank password
+                // 3. The limited user tries to elevate as a Guest account
                 error = clientLang.AdminError;
                 errorDetails = ex.Message;
 
@@ -64,8 +70,12 @@ namespace wyUpdate
 
         bool NeedElevationToUpdate()
         {
-            //no elevation necessary if it's not overwriting important files
-            if (IsAdmin || (updateFrom.InstallingTo == 0 && updateFrom.RegChanges.Count == 0))
+            bool willSelfUpdate = (SelfUpdateState == SelfUpdateState.WillUpdate ||
+                                   SelfUpdateState == SelfUpdateState.FullUpdate ||
+                                   SelfUpdateState == SelfUpdateState.Extracted);
+
+            // no elevation necessary if it's not overwriting important files
+            if (IsAdmin || (updateFrom.InstallingTo == 0 && updateFrom.RegChanges.Count == 0 && !willSelfUpdate))
                 return false;
 
             try
@@ -108,9 +118,14 @@ namespace wyUpdate
             if (!IsFileInDirectory(userProfileFolder, clientFileLoc))
                 return false;
 
-            //when self-updating, if this client is'nt in the userprofile folder
-            if ((SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate) && !IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
+            // when self-updating, if this client isn't in the userprofile folder
+            if ((SelfUpdateState == SelfUpdateState.WillUpdate
+                || SelfUpdateState == SelfUpdateState.FullUpdate
+                || SelfUpdateState == SelfUpdateState.Extracted)
+                && !IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
+            {
                 return false;
+            }
 
             //it's not changing anything outside the user profile folder
             return true;

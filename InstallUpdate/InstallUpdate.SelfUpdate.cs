@@ -176,6 +176,13 @@ namespace wyUpdate
 
             try
             {
+                string updtDetailsFilename = Path.Combine(OutputDirectory, "updtdetails.udt");
+
+                if (File.Exists(updtDetailsFilename))
+                {
+                    UpdtDetails = UpdateDetails.Load(updtDetailsFilename);
+                }
+
                 //find self in Path.Combine(OutputDirectory, "base")
                 UpdateFile updateFile = FindNewClient();
 
@@ -188,12 +195,6 @@ namespace wyUpdate
                 //Optimize client if necessary
                 if (updateFile != null)
                     NGenInstall(OldSelfLoc, updateFile.CPUVersion);
-
-
-                //TODO: we'll still be running NewSelfLoc when this replacement takes place.
-                //cleanup the client update files to prevent conflicts with the product update
-                //File.Delete(NewSelfLoc);
-                //Directory.Delete(Path.Combine(OutputDirectory, "base"));
             }
             catch (Exception ex)
             {
@@ -298,7 +299,7 @@ namespace wyUpdate
             }
             else
             {
-                throw new Exception("Self update client couldn't be found.");
+                throw new Exception("New wyUpdate couldn't be found.");
             }
 
             //not ngen-able
