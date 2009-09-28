@@ -212,14 +212,14 @@ namespace wyUpdate
                             // save autoupdate file (new selfupdate state is saved)
                             SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
 
-                            // begin main update install
-                            //update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
-                            //InstallUpdates(update.CurrentlyUpdating);
+                            // we must set new self to false because it's used in StartSelfElevated()
+                            // to set the /ns argument for the newly launched wyUpdate
+                            IsNewSelf = false;
 
-                            //TODO: actually, relaunch newly installed self to do regular update
-                            // (This way the temp folder can be deleted properly)
+                            // relaunch newly installed self to do regular update
+                            StartSelfElevated();
 
-                            break;
+                            return;
                     }
                 }
             }

@@ -54,6 +54,16 @@ namespace wyUpdate
             if (!string.IsNullOrEmpty(autoUpdateStateFile))
                 WriteFiles.WriteString(fs, 0x0A, autoUpdateStateFile);
 
+            if(isAutoUpdateMode)
+            {
+                // is in automatic update mode
+                fs.WriteByte(0x80);
+
+                // will be starting wyUpdate as new self
+                if (IsNewSelf)
+                    fs.WriteByte(0x81);
+            }
+
             fs.WriteByte(0xFF);
             fs.Close();
         }
@@ -128,6 +138,13 @@ namespace wyUpdate
                         break;
                     case 0x0A:
                         autoUpdateStateFile = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x80: // is autoupdate mode
+                        beginAutoUpdateInstallation = true;
+                        SetupAutoupdateMode();
+                        break;
+                    case 0x81:
+                        IsNewSelf = true;
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);

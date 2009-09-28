@@ -29,9 +29,7 @@ namespace wyUpdate
            IntPtr lpOverlapped);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool DisconnectNamedPipe(
-            SafeFileHandle hHandle);
-
+        static extern bool DisconnectNamedPipe(SafeFileHandle hHandle);
 
         public class Client
         {

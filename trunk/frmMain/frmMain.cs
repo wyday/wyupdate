@@ -111,6 +111,7 @@ namespace wyUpdate
                 // load the self update information
                 if (!string.IsNullOrEmpty(selfUpdateFileLoc))
                 {
+                    //Note: always load the selfupdate data before the automatic update data
                     LoadSelfUpdateData(selfUpdateFileLoc);
 
                     //TODO: wyUp 3.0: excise this hack
@@ -302,6 +303,9 @@ namespace wyUpdate
                     try
                     {
                         PrepareStepOn(startStep);
+
+                        if (beginAutoUpdateInstallation)
+                            UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.Install);
                     }
                     catch (Exception ex)
                     {
@@ -331,7 +335,6 @@ namespace wyUpdate
                         }
                     }
                 }
-
 
                 return;
             }

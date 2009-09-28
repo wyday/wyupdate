@@ -74,7 +74,7 @@ namespace wyDay.Controls
         }
 
 
-        // not using registry because .NET 2.0 has shit support for x64/x86 access
+        // not using registry because .NET 2.0 has bad support for x64/x86 access
         public void Save()
         {
             FileStream fs = new FileStream(GetFilename(), FileMode.Create, FileAccess.Write);

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using wyDay.Controls;
 using wyUpdate.Common;
+using System.Windows.Forms;
 
 namespace wyUpdate
 {
@@ -19,8 +20,10 @@ namespace wyUpdate
         bool currentlyExtracting;
 
         // is this instance of wyUpdate the New Self
-        //TODO: this probably is being handled right in StartSelfElevated()  -the self update state will still be Extracted, but the isNewSelf will be false, thus a new hidden wyUpdate will be started - this is bad
         public bool IsNewSelf;
+
+        bool beginAutoUpdateInstallation;
+
 
         void SetupAutoupdateMode()
         {
@@ -43,7 +46,7 @@ namespace wyUpdate
                     Arguments = "-cdata:\"" + clientFileLoc + "\" -basedir:\"" +  baseDirectory + "\" /autoupdate /ns",
 
                     //TODO: Re-enable once finished debugging
-                    //WindowStyle = ProcessWindowStyle.Hidden
+                    WindowStyle = ProcessWindowStyle.Hidden
                 }
             };
 
@@ -103,20 +106,24 @@ namespace wyUpdate
                     TopMost = true;
                     TopMost = false;
 
-                    //TODO: do we really need to start elevate if updating self?
-                    //TODO: the need elevation algorithm should check if elevation is needed to update self
                     if (needElevation)
                     {
+                        // save the RestartInfo details (file to launch, where to save the update success details)
+                        SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
+
                         StartSelfElevated();
                         return;
                     }
 
                     if (SelfUpdateState == SelfUpdateState.Extracted)
                     {
-                        //TODO: install the self update
+                        // install the self update
+                        update.CurrentlyUpdating = UpdateOn.InstallSelfUpdate;
+                        InstallUpdates(update.CurrentlyUpdating);
                     }
                     else
                     {
+                        // install the regular update
                         update.CurrentlyUpdating = UpdateOn.ClosingProcesses;
                         InstallUpdates(update.CurrentlyUpdating);
                     }
@@ -272,7 +279,6 @@ namespace wyUpdate
 
                     break;
             }
-
 
             // no bad request found - continue processing as usual
             return false;
