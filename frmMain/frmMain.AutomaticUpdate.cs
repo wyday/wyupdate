@@ -146,9 +146,21 @@ namespace wyUpdate
         /// <returns>True if a bad request has been filtered, false otherwise</returns>
         bool FilterBadRequest(UpdateStep s)
         {
-            //TODO: begin selfupdate extraction: if the selfupdate has been downloaded, but it's not currently being extracted
-            //if(SelfUpdateState == SelfUpdateState.Downloaded && NotCurrentlyExtracting && s != UpdateStep.CheckForUpdate) {}
+            // if the selfupdate has been downloaded but not extracted
+            // it means wyUpdate was closed before extraction could take place
+            if(SelfUpdateState == SelfUpdateState.Downloaded
+                && update.CurrentlyUpdating != UpdateOn.ExtractSelfUpdate
+                && s != UpdateStep.CheckForUpdate)
+            {
+                // report we're downloading
+                updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
 
+                // begin extracting self
+                update.CurrentlyUpdating = UpdateOn.ExtractSelfUpdate;
+                InstallUpdates(update.CurrentlyUpdating);
+
+                return true;
+            }
 
             switch (s)
             {
@@ -274,8 +286,51 @@ namespace wyUpdate
                 case UpdateStep.RestartInfo:
                 case UpdateStep.Install:
 
+                    if (frameOn == Frame.Checking)
+                    {
+                        // waiting to be told to check for updates...
+                        if (downloader == null)
+                        {
+                            // report 0% and begin checking
+                            updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                            CheckForUpdate();
+                        }
+                        else // already checking ...
+                        {
+                            // report 0% progress
+                            updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                        }
 
-                    //TODO: if there isn't an update ready to install - 
+                        return true;
+                    }
+
+                    // if we haven't downloaded yet...
+                    if (frameOn == Frame.UpdateInfo)
+                    {
+                        ShowFrame(Frame.InstallUpdates);
+
+                        // report 0% progress & download
+                        updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
+                        DownloadUpdate();
+                    }
+
+                    if (frameOn == Frame.InstallUpdates)
+                    {
+                        // if already downloading ...
+                        if (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
+                        {
+                            // report 0%
+                            updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
+                            return true;
+                        }
+
+                        if (currentlyExtracting)
+                        {
+                            // report extraction has begun
+                            updateHelper.SendProgress(0, UpdateStep.BeginExtraction);
+                            return true;
+                        }
+                    }
 
                     break;
             }

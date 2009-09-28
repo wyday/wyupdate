@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using wyDay.Controls;
 using wyUpdate.Common;
+using System.Windows.Forms;
 
 namespace wyUpdate
 {
@@ -280,6 +281,8 @@ namespace wyUpdate
                     break;
                 case UpdateOn.ExtractSelfUpdate:
                     showProgress = SelfUpdateProgress;
+
+                    oldSelfLocation = Application.ExecutablePath;
 
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {

@@ -165,8 +165,6 @@ namespace wyUpdate
                                 // save autoupdate file (new selfupdate state is saved)
                                 SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
 
-                                oldSelfLocation = Application.ExecutablePath;
-
                                 // begin extracting self
                                 update.CurrentlyUpdating = UpdateOn.ExtractSelfUpdate;
                                 InstallUpdates(update.CurrentlyUpdating);
@@ -195,7 +193,6 @@ namespace wyUpdate
                             SelfUpdateState = SelfUpdateState.Extracted;
 
                             newSelfLocation = installUpdate.NewSelfLoc;
-                            oldSelfLocation = Application.ExecutablePath;
 
                             // save autoupdate file (new selfupdate state is saved)
                             SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
@@ -292,11 +289,20 @@ namespace wyUpdate
                     {
                         SelfUpdateState = SelfUpdateState.None;
 
+                        if(update.CurrentlyUpdating == UpdateOn.InstallSelfUpdate)
+                        {
+                            // update has already been downloaded & extracted
+                            SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
 
-                        //TODO: failure in isAutoUpdate mode shouldn't launch a new instance of wyUpdate
-                        //TODO: (we could get this error from Download error, Extraction error or Installation error
-                        //TODO:  thus we could be either UpdateStepOn.UpdateAvailable or UpdateStepOn.UpdateReadyToInstall
-                        //TODO: instead mark  SelfUpdateState = None, SaveAutoUpdateData(), and continue by downloading the main update
+                            UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.Install);
+                        }
+                        else
+                        {
+                            // update hasn't been downloaded yet
+                            SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
+
+                            UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.DownloadUpdate);
+                        }
                     }
                     else
                     {

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 11:01:59>
+// Time-stamp: <2009-September-27 14:17:12>
 //
 // ------------------------------------------------------------------
 //
@@ -41,52 +41,58 @@ namespace Ionic.Zip
     partial class ZipFile
     {
         /// <summary>
-        /// Adds to the ZipFile a set of files from the disk that conform to the specified criteria.
+        /// Adds to the ZipFile a set of files from the disk that conform to the
+        /// specified criteria.
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// This method selects files from the the current working directory matching the specified
-        /// criteria, and adds them to the ZipFile.  The selection does not recurse into
-        /// subdirectories.
+        ///   This method selects files from the the current working directory matching
+        ///   the specified criteria, and adds them to the ZipFile.  The selection does
+        ///   not recurse into subdirectories.
         /// </para>
         ///
         /// <para>
-        /// Specify the criteria in statements of 3 elements: a noun, an operator, and a value.
-        /// Consider the string "name != *.doc" .  The noun is "name".  The operator is "!=",
-        /// implying "Not Equal".  The value is "*.doc".  That criterion, in English, says "all
-        /// files with a name that does not end in the .doc extension."
-        /// </para> 
+        ///   Specify the criteria in statements of 3 elements: a noun, an operator, and
+        ///   a value.  Consider the string "name != *.doc" .  The noun is "name".  The
+        ///   operator is "!=", implying "Not Equal".  The value is "*.doc".  That
+        ///   criterion, in English, says "all files with a name that does not end in
+        ///   the .doc extension."
+        /// </para>
         ///
         /// <para>
-        /// Supported nouns include "name" for the filename; "atime", "mtime", and "ctime" for
-        /// last access time, last modfied time, and created time of the file, respectively;
-        /// "attributes" for the file attributes; and "size" for the file length (uncompressed).
-        /// The "attributes" and "name" nouns both support = and != as operators.  The "size",
-        /// "atime", "mtime", and "ctime" nouns support = and !=, and &gt;, &gt;=, &lt;, &lt;=
-        /// as well. The times are taken to be expressed in "local time". 
-        /// </para> 
+        ///   Supported nouns include "name" for the filename; "atime", "mtime", and
+        ///   "ctime" for last access time, last modfied time, and created time of the
+        ///   file, respectively; "attributes" for the file attributes; and "size" for
+        ///   the file length (uncompressed).  The "attributes" and "name" nouns both
+        ///   support = and != as operators.  The "size", "atime", "mtime", and "ctime"
+        ///   nouns support = and !=, and &gt;, &gt;=, &lt;, &lt;= as well. The times
+        ///   are taken to be expressed in "local time".
+        /// </para>
         ///
         /// <para>
-        /// Specify values for the file attributes as a string with one or more of the
-        /// characters H,R,S,A in any order, implying Hidden, ReadOnly, System, and Archive,
-        /// respectively.  To specify a time, use YYYY-MM-DD-HH:mm:ss as the format.  If you
-        /// omit the HH:mm:ss portion, it is assumed to be 00:00:00 (midnight). The value for a
-        /// size criterion is expressed in integer quantities of bytes, kilobytes (use k or kb
-        /// after the number), megabytes (m or mb), or gigabytes (g or gb).  The value for a
-        /// name is a pattern to match against the filename, potentially including wildcards.
-        /// The pattern follows CMD.exe glob rules: * implies one or more of any character,
-        /// while ? implies one character.  If the name pattern contains any slashes, it is
-        /// matched to the entire filename, including the path; otherwise, it is matched
-        /// against only the filename without the path.  This means a pattern of "*\*.*" matches 
-        /// all files one directory level deep, while a pattern of "*.*" matches all files in 
-        /// all directories.  
-        /// </para> 
+        ///   Specify values for the file attributes as a string with one or more of the
+        ///   characters H,R,S,A in any order, implying Hidden, ReadOnly, System, and
+        ///   Archive, respectively.  To specify a time, use YYYY-MM-DD-HH:mm:ss as the
+        ///   format.  If you omit the HH:mm:ss portion, it is assumed to be 00:00:00
+        ///   (midnight). The value for a size criterion is expressed in integer
+        ///   quantities of bytes, kilobytes (use k or kb after the number), megabytes
+        ///   (m or mb), or gigabytes (g or gb).  The value for a name is a pattern to
+        ///   match against the filename, potentially including wildcards.  The pattern
+        ///   follows CMD.exe glob rules: * implies one or more of any character (not
+        ///   including dot), while ? implies one character (not including dot).  If the
+        ///   name pattern contains any slashes, it is matched to the entire filename,
+        ///   including the path; otherwise, it is matched against only the filename
+        ///   without the path.  This means a pattern of "*\*.*" matches all files one
+        ///   directory level deep, while a pattern of "*.*" matches all files in all
+        ///   directories.
+        /// </para>
         ///
         /// <para>
-        /// To specify a name pattern that includes spaces, use single quotes around the pattern.
-        /// A pattern of "'* *.*'" will match all files that have spaces in the filename.  The full 
-        /// criteria string for that would be "name = '* *.*'" . 
+        ///   To specify a name pattern that includes spaces, use single quotes around
+        ///   the pattern.  A pattern of "'* *.*'" will match all files that have spaces
+        ///   in the filename.  The full criteria string for that would be "name = '*
+        ///   *.*'" .
         /// </para> 
         ///
         ///
