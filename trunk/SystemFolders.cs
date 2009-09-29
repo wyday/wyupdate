@@ -139,7 +139,7 @@ namespace wyUpdate.Common
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         static extern UIntPtr GetProcAddress(IntPtr hModule, string procName);
 
-        private static bool Is64Bit()
+        public static bool Is64Bit()
         {
             return IntPtr.Size == 8 || (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor());
         }

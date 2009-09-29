@@ -161,13 +161,18 @@ namespace wyUpdate
                 return;
             }
 
-            //TODO: detect if the update is x64 only (installs to x64 system32 folder)
-            //TODO: if so, throw an error
-
             // get the correct update file to download
             updateFrom = ServerFile.GetVersionChoice(update.InstalledVersion);
 
+            // if the update install the x64 system32 folder on an x86 machine we need to throw an error
+            if((updateFrom.InstallingTo & InstallingTo.SysDirx64) == InstallingTo.SysDirx64 && !SystemFolders.Is64Bit())
+            {
+                error = "Update available, but can't install 64-bit files on a 32-bit machine.";
+                errorDetails = "There's an update available (version " + ServerFile.NewVersion + "). However, this update will install files to the x64 (64-bit) system32 folder. And because this machine is an x86 (32-bit), there isn't an x64 system32 folder.";
 
+                ShowFrame(Frame.Error);
+                return;
+            }
 
             // set the changes text
             if (setChangesText || isAutoUpdateMode)
