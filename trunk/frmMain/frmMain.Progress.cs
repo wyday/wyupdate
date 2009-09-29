@@ -192,6 +192,7 @@ namespace wyUpdate
 
                             SelfUpdateState = SelfUpdateState.Extracted;
 
+                            // oldSelfLocation already set in the InstallUpdates(ExtractSelfUpdate)
                             newSelfLocation = installUpdate.NewSelfLoc;
 
                             // save autoupdate file (new selfupdate state is saved)
