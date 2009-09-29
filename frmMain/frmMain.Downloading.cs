@@ -161,6 +161,9 @@ namespace wyUpdate
                 return;
             }
 
+            //TODO: detect if the update is x64 only (installs to x64 system32 folder)
+            //TODO: if so, throw an error
+
             // get the correct update file to download
             updateFrom = ServerFile.GetVersionChoice(update.InstalledVersion);
 

@@ -563,6 +563,18 @@ namespace wyUpdate
                 // load the server file
                 LoadServerFile(true);
 
+                // if frameOn != Frame.Checking - it means we're either up-to-date OR an error occurred.
+                // We shouldn't under any circumstance StartNewSelfAndClose. Just remove temp files & exit.
+                if (frameOn != Frame.Checking)
+                {
+                    // neither OnClosed nor OnClosing will be called because
+                    // the form is being disposed in the constructor.
+
+                    // Thus we need to cleanup the temp directory now.
+                    RemoveTempDirectory();
+                    return;
+                }
+
                 if(SelfUpdateState == SelfUpdateState.Extracted && !IsNewSelf)
                 {
                     // launch new wyUpdate
