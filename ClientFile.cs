@@ -62,7 +62,7 @@ namespace wyUpdate.Common
                     // generate a GUID from the product name
                     char[] invalidChars = Path.GetInvalidFileNameChars();
 
-                    if (ProductName.IndexOfAny(invalidChars) != -1)
+                    if (ProductName != null && ProductName.IndexOfAny(invalidChars) != -1)
                     {
                         List<char> invalidFilenameChars = new List<char>(invalidChars);
 
