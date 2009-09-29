@@ -36,6 +36,10 @@ namespace wyUpdate.Common
         {
             try
             {
+                // eat any messages after the owner closes (aka IsDisposed)
+                if (owner.IsDisposed)
+                    return;
+
                 owner.Invoke(new PipeServer.ClientDisconnectedHandler(ClientDisconnected),
                              new object[] {client});
             }
@@ -52,6 +56,10 @@ namespace wyUpdate.Common
         {
             try
             {
+                // eat any messages after the owner closes (aka IsDisposed)
+                if (owner.IsDisposed)
+                    return;
+
                 owner.Invoke(new PipeServer.MessageReceivedHandler(ServerReceivedData),
                              new object[] {message, client});
             }

@@ -26,7 +26,7 @@ namespace wyUpdate
 
         readonly ClientLanguage clientLang = new ClientLanguage();
 
-        Frame frameOn;
+        Frame frameOn = Frame.Checking;
         bool isCancelled;
 
         string error;
@@ -473,18 +473,25 @@ namespace wyUpdate
             //if not self updating, then delete temp files.
             if (!(needElevation || SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate || isAutoUpdateMode))
             {
-                //if the temp directory exists, remove it
-                if (Directory.Exists(tempDirectory))
-                {
-                    try
-                    {
-                        Directory.Delete(tempDirectory, true);
-                    }
-                    catch { }
-                }
+                RemoveTempDirectory();
             }
 
             base.OnClosed(e);
+        }
+
+        /// <summary>
+        /// Remove the temporary directory if it exists.
+        /// </summary>
+        void RemoveTempDirectory()
+        {
+            if (!Directory.Exists(tempDirectory))
+                return;
+
+            try
+            {
+                Directory.Delete(tempDirectory, true);
+            }
+            catch { }
         }
     }
 }

@@ -23,6 +23,10 @@ namespace wyUpdate.Common
 
                     // NOTE: a -1 for progress assures that the progress bar won't be reset
 
+                    // eat any messages after the sender closes (aka IsDisposed)
+                    if (sender.IsDisposed)
+                        return;
+
                     sender.BeginInvoke(del, new object[] { -1, -1, true, errorText, ex });
                     break;
                 }
@@ -35,6 +39,10 @@ namespace wyUpdate.Common
         {
             try
             {
+                // eat any messages after the sender closes (aka IsDisposed)
+                if (sender.IsDisposed)
+                    return;
+
                 sender.BeginInvoke(del, new object[] { progress, unweightedProgress, false, text, null });
             }
             catch
@@ -49,6 +57,10 @@ namespace wyUpdate.Common
             {
                 try
                 {
+                    // eat any messages after the sender closes (aka IsDisposed)
+                    if (sender.IsDisposed)
+                        return;
+
                     //Try to send our success to the frmMain thread - wait until it gets through
 
                     // NOTE: a -1 for progress assures that the progress bar won't be reset
@@ -67,6 +79,10 @@ namespace wyUpdate.Common
             {
                 try
                 {
+                    // eat any messages after the sender closes (aka IsDisposed)
+                    if (sender.IsDisposed)
+                        return;
+
                     //Try to send our changing status to rolling back
 
                     sender.BeginInvoke(del, new object[] { rbRegistry });
