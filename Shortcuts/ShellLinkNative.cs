@@ -47,11 +47,9 @@ namespace wyUpdate
         private const int MAX_PATH = 260;
     }
 
-    [
-      ComImport,
-      InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-      Guid("0000010B-0000-0000-C000-000000000046")
-    ]
+    [ComImport,
+     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+     Guid("0000010B-0000-0000-C000-000000000046")]
     public interface IPersistFile
     {
         // inherited from IPersist
@@ -68,18 +66,14 @@ namespace wyUpdate
           [MarshalAs(UnmanagedType.LPWStr)] string pszFileName,
           [MarshalAs(UnmanagedType.Bool)] bool fRemember);
 
-        void SaveCompleted(
-          [MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
+        void SaveCompleted([MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
 
-        void GetCurFile(
-          out IntPtr ppszFileName);
+        void GetCurFile(out IntPtr ppszFileName);
     }
 
-    [
-      ComImport,
-      InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-      Guid("000214F9-0000-0000-C000-000000000046")
-    ]
+    [ComImport,
+     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+     Guid("000214F9-0000-0000-C000-000000000046")]
     public interface IShellLinkW
     {
         void GetPath(
@@ -88,18 +82,15 @@ namespace wyUpdate
           out WIN32_FIND_DATAW pfd,
           SLGP_FLAGS fFlags);
 
-        void GetIDList(
-          out IntPtr ppidl);
+        void GetIDList(out IntPtr ppidl);
 
-        void SetIDList(
-          IntPtr pidl);
+        void SetIDList(IntPtr pidl);
 
         void GetDescription(
           [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName,
           int cchMaxName);
 
-        void SetDescription(
-          [MarshalAs(UnmanagedType.LPWStr)] string pszName);
+        void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
 
         void GetWorkingDirectory(
           [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir,
@@ -112,20 +103,15 @@ namespace wyUpdate
           [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs,
           int cchMaxPath);
 
-        void SetArguments(
-          [MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+        void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
 
-        void GetHotkey(
-          out short pwHotkey);
+        void GetHotkey(out short pwHotkey);
 
-        void SetHotkey(
-          short wHotkey);
+        void SetHotkey(short wHotkey);
 
-        void GetShowCmd(
-          out int piShowCmd);
+        void GetShowCmd(out int piShowCmd);
 
-        void SetShowCmd(
-          int iShowCmd);
+        void SetShowCmd(int iShowCmd);
 
         void GetIconLocation(
           [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath,
@@ -140,21 +126,15 @@ namespace wyUpdate
           [MarshalAs(UnmanagedType.LPWStr)] string pszPathRel,
           int dwReserved);
 
-        void Resolve(
-          IntPtr hwnd,
-          SLR_FLAGS fFlags);
+        void Resolve(IntPtr hwnd, SLR_FLAGS fFlags);
 
-        void SetPath(
-          [MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
     }
 
 
-    [
-      ComImport,
-      Guid("00021401-0000-0000-C000-000000000046")
-    ]
+    [ComImport,
+     Guid("00021401-0000-0000-C000-000000000046")]
     public class ShellLink  // : IPersistFile, IShellLinkA, IShellLinkW 
     {
     }
-
 }
