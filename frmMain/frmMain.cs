@@ -284,6 +284,24 @@ namespace wyUpdate
                 base.SetVisibleCore(StartFormHidden ? false : value);
 
 
+                if (isAutoUpdateMode)
+                {
+                    /* SetupAutoupdateMode must happen after the handle is created
+                     * (aka. in OnHandleCreated, or after base.SetVisibleCore() is called)
+                     * because Control.Invoke() used in UpdateHelper
+                     * requires the handle to be created.
+                     *
+                     * This solves the problem where the AutomaticUpdater control sends a message,
+                     * it thinks the message was recieved successfully because there
+                     * wasn't an error on the pipe stream, however in reality it never gets past
+                     * the try-catch block in 'pipeServer_MessageReceived'. The exception is gobbled up
+                     * and there's a stalemate: wyUpdate is waiting for its first message, AutomaticUpdater
+                     * is waiting for a progress report.
+                     */
+                    SetupAutoupdateMode();
+                }
+
+
                 // run the OnLoad code
 
                 if (uninstalling)
@@ -304,6 +322,7 @@ namespace wyUpdate
                     {
                         PrepareStepOn(startStep);
 
+                        // selfupdate & post-selfupdate installation
                         if (beginAutoUpdateInstallation)
                             UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.Install);
                     }
@@ -355,7 +374,8 @@ namespace wyUpdate
                 // wait mode - for automatic updates
                 if (commands["autoupdate"] != null)
                 {
-                    SetupAutoupdateMode();
+                    // the actual pipe will be created when OnHandleCreated is called
+                    isAutoUpdateMode = true;
 
                     // check if this instance is the "new self"
                     if (commands["ns"] != null)

@@ -141,7 +141,9 @@ namespace wyUpdate
                         break;
                     case 0x80: // is autoupdate mode
                         beginAutoUpdateInstallation = true;
-                        SetupAutoupdateMode();
+
+                        // the actual pipe will be created when OnHandleCreated is called
+                        isAutoUpdateMode = true;
                         break;
                     case 0x81:
                         IsNewSelf = true;

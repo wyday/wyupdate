@@ -8,7 +8,7 @@ namespace wyUpdate.Common
 {
     class UpdateHelper
     {
-        readonly PipeServer pipeServer;
+        PipeServer pipeServer;
 
         public bool Installing;
 
@@ -20,8 +20,10 @@ namespace wyUpdate.Common
 
         Control owner;
 
-        public UpdateHelper(Control OwnerHandle)
+        public void StartPipeServer(Control OwnerHandle)
         {
+            //Note: this function can only be called once. Explosions otherwise.
+
             owner = OwnerHandle;
 
             pipeServer = new PipeServer();

@@ -9,7 +9,7 @@ namespace wyUpdate
     public partial class frmMain
     {
         // Automatic Update Mode (aka API mode)
-        UpdateHelper updateHelper;
+        readonly UpdateHelper updateHelper = new UpdateHelper();
         bool isAutoUpdateMode;
         string autoUpdateStateFile;
 
@@ -26,9 +26,7 @@ namespace wyUpdate
 
         void SetupAutoupdateMode()
         {
-            isAutoUpdateMode = true;
-
-            updateHelper = new UpdateHelper(this);
+            updateHelper.StartPipeServer(this);
             updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
             updateHelper.RequestReceived += UpdateHelper_RequestReceived;
         }
