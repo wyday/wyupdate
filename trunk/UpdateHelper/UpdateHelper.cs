@@ -20,6 +20,23 @@ namespace wyUpdate.Common
 
         Control owner;
 
+        public bool RunningServer
+        {
+            get
+            {
+                // is the pipeserver running
+                return pipeServer != null && pipeServer.Running;
+            }
+        }
+
+        public int TotalConnectedClients
+        {
+            get
+            {
+                return pipeServer == null ? 0 : pipeServer.TotalConnectedClients;
+            }
+        }
+
         public void StartPipeServer(Control OwnerHandle)
         {
             //Note: this function can only be called once. Explosions otherwise.
@@ -34,7 +51,7 @@ namespace wyUpdate.Common
             pipeServer.Start(UpdateHelperData.PipenameFromFilename(Application.ExecutablePath));
         }
 
-        void pipeServer_ClientDisconnected(PipeServer.Client client)
+        void pipeServer_ClientDisconnected()
         {
             try
             {
@@ -42,19 +59,18 @@ namespace wyUpdate.Common
                 if (owner.IsDisposed)
                     return;
 
-                owner.Invoke(new PipeServer.ClientDisconnectedHandler(ClientDisconnected),
-                             new object[] {client});
+                owner.Invoke(new PipeServer.ClientDisconnectedHandler(ClientDisconnected));
             }
             catch { }
         }
 
-        void ClientDisconnected(PipeServer.Client client)
+        void ClientDisconnected()
         {
             if (SenderProcessClosed != null && pipeServer.TotalConnectedClients == 0)
                 SenderProcessClosed(this, EventArgs.Empty);
         }
 
-        void pipeServer_MessageReceived(byte[] message, PipeServer.Client client)
+        void pipeServer_MessageReceived(byte[] message)
         {
             try
             {
@@ -63,18 +79,15 @@ namespace wyUpdate.Common
                     return;
 
                 owner.Invoke(new PipeServer.MessageReceivedHandler(ServerReceivedData),
-                             new object[] {message, client});
+                             new object[] {message});
             }
             catch { }
         }
 
-        void ServerReceivedData(byte[] message, PipeServer.Client client)
+        void ServerReceivedData(byte[] message)
         {
-            ProcessMessage(UpdateHelperData.FromByteArray(message));
-        }
+            UpdateHelperData data = UpdateHelperData.FromByteArray(message);
 
-        void ProcessMessage(UpdateHelperData data)
-        {
             if (data.Action == Action.GetwyUpdateProcessID)
             {
                 // send ProcessID

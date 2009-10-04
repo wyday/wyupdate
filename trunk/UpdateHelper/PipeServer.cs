@@ -41,8 +41,7 @@ namespace wyUpdate
         /// Handles messages received from a client pipe
         /// </summary>
         /// <param name="message">The byte message received</param>
-        /// <param name="client">The client that sent the message</param>
-        public delegate void MessageReceivedHandler(byte[] message, Client client);
+        public delegate void MessageReceivedHandler(byte[] message);
 
         /// <summary>
         /// Event is called whenever a message is received from a client pipe
@@ -53,7 +52,7 @@ namespace wyUpdate
         /// <summary>
         /// Handles client disconnected messages
         /// </summary>
-        public delegate void ClientDisconnectedHandler(Client client);
+        public delegate void ClientDisconnectedHandler();
 
         /// <summary>
         /// Event is called when a client pipe is severed.
@@ -73,7 +72,9 @@ namespace wyUpdate
             get
             {
                 lock (clients)
+                {
                     return clients.Count;
+                }
             }
         }
 
@@ -197,20 +198,26 @@ namespace wyUpdate
 
                     //fire message received event
                     if (MessageReceived != null)
-                        MessageReceived(ms.ToArray(), client);
+                        MessageReceived(ms.ToArray());
                 }
             }
 
-            //clean up resources
-            DisconnectNamedPipe(client.handle);
-            client.stream.Close();
-            client.handle.Close();
+            // the clients must be locked - otherwise "stream.Close()"
+            // could be called while SendMessage(byte[]) is being called on another thread.
+            // This leads to an IO error & several wasted days.
             lock (clients)
+            {
+                //clean up resources
+                DisconnectNamedPipe(client.handle);
+                client.stream.Close();
+                client.handle.Close();
+
                 clients.Remove(client);
+            }
 
             // invoke the event, a client disconnected
             if (ClientDisconnected != null)
-                ClientDisconnected(client);
+                ClientDisconnected();
         }
 
         /// <summary>

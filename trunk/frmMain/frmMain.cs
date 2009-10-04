@@ -430,13 +430,14 @@ namespace wyUpdate
                 if (commands["basedir"] != null && Directory.Exists(commands["basedir"]))
                 {
                     //if the specified directory exists, then set as directory
-                    baseDirectory = commands["basedir"];
+                    // also trim the trailing space
+                    baseDirectory = commands["basedir"].TrimEnd();
                 }
 
                 if (commands["tempdir"] != null && Directory.Exists(commands["tempdir"]))
                 {
                     //set the temp directory
-                    tempDirectory = commands["tempdir"];
+                    tempDirectory = commands["tempdir"].TrimEnd();
                 }
                 else if (!isAutoUpdateMode) //if the tempDir hasn't been created (and not isAutoUpdateMode)
                 {
