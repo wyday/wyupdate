@@ -26,20 +26,65 @@ namespace wyDay.Controls
 
         public string ErrorTitle { get; set; }
         public string ErrorMessage { get; set; }
-        
 
-        string autoUpdateID;
 
-        public AutoUpdaterInfo(string auID)
+        readonly string autoUpdateID;
+
+        readonly string[] filenames = new string[2];
+
+        public AutoUpdaterInfo(string auID, string tempFolder)
         {
             autoUpdateID = auID;
             AutoUpdaterStatus = AutoUpdaterStatus.Nothing;
 
+            // get the admin filename
+            filenames[0] = GetFilename();
+
+#if CLIENT
+            // if tempFolder is not in ApplicationData, then we're updating on behalf of a limited user
+            if (tempFolder != null && !SystemFolders.IsDirInDir(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), tempFolder))
+            {
+                // AutoUpdateFiles are stored in: %appdata%\wyUpdate AU\
+                // The tempFolder is:             %appdata%\wyUpdate AU\cache\AppGUID\
+
+                // get the limited user's AutoUpdate file
+                filenames[1] = Path.Combine(tempFolder, "..\\..\\" + AutoUpdateID + ".autoupdate");
+
+                // check if LimitedUser AutoUpdateFile exists
+                if (!File.Exists(filenames[1]))
+                    filenames[1] = null;
+            }
+#endif
+
+            bool failedToLoad = false;
+
             try
             {
-                Load();
+                // try to load the AutoUpdatefile for limited user
+                if (filenames[1] != null)
+                    Load(filenames[1]);
+                else // load the admin user
+                    Load(filenames[0]);
             }
             catch
+            {
+                if (filenames[1] != null)
+                {
+                    try
+                    {
+                        // try to load the AutoUpdateFile for the admin user
+                        Load(filenames[0]);
+                    }
+                    catch
+                    {
+                        failedToLoad = true;
+                    }
+                }
+                else
+                    failedToLoad = true;
+            }
+
+            if (failedToLoad)
             {
                 LastCheckedForUpdate = DateTime.MinValue;
                 UpdateStepOn = UpdateStepOn.Nothing;
@@ -77,7 +122,16 @@ namespace wyDay.Controls
         // not using registry because .NET 2.0 has bad support for x64/x86 access
         public void Save()
         {
-            FileStream fs = new FileStream(GetFilename(), FileMode.Create, FileAccess.Write);
+            // save for each filename
+            Save(filenames[0]);
+
+            if (filenames[1] != null)
+                Save(filenames[1]);
+        }
+
+        void Save(string filename)
+        {
+            FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
 
             // Write any file-identification data you want to here
             WriteFiles.WriteHeader(fs, "AUIF");
@@ -90,7 +144,7 @@ namespace wyDay.Controls
             WriteFiles.WriteDateTime(fs, 0x01, LastCheckedForUpdate);
 
             // update step on
-            WriteFiles.WriteInt(fs, 0x02, (int) UpdateStepOn);
+            WriteFiles.WriteInt(fs, 0x02, (int)UpdateStepOn);
 
 #if CLIENT
             // only save the AutoUpdaterStatus when wyUpdate writes the file
@@ -106,7 +160,7 @@ namespace wyDay.Controls
 
                 WriteFiles.WriteBool(fs, 0x06, ChangesIsRTF);
             }
-            
+
 
 #if CLIENT
             if (!string.IsNullOrEmpty(ErrorTitle))
@@ -120,9 +174,9 @@ namespace wyDay.Controls
             fs.Close();
         }
 
-        void Load()
+        void Load(string filename)
         {
-            FileStream fs = new FileStream(GetFilename(), FileMode.Open, FileAccess.Read);
+            FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
 
             if (!ReadFiles.IsHeaderValid(fs, "AUIF"))
             {

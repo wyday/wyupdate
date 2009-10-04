@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Windows.Forms;
 using wyUpdate.Common;
 
@@ -111,74 +110,24 @@ namespace wyUpdate
             string userProfileFolder = Environment.GetEnvironmentVariable("userprofile");
 
             //if the basedirectory isn't in the userprofile folder (C:\Users\UserName)
-            if ((updateFrom.InstallingTo & InstallingTo.BaseDir) != 0 && !IsDirInDir(userProfileFolder, baseDirectory))
+            if ((updateFrom.InstallingTo & InstallingTo.BaseDir) != 0 && !SystemFolders.IsDirInDir(userProfileFolder, baseDirectory))
                 return false;
 
             //if the client data file isn't in the userprofile folder
-            if (!IsFileInDirectory(userProfileFolder, clientFileLoc))
+            if (!SystemFolders.IsFileInDirectory(userProfileFolder, clientFileLoc))
                 return false;
 
             // when self-updating, if this client isn't in the userprofile folder
             if ((SelfUpdateState == SelfUpdateState.WillUpdate
                 || SelfUpdateState == SelfUpdateState.FullUpdate
                 || SelfUpdateState == SelfUpdateState.Extracted)
-                && !IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
+                && !SystemFolders.IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
             {
                 return false;
             }
 
             //it's not changing anything outside the user profile folder
             return true;
-        }
-
-        static bool IsFileInDirectory(string dir, string file)
-        {
-            StringBuilder strBuild = new StringBuilder(InstallUpdate.MAX_PATH);
-
-            bool bRet = InstallUpdate.PathRelativePathTo(
-                strBuild,
-                dir, (uint)InstallUpdate.PathAttribute.Directory,
-                file, (uint)InstallUpdate.PathAttribute.File
-            );
-
-            if (bRet && strBuild.Length >= 2)
-            {
-                //get the first two characters
-                if (strBuild.ToString().Substring(0, 2) == @".\")
-                {
-                    //if file is in the directory (or a subfolder)
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        static bool IsDirInDir(string dir, string checkDir)
-        {
-            StringBuilder strBuild = new StringBuilder(InstallUpdate.MAX_PATH);
-
-            bool bRet = InstallUpdate.PathRelativePathTo(
-                strBuild,
-                dir, (uint)InstallUpdate.PathAttribute.Directory,
-                checkDir, (uint)InstallUpdate.PathAttribute.Directory
-            );
-
-            if (bRet)
-            {
-                if (strBuild.Length == 1) //result is "."
-                    return true;
-
-                if (strBuild.Length >= 2
-                    //get the first two characters
-                    && strBuild.ToString().Substring(0, 2) == @".\")
-                {
-                    //if checkDir is the directory (or a subfolder)
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

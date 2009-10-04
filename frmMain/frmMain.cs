@@ -190,7 +190,8 @@ namespace wyUpdate
             if (isAutoUpdateMode)
             {
                 // create the temp folder where we'll store the updates long term
-                tempDirectory = CreateAutoUpdateTempFolder();
+                if (tempDirectory == null)
+                    tempDirectory = CreateAutoUpdateTempFolder();
                 
                 try
                 {
@@ -434,12 +435,8 @@ namespace wyUpdate
                     baseDirectory = commands["basedir"].TrimEnd();
                 }
 
-                if (commands["tempdir"] != null && Directory.Exists(commands["tempdir"]))
-                {
-                    //set the temp directory
-                    tempDirectory = commands["tempdir"].TrimEnd();
-                }
-                else if (!isAutoUpdateMode) //if the tempDir hasn't been created (and not isAutoUpdateMode)
+                // only generate a temp directory if we're not in AutoUpdate mode
+                if (!isAutoUpdateMode)
                 {
                     //create my own "random" temp dir.
                     tempDirectory = Path.Combine(Path.GetTempPath(), @"wyup" + DateTime.Now.ToString("ddMMssfff"));
