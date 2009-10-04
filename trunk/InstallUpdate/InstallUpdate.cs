@@ -696,17 +696,7 @@ namespace wyUpdate
 
         #region RelativePaths
 
-        public enum PathAttribute { File = 0, Directory = 0x10 }
-        public const Int32 MAX_PATH = 260;
 
-        [DllImport("shlwapi.dll", CharSet = CharSet.Auto)]
-        public static extern bool PathRelativePathTo(
-             [Out] StringBuilder pszPath,
-             [In] string pszFrom,
-             [In] uint dwAttrFrom,
-             [In] string pszTo,
-             [In] uint dwAttrTo
-        );
 
         static void DeleteClientInPath(string destPath, string origPath)
         {
@@ -721,14 +711,14 @@ namespace wyUpdate
         static string ClientInTempBase(string actualBase, string tempBase)
         {
             //relative path from origFolder to client location
-            StringBuilder strBuild = new StringBuilder(MAX_PATH);
+            StringBuilder strBuild = new StringBuilder(SystemFolders.MAX_PATH);
             string tempStr = Assembly.GetExecutingAssembly().Location;
 
             //find the relativity of the actualBase and this running client
-            bool bRet = PathRelativePathTo(
+            bool bRet = SystemFolders.PathRelativePathTo(
                 strBuild,
-                actualBase, (uint)PathAttribute.Directory,
-                tempStr, (uint)PathAttribute.File
+                actualBase, (uint)SystemFolders.PathAttribute.Directory,
+                tempStr, (uint)SystemFolders.PathAttribute.File
             );
 
             if (bRet && strBuild.Length >= 2)

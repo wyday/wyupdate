@@ -166,5 +166,68 @@ namespace wyUpdate.Common
 
             return is32on64.Value;
         }
+
+
+        public enum PathAttribute { File = 0, Directory = 0x10 }
+        public const Int32 MAX_PATH = 260;
+
+        [DllImport("shlwapi.dll", CharSet = CharSet.Auto)]
+        public static extern bool PathRelativePathTo(
+             [Out] StringBuilder pszPath,
+             [In] string pszFrom,
+             [In] uint dwAttrFrom,
+             [In] string pszTo,
+             [In] uint dwAttrTo
+        );
+
+        public static bool IsFileInDirectory(string dir, string file)
+        {
+            StringBuilder strBuild = new StringBuilder(MAX_PATH);
+
+            bool bRet = PathRelativePathTo(
+                strBuild,
+                dir, (uint)PathAttribute.Directory,
+                file, (uint)PathAttribute.File
+            );
+
+            if (bRet && strBuild.Length >= 2)
+            {
+                //get the first two characters
+                if (strBuild.ToString().Substring(0, 2) == @".\")
+                {
+                    //if file is in the directory (or a subfolder)
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IsDirInDir(string dir, string checkDir)
+        {
+            StringBuilder strBuild = new StringBuilder(MAX_PATH);
+
+            bool bRet = PathRelativePathTo(
+                strBuild,
+                dir, (uint)PathAttribute.Directory,
+                checkDir, (uint)PathAttribute.Directory
+            );
+
+            if (bRet)
+            {
+                if (strBuild.Length == 1) //result is "."
+                    return true;
+
+                if (strBuild.Length >= 2
+                    //get the first two characters
+                    && strBuild.ToString().Substring(0, 2) == @".\")
+                {
+                    //if checkDir is the directory (or a subfolder)
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
