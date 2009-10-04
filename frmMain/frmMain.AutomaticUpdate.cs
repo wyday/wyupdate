@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using wyDay.Controls;
 using wyUpdate.Common;
+using System.Threading;
 
 namespace wyUpdate
 {
@@ -26,23 +27,41 @@ namespace wyUpdate
 
         void SetupAutoupdateMode()
         {
-            updateHelper.StartPipeServer(this);
             updateHelper.SenderProcessClosed += UpdateHelper_SenderProcessClosed;
             updateHelper.RequestReceived += UpdateHelper_RequestReceived;
+            updateHelper.StartPipeServer(this);
         }
 
         void StartNewSelfAndClose()
         {
+            bool checkForClients = false;
+
+            // when this function is called in the constructor
+            // (i.e. before the handle for the form is created)
+            // then the pipeserver will not have yet been created
+            if(!updateHelper.RunningServer)
+            {
+                checkForClients = true;
+                updateHelper.StartPipeServer(this);
+            }
+
             Process clientProcess = new Process
                                         {
                                             StartInfo =
                                                 {
                                                     FileName = newSelfLocation,
 
+                                                    //NOTE: (Very goddamn important - change this and die)
+                                                    // Arguments must have the "clear space" before the closing quote after
+                                                    // baseDirectory. "Why?" you ask, because Windows is the offspring
+                                                    // of a Unicorn and an Angel. Everyone knows that Angels don't
+                                                    // respect backslash-quote combos.
+                                                    // And Unicorns are racists.
+
                                                     // start the client in automatic update mode (a.k.a. wait mode)
                                                     Arguments =
                                                         "-cdata:\"" + clientFileLoc + "\" -basedir:\"" + baseDirectory +
-                                                        "\" /autoupdate /ns",
+                                                        " \" /autoupdate /ns",
 
                                                     WindowStyle = ProcessWindowStyle.Hidden
                                                 }
@@ -50,7 +69,24 @@ namespace wyUpdate
 
             clientProcess.Start();
 
-            clientProcess.WaitForInputIdle();
+            if(checkForClients)
+            {
+                // there must be at least one client running to receive this message
+                int timeSpent = 0;
+
+                while (updateHelper.TotalConnectedClients == 0)
+                {
+                    // if we've already waited 30 seconds, we've wait long enough
+                    // something has gone wrong with the AutomaticUpdater control
+                    // no point in waiting around any longer.
+                    if (timeSpent == 30000)
+                        break;
+
+                    // wait 1/3 of a second
+                    timeSpent += 300;
+                    Thread.Sleep(300);
+                }
+            }
 
             // tell all the clients that there's a new wyUpdate
             updateHelper.SendNewWyUpdate(UpdateHelperData.PipenameFromFilename(newSelfLocation), clientProcess.Id);
