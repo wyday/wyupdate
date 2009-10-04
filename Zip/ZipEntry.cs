@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-23 13:07:09>
+// Time-stamp: <2009-October-03 23:39:32>
 //
 // ------------------------------------------------------------------
 //
@@ -753,7 +753,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// In some cases there is no related filesystem file - for example when a
-        /// <c>ZipEntry</c> is created using <see cref="ZipFile.AddEntry(string, string,
+        /// <c>ZipEntry</c> is created using <see cref="ZipFile.AddEntry(string, 
         /// string)"/> or one of
         /// the similar overloads.  In this case, the value of this property is derived from
         /// the fileName and the directory path passed to that method.
@@ -825,40 +825,31 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         ///
-        /// <para> The application can use this property to set the input stream for an
+        /// <para> 
+        /// The application can use this property to set the input stream for an
         /// entry on a just-in-time basis. Imagine a scenario where the application
         /// creates a <c>ZipFile</c> comprised of content obtained from hundreds of
         /// files, via calls to <c>AddFile()</c>. The DotNetZip library opens streams on
         /// these files on a just-in-time basis, only when writing the entry out to an
         /// external store within the scope of a <c>ZipFile.Save()</c> call.  Only one
         /// input stream is opened at a time, as each entry is being written
-        /// out. </para>
+        /// out. 
+        /// </para>
         ///
-        /// <para> Now imagine a different application that creates a <c>ZipFile</c> with
+        /// <para> 
+        /// Now imagine a different application that creates a <c>ZipFile</c> with
         /// content obtained from hundreds of streams, added through <see
-        /// cref="ZipFile.AddEntry(string, string, System.IO.Stream)"/>.
+        /// cref="ZipFile.AddEntry(string, System.IO.Stream)"/>.
         /// Normally the application would supply an open stream to that call.  But when
         /// large numbers of streams are being added, this can mean many open streams at
-        /// one time, unnecessarily.  </para>
+        /// one time, unnecessarily.  
+        /// </para>
         ///
-        /// <para> To avoid this, at the time of calling
-        /// <c>ZipFile.AddFileFromStream</c> for each entry, the application can supply
-        /// Stream.Null as the value of the stream parameter. The application
-        /// can then open the stream on a just-in-time basis, setting this property, and
-        /// thus insuring, as with the latter example, that only one stream need be
-        /// opened at a time while constructing and saving the ZipFile.  </para>
+        /// <para>
+        /// To avoid this, call <see cref="ZipFile.AddEntry(String, OpenDelegate, CloseDelegate)"/> and specify delegates that 
+        /// open and close the stream at the time of Save.  
+        /// </para>
         ///
-        /// <para> To do this, the application should set the <c>InputStream</c>
-        /// property within the context of the <see cref="ZipFile.SaveProgress"/> event,
-        /// when the event type is <see
-        /// cref="ZipProgressEventType.Saving_BeforeWriteEntry"/>. The application
-        /// should only set <see cref="InputStream" /> for a <c>ZipEntry</c> which has the <see
-        /// cref="ZipEntry.Source"/> equal to <see cref="ZipEntrySource.Stream"/>.  When
-        /// the input stream is provided by the application in this way, the application
-        /// is also responsible for closing or disposing the stream.  This would
-        /// normally be done in the <see cref="ZipFile.SaveProgress"/> event, when the
-        /// event type is <see cref="ZipProgressEventType.Saving_AfterWriteEntry"/>. See
-        /// the example code provided here for how this can be done. </para>
         ///
         /// <para> Setting the value of this property when the entry was not added from
         /// a stream (for example, when the <c>ZipEntry</c> was added with <see
@@ -868,79 +859,6 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         ///
-        /// <example>
-        ///
-        /// <para> This example adds a large number of entries to a ZipFile. The
-        /// application uses the just-in-time stream provisioning mechanism to avoid
-        /// keeping all the streams open simultaneiously. </para>
-        ///
-        /// <code lang="C#">
-        /// public static void ProvisionStreams(object sender, SaveProgressEventArgs e)
-        /// {
-        ///     if (e.EventType == ZipProgressEventType.Saving_BeforeWriteEntry)
-        ///     {
-        ///         if (e.CurrentEntry.Source == ZipEntrySource.Stream &amp;&amp;
-        ///               e.CurrentEntry.InputStream == Stream.Null)
-        ///         {
-        ///             System.IO.Stream s = MyStreamOpener(e.CurrentEntry.FileName);
-        ///             e.CurrentEntry.InputStream = s;
-        ///         }
-        ///     }
-        ///     else if (e.EventType == ZipProgressEventType.Saving_AfterWriteEntry)
-        ///     {
-        ///         if (e.CurrentEntry.InputStreamWasJitProvided)
-        ///         {
-        ///             e.CurrentEntry.InputStream.Close();
-        ///         }
-        ///     }
-        /// }
-        ///
-        /// public void CreateZip()
-        /// {
-        ///     using (ZipFile zip = new ZipFile())
-        ///     {
-        ///         // add content into a "content" dir in the zip archive
-        ///         foreach (string s in namesOfStreamsToZip)
-        ///             zip.AddFileFromStream(s, "content", null);
-        ///         // set up the event handler to provision streams "just-in-time"
-        ///         zip.SaveProgress += ProvisionStreams;
-        ///         zip.AddFile("Readme.txt");
-        ///         zip.Save(ZipToCreate);
-        ///     }
-        /// }
-        /// </code>
-        /// <code lang="VB">
-        /// Public Shared Sub ProvisionStreams(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
-        ///     If (e.EventType = ZipProgressEventType.Saving_BeforeWriteEntry) Then
-        ///         If (e.CurrentEntry.Source = ZipEntrySource.Stream) Then
-        ///             If (e.CurrentEntry.InputStream = Stream.Null) Then
-        ///                 Dim s As Stream = MyStreamOpener(e.CurrentEntry.FileName)
-        ///                 e.CurrentEntry.InputStream = s
-        ///             End If
-        ///         End If
-        ///     ElseIf (e.EventType = ZipProgressEventType.Saving_AfterWriteEntry) Then
-        ///         If (e.CurrentEntry.InputStreamWasJitProvided) Then
-        ///             e.CurrentEntry.InputStream.Close
-        ///         End If
-        ///     End If
-        /// End Sub
-        ///
-        /// Public Sub CreateZip()
-        ///     Using zip As ZipFile = new ZipFile()
-        ///         ' add content into a "content" dir in the zip archive
-        ///         Dim s As String
-        ///         For Each s In namesOfStreamsToZip
-        ///             zip.AddFileFromStream(s, "content", Nothing)
-        ///         ' set up the event handler to provision streams "just-in-time"
-        ///         AddHandler zip.SaveProgress, AddressOf ProvisionStreams
-        ///         zip.AddFile("Readme.txt")
-        ///         zip.Save(ZipToCreate)
-        ///     End Using
-        /// End Sub
-        /// </code>
-        /// </example>
-        ///
-        /// <seealso cref="InputStreamWasJitProvided"/>
         public Stream InputStream
         {
             get { return _sourceStream; }
@@ -964,7 +882,7 @@ namespace Ionic.Zip
         /// <para>
         /// When creating a zip archive, an application can obtain content for one or more of the
         /// <c>ZipEntry</c> instances from streams, using the <see
-        /// cref="ZipFile.AddEntry(string, string, System.IO.Stream)"/> method.  At the
+        /// cref="ZipFile.AddEntry(string, System.IO.Stream)"/> method.  At the
         /// time of calling that method, the application can supply null as the value of the
         /// stream parameter.  By doing so, the application indicates to the library that it will
         /// provide a stream for the entry on a just-in-time basis, at the time one of the
@@ -2147,14 +2065,28 @@ namespace Ionic.Zip
         }
 
 
-
-        internal static ZipEntry Create(String filename, string nameInArchive)
+        internal static ZipEntry CreateFromFile(String filename, string nameInArchive)
         {
-            return Create(filename, nameInArchive, false, null);
+            return Create(filename, nameInArchive, ZipEntrySource.FileSystem, null, null);
+        }
+
+        internal static ZipEntry CreateForStream(String filename, string nameInArchive, Stream s)
+        {
+            return Create(filename, nameInArchive, ZipEntrySource.Stream, s, null);
+        }
+
+        internal static ZipEntry CreateForWriter(String filename, string nameInArchive, WriteDelegate d)
+        {
+            return Create(filename, nameInArchive, ZipEntrySource.WriteDelegate, d, null);
+        }
+
+        internal static ZipEntry CreateForJitStreamProvider(String filename, string nameInArchive, OpenDelegate opener,CloseDelegate closer)
+        {
+            return Create(filename, nameInArchive, ZipEntrySource.JitStream, opener, closer);
         }
 
 
-        internal static ZipEntry Create(String filename, string nameInArchive, bool isStream, Stream stream)
+        private static ZipEntry Create(String filename, string nameInArchive, ZipEntrySource source, Object arg1, Object arg2)
         {
             if (String.IsNullOrEmpty(filename))
                 throw new Ionic.Zip.ZipException("The entry name must be non-null and non-empty.");
@@ -2164,14 +2096,21 @@ namespace Ionic.Zip
             // workitem 7071
             // workitem 7926 - "version made by" OS should be zero for compat with WinZip
             entry._VersionMadeBy = (0 << 8) + 45; // indicates the attributes are FAT Attributes, and v4.5 of the spec
+            entry._Source = source;
+            entry._Mtime = entry._Atime = entry._Ctime = DateTime.UtcNow;
 
-            // workitem 7192 - late bound streams
-            if (isStream)
+            if (source == ZipEntrySource.Stream)
             {
-                entry._Source = ZipEntrySource.Stream;
-                entry._sourceStream = stream; // may  or may not be null
-                entry._Mtime = entry._Atime = entry._Ctime = DateTime.UtcNow;
-                //entry._ntfsTimesAreSet = false;  // no need to set it
+                entry._sourceStream = (arg1 as Stream);         // may  or may not be null
+            }
+            else if (source == ZipEntrySource.WriteDelegate)
+            {
+                entry._WriteDelegate = (arg1 as WriteDelegate); // may  or may not be null
+            }
+            else if (source == ZipEntrySource.JitStream)
+            {
+                entry._OpenDelegate = (arg1 as OpenDelegate);   // may  or may not be null
+                entry._CloseDelegate = (arg2 as CloseDelegate); // may  or may not be null
             }
             else
             {
@@ -2208,10 +2147,10 @@ namespace Ionic.Zip
 #endif
                 entry._ntfsTimesAreSet = true;
                 
+                entry._LocalFileName = Path.GetFullPath(filename); // workitem 8813
             }
 
             entry._LastModified = entry._Mtime;
-            entry._LocalFileName = Path.GetFullPath(filename); // workitem 8813
             entry._FileNameInArchive = nameInArchive.Replace('\\', '/');
 
             // We don't actually slurp in the file data until the caller invokes Write on this entry.
@@ -2481,41 +2420,16 @@ namespace Ionic.Zip
         private static System.DateTime _win32Epoch = System.DateTime.FromFileTimeUtc(0L);
         private static System.DateTime _zeroHour = new System.DateTime(1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        private WriteDelegate _WriteDelegate;
+        private OpenDelegate _OpenDelegate;
+        private CloseDelegate _CloseDelegate;
+
 
         // summary
         // The default size of the IO buffer for ZipEntry instances. Currently it is 8192 bytes.
         // summary
         //public const int IO_BUFFER_SIZE_DEFAULT = 8192; // 0x8000; // 0x4400
 
-    }
-
-
-    /// <summary>
-    /// An enum that specifies the source of the ZipEntry. 
-    /// </summary>
-    public enum ZipEntrySource
-    {
-        /// <summary>
-        /// Default value.  Invalid on a bonafide ZipEntry.
-        /// </summary>
-        None = 0,
-
-        /// <summary>
-        /// The entry was instantiated by calling AddFile() or another method that 
-        /// added an entry from the filesystem.
-        /// </summary>
-        FileSystem,
-
-        /// <summary>
-        /// The entry was instantiated via <see cref="Ionic.Zip.ZipFile.AddEntry(string,string,string)"/> or
-        /// <see cref="Ionic.Zip.ZipFile.AddEntry(string,string,System.IO.Stream)"/> .
-        /// </summary>
-        Stream,
-
-        /// <summary>
-        /// The ZipEntry was instantiated by reading a zipfile.
-        /// </summary>
-        ZipFile,
     }
 
 

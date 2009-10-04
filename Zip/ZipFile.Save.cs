@@ -74,7 +74,7 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         ///
-        /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(String, String, System.IO.Stream)"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(String, System.IO.Stream)"/>
         ///
         /// <exception cref="Ionic.Zip.BadStateException">
         /// Thrown if you haven't specified a location or stream for saving the zip,
