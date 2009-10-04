@@ -210,6 +210,7 @@
     <Compile Include="Zip\ZipEntry.Extract.cs" />
     <Compile Include="Zip\ZipEntry.Read.cs" />
     <Compile Include="Zip\ZipEntry.Write.cs" />
+    <Compile Include="Zip\ZipEntrySource.cs" />
     <Compile Include="Zip\ZipErrorAction.cs" />
     <Compile Include="Zip\ZipFile.AddUpdate.cs" />
     <Compile Include="Zip\ZipFile.cs" />

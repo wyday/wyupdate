@@ -15,14 +15,13 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-23 13:02:08>
+// Time-stamp: <2009-October-03 23:17:06>
 //
 // ------------------------------------------------------------------
 //
 // This module defines events used by the ZipFile class.
 //
 //
-
 
 using System;
 using System.Collections.Generic;
@@ -31,12 +30,23 @@ using System.Text;
 namespace Ionic.Zip
 {
     /// <summary>
-    /// Delegate for the callback by which the application gives approval for multiple
-    /// reads of the file stream. This callback is called only when the initial 
-    /// compression operation inflates the size of the file data. 
+    ///   Delegate in which the application writes the ZipEntry content for the named entry.
     /// </summary>
-    public delegate bool ReReadApprovalCallback(Int64 uncompressedSize, Int64 compressedSize, string fileName);
+    /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>
+    public delegate void WriteDelegate(string entryName, System.IO.Stream stream);
 
+    /// <summary>
+    ///   Delegate in which the application opens the stream, just-in-time, for the named entry.
+    /// </summary>
+    /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
+    public delegate System.IO.Stream OpenDelegate(string entryName);
+    
+    /// <summary>
+    ///   Delegate in which the application closes the stream, just-in-time, for the named entry.
+    /// </summary>
+    /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
+    public delegate void CloseDelegate(string entryName, System.IO.Stream stream);
+    
     /// <summary>
     ///   Delegate for the callback by which the application tells the
     ///   library the CompressionLevel to use for a file.
@@ -52,7 +62,6 @@ namespace Ionic.Zip
     /// </remarks>
     /// <seealso cref="Ionic.Zip.ZipFile.SetCompression"/>
     public delegate Ionic.Zlib.CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
-
 
     /// <summary>
     /// In an EventArgs type, indicates which sort of progress event is being reported. 
