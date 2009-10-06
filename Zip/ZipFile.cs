@@ -269,11 +269,11 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        /// This refers to the Strategy used by the ZLIB-compatible compressor. Different
-        /// compression strategies work better on different sorts of data. The strategy parameter
-        /// can affect the compression ratio and the speed of compression but not the correctness
-        /// of the compresssion.  For more information see <see
-        /// cref="Ionic.Zlib.CompressionStrategy "/>.
+        /// Set the Strategy used by the ZLIB-compatible compressor, when compressing
+        /// entries. Different compression strategies work better on different sorts of
+        /// data. The strategy parameter can affect the compression ratio and the speed
+        /// of compression but not the correctness of the compresssion.  For more
+        /// information see <see cref="Ionic.Zlib.CompressionStrategy "/>.
         /// </remarks>
         public Ionic.Zlib.CompressionStrategy Strategy
         {
@@ -328,7 +328,7 @@ namespace Ionic.Zip
         ///  <para>
         ///    As with some other properties on the <c>ZipFile</c> class, like <see
         ///    cref="Password"/>, <see cref="Encryption"/>, and <see
-        ///    cref="ZipErrorAction"/>, setting this property a <c>ZipFile</c>
+        ///    cref="ZipErrorAction"/>, setting this property on a <c>ZipFile</c>
         ///    instance will cause the specified <c>CompressionLevel</c> to be used on all
         ///    <see cref="ZipEntry"/> items that are subsequently added to the
         ///    <c>ZipFile</c> instance. If you set this property after you have added
@@ -654,6 +654,22 @@ namespace Ionic.Zip
         }
 
 
+
+        /// <summary>
+        /// Returns true if an entry by the given name exists in the ZipFile.
+        /// </summary>
+        public bool ContainsEntry(string name)
+        {
+            foreach (var e in _entries)
+            {
+                if (e.FileName == name)
+                    return true;
+            }
+            return false;
+        }
+        
+
+        
         /// <summary>
         /// Indicates whether to perform case-sensitive matching on the filename when
         /// retrieving entries in the zipfile via the string-based indexer.
@@ -738,7 +754,7 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// If you do not set this flag, it will remain false.  If this flag is false,
-        /// your ZipFile will encode all filenames and comments using the IBM437
+        /// your <c>ZipFile</c> will encode all filenames and comments using the IBM437
         /// codepage.  This can cause "loss of information" on some filenames, but the
         /// resulting zipfile will be more interoperable with other utilities. As an
         /// example of the loss of information, diacritics can be lost.  The o-tilde
@@ -754,7 +770,7 @@ namespace Ionic.Zip
         /// The loss of information associated to the use of the IBM437 encoding is
         /// inconvenient, and can also lead to runtime errors. For example, using
         /// IBM437, any sequence of 4 Chinese characters will be encoded as ????.  If
-        /// your application creates a ZipFile, then adds two files, each with names of
+        /// your application creates a <c>ZipFile</c>, then adds two files, each with names of
         /// four Chinese characters each, this will result in a duplicate filename
         /// exception.  In the case where you add a single file with a name containing
         /// four Chinese characters, calling Extract() on the entry that has question
@@ -800,99 +816,41 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Specify whether to use ZIP64 extensions when saving a zip archive. 
+        ///   Specify whether to use ZIP64 extensions when saving a zip archive. 
         /// </summary>
+        ///
         /// <remarks>
         ///
         /// <para>
-        /// Designed many years ago, the <see
-        /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">original zip
-        /// specification from PKWARE</see> allowed for 32-bit quantities for the
-        /// compressed and uncompressed sizes of zip entries, as well as a 32-bit
-        /// quantity for specifying the length of the zip archive itself, and a maximum
-        /// of 65535 entries.  These limits are now regularly exceeded in many backup
-        /// and archival scenarios.  Recently, PKWare added extensions to the original
-        /// zip spec, called "ZIP64 extensions", to raise those limitations.  This
-        /// property governs whether the <c>ZipFile</c> instance will use those
-        /// extensions when writing zip archives within a call to one of the Save()
-        /// methods.  The use of these extensions is optional and explicit in DotNetZip
-        /// because, despite the status of ZIP64 as a bona fide standard, many other zip
-        /// tools and libraries do not support ZIP64, and therefore a zip file saved
-        /// with ZIP64 extensions may be unreadable by some of those other tools.
-        /// </para>
-        /// 
-        /// <para>
-        /// Set this property to <see cref="Zip64Option.Always"/> to always use ZIP64
-        /// extensions when saving, regardless of whether your zip archive needs it.
-        /// Suppose you add 5 files, each under 100k, to a ZipFile.  If you specify
-        /// Always for this flag before calling the Save() method, you will get a ZIP64
-        /// archive, though you do not need to use ZIP64 because none of the original
-        /// zip limits had been exceeded.
+        ///   When creating a zip file, the default value for the property is <see
+        ///   cref="Zip64Option.Never"/>. <see cref="Zip64Option.AsNecessary"/> is
+        ///   safest, in the sense that you will not get an Exception if a pre-ZIP64
+        ///   limit is exceeded.
         /// </para>
         ///
         /// <para>
-        /// Set this property to <see cref="Zip64Option.Never"/> to tell the DotNetZip
-        /// library to never use ZIP64 extensions.  This is useful for maximum
-        /// compatibility and interoperability, at the expense of the capability of
-        /// handling large files or large archives.  NB: Windows Explorer in Windows XP
-        /// and Windows Vista cannot currently extract files from a zip64 archive, so if
-        /// you want to guarantee that a zip archive produced by this library will work
-        /// in Windows Explorer, use <c>Never</c>. If you set this property to <see
-        /// cref="Zip64Option.Never"/>, and your application creates a zip that would
-        /// exceed one of the ZIP limits, the library will throw an exception during the
-        /// <c>Save()</c>.
+        ///   You may set the property at any time before calling Save(). 
         /// </para>
         ///
         /// <para>
-        /// Set this property to <see cref="Zip64Option.AsNecessary"/> to tell the
-        /// DotNetZip library to use the zip64 extensions when required by the
-        /// entry. After the file is compressed, the original and compressed sizes are
-        /// checked, and if they exceed the limits described above, then zip64 can be
-        /// used. That is the general idea, but there is an additional wrinkle when
-        /// saving to a non-seekable device, like the ASP.NET
-        /// <c>Response.OutputStream</c>, or <c>Console.Out</c>.  When using
-        /// non-seekable streams for output, the entry header - which indicates whether
-        /// zip64 is in use - is emitted before it is known if zip64 is necessary.  It
-        /// is only after all entries have been saved that it can be known if ZIP64 will
-        /// be required.  On seekable output streams, after saving all entries, the
-        /// library can seek backward and re-emit the zip file header to be consistent
-        /// with the actual ZIP64 requirement.  But using a non-seekable output stream,
-        /// the library cannot seek backward, so the header can never be changed. In
-        /// other words, the archive's use of ZIP64 extensions is not alterable after
-        /// the header is emitted.  Therefore, when saving to non-seekable streams,
-        /// using <see cref="Zip64Option.AsNecessary"/> is the same as using <see
-        /// cref="Zip64Option.Always"/>: it will always produce a zip archive that uses
-        /// zip64 extensions.
+        ///   When reading a zip file via the <c>Zipfile.Read()</c> method, DotNetZip
+        ///   will properly read ZIP64-endowed zip archives, regardless of the value of
+        ///   this property.  DotNetZip will always read ZIP64 archives.  This property
+        ///   governs only whether DotNetZip will write them. Therefore, when updating
+        ///   archives, be careful about setting this property after reading an archive
+        ///   that may use ZIP64 extensions.
         /// </para>
         ///
         /// <para>
-        /// The default value for the property is <see cref="Zip64Option.Never"/>. <see
-        /// cref="Zip64Option.AsNecessary"/> is safest, in the sense that you will not
-        /// get an Exception if a pre-ZIP64 limit is exceeded.
+        ///   An interesting question is, if you have set this property to
+        ///   <c>AsNecessary</c>, and then successfully saved, does the resulting
+        ///   archive use ZIP64 extensions or not?  To learn this, check the <see
+        ///   cref="OutputUsedZip64"/> property, after calling Save().
         /// </para>
         ///
         /// <para>
-        /// You may set the property at any time before calling Save(). 
-        /// </para>
-        ///
-        /// <para>
-        /// The <c>Zipfile.Read()</c> method will properly read ZIP64-endowed zip
-        /// archives, regardless of the value of this property.  DotNetZip will always
-        /// read ZIP64 archives.  This property governs whether DotNetZip will write
-        /// them. Therefore, when updating archives, be careful about setting this
-        /// property after reading an archive that may use ZIP64 extensions.
-        /// </para>
-        ///
-        /// <para>
-        /// An interesting question is, if you have set this property to
-        /// <c>AsNecessary</c>, and then successfully saved, does the resulting archive
-        /// use ZIP64 extensions or not?  To learn this, check the <see
-        /// cref="OutputUsedZip64"/> property, after calling Save().
-        /// </para>
-        ///
-        /// <para>
-        /// Have you thought about
-        /// <see href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">donating</see>?
+        ///   Have you thought about
+        ///   <see href="http://cheeso.members.winisp.net/DotNetZipDonate.aspx">donating</see>?
         /// </para>
         ///
         /// </remarks>
@@ -912,42 +870,44 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Indicates whether the archive requires ZIP64 extensions.
+        ///   Indicates whether the archive requires ZIP64 extensions.
         /// </summary>
+        ///
         /// <remarks>
         ///
         /// <para>
-        /// This property is <c>null</c> (or <c>Nothing</c> in VB) if the archive has not been
-        /// saved, and there are fewer than 65334 <c>ZipEntry</c> items contained in the archive.
+        ///   This property is <c>null</c> (or <c>Nothing</c> in VB) if the archive has
+        ///   not been saved, and there are fewer than 65334 <c>ZipEntry</c> items
+        ///   contained in the archive.
         /// </para>
         ///
         /// <para>
-        /// The <c>Value</c> is true if any of the following four conditions holds: the
-        /// uncompressed size of any entry is larger than 0xFFFFFFFF; the compressed
-        /// size of any entry is larger than 0xFFFFFFFF; the relative offset of any
-        /// entry within the zip archive is larger than 0xFFFFFFFF; or there are more
-        /// than 65534 entries in the archive.  (0xFFFFFFFF = 4,294,967,295).  The
-        /// result may not be known until a Save() is attempted on the zip archive.  The
-        /// Value of this <see cref="System.Nullable"/> property may be set only AFTER
-        /// one of the Save() methods has been called.
+        ///   The <c>Value</c> is true if any of the following four conditions holds:
+        ///   the uncompressed size of any entry is larger than 0xFFFFFFFF; the
+        ///   compressed size of any entry is larger than 0xFFFFFFFF; the relative
+        ///   offset of any entry within the zip archive is larger than 0xFFFFFFFF; or
+        ///   there are more than 65534 entries in the archive.  (0xFFFFFFFF =
+        ///   4,294,967,295).  The result may not be known until a Save() is attempted
+        ///   on the zip archive.  The Value of this <see cref="System.Nullable"/>
+        ///   property may be set only AFTER one of the Save() methods has been called.
         /// </para>
         ///
         /// <para>
-        /// If none of the four conditions holds, and the archive has been saved, then
-        /// the Value is false.
+        ///   If none of the four conditions holds, and the archive has been saved, then
+        ///   the Value is false.
         /// </para>
         ///
         /// <para>
-        /// A <c>Value</c> of false does not indicate that the zip archive, as saved,
-        /// does not use ZIP64.  It merely indicates that ZIP64 is not required.  An
-        /// archive may use ZIP64 even when not required if the <see
-        /// cref="ZipFile.UseZip64WhenSaving"/> property is set to <see
-        /// cref="Zip64Option.Always"/>, or if the <see
-        /// cref="ZipFile.UseZip64WhenSaving"/> property is set to <see
-        /// cref="Zip64Option.AsNecessary"/> and the output stream was not seekable. Use
-        /// the <see cref="OutputUsedZip64"/> property to determine if the most recent
-        /// <c>Save()</c> method resulted in an archive that utilized the ZIP64
-        /// extensions.
+        ///   A <c>Value</c> of false does not indicate that the zip archive, as saved,
+        ///   does not use ZIP64.  It merely indicates that ZIP64 is not required.  An
+        ///   archive may use ZIP64 even when not required if the <see
+        ///   cref="ZipFile.UseZip64WhenSaving"/> property is set to <see
+        ///   cref="Zip64Option.Always"/>, or if the <see
+        ///   cref="ZipFile.UseZip64WhenSaving"/> property is set to <see
+        ///   cref="Zip64Option.AsNecessary"/> and the output stream was not
+        ///   seekable. Use the <see cref="OutputUsedZip64"/> property to determine if
+        ///   the most recent <c>Save()</c> method resulted in an archive that utilized
+        ///   the ZIP64 extensions.
         /// </para>
         ///
         /// </remarks>
@@ -976,37 +936,39 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Describes whether the most recent <c>Save()</c> operation used ZIP64 extensions.
+        ///   Describes whether the most recent <c>Save()</c> operation used ZIP64 extensions.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// The use of ZIP64 extensions within an archive is not always necessary, and for
-        /// interoperability concerns, it may be desired to NOT use ZIP64 if possible.  The
-        /// <see cref="ZipFile.UseZip64WhenSaving"/> property can be set to use ZIP64
-        /// extensions only when necessary.  In those cases, Sometimes applications want to
-        /// know whether a Save() actually used ZIP64 extensions.  Applications can query
-        /// this read-only property to learn whether ZIP64 has been used in a just-saved
-        /// <c>ZipFile</c>.
+        ///   The use of ZIP64 extensions within an archive is not always necessary, and
+        ///   for interoperability concerns, it may be desired to NOT use ZIP64 if
+        ///   possible.  The <see cref="ZipFile.UseZip64WhenSaving"/> property can be
+        ///   set to use ZIP64 extensions only when necessary.  In those cases,
+        ///   Sometimes applications want to know whether a Save() actually used ZIP64
+        ///   extensions.  Applications can query this read-only property to learn
+        ///   whether ZIP64 has been used in a just-saved <c>ZipFile</c>.
         /// </para>
         ///
         /// <para>
-        /// The value is <c>null</c> (or <c>Nothing</c> in VB) if the archive has not
-        /// been saved.
+        ///   The value is <c>null</c> (or <c>Nothing</c> in VB) if the archive has not
+        ///   been saved.
         /// </para>
         ///
         /// <para>
-        /// Non-null values (<c>HasValue</c> is true) indicate whether ZIP64 extensions
-        /// were used during the most recent <c>Save()</c> operation.  The ZIP64
-        /// extensions may have been used as required by any particular entry because of
-        /// its uncompressed or compressed size, or because the archive is larger than
-        /// 4294967295 bytes, or because there are more than 65534 entries in the
-        /// archive, or because the <c>UseZip64WhenSaving</c> property was set to <see
-        /// cref="Zip64Option.Always"/>, or because the <c>UseZip64WhenSaving</c>
-        /// property was set to <see cref="Zip64Option.AsNecessary"/> and the output
-        /// stream was not seekable.  The value of this property does not indicate the
-        /// reason the ZIP64 extensions were used.
+        ///   Non-null values (<c>HasValue</c> is true) indicate whether ZIP64
+        ///   extensions were used during the most recent <c>Save()</c> operation.  The
+        ///   ZIP64 extensions may have been used as required by any particular entry
+        ///   because of its uncompressed or compressed size, or because the archive is
+        ///   larger than 4294967295 bytes, or because there are more than 65534 entries
+        ///   in the archive, or because the <c>UseZip64WhenSaving</c> property was set
+        ///   to <see cref="Zip64Option.Always"/>, or because the
+        ///   <c>UseZip64WhenSaving</c> property was set to <see
+        ///   cref="Zip64Option.AsNecessary"/> and the output stream was not seekable.
+        ///   The value of this property does not indicate the reason the ZIP64
+        ///   extensions were used.
         /// </para>
+        ///
         /// </remarks>
         /// <seealso cref="UseZip64WhenSaving"/>
         /// <seealso cref="RequiresZip64"/>
@@ -1320,7 +1282,7 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        /// If you set the password on the zip archive, and then add a set of files to the
+        /// If you set the password on the <c>ZipFile</c>, and then add a set of files to the
         /// archive, then each entry is encrypted with that password.  You may also want to
         /// change the password between adding different entries. If you set the password,
         /// add an entry, then set the password to <c>null</c> (<c>Nothing</c> in VB), and
@@ -1511,7 +1473,7 @@ namespace Ionic.Zip
         ///  <para>
         ///    As with some other properties on the <c>ZipFile</c> class, like <see
         ///    cref="Password"/>, <see cref="Encryption"/>, and <see
-        ///    cref="CompressionLevel"/>, setting this property a <c>ZipFile</c>
+        ///    cref="CompressionLevel"/>, setting this property on a <c>ZipFile</c>
         ///    instance will cause the specified <c>ZipErrorAction</c> to be used on all
         ///    <see cref="ZipEntry"/> items that are subsequently added to the
         ///    <c>ZipFile</c> instance. If you set this property after you have added
@@ -1891,7 +1853,6 @@ namespace Ionic.Zip
                 return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             }
         }
-
 
         internal void NotifyEntryChanged()
         {
@@ -3131,7 +3092,6 @@ namespace Ionic.Zip
         private bool _extractOperationCanceled;
         private EncryptionAlgorithm _Encryption;
         private bool _JustSaved;
-        private bool _NeedZip64CentralDirectory;
         private long _locEndOfCDS = -1;
         private Nullable<bool> _OutputUsesZip64;
         internal bool _inExtractAll;
@@ -3150,6 +3110,72 @@ namespace Ionic.Zip
     /// <summary>
     /// Options for using ZIP64 extensions when saving zip archives. 
     /// </summary>
+    ///
+    /// <remarks>
+    ///
+    /// <para>
+    /// Designed many years ago, the <see
+    /// href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">original
+    /// zip specification from PKWARE</see> allowed for 32-bit quantities for
+    /// the compressed and uncompressed sizes of zip entries, as well as a
+    /// 32-bit quantity for specifying the length of the zip archive itself,
+    /// and a maximum of 65535 entries.  These limits are now regularly
+    /// exceeded in many backup and archival scenarios.  Recently, PKWare
+    /// added extensions to the original zip spec, called "ZIP64 extensions",
+    /// to raise those limitations.  This property governs whether DotNetZip
+    /// will use those extensions when writing
+    /// zip archives. The use of these extensions is optional and explicit in
+    /// DotNetZip because, despite the status of ZIP64 as a bona fide
+    /// standard, many other zip tools and libraries do not support ZIP64, and
+    /// therefore a zip file with ZIP64 extensions may be unreadable by some
+    /// of those other tools.
+    /// </para>
+    /// 
+    /// <para>
+    /// Set this property to <see cref="Zip64Option.Always"/> to always use
+    /// ZIP64 extensions when saving, regardless of whether your zip archive
+    /// needs it.  Suppose you add 5 files, each under 100k, to a ZipFile. If
+    /// you specify Always for this flag, you will get a ZIP64 archive, though
+    /// the archive does not need to use ZIP64 because none of the original
+    /// zip limits had been exceeded.
+    /// </para>
+    ///
+    /// <para>
+    /// Set this property to <see cref="Zip64Option.Never"/> to tell the DotNetZip
+    /// library to never use ZIP64 extensions.  This is useful for maximum
+    /// compatibility and interoperability, at the expense of the capability of
+    /// handling large files or large archives.  NB: Windows Explorer in Windows XP
+    /// and Windows Vista cannot currently extract files from a zip64 archive, so if
+    /// you want to guarantee that a zip archive produced by this library will work
+    /// in Windows Explorer, use <c>Never</c>. If you set this property to <see
+    /// cref="Zip64Option.Never"/>, and your application creates a zip that would
+    /// exceed one of the Zip limits, the library will throw an exception while
+    /// saving the zip file.
+    /// </para>
+    ///
+    /// <para>
+    /// Set this property to <see cref="Zip64Option.AsNecessary"/> to tell the
+    /// DotNetZip library to use the ZIP64 extensions when required by the
+    /// entry. After the file is compressed, the original and compressed sizes are
+    /// checked, and if they exceed the limits described above, then zip64 can be
+    /// used. That is the general idea, but there is an additional wrinkle when
+    /// saving to a non-seekable device, like the ASP.NET
+    /// <c>Response.OutputStream</c>, or <c>Console.Out</c>.  When using
+    /// non-seekable streams for output, the entry header - which indicates whether
+    /// zip64 is in use - is emitted before it is known if zip64 is necessary.  It
+    /// is only after all entries have been saved that it can be known if ZIP64 will
+    /// be required.  On seekable output streams, after saving all entries, the
+    /// library can seek backward and re-emit the zip file header to be consistent
+    /// with the actual ZIP64 requirement.  But using a non-seekable output stream,
+    /// the library cannot seek backward, so the header can never be changed. In
+    /// other words, the archive's use of ZIP64 extensions is not alterable after
+    /// the header is emitted.  Therefore, when saving to non-seekable streams,
+    /// using <see cref="Zip64Option.AsNecessary"/> is the same as using <see
+    /// cref="Zip64Option.Always"/>: it will always produce a zip archive that uses
+    /// ZIP64 extensions.
+    /// </para>
+    ///
+    /// </remarks>    
     public enum Zip64Option
     {
         /// <summary>

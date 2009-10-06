@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-14 00:09:26>
+// Time-stamp: <2009-October-05 20:10:09>
 //
 // ------------------------------------------------------------------
 //
@@ -115,7 +115,7 @@ namespace Ionic.Zip
                         e.Write(WriteStream);
                         if (_saveOperationCanceled)
                             break;
-                        e._zipfile = this;
+                        e._container = new ZipContainer(this);
                         n++;
                         OnSaveEntry(n, e, false);
                         if (_saveOperationCanceled)
@@ -136,14 +136,19 @@ namespace Ionic.Zip
                     ? zss.CurrentSegment
                     : 1;
                     
-                WriteCentralDirectoryStructure(WriteStream);
+                bool directoryNeededZip64 = ZipOutput.WriteCentralDirectoryStructure(WriteStream,
+                                                         _entries,
+                                                         _numberOfSegmentsForMostRecentSave, 
+                                                         _zip64,
+                                                         Comment,
+                                                         ProvisionalAlternateEncoding);
 
                 OnSaveEvent(ZipProgressEventType.Saving_AfterSaveTempArchive);
 
                 _hasBeenSaved = true;
                 _contentsChanged = false;
 
-                thisSaveUsedZip64 |= _NeedZip64CentralDirectory;
+                thisSaveUsedZip64 |= directoryNeededZip64;
                 _OutputUsesZip64 = new Nullable<bool>(thisSaveUsedZip64);
 
 
@@ -401,8 +406,20 @@ namespace Ionic.Zip
         }
 
 
+    }
 
-        private void WriteCentralDirectoryStructure(Stream s)
+
+    
+
+    internal class ZipOutput
+    {
+
+        public static bool WriteCentralDirectoryStructure(Stream s,
+                                                          List<ZipEntry> _entries,
+                                                          uint numSegments,
+                                                          Zip64Option zip64,
+                                                          String comment,
+                                                          System.Text.Encoding encoding)
         {
             var zss = s as ZipSegmentedStream;
             if (zss != null)
@@ -415,7 +432,10 @@ namespace Ionic.Zip
             foreach (ZipEntry e in _entries)
             {
                 if (e.IncludedInMostRecentSave)
-                    e.WriteCentralDirectoryEntry(ms);  // this writes a ZipDirEntry corresponding to the ZipEntry
+                {
+                    // this writes a ZipDirEntry corresponding to the ZipEntry
+                    e.WriteCentralDirectoryEntry(ms);  
+                }
             }
             var a = ms.ToArray();
             s.Write(a, 0, a.Length);
@@ -447,22 +467,24 @@ namespace Ionic.Zip
             
             Int64 SizeOfCentralDirectory = Finish - Start;
 
-            _NeedZip64CentralDirectory =
-        _zip64 == Zip64Option.Always ||
-        CountEntries() >= 0xFFFF ||
-        SizeOfCentralDirectory > 0xFFFFFFFF ||
-        Start > 0xFFFFFFFF;
+            int countOfEntries = CountEntries(_entries);
+            
+            bool needZip64CentralDirectory =
+                zip64 == Zip64Option.Always ||
+                countOfEntries >= 0xFFFF ||
+                SizeOfCentralDirectory > 0xFFFFFFFF ||
+                Start > 0xFFFFFFFF;
 
             byte[] a2 = null;
             
             // emit ZIP64 extensions as required
-            if (_NeedZip64CentralDirectory)
+            if (needZip64CentralDirectory)
             {
-                if (_zip64 == Zip64Option.Never)
+                if (zip64 == Zip64Option.Never)
                     throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the UseZip64WhenSaving property.");
 
-                a = GenZip64EndOfCentralDirectory(Start, Finish);
-                a2 = GenCentralDirectoryFooter(Start, Finish);
+                a = GenZip64EndOfCentralDirectory(Start, Finish, countOfEntries, numSegments);
+                a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, encoding);
                 if (startSegment != 0)
                 {
                     UInt32 thisSegment = zss.ComputeSegment(a.Length + a2.Length);
@@ -488,7 +510,7 @@ namespace Ionic.Zip
                 s.Write(a, 0, a.Length);
             }
             else 
-                 a2 = GenCentralDirectoryFooter(Start, Finish);
+                a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, encoding);
 
 
             // now, the regular footer
@@ -513,23 +535,126 @@ namespace Ionic.Zip
             // reset the contiguous write property if necessary
             if (zss != null)
                 zss.ContiguousWrite = false;
+
+            return needZip64CentralDirectory;
         }
 
 
 
-        private int CountEntries()
+        private static byte[] GenCentralDirectoryFooter(long StartOfCentralDirectory,
+                                                        long EndOfCentralDirectory,
+                                                          Zip64Option zip64,
+                                                        int entryCount,
+                                                        string comment,
+                                                        System.Text.Encoding encoding)
         {
-            // cannot just emit _entries.Count, because some of the entries
-            // may have been skipped.
-            int count = 0;
-            foreach (var entry in _entries)
-                if (entry.IncludedInMostRecentSave) count++;
-            return count;
+            int j = 0;
+            int bufferLength = 22;
+            byte[] block = null;
+            Int16 commentLength = 0;
+            if ((comment != null) && (comment.Length != 0))
+            {
+                block = encoding.GetBytes(comment);
+                commentLength = (Int16)block.Length;
+            }
+            bufferLength += commentLength;
+            byte[] bytes = new byte[bufferLength];
+
+            int i = 0;
+            // signature
+            byte[] sig = BitConverter.GetBytes(ZipConstants.EndOfCentralDirectorySignature);
+            Array.Copy(sig, 0, bytes, i, 4);
+            i+=4;
+            
+            // number of this disk
+            // (this number may change later)
+            bytes[i++] = 0;
+            bytes[i++] = 0;
+
+            // number of the disk with the start of the central directory
+            // (this number may change later)
+            bytes[i++] = 0;
+            bytes[i++] = 0;
+
+            // handle ZIP64 extensions for the end-of-central-directory 
+            if (entryCount >= 0xFFFF || zip64 == Zip64Option.Always)
+            {
+                // the ZIP64 version.
+                for (j = 0; j < 4; j++)
+                    bytes[i++] = 0xFF;
+            }
+            else
+            {
+                // the standard version.
+                // total number of entries in the central dir on this disk
+                bytes[i++] = (byte)(entryCount & 0x00FF);
+                bytes[i++] = (byte)((entryCount & 0xFF00) >> 8);
+
+                // total number of entries in the central directory
+                bytes[i++] = (byte)(entryCount & 0x00FF);
+                bytes[i++] = (byte)((entryCount & 0xFF00) >> 8);
+            }
+
+            // size of the central directory
+            Int64 SizeOfCentralDirectory = EndOfCentralDirectory - StartOfCentralDirectory;
+
+            if (SizeOfCentralDirectory >= 0xFFFFFFFF || StartOfCentralDirectory >= 0xFFFFFFFF)
+            {
+                // The actual data is in the ZIP64 central directory structure
+                for (j = 0; j < 8; j++)
+                    bytes[i++] = 0xFF;
+            }
+            else
+            {
+                // size of the central directory (we just get the low 4 bytes)
+                bytes[i++] = (byte)(SizeOfCentralDirectory & 0x000000FF);
+                bytes[i++] = (byte)((SizeOfCentralDirectory & 0x0000FF00) >> 8);
+                bytes[i++] = (byte)((SizeOfCentralDirectory & 0x00FF0000) >> 16);
+                bytes[i++] = (byte)((SizeOfCentralDirectory & 0xFF000000) >> 24);
+
+                // offset of the start of the central directory (we just get the low 4 bytes)
+                bytes[i++] = (byte)(StartOfCentralDirectory & 0x000000FF);
+                bytes[i++] = (byte)((StartOfCentralDirectory & 0x0000FF00) >> 8);
+                bytes[i++] = (byte)((StartOfCentralDirectory & 0x00FF0000) >> 16);
+                bytes[i++] = (byte)((StartOfCentralDirectory & 0xFF000000) >> 24);
+            }
+
+
+            // zip archive comment 
+            if ((comment == null) || (comment.Length == 0))
+            {
+                // no comment!
+                bytes[i++] = (byte)0;
+                bytes[i++] = (byte)0;
+            }
+            else
+            {
+                // the size of our buffer defines the max length of the comment we can write
+                if (commentLength + i + 2 > bytes.Length) commentLength = (Int16)(bytes.Length - i - 2);
+                bytes[i++] = (byte)(commentLength & 0x00FF);
+                bytes[i++] = (byte)((commentLength & 0xFF00) >> 8);
+
+                if (commentLength != 0)
+                {
+                    // now actually write the comment itself into the byte buffer
+                    for (j = 0; (j < commentLength) && (i + j < bytes.Length); j++)
+                    {
+                        bytes[i + j] = block[j];
+                    }
+                    i += j;
+                }
+            }
+
+            //   s.Write(bytes, 0, i);
+            return bytes;
         }
+
 
         
-        private byte[] GenZip64EndOfCentralDirectory(long StartOfCentralDirectory,
-                                                     long EndOfCentralDirectory)
+        private static byte[] GenZip64EndOfCentralDirectory(long StartOfCentralDirectory,
+                                                            long EndOfCentralDirectory,
+                                                            int entryCount,
+                                                            uint numSegments)
         {
             const int bufferLength = 12 + 44 + 20;
 
@@ -565,7 +690,7 @@ namespace Ionic.Zip
                 bytes[i++] = 0x00;
 
             // offset 24
-            long numberOfEntries = CountEntries();
+            long numberOfEntries = entryCount;
             Array.Copy(BitConverter.GetBytes(numberOfEntries), 0, bytes, i, 8);
             i += 8;
             Array.Copy(BitConverter.GetBytes(numberOfEntries), 0, bytes, i, 8);
@@ -588,7 +713,7 @@ namespace Ionic.Zip
             // offset 60
             // number of the disk with the start of the zip64 eocd
             // (this will change later)
-            Array.Copy(BitConverter.GetBytes(_numberOfSegmentsForMostRecentSave-1), 0, bytes, i, 4);
+            Array.Copy(BitConverter.GetBytes(numSegments-1), 0, bytes, i, 4);
             i+=4;
 
             // offset 64
@@ -599,120 +724,26 @@ namespace Ionic.Zip
             // offset 72
             // total number of disks
             // (this will change later)
-            Array.Copy(BitConverter.GetBytes(_numberOfSegmentsForMostRecentSave-1), 0, bytes, i, 4);
+            Array.Copy(BitConverter.GetBytes(numSegments-1), 0, bytes, i, 4);
             i+=4;
 
             return bytes;
         }
 
 
-
-
-        private byte[] GenCentralDirectoryFooter(long StartOfCentralDirectory,
-                                                 long EndOfCentralDirectory)
+        
+        private static int CountEntries(List<ZipEntry> _entries)
         {
-            int j = 0;
-            int bufferLength = 22;
-            byte[] block = null;
-            Int16 commentLength = 0;
-            if ((Comment != null) && (Comment.Length != 0))
-            {
-                block = ProvisionalAlternateEncoding.GetBytes(Comment);
-                commentLength = (Int16)block.Length;
-            }
-            bufferLength += commentLength;
-            byte[] bytes = new byte[bufferLength];
-
-            int i = 0;
-            // signature
-            byte[] sig = BitConverter.GetBytes(ZipConstants.EndOfCentralDirectorySignature);
-            Array.Copy(sig, 0, bytes, i, 4);
-            i+=4;
-            
-            // number of this disk
-            // (this number may change later)
-            bytes[i++] = 0;
-            bytes[i++] = 0;
-
-            // number of the disk with the start of the central directory
-            // (this number may change later)
-            bytes[i++] = 0;
-            bytes[i++] = 0;
-
-            // handle ZIP64 extensions for the end-of-central-directory 
-            if (CountEntries() >= 0xFFFF || _zip64 == Zip64Option.Always)
-            {
-                // the ZIP64 version.
-                for (j = 0; j < 4; j++)
-                    bytes[i++] = 0xFF;
-            }
-            else
-            {
-                int c = CountEntries();
-                // the standard version.
-                // total number of entries in the central dir on this disk
-                bytes[i++] = (byte)(c & 0x00FF);
-                bytes[i++] = (byte)((c & 0xFF00) >> 8);
-
-                // total number of entries in the central directory
-                bytes[i++] = (byte)(c & 0x00FF);
-                bytes[i++] = (byte)((c & 0xFF00) >> 8);
-            }
-
-            // size of the central directory
-            Int64 SizeOfCentralDirectory = EndOfCentralDirectory - StartOfCentralDirectory;
-
-            if (SizeOfCentralDirectory >= 0xFFFFFFFF || StartOfCentralDirectory >= 0xFFFFFFFF)
-            {
-                // The actual data is in the ZIP64 central directory structure
-                for (j = 0; j < 8; j++)
-                    bytes[i++] = 0xFF;
-            }
-            else
-            {
-                // size of the central directory (we just get the low 4 bytes)
-                bytes[i++] = (byte)(SizeOfCentralDirectory & 0x000000FF);
-                bytes[i++] = (byte)((SizeOfCentralDirectory & 0x0000FF00) >> 8);
-                bytes[i++] = (byte)((SizeOfCentralDirectory & 0x00FF0000) >> 16);
-                bytes[i++] = (byte)((SizeOfCentralDirectory & 0xFF000000) >> 24);
-
-                // offset of the start of the central directory (we just get the low 4 bytes)
-                bytes[i++] = (byte)(StartOfCentralDirectory & 0x000000FF);
-                bytes[i++] = (byte)((StartOfCentralDirectory & 0x0000FF00) >> 8);
-                bytes[i++] = (byte)((StartOfCentralDirectory & 0x00FF0000) >> 16);
-                bytes[i++] = (byte)((StartOfCentralDirectory & 0xFF000000) >> 24);
-            }
-
-
-            // zip archive comment 
-            if ((Comment == null) || (Comment.Length == 0))
-            {
-                // no comment!
-                bytes[i++] = (byte)0;
-                bytes[i++] = (byte)0;
-            }
-            else
-            {
-                // the size of our buffer defines the max length of the comment we can write
-                if (commentLength + i + 2 > bytes.Length) commentLength = (Int16)(bytes.Length - i - 2);
-                bytes[i++] = (byte)(commentLength & 0x00FF);
-                bytes[i++] = (byte)((commentLength & 0xFF00) >> 8);
-
-                if (commentLength != 0)
-                {
-                    // now actually write the comment itself into the byte buffer
-                    for (j = 0; (j < commentLength) && (i + j < bytes.Length); j++)
-                    {
-                        bytes[i + j] = block[j];
-                    }
-                    i += j;
-                }
-            }
-
-            //   s.Write(bytes, 0, i);
-            return bytes;
+            // Cannot just emit _entries.Count, because some of the entries
+            // may have been skipped.
+            int count = 0;
+            foreach (var entry in _entries)
+                if (entry.IncludedInMostRecentSave) count++;
+            return count;
         }
 
+        
+        
+        
     }
-    
 }

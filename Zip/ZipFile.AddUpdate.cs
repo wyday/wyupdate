@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-04 01:54:13>
+// Time-stamp: <2009-October-05 21:19:56>
 //
 // ------------------------------------------------------------------
 //
@@ -1228,14 +1228,7 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddEntry(string entryName, Stream stream)
         {
-            string directoryPathInArchive = null;
-            if (entryName.IndexOf('\\') != -1)
-            {
-                directoryPathInArchive = Path.GetDirectoryName(entryName);
-                entryName = Path.GetFileName(entryName);
-            }
-            string nameInArchive = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
-            ZipEntry ze = ZipEntry.CreateForStream(entryName, nameInArchive, stream);
+            ZipEntry ze = ZipEntry.CreateForStream(entryName, stream);
             ze.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", entryName);
             return _InternalAddEntry(ze);
@@ -1350,15 +1343,7 @@ namespace Ionic.Zip
         /// </example>
         public ZipEntry AddEntry(string entryName, WriteDelegate writer)
         {
-            string directoryPathInArchive = null;
-            if (entryName.IndexOf('\\') != -1)
-            {
-                directoryPathInArchive = Path.GetDirectoryName(entryName);
-                entryName = Path.GetFileName(entryName);
-            }
-            string nameInArchive = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
-            ZipEntry ze = ZipEntry.CreateForWriter(entryName, nameInArchive, writer);
-            ze.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
+            ZipEntry ze = ZipEntry.CreateForWriter(entryName, writer);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", entryName);
             return _InternalAddEntry(ze);
         }
@@ -1403,14 +1388,7 @@ namespace Ionic.Zip
         /// </example>
         public ZipEntry AddEntry(string entryName, OpenDelegate opener, CloseDelegate closer)
         {
-            string directoryPathInArchive = null;
-            if (entryName.IndexOf('\\') != -1)
-            {
-                directoryPathInArchive = Path.GetDirectoryName(entryName);
-                entryName = Path.GetFileName(entryName);
-            }
-            string nameInArchive = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
-            ZipEntry ze = ZipEntry.CreateForJitStreamProvider(entryName, nameInArchive, opener, closer);
+            ZipEntry ze = ZipEntry.CreateForJitStreamProvider(entryName, opener, closer);
             ze.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
             if (Verbose) StatusMessageTextWriter.WriteLine("adding {0}...", entryName);
             return _InternalAddEntry(ze);
@@ -1425,7 +1403,7 @@ namespace Ionic.Zip
             ze.ZipErrorAction = this.ZipErrorAction;
             ze.SetCompression = SetCompression;
             ze.ProvisionalAlternateEncoding = ProvisionalAlternateEncoding;
-            ze._zipfile = this;
+            ze._container = new ZipContainer(this);
             ze.Password = _Password;
             ze.Encryption = Encryption;
             ze.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
@@ -1797,7 +1775,7 @@ namespace Ionic.Zip
             dir.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
             dir.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;
             dir._Source = ZipEntrySource.Stream;
-            dir._zipfile = this;
+            dir._container = new ZipContainer(this);
             InsureUniqueEntry(dir);
             _entries.Add(dir);
             AfterAddEntry(dir);
@@ -1846,7 +1824,7 @@ namespace Ionic.Zip
                 baseDir = ZipEntry.CreateFromFile(directoryName, dirForEntries);
                 baseDir.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;  // workitem 6410
                 baseDir.MarkAsDirectory();
-                baseDir._zipfile = this;
+                baseDir._container = new ZipContainer(this);
 
                 // check for uniqueness:
                 ZipEntry e = this[baseDir.FileName];

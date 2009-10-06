@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-18 16:23:59>
+// Time-stamp: <2009-October-05 20:01:22>
 //
 // ------------------------------------------------------------------
 //
@@ -472,7 +472,7 @@ namespace Ionic.Zip
         public Ionic.Zlib.CrcCalculatorStream OpenReader()
         {
             // use the entry password if it is non-null, else use the zipfile password, which is possibly null
-            return InternalOpenReader(this._Password ?? this._zipfile._Password);
+            return InternalOpenReader(this._Password ?? this._container.Password);
         }
 
         /// <summary>
@@ -534,7 +534,8 @@ namespace Ionic.Zip
 
         private void OnExtractProgress(Int64 bytesWritten, Int64 totalBytesToWrite)
         {
-            _ioOperationCanceled = _zipfile.OnExtractBlock(this, bytesWritten, totalBytesToWrite);
+            if (_container.ZipFile != null)
+            _ioOperationCanceled = _container.ZipFile.OnExtractBlock(this, bytesWritten, totalBytesToWrite);
         }
 
 
@@ -543,9 +544,12 @@ namespace Ionic.Zip
             // When in the context of a ZipFile.ExtractAll, the events are generated from 
             // the ZipFile method, not from within the ZipEntry instance. (why?)
             // Therefore we suppress the events originating from the ZipEntry method.
-            if (!_zipfile._inExtractAll)
+            if (_container.ZipFile != null)
             {
-                _ioOperationCanceled = _zipfile.OnSingleEntryExtract(this, path, true);
+                if (!_container.ZipFile._inExtractAll)
+                {
+                    _ioOperationCanceled = _container.ZipFile.OnSingleEntryExtract(this, path, true);
+                }
             }
         }
 
@@ -554,20 +558,25 @@ namespace Ionic.Zip
             // When in the context of a ZipFile.ExtractAll, the events are generated from 
             // the ZipFile method, not from within the ZipEntry instance. (why?)
             // Therefore we suppress the events originating from the ZipEntry method.
-            if (!_zipfile._inExtractAll)
+            if (_container.ZipFile != null)
             {
-                _zipfile.OnSingleEntryExtract(this, path, false);
+                if (!_container.ZipFile._inExtractAll)
+                {
+                    _container.ZipFile.OnSingleEntryExtract(this, path, false);
+                }
             }
         }
 
         private void OnExtractExisting(string path)
         {
-            _ioOperationCanceled = _zipfile.OnExtractExisting(this, path);
+            if (_container.ZipFile != null)
+                _ioOperationCanceled = _container.ZipFile.OnExtractExisting(this, path);
         }
 
         private void OnWriteBlock(Int64 bytesXferred, Int64 totalBytesToXfer)
         {
-            _ioOperationCanceled = _zipfile.OnSaveBlock(this, bytesXferred, totalBytesToXfer);
+            if (_container.ZipFile != null)
+                _ioOperationCanceled = _container.ZipFile.OnSaveBlock(this, bytesXferred, totalBytesToXfer);
         }
 
         private static void ReallyDelete(string fileName)
@@ -584,16 +593,24 @@ namespace Ionic.Zip
             File.Delete(fileName);
         }
 
+
+        private void WriteStatus(string format, params Object[] args)
+        {
+            if (_container.ZipFile != null && _container.ZipFile.Verbose) _container.ZipFile.StatusMessageTextWriter.WriteLine(format, args);
+        }
+
+        
         // Pass in either basedir or s, but not both. 
         // In other words, you can extract to a stream or to a directory (filesystem), but not both!
         // The Password param is required for encrypted entries.
         private void InternalExtract(string baseDir, Stream outstream, string password)
         {
             // workitem 7958
-            if (_zipfile == null)
+            if (_container == null)
                 throw new BadStateException("This ZipEntry is an orphan.");
 
-            _zipfile.Reset();
+            _container.ZipFile.Reset();
+            
             if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling any Extract method.");
 
@@ -610,7 +627,7 @@ namespace Ionic.Zip
 
                 if (ValidateOutput(baseDir, outstream, out TargetFile))
                 {
-                    if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("extract dir {0}...", TargetFile);
+                    WriteStatus("extract dir {0}...", TargetFile);
                     // if true, then the entry was a directory and has been created.
                     // We need to fire the Extract Event.
                     OnAfterExtract(baseDir);
@@ -619,7 +636,7 @@ namespace Ionic.Zip
 
                 // if no password explicitly specified, use the password on the entry itself,
                 // or on the zipfile itself.
-                string p = password ?? this._Password ?? this._zipfile._Password;
+                string p = password ?? this._Password ?? this._container.Password;
                 if (UsesEncryption)
                 {
                     if (p == null)
@@ -630,7 +647,7 @@ namespace Ionic.Zip
                 // set up the output stream
                 if (TargetFile != null)
                 {
-                    if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("extract file {0}...", TargetFile);
+                    WriteStatus("extract file {0}...", TargetFile);
                     // ensure the target path exists
                     if (!Directory.Exists(Path.GetDirectoryName(TargetFile)))
                     {
@@ -641,7 +658,10 @@ namespace Ionic.Zip
                         Directory.CreateDirectory(Path.GetDirectoryName(TargetFile));
                     }
                     else
-                        checkLaterForResetDirTimes = _zipfile._inExtractAll;  // workitem 8264
+                    {
+                        if (_container.ZipFile != null)
+                            checkLaterForResetDirTimes = _container.ZipFile._inExtractAll;  // workitem 8264
+                    }
 
 
                     // Take care of the behavior when extraction would overwrite an existing file
@@ -656,7 +676,7 @@ namespace Ionic.Zip
                 }
                 else
                 {
-                    if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("extract entry {0} to stream...", FileName);
+                    WriteStatus("extract entry {0} to stream...", FileName);
                     output = outstream;
                 }
 
@@ -715,10 +735,8 @@ namespace Ionic.Zip
                         if (this.FileName.IndexOf('/') != -1)
                         {
                             string dirname = Path.GetDirectoryName(this.FileName);
-                            //Console.WriteLine("Checking for dir '{0}'", dirname);
-                            if (this._zipfile[dirname] == null)
+                            if (this._container.ZipFile[dirname] == null)
                             {
-                                //Console.WriteLine("found no dir '{0}', setting times", dirname);
                                 _SetTimes(Path.GetDirectoryName(TargetFile), false);
                             }
                         }
@@ -789,16 +807,14 @@ namespace Ionic.Zip
                 switch (ExtractExistingFile)
                 {
                     case ExtractExistingFileAction.OverwriteSilently:
-                            if (_zipfile.Verbose)
-                                _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; deleting it...", TargetFile);
+                        WriteStatus("the file {0} exists; deleting it...", TargetFile);
 
-                            //File.Delete(TargetFile);
-                            ReallyDelete(TargetFile);
-                            return 0;
+                        //File.Delete(TargetFile);
+                        ReallyDelete(TargetFile);
+                        return 0;
 
                     case ExtractExistingFileAction.DoNotOverwrite:
-                        if (_zipfile.Verbose)
-                            _zipfile.StatusMessageTextWriter.WriteLine("the file {0} exists; not extracting entry...", FileName);
+                        WriteStatus("the file {0} exists; not extracting entry...", FileName);
                         OnAfterExtract(baseDir);
                         return 1;
 
@@ -947,8 +963,7 @@ namespace Ionic.Zip
                 int rc = NetCfFile.SetTimes(fileOrDirectory, _Ctime, _Atime, _Mtime);
                 if ( rc != 0)
                 {
-                    if (_zipfile.Verbose)
-                        _zipfile.StatusMessageTextWriter.WriteLine("Warning: SetTimes failed.  entry({0})  file({1})  rc({2})",
+                    WriteStatus("Warning: SetTimes failed.  entry({0})  file({1})  rc({2})",
                                                                    FileName, fileOrDirectory, rc);
                 }
 #else
@@ -986,8 +1001,7 @@ namespace Ionic.Zip
                         
                 if ( rc != 0)
                 {
-                    if (_zipfile.Verbose)
-                        _zipfile.StatusMessageTextWriter.WriteLine("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
+                    WriteStatus("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
                                                                    FileName, fileOrDirectory, rc);
                 }
 #else
@@ -1000,8 +1014,7 @@ namespace Ionic.Zip
             }
             catch (System.IO.IOException ioexc1)
             {
-                if (_zipfile.Verbose) _zipfile.StatusMessageTextWriter.WriteLine("failed to set time on {0}: {1}",
-                                                                                 fileOrDirectory, ioexc1.Message);
+                WriteStatus("failed to set time on {0}: {1}", fileOrDirectory, ioexc1.Message);
             }
         }
 
@@ -1186,7 +1199,7 @@ namespace Ionic.Zip
 
                 // String.Contains is not available on .NET CF 2.0
 
-                if (_zipfile.FlattenFoldersOnExtract)
+                if (_container.ZipFile.FlattenFoldersOnExtract)
                     OutputFile = Path.Combine(basedir,
                                               (f.IndexOf('/') != -1) ? Path.GetFileName(f) : f);
                 else 

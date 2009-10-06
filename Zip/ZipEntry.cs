@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-03 23:39:32>
+// Time-stamp: <2009-October-05 21:19:21>
 //
 // ------------------------------------------------------------------
 //
@@ -28,7 +28,7 @@
 
 using System;
 using System.IO;
-using Interop=System.Runtime.InteropServices;
+using Interop = System.Runtime.InteropServices;
 
 namespace Ionic.Zip
 {
@@ -41,7 +41,7 @@ namespace Ionic.Zip
     [Interop.ComVisible(true)]
 #if !NETCF
     [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
-#endif    
+#endif
     public partial class ZipEntry
     {
         /// <summary>
@@ -170,7 +170,10 @@ namespace Ionic.Zip
 
         private int BufferSize
         {
-            get { return this._zipfile.BufferSize; }
+            get
+            {
+                return this._container.BufferSize;
+            }
         }
 
         /// <summary>
@@ -340,7 +343,8 @@ namespace Ionic.Zip
         /// <seealso cref="ModifiedTime"/>
         /// <seealso cref="CreationTime"/>
         /// <seealso cref="SetEntryTimes"/>
-        public DateTime AccessedTime {
+        public DateTime AccessedTime
+        {
             get { return _Atime; }
             set
             {
@@ -361,7 +365,8 @@ namespace Ionic.Zip
         /// <seealso cref="ModifiedTime"/>
         /// <seealso cref="AccessedTime"/>
         /// <seealso cref="SetEntryTimes"/>
-        public DateTime CreationTime {
+        public DateTime CreationTime
+        {
             get { return _Ctime; }
             set
             {
@@ -414,7 +419,7 @@ namespace Ionic.Zip
         public void SetEntryTimes(DateTime created, DateTime accessed, DateTime modified)
         {
             _ntfsTimesAreSet = true;
-            if (created == _zeroHour &&  created.Kind == _zeroHour.Kind) created = _win32Epoch;
+            if (created == _zeroHour && created.Kind == _zeroHour.Kind) created = _win32Epoch;
             if (accessed == _zeroHour && accessed.Kind == _zeroHour.Kind) accessed = _win32Epoch;
             if (modified == _zeroHour && modified.Kind == _zeroHour.Kind) modified = _win32Epoch;
             _Ctime = created.ToUniversalTime();
@@ -681,7 +686,7 @@ namespace Ionic.Zip
         }
 
 
-        
+
         /// <summary>
         ///   Sets the compression level to be used for the entry when saving the zip
         ///   archive.
@@ -710,7 +715,7 @@ namespace Ionic.Zip
             set;
         }
 
-        
+
         /// <summary>
         /// The name of the filesystem file, referred to by the ZipEntry. 
         /// </summary>
@@ -806,14 +811,13 @@ namespace Ionic.Zip
                 var filename = ZipEntry.NameInArchive(value, null);
                 // workitem 8180
                 if (_FileNameInArchive == filename) return; // nothing to do
-                
+
                 // workitem 8047 - renaming to a name that already exists
-                if (this._zipfile.EntryFileNames.Contains(filename))
+                if (this._container.ContainsEntry(filename))
                     throw new ZipException(String.Format("Cannot rename {0} to {1}; an entry by that name already exists in the archive.", _FileNameInArchive, filename));
-                        //this._zipfile.RemoveEntry(filename);
-                
+
                 _FileNameInArchive = filename;
-                if (this._zipfile != null) this._zipfile.NotifyEntryChanged();
+                if (_container.ZipFile != null) _container.ZipFile.NotifyEntryChanged();
                 _metadataChanged = true;
             }
         }
@@ -1420,7 +1424,7 @@ namespace Ionic.Zip
             get { return (Encryption != EncryptionAlgorithm.None); }
         }
 
-        
+
         /// <summary>
         /// Set this to specify which encryption algorithm to use for the entry
         /// when saving it to a zip archive.
@@ -1874,7 +1878,7 @@ namespace Ionic.Zip
         /// <seealso cref="ZipErrorAction"/>
         public bool IncludedInMostRecentSave
         {
-            get 
+            get
             {
                 return !_skippedDuringSave;
             }
@@ -2064,33 +2068,37 @@ namespace Ionic.Zip
             return result;
         }
 
-
         internal static ZipEntry CreateFromFile(String filename, string nameInArchive)
         {
-            return Create(filename, nameInArchive, ZipEntrySource.FileSystem, null, null);
+            return Create(nameInArchive, ZipEntrySource.FileSystem, filename, null);
         }
 
-        internal static ZipEntry CreateForStream(String filename, string nameInArchive, Stream s)
+        internal static ZipEntry CreateForStream(String entryName, Stream s)
         {
-            return Create(filename, nameInArchive, ZipEntrySource.Stream, s, null);
+            return Create(entryName, ZipEntrySource.Stream, s, null);
+        }
+        
+        internal static ZipEntry CreateForWriter(String entryName, WriteDelegate d)
+        {
+            return Create(entryName, ZipEntrySource.WriteDelegate, d, null);
         }
 
-        internal static ZipEntry CreateForWriter(String filename, string nameInArchive, WriteDelegate d)
+        internal static ZipEntry CreateForJitStreamProvider(string nameInArchive, OpenDelegate opener, CloseDelegate closer)
         {
-            return Create(filename, nameInArchive, ZipEntrySource.WriteDelegate, d, null);
+            return Create(nameInArchive, ZipEntrySource.JitStream, opener, closer);
         }
 
-        internal static ZipEntry CreateForJitStreamProvider(String filename, string nameInArchive, OpenDelegate opener,CloseDelegate closer)
+        internal static ZipEntry CreateForZipOutputStream(string nameInArchive)
         {
-            return Create(filename, nameInArchive, ZipEntrySource.JitStream, opener, closer);
+            return Create(nameInArchive, ZipEntrySource.ZipOutputStream, null, null);
         }
 
 
-        private static ZipEntry Create(String filename, string nameInArchive, ZipEntrySource source, Object arg1, Object arg2)
+        private static ZipEntry Create(string nameInArchive, ZipEntrySource source, Object arg1, Object arg2)
         {
-            if (String.IsNullOrEmpty(filename))
+            if (String.IsNullOrEmpty(nameInArchive))
                 throw new Ionic.Zip.ZipException("The entry name must be non-null and non-empty.");
-
+            
             ZipEntry entry = new ZipEntry();
 
             // workitem 7071
@@ -2112,8 +2120,16 @@ namespace Ionic.Zip
                 entry._OpenDelegate = (arg1 as OpenDelegate);   // may  or may not be null
                 entry._CloseDelegate = (arg2 as CloseDelegate); // may  or may not be null
             }
+            else if (source == ZipEntrySource.ZipOutputStream)
+            {
+            }
             else
             {
+                String filename = (arg1 as String);   // must not be null
+
+                if (String.IsNullOrEmpty(filename))
+                    throw new Ionic.Zip.ZipException("The filename must be non-null and non-empty.");
+
                 // The named file may or may not exist at this time.  For example, when 
                 // adding a directory by name.  We test existence when necessary:
                 // when saving the ZipFile, or when getting the attributes, and so on. 
@@ -2146,7 +2162,7 @@ namespace Ionic.Zip
 
 #endif
                 entry._ntfsTimesAreSet = true;
-                
+
                 entry._LocalFileName = Path.GetFullPath(filename); // workitem 8813
             }
 
@@ -2161,7 +2177,7 @@ namespace Ionic.Zip
 
 
 
-        
+
 
 
 
@@ -2231,12 +2247,12 @@ namespace Ionic.Zip
         }
 
 
-        
+
         /// <summary>Provides a string representation of the instance.</summary>
         /// <returns>a string representation of the instance.</returns>
         public override String ToString()
         {
-            return String.Format ("ZipEntry/{0}", FileName);
+            return String.Format("ZipEntry/{0}", FileName);
         }
 
 
@@ -2246,14 +2262,22 @@ namespace Ionic.Zip
             {
                 if (_archiveStream == null)
                 {
-                    _zipfile.Reset();
-                    _archiveStream = _zipfile.StreamForDiskNumber(_diskNumber);
+                    if (_container.ZipFile != null)
+                    {
+                        var zf = _container.ZipFile;
+                        zf.Reset();
+                        _archiveStream = zf.StreamForDiskNumber(_diskNumber);
+                    }
+                    else
+                    {
+                        _archiveStream = _container.ZipOutputStream.OutputStream;
+                    }
                 }
                 return _archiveStream;
             }
         }
 
-        
+
         private void SetFdpLoh()
         {
             // The value for FileDataPosition has not yet been set. 
@@ -2289,7 +2313,7 @@ namespace Ionic.Zip
 
             // Console.WriteLine("  pos  0x{0:X8} ({0})", this.ArchiveStream.Position);
             // Console.WriteLine("  seek 0x{0:X8} ({0})", filenameLength + extraFieldLength);
-            
+
             this.ArchiveStream.Seek(filenameLength + extraFieldLength, SeekOrigin.Current);
             this._LengthOfHeader = 30 + extraFieldLength + filenameLength +
                 LengthOfCryptoHeaderBytes;
@@ -2386,12 +2410,13 @@ namespace Ionic.Zip
         private bool _sourceIsEncrypted;
         private bool _skippedDuringSave;
         private UInt32 _diskNumber;
-        
+
         private static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _actualEncoding;
 
-        internal ZipFile _zipfile;
+        internal ZipContainer _container;
+
         internal long __FileDataPosition = -1;
         private byte[] _EntryHeader;
         internal Int64 _RelativeOffsetOfLocalHeader;

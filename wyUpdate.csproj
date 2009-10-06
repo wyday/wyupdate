@@ -220,6 +220,7 @@
     <Compile Include="Zip\ZipFile.Save.cs" />
     <Compile Include="Zip\ZipFile.Selector.cs" />
     <Compile Include="Zip\ZipFile.x-IEnumerable.cs" />
+    <Compile Include="Zip\ZipOutputStream.cs" />
     <Compile Include="Zip\ZipSegmentedStream.cs" />
     <Compile Include="Zip\Zlib.cs" />
     <Compile Include="Zip\ZlibBaseStream.cs" />

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-13 16:20:49>
+// Time-stamp: <2009-October-05 12:18:20>
 //
 // ------------------------------------------------------------------
 //
@@ -206,14 +206,6 @@ namespace Ionic.Zip
                 return _MacInitializationVector;
             }
         }
-
-        //public byte[] StoredMac
-        //{
-        //    get
-        //    {
-        //        return _StoredMac;
-        //    }
-        //}
 
         public byte[] CalculatedMac;
 
@@ -608,40 +600,6 @@ namespace Ionic.Zip
 
 
 
-#if NOTUSED
-        public void NotifyFinal()
-        {
-            // Caller is telling us that the next Read() will be the final Read(),
-            // or the next Write() will be the final Write().
-
-            // To get proper results, we need to call TransformFinalBlock() on
-            // both The MAC and the decryption xform. But we don't know how to
-            // recognize the final block, in order to make those calls. 
-            // And we cannot do it after the fact.  
-
-            // A heuristic won't work. For example, we cannot depend on a
-            // partial block being the final one.  First, because some files
-            // will be an exact multiple of 16-bytes, and there will be no
-            // partial blocks.  Second, because the caller may read in batches
-            // (let's say 5000 bytes), and we can get partial blocks for each
-            // batch. 
-
-            // The only reliable way to know it is the final block is for the caller 
-            // to tell us so.  This method how the caller can do that. 
-
-            // After this has been called, then the last block in that batch 
-            // will be treated as final. 
-
-            // Typically, the caller will call NotifyFinal() the last time
-            // through a loop that also includes a Read() call.
-
-            //_NextXformWillBeFinal = true;
-            //Console.WriteLine("WinZipAesCipherStream: next xform() will be the last...");
-        }
-
-#endif
-
-
         private void TransformInPlace(byte[] buffer, int offset, int count)
         {
             int posn = offset;
@@ -712,9 +670,8 @@ namespace Ionic.Zip
 
 
 
-
         /// <summary>
-        /// Returns the final HMAC-SHA1-80 
+        /// Returns the final HMAC-SHA1-80 for the data that was encrypted.
         /// </summary>
         public byte[] FinalAuthentication
         {
@@ -822,6 +779,9 @@ namespace Ionic.Zip
 
 
 
+        /// <summary>
+        /// Close the stream.
+        /// </summary>
         public override void Close()
         {
             if (_pendingCount != 0)
@@ -844,6 +804,9 @@ namespace Ionic.Zip
         }
 
 
+        /// <summary>
+        /// Returns true if the stream can be read.
+        /// </summary>
         public override bool CanRead
         {
             get
@@ -852,41 +815,64 @@ namespace Ionic.Zip
                 return true;
             }
         }
+
+        
+        /// <summary>
+        /// Always returns false. 
+        /// </summary>
         public override bool CanSeek
         {
             get { return false; }
         }
 
+        /// <summary>
+        /// Returns true if the CryptoMode is Encrypt.
+        /// </summary>
         public override bool CanWrite
         {
             get { return (_mode == CryptoMode.Encrypt); }
         }
 
+        /// <summary>
+        /// Flush the content in the stream.
+        /// </summary>
         public override void Flush()
         {
             _s.Flush();
         }
 
+        /// <summary>
+        /// Getting this property throws a NotImplementedException.
+        /// </summary>
         public override long Length
         {
             get { throw new NotImplementedException(); }
         }
 
+        /// <summary>
+        /// Getting or Setting this property throws a NotImplementedException.
+        /// </summary>
         public override long Position
         {
             get { throw new NotImplementedException(); }
             set { throw new NotImplementedException(); }
         }
+        
+        /// <summary>
+        /// This method throws a NotImplementedException.
+        /// </summary>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// This method throws a NotImplementedException.
+        /// </summary>
         public override void SetLength(long value)
         {
             throw new NotImplementedException();
         }
-
     }
 
 

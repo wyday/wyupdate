@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-August-28 15:28:47>
+// Time-stamp: <2009-October-05 20:01:33>
 //
 // ------------------------------------------------------------------
 //
@@ -178,7 +178,8 @@ namespace Ionic.Zip
                     // stream we had to seek forward, to find the sig.  We need this to
                     // determine if the zip entry is valid, later.
 
-                    ze._zipfile.OnReadBytes(ze);
+                    if (ze._container.ZipFile != null)
+                        ze._container.ZipFile.OnReadBytes(ze);
 
                     long d = Ionic.Zip.SharedUtilities.FindSignature(ze.ArchiveStream, ZipConstants.ZipEntryDataDescriptorSignature);
                     if (d == -1) return false;
@@ -335,7 +336,7 @@ namespace Ionic.Zip
             System.Text.Encoding defaultEncoding = zf.ProvisionalAlternateEncoding;
             ZipEntry entry = new ZipEntry();
             entry._Source = ZipEntrySource.ZipFile;
-            entry._zipfile = zf;
+            entry._container = new ZipContainer(zf);
             entry._archiveStream = s;
             zf.OnReadEntry(true, null);
 

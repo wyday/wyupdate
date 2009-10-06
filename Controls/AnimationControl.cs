@@ -6,7 +6,11 @@ using System.Windows.Forms;
 
 namespace wyDay.Controls
 {
+#if AUPDATE
+    internal class AnimationControl : Control
+#else
     public class AnimationControl : Control
+#endif
     {
         Image m_BaseImage;
         int m_Rows = 1;

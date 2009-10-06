@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-13 22:01:13>
+// Time-stamp: <2009-October-05 19:45:28>
 //
 // ------------------------------------------------------------------
 //
@@ -143,9 +143,7 @@ namespace Ionic.Zip
             int i = 0;
             ZipEntry zde = new ZipEntry();
             zde._Source = ZipEntrySource.ZipFile;
-            //zde._archiveStream = s;
-            zde._zipfile = zf;
-            //zde._cdrPosition = cdrPosition;
+            zde._container = new ZipContainer(zf);
 
             unchecked
             {
