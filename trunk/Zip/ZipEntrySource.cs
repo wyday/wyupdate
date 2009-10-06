@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-03 23:21:34>
+// Time-stamp: <2009-October-05 21:06:45>
 //
 // ------------------------------------------------------------------
 //
@@ -55,10 +55,15 @@ namespace Ionic.Zip
         WriteDelegate,
         
         /// <summary>
-        /// The content for the ZipEntry will be obtained from the stream dispensed by the OpenDelegate.
+        /// The content for the ZipEntry will be obtained from the stream dispensed by the <c>OpenDelegate</c>.
         /// The entry was instantiated via <see cref="Ionic.Zip.ZipFile.AddEntry(string,OpenDelegate,CloseDelegate)"/>.
         /// </summary>
         JitStream,
+        
+        /// <summary>
+        /// The content for the ZipEntry will be obtained from a <c>ZipOutputStream</c>.
+        /// </summary>
+        ZipOutputStream,
     }
     
 }
