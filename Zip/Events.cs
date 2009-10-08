@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-03 23:17:06>
+// Time-stamp: <2009-October-06 23:23:11>
 //
 // ------------------------------------------------------------------
 //
@@ -32,18 +32,51 @@ namespace Ionic.Zip
     /// <summary>
     ///   Delegate in which the application writes the ZipEntry content for the named entry.
     /// </summary>
+    ///
+    /// <param name="entryName">The name of the entry that must be written.</param>
+    /// <param name="stream">The stream to which the entry data should be written.</param>
+    ///
+    /// <remarks>
+    ///   When you add an entry and specify a WriteDelegate, via <see
+    ///   cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>, the application
+    ///   code provides the logic that writes the entry data directly into the zip file.
+    /// </remarks>
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>
     public delegate void WriteDelegate(string entryName, System.IO.Stream stream);
 
     /// <summary>
     ///   Delegate in which the application opens the stream, just-in-time, for the named entry.
     /// </summary>
+    /// 
+    /// <param name="entryName">
+    /// The name of the ZipEntry that the application should open the stream for.
+    /// </param>
+    /// 
+    /// <remarks>
+    ///   When you add an entry via <see cref="Ionic.Zip.ZipFile.AddEntry(string,
+    ///   OpenDelegate, CloseDelegate)"/>, the application code provides the logic that
+    ///   opens and closes the stream for the given ZipEntry. 
+    /// </remarks>
+    ///
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
     public delegate System.IO.Stream OpenDelegate(string entryName);
     
     /// <summary>
     ///   Delegate in which the application closes the stream, just-in-time, for the named entry.
     /// </summary>
+    /// 
+    /// <param name="entryName">
+    /// The name of the ZipEntry that the application should close the stream for.
+    /// </param>
+    /// 
+    /// <param name="stream">The stream to be closed.</param>
+    ///
+    /// <remarks>
+    ///   When you add an entry via <see cref="Ionic.Zip.ZipFile.AddEntry(string,
+    ///   OpenDelegate, CloseDelegate)"/>, the application code provides the logic that
+    ///   opens and closes the stream for the given ZipEntry. 
+    /// </remarks>
+    ///
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
     public delegate void CloseDelegate(string entryName, System.IO.Stream stream);
     

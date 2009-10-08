@@ -31,6 +31,34 @@ namespace wyUpdate
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern bool DisconnectNamedPipe(SafeFileHandle hHandle);
 
+        [StructLayoutAttribute(LayoutKind.Sequential)]
+        struct SECURITY_DESCRIPTOR
+        {
+            public byte revision;
+            public byte size;
+            public short control;
+            public IntPtr owner;
+            public IntPtr group;
+            public IntPtr sacl;
+            public IntPtr dacl;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SECURITY_ATTRIBUTES
+        {
+            public int nLength;
+            public IntPtr lpSecurityDescriptor;
+            public int bInheritHandle;
+        }
+
+        private const uint SECURITY_DESCRIPTOR_REVISION = 1;
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool InitializeSecurityDescriptor(ref SECURITY_DESCRIPTOR sd, uint dwRevision);
+        
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool SetSecurityDescriptorDacl(ref SECURITY_DESCRIPTOR sd, bool daclPresent, IntPtr dacl, bool daclDefaulted);
+
         public class Client
         {
             public SafeFileHandle handle;
@@ -110,22 +138,43 @@ namespace wyUpdate
 
         void ListenForClients()
         {
+            SECURITY_DESCRIPTOR sd = new SECURITY_DESCRIPTOR();
+
+            // set the Security Descriptor to be completely permissive
+            InitializeSecurityDescriptor(ref sd, SECURITY_DESCRIPTOR_REVISION);
+            SetSecurityDescriptorDacl(ref sd, true, IntPtr.Zero, false);
+
+            IntPtr ptrSD = Marshal.AllocCoTaskMem(Marshal.SizeOf(sd));
+            Marshal.StructureToPtr(sd, ptrSD, false);
+
+            SECURITY_ATTRIBUTES sa = new SECURITY_ATTRIBUTES
+                                         {
+                                             nLength = Marshal.SizeOf(sd),
+                                             lpSecurityDescriptor = ptrSD,
+                                             bInheritHandle = 1
+                                         };
+
+            IntPtr ptrSA = Marshal.AllocCoTaskMem(Marshal.SizeOf(sa));
+            Marshal.StructureToPtr(sa, ptrSA, false);
+
+
             while (true)
             {
+                // Creates an instance of a named pipe for one client
                 SafeFileHandle clientHandle =
                     CreateNamedPipe(
-                         PipeName,
+                        PipeName,
 
-                         // DUPLEX | FILE_FLAG_OVERLAPPED = 0x00000003 | 0x40000000;
-                         0x40000003,
-                         0,
-                         255,
-                         BUFFER_SIZE,
-                         BUFFER_SIZE,
-                         0,
-                         IntPtr.Zero);
+                        // DUPLEX | FILE_FLAG_OVERLAPPED = 0x00000003 | 0x40000000;
+                        0x40000003,
+                        0,
+                        255,
+                        BUFFER_SIZE,
+                        BUFFER_SIZE,
+                        0,
+                        ptrSA);
 
-                //could not create named pipe
+                //could not create named pipe instance
                 if (clientHandle.IsInvalid)
                     continue;
 
@@ -139,7 +188,10 @@ namespace wyUpdate
                     continue;
                 }
 
-                Client client = new Client {handle = clientHandle};
+                Client client = new Client
+                                    {
+                                        handle = clientHandle
+                                    };
 
                 lock (clients)
                     clients.Add(client);
@@ -150,6 +202,10 @@ namespace wyUpdate
                                         };
                 readThread.Start(client);
             }
+
+            // free up the ptrs (never reached due to infinite loop)
+            Marshal.FreeCoTaskMem(ptrSD);
+            Marshal.FreeCoTaskMem(ptrSA);
         }
 
         void Read(object clientObj)
