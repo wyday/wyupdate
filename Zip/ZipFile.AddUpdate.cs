@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-05 21:19:56>
+// Time-stamp: <2009-October-08 17:12:58>
 //
 // ------------------------------------------------------------------
 //
@@ -35,37 +35,37 @@ namespace Ionic.Zip
     public partial class ZipFile
     {
         /// <summary>
-        /// Adds an item, either a file or a directory, to a zip file archive.  
+        ///   Adds an item, either a file or a directory, to a zip file archive.  
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// This method is handy if you are adding things to zip archive and don't want
-        /// to bother distinguishing between directories or files.  Any files are added
-        /// as single entries.  A directory added through this method is added
-        /// recursively: all files and subdirectories contained within the directory are
-        /// added to the <c>ZipFile</c>.
+        ///   This method is handy if you are adding things to zip archive and don't
+        ///   want to bother distinguishing between directories or files.  Any files are
+        ///   added as single entries.  A directory added through this method is added
+        ///   recursively: all files and subdirectories contained within the directory
+        ///   are added to the <c>ZipFile</c>.
         /// </para>
         /// 
         /// <para>
-        /// The name of the item may be a relative path or a fully-qualified
-        /// path. Remember, the items contained in <c>ZipFile</c> instance get written
-        /// to the disk only when you call ZipFile.Save() or a similar save method.
+        ///   The name of the item may be a relative path or a fully-qualified
+        ///   path. Remember, the items contained in <c>ZipFile</c> instance get written
+        ///   to the disk only when you call ZipFile.Save() or a similar save method.
         /// </para>
         ///
         /// <para>
-        /// The directory name used for the file within the archive is the same as the
-        /// directory name (potentially a relative path) specified in the
-        /// fileOrDirectoryName.
+        ///   The directory name used for the file within the archive is the same as the
+        ///   directory name (potentially a relative path) specified in the
+        ///   fileOrDirectoryName.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
-        /// respective values at the time of this call will be applied to the
-        /// <c>ZipEntry</c> added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         ///
         /// </remarks>
@@ -86,56 +86,57 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds an item, either a file or a directory, to a zip file archive, 
-        /// explicitly specifying the directory path to be used in the archive. 
+        ///   Adds an item, either a file or a directory, to a zip file archive,
+        ///   explicitly specifying the directory path to be used in the archive.
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// If adding a directory, the add is recursive on all files and subdirectories 
-        /// contained within it. 
+        ///   If adding a directory, the add is recursive on all files and
+        ///   subdirectories contained within it.
         /// </para>
         /// <para>
-        /// The name of the item may be a relative path or a fully-qualified path.
-        /// The item added by this call to the <c>ZipFile</c> is not written to the zip file
-        /// archive until the application calls Save() on the <c>ZipFile</c>. 
-        /// </para>
-        /// 
-        /// <para>
-        /// This version of the method allows the caller to explicitly specify the 
-        /// directory path to be used in the archive, which would override the 
-        /// "natural" path of the filesystem file.
+        ///   The name of the item may be a relative path or a fully-qualified path.
+        ///   The item added by this call to the <c>ZipFile</c> is not written to the
+        ///   zip file archive until the application calls Save() on the <c>ZipFile</c>.
         /// </para>
         /// 
         /// <para>
-        /// Encryption will be used on the file data if the Password
-        /// has been set on the <c>ZipFile</c> object, prior to calling this method.
+        ///   This version of the method allows the caller to explicitly specify the
+        ///   directory path to be used in the archive, which would override the
+        ///   "natural" path of the filesystem file.
         /// </para>
         /// 
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see cref="Password"/>,
-        /// <see cref="SetCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
-        /// <see cref="ExtractExistingFile"/>, <see cref="ZipErrorAction"/>, and <see
-        /// cref="CompressionLevel"/>, their respective values at the time of this call will be
-        /// applied to the <c>ZipEntry</c> added.
+        ///   Encryption will be used on the file data if the Password has been set on
+        ///   the <c>ZipFile</c> object, prior to calling this method.
+        /// </para>
+        /// 
+        /// <para>
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         ///
         /// </remarks>
         /// 
         /// <exception cref="System.IO.FileNotFoundException">
-        /// Thrown if the file or directory passed in does not exist. 
+        ///   Thrown if the file or directory passed in does not exist. 
         /// </exception>
         ///
         /// <param name="fileOrDirectoryName">the name of the file or directory to add.
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// The name of the directory path to use within the zip archive.  This path
-        /// need not refer to an extant directory in the current filesystem.  If the
-        /// files within the zip are later extracted, this is the path used for the
-        /// extracted file.  Passing <c>null</c> (<c>Nothing</c> in VB) will use the
-        /// path on the fileOrDirectoryName.  Passing the empty string ("") will insert
-        /// the item at the root path within the archive.
+        ///   The name of the directory path to use within the zip archive.  This path
+        ///   need not refer to an extant directory in the current filesystem.  If the
+        ///   files within the zip are later extracted, this is the path used for the
+        ///   extracted file.  Passing <c>null</c> (<c>Nothing</c> in VB) will use the
+        ///   path on the fileOrDirectoryName.  Passing the empty string ("") will
+        ///   insert the item at the root path within the archive.
         /// </param>
         /// 
         /// <seealso cref="Ionic.Zip.ZipFile.AddFile(string, string)"/>
@@ -143,12 +144,12 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateItem(string, string)"/>
         ///
         /// <example>
-        /// This example shows how to zip up a set of files into a flat hierarchy,
-        /// regardless of where in the filesystem the files originated. The resulting
-        /// zip archive will contain a toplevel directory named "flat", which itself
-        /// will contain files Readme.txt, MyProposal.docx, and Image1.jpg.  A
-        /// subdirectory under "flat" called SupportFiles will contain all the files in
-        /// the "c:\SupportFiles" directory on disk.
+        ///   This example shows how to zip up a set of files into a flat hierarchy,
+        ///   regardless of where in the filesystem the files originated. The resulting
+        ///   zip archive will contain a toplevel directory named "flat", which itself
+        ///   will contain files Readme.txt, MyProposal.docx, and Image1.jpg.  A
+        ///   subdirectory under "flat" called SupportFiles will contain all the files
+        ///   in the "c:\SupportFiles" directory on disk.
         /// 
         /// <code>
         /// String[] itemnames= { 
@@ -210,37 +211,37 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Adds a File to a Zip file archive. 
+        ///   Adds a File to a Zip file archive. 
         /// </summary>
         /// <remarks>
         ///
         /// <para>
-        /// The file added by this call to the <c>ZipFile</c> is not written to the zip
-        /// file archive until the application calls Save() on the <c>ZipFile</c>.
+        ///   The file added by this call to the <c>ZipFile</c> is not written to the
+        ///   zip file archive until the application calls Save() on the <c>ZipFile</c>.
         /// </para>
         ///
         /// <para>
-        /// This method will throw an exception if an entry with the same name already
-        /// exists in the <c>ZipFile</c>.
+        ///   This method will throw an exception if an entry with the same name already
+        ///   exists in the <c>ZipFile</c>.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to the <c>ZipEntry</c> added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         ///
         /// </remarks>
         /// 
         /// <example>
         /// <para>
-        /// In this example, three files are added to a Zip archive. The ReadMe.txt file
-        /// will be placed in the root of the archive. The .png file will be placed in a
-        /// folder within the zip called photos\personal.  The pdf file will be included
-        /// into a folder within the zip called Desktop.
+        ///   In this example, three files are added to a Zip archive. The ReadMe.txt
+        ///   file will be placed in the root of the archive. The .png file will be
+        ///   placed in a folder within the zip called photos\personal.  The pdf file
+        ///   will be included into a folder within the zip called Desktop.
         /// </para>
         /// <code>
         ///    try
@@ -281,8 +282,8 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateFile(string)"/>
         ///
         /// <param name="fileName">
-        /// The name of the file to add. It should refer to a file in the filesystem.  
-        /// The name of the file may be a relative path or a fully-qualified path. 
+        ///   The name of the file to add. It should refer to a file in the filesystem.
+        ///   The name of the file may be a relative path or a fully-qualified path.
         /// </param>
         /// <returns>The <c>ZipEntry</c> corresponding to the File added.</returns>
         public ZipEntry AddFile(string fileName)
@@ -295,43 +296,44 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds a File to a Zip file archive, potentially overriding the path to be used
-        /// within the zip archive.
+        ///   Adds a File to a Zip file archive, potentially overriding the path to be
+        ///   used within the zip archive.
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// The file added by this call to the <c>ZipFile</c> is not written to the zip file
-        /// archive until the application calls Save() on the <c>ZipFile</c>. 
+        ///   The file added by this call to the <c>ZipFile</c> is not written to the
+        ///   zip file archive until the application calls Save() on the <c>ZipFile</c>.
         /// </para>
         /// 
         /// <para>
-        /// This method will throw an exception if an entry with the same name already exists
-        /// in the <c>ZipFile</c>.
+        ///   This method will throw an exception if an entry with the same name already
+        ///   exists in the <c>ZipFile</c>.
         /// </para>
         ///
         /// <para>
-        /// This version of the method allows the caller to explicitly specify the 
-        /// directory path to be used in the archive. 
+        ///   This version of the method allows the caller to explicitly specify the
+        ///   directory path to be used in the archive.
         /// </para>
         /// 
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see cref="Password"/>,
-        /// <see cref="SetCompression"/>, <see cref="ProvisionalAlternateEncoding"/>, 
-        /// <see cref="ExtractExistingFile"/>, <see cref="ZipErrorAction"/>, and <see
-        /// cref="CompressionLevel"/>, their respective values at the time of this call will be
-        /// applied to the <c>ZipEntry</c> added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         ///
         /// </remarks>
         /// 
         /// <example>
         /// <para>
-        /// In this example, three files are added to a Zip archive. The ReadMe.txt file
-        /// will be placed in the root of the archive. The .png file will be placed in a
-        /// folder within the zip called images.  The pdf file will be included into a
-        /// folder within the zip called files\docs, and will be encrypted with the
-        /// given password.
+        ///   In this example, three files are added to a Zip archive. The ReadMe.txt
+        ///   file will be placed in the root of the archive. The .png file will be
+        ///   placed in a folder within the zip called images.  The pdf file will be
+        ///   included into a folder within the zip called files\docs, and will be
+        ///   encrypted with the given password.
         /// </para>
         /// <code>
         /// try
@@ -379,17 +381,17 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateFile(string,string)"/>
         ///
         /// <param name="fileName">
-        /// The name of the file to add.  The name of the file may be a relative path or 
-        /// a fully-qualified path.
+        ///   The name of the file to add.  The name of the file may be a relative path
+        ///   or a fully-qualified path.
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the fileName.  This path
-        /// may, or may not, correspond to a real directory in the current filesystem.  If the
-        /// files within the zip are later extracted, this is the path used for the extracted
-        /// file.  Passing <c>null</c> (<c>Nothing</c> in VB) will use the path on the
-        /// fileName, if any.  Passing the empty string ("") will insert the item at the root
-        /// path within the archive.
+        ///   Specifies a directory path to use to override any path in the fileName.
+        ///   This path may, or may not, correspond to a real directory in the current
+        ///   filesystem.  If the files within the zip are later extracted, this is the
+        ///   path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
+        ///   VB) will use the path on the fileName, if any.  Passing the empty string
+        ///   ("") will insert the item at the root path within the archive.
         /// </param>
         ///
         /// <returns>The <c>ZipEntry</c> corresponding to the file added.</returns>
@@ -403,15 +405,15 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// This method removes a collection of entries from the <c>ZipFile</c>.
+        ///   This method removes a collection of entries from the <c>ZipFile</c>.
         /// </summary>
         ///
         /// <param name="entriesToRemove">
-        /// A collection of ZipEntry instances from this zip file to be removed. For
-        /// example, you can pass in an array of ZipEntry instances; or you can call
-        /// SelectEntries(), and then add or remove entries from that
-        /// ICollection&lt;ZipEntry&gt; (ICollection(Of ZipEntry) in VB), and pass that
-        /// ICollection to this method.
+        ///   A collection of ZipEntry instances from this zip file to be removed. For
+        ///   example, you can pass in an array of ZipEntry instances; or you can call
+        ///   SelectEntries(), and then add or remove entries from that
+        ///   ICollection&lt;ZipEntry&gt; (ICollection(Of ZipEntry) in VB), and pass
+        ///   that ICollection to this method.
         /// </param>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.SelectEntries(String)" />
@@ -426,15 +428,15 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// This method removes a collection of entries from the <c>ZipFile</c>, by name.
+        ///   This method removes a collection of entries from the <c>ZipFile</c>, by name.
         /// </summary>
         ///
         /// <param name="entriesToRemove">
-        /// A collection of strings that refer to names of entries to be removed from
-        /// the <c>ZipFile</c>.  For example, you can pass in an array of ZipEntry
-        /// instances; or you can call SelectEntries(), and then add or remove entries
-        /// from that ICollection&lt;ZipEntry&gt; (ICollection(Of ZipEntry) in VB), and
-        /// pass that ICollection to this method.
+        ///   A collection of strings that refer to names of entries to be removed from
+        ///   the <c>ZipFile</c>.  For example, you can pass in an array of ZipEntry
+        ///   instances; or you can call SelectEntries(), and then add or remove entries
+        ///   from that ICollection&lt;ZipEntry&gt; (ICollection(Of ZipEntry) in VB),
+        ///   and pass that ICollection to this method.
         /// </param>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.SelectEntries(String)" />
@@ -449,32 +451,32 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// This method adds a set of files to the <c>ZipFile</c>.
+        ///   This method adds a set of files to the <c>ZipFile</c>.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// Use this method to add a set of files to the zip archive, in one call.  
+        ///   Use this method to add a set of files to the zip archive, in one call.  
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to each
+        ///   ZipEntry added.
         /// </para>
         /// </remarks>
         ///
         /// <param name="fileNames">
-        /// The collection of names of the files to add. Each string should refer to a
-        /// file in the filesystem. The name of the file may be a relative path or a
-        /// fully-qualified path.
+        ///   The collection of names of the files to add. Each string should refer to a
+        ///   file in the filesystem. The name of the file may be a relative path or a
+        ///   fully-qualified path.
         /// </param>
         ///
         /// <example>
-        /// This example shows how to create a zip file, and add a few files into it. 
+        ///   This example shows how to create a zip file, and add a few files into it. 
         /// <code>
         /// String ZipFileToCreate = "archive1.zip";
         /// String DirectoryToZip = "c:\\reports";
@@ -507,28 +509,28 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds or updates a set of files in the <c>ZipFile</c>.
+        ///   Adds or updates a set of files in the <c>ZipFile</c>.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// Any files that already exist in the archive are updated. Any files that
-        /// don't yet exist in the archive are added.
+        ///   Any files that already exist in the archive are updated. Any files that
+        ///   don't yet exist in the archive are added.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to each
+        ///   ZipEntry added.
         /// </para>
         /// </remarks>
         ///
         /// <param name="fileNames">
-        /// The collection of names of the files to update. Each string should refer to a file in 
-        /// the filesystem. The name of the file may be a relative path or a fully-qualified path. 
+        ///   The collection of names of the files to update. Each string should refer to a file in 
+        ///   the filesystem. The name of the file may be a relative path or a fully-qualified path. 
         /// </param>
         ///
         public void UpdateFiles(System.Collections.Generic.IEnumerable<String> fileNames)
@@ -538,24 +540,27 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds a set of files to the <c>ZipFile</c>, using the specified directory path 
-        /// in the archive.
+        ///   Adds a set of files to the <c>ZipFile</c>, using the
+        ///   specified directory path in the archive.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// Any directory structure that may be present in the filenames contained in
-        /// the list is "flattened" in the archive.  Each file in the list is added to
-        /// the archive in the specified top-level directory.
+        ///   Any directory structure that may be present in the
+        ///   filenames contained in the list is "flattened" in the
+        ///   archive.  Each file in the list is added to the archive in
+        ///   the specified top-level directory.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see
+        ///   cref="Encryption"/>, <see cref="Password"/>, <see
+        ///   cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see
+        ///   cref="ExtractExistingFile"/>, <see
+        ///   cref="ZipErrorAction"/>, and <see
+        ///   cref="CompressionLevel"/>, their respective values at the
+        ///   time of this call will be applied to each ZipEntry added.
         /// </para>
         /// </remarks>
         ///
@@ -566,12 +571,13 @@ namespace Ionic.Zip
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the file name.
-        /// This path may, or may not, correspond to a real directory in the current
-        /// filesystem.  If the files within the zip are later extracted, this is the
-        /// path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
-        /// VB) will use the path on each of the <c>fileNames</c>, if any.  Passing the
-        /// empty string ("") will insert the item at the root path within the archive.
+        ///   Specifies a directory path to use to override any path in the file name.
+        ///   Th is path may, or may not, correspond to a real directory in the current
+        ///   filesystem.  If the files within the zip are later extracted, this is the
+        ///   path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
+        ///   VB) will use the path on each of the <c>fileNames</c>, if any.  Passing
+        ///   the empty string ("") will insert the item at the root path within the
+        ///   archive.
         /// </param>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
@@ -583,49 +589,51 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds a set of files to the <c>ZipFile</c>, using the specified directory
-        /// path in the archive, and preserving the full directory structure in the
-        /// filenames.
+        ///   Adds a set of files to the <c>ZipFile</c>, using the specified directory
+        ///   path in the archive, and preserving the full directory structure in the
+        ///   filenames.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// If preserveDirHierarchy is true, any directory structure present in the
-        /// filenames contained in the list is preserved in the archive.  On the other
-        /// hand, if preserveDirHierarchy is false, any directory structure that may be
-        /// present in the filenames contained in the list is "flattened" in the
-        /// archive; Each file in the list is added to the archive in the specified
-        /// top-level directory.
+        ///   If preserveDirHierarchy is true, any directory structure present in the
+        ///   filenames contained in the list is preserved in the archive.  On the other
+        ///   hand, if preserveDirHierarchy is false, any directory structure that may
+        ///   be present in the filenames contained in the list is "flattened" in the
+        ///   archive; Each file in the list is added to the archive in the specified
+        ///   top-level directory.
         /// </para>
         /// 
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to each
+        ///   ZipEntry added.
         /// </para>
         ///
         /// </remarks>
         ///
         /// <param name="fileNames">
-        /// The names of the files to add. Each string should refer to a file in the filesystem.  
-        /// The name of the file may be a relative path or a fully-qualified path. 
+        ///   The names of the files to add. Each string should refer to a file in the
+        ///   filesystem.  The name of the file may be a relative path or a
+        ///   fully-qualified path.
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the file name.
-        /// This path may, or may not, correspond to a real directory in the current
-        /// filesystem.  If the files within the zip are later extracted, this is the
-        /// path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
-        /// VB) will use the path on each of the <c>fileNames</c>, if any.  Passing the
-        /// empty string ("") will insert the item at the root path within the archive.
+        ///   Specifies a directory path to use to override any path in the file name.
+        ///   This path may, or may not, correspond to a real directory in the current
+        ///   filesystem.  If the files within the zip are later extracted, this is the
+        ///   path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
+        ///   VB) will use the path on each of the <c>fileNames</c>, if any.  Passing
+        ///   the empty string ("") will insert the item at the root path within the
+        ///   archive.
         /// </param>
         ///
         /// <param name="preserveDirHierarchy">
-        /// whether the entries in the zip archive will reflect the dir hierarchy that
-        /// is present in each filename.
+        ///   whether the entries in the zip archive will reflect the dir hierarchy that
+        ///   is present in each filename.
         /// </param>
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
         public void AddFiles(System.Collections.Generic.IEnumerable<String> fileNames,
@@ -657,40 +665,41 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds or updates a set of files to the <c>ZipFile</c>, using the specified
-        /// directory path in the archive.
+        ///   Adds or updates a set of files to the <c>ZipFile</c>, using the specified
+        ///   directory path in the archive.
         /// </summary>
         ///
         /// <remarks>
         ///
         /// <para>
-        /// Any files that already exist in the archive are updated. Any files that
-        /// don't yet exist in the archive are added.
+        ///   Any files that already exist in the archive are updated. Any files that
+        ///   don't yet exist in the archive are added.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to each
+        ///   ZipEntry added.
         /// </para>
         /// </remarks>
         ///
         /// <param name="fileNames">
-        /// The names of the files to add or update. Each string should refer to a file
-        /// in the filesystem.  The name of the file may be a relative path or a
-        /// fully-qualified path.
+        ///   The names of the files to add or update. Each string should refer to a
+        ///   file in the filesystem.  The name of the file may be a relative path or a
+        ///   fully-qualified path.
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the file name.
-        /// This path may, or may not, correspond to a real directory in the current
-        /// filesystem.  If the files within the zip are later extracted, this is the
-        /// path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
-        /// VB) will use the path on each of the <c>fileNames</c>, if any.  Passing the
-        /// empty string ("") will insert the item at the root path within the archive.
+        ///   Specifies a directory path to use to override any path in the file name.
+        ///   This path may, or may not, correspond to a real directory in the current
+        ///   filesystem.  If the files within the zip are later extracted, this is the
+        ///   path used for the extracted file.  Passing <c>null</c> (<c>Nothing</c> in
+        ///   VB) will use the path on each of the <c>fileNames</c>, if any.  Passing
+        ///   the empty string ("") will insert the item at the root path within the
+        ///   archive.
         /// </param>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.AddSelectedFiles(String, String)" />
@@ -779,13 +788,13 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateItem(string)"/>
         ///
         /// <param name="fileName">
-        /// The name of the file to add or update. It should refer to a file in the
-        /// filesystem.  The name of the file may be a relative path or a
-        /// fully-qualified path.
+        ///   The name of the file to add or update. It should refer to a file in the
+        ///   filesystem.  The name of the file may be a relative path or a
+        ///   fully-qualified path.
         /// </param>
         ///
         /// <returns>
-        /// The <c>ZipEntry</c> corresponding to the File that was added or updated.
+        ///   The <c>ZipEntry</c> corresponding to the File that was added or updated.
         /// </returns>
         public ZipEntry UpdateFile(string fileName)
         {
@@ -795,35 +804,35 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds or Updates a File in a Zip file archive.
+        ///   Adds or Updates a File in a Zip file archive.
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// This method adds a file to a zip archive, or, if the file already exists in
-        /// the zip archive, this method Updates the content of that given filename in
-        /// the zip archive.
+        ///   This method adds a file to a zip archive, or, if the file already exists
+        ///   in the zip archive, this method Updates the content of that given filename
+        ///   in the zip archive.
         /// </para>
         /// 
         /// <para>
-        /// This version of the method allows the caller to explicitly specify the
-        /// directory path to be used in the archive.  The entry to be added or updated
-        /// is found by using the specified directory path, combined with the basename
-        /// of the specified filename.
+        ///   This version of the method allows the caller to explicitly specify the
+        ///   directory path to be used in the archive.  The entry to be added or
+        ///   updated is found by using the specified directory path, combined with the
+        ///   basename of the specified filename.
         /// </para>
         /// 
         /// <para>
-        /// Upon success, there is no way for the application to learn if the file was
-        /// added versus updated.
+        ///   Upon success, there is no way for the application to learn if the file was
+        ///   added versus updated.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to the <c>ZipEntry</c> added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         /// </remarks>
         /// 
@@ -832,22 +841,23 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateItem(string,string)"/>
         ///
         /// <param name="fileName">
-        /// The name of the file to add or update. It should refer to a file in the filesystem.  
-        /// The name of the file may be a relative path or a fully-qualified path. 
+        ///   The name of the file to add or update. It should refer to a file in the
+        ///   filesystem.  The name of the file may be a relative path or a
+        ///   fully-qualified path.
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the
-        /// <c>fileName</c>.  This path may, or may not, correspond to a real directory
-        /// in the current filesystem.  If the files within the zip are later extracted,
-        /// this is the path used for the extracted file.  Passing <c>null</c>
-        /// (<c>Nothing</c> in VB) will use the path on the <c>fileName</c>, if any.
-        /// Passing the empty string ("") will insert the item at the root path within
-        /// the archive.
+        ///   Specifies a directory path to use to override any path in the
+        ///   <c>fileName</c>.  This path may, or may not, correspond to a real
+        ///   directory in the current filesystem.  If the files within the zip are
+        ///   later extracted, this is the path used for the extracted file.  Passing
+        ///   <c>null</c> (<c>Nothing</c> in VB) will use the path on the
+        ///   <c>fileName</c>, if any.  Passing the empty string ("") will insert the
+        ///   item at the root path within the archive.
         /// </param>
         ///
         /// <returns>
-        /// The <c>ZipEntry</c> corresponding to the File that was added or updated.
+        ///   The <c>ZipEntry</c> corresponding to the File that was added or updated.
         /// </returns>
         public ZipEntry UpdateFile(string fileName, String directoryPathInArchive)
         {
@@ -863,16 +873,17 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Add or update a directory in a zip archive.  
+        ///   Add or update a directory in a zip archive.  
         /// </summary>
         ///
         /// <remarks>
-        /// If the specified directory does not exist in the archive, then this method
-        /// is equivalent to calling <c>AddDirectory()</c>.  If the specified directory already
-        /// exists in the archive, then this method updates any existing entries, and
-        /// adds any new entries. Any entries that are in the zip archive but not in the
-        /// specified directory, are left alone.  In other words, the contents of the
-        /// zip file will be a union of the previous contents and the new files.
+        ///   If the specified directory does not exist in the archive, then this method
+        ///   is equivalent to calling <c>AddDirectory()</c>.  If the specified
+        ///   directory already exists in the archive, then this method updates any
+        ///   existing entries, and adds any new entries. Any entries that are in the
+        ///   zip archive but not in the specified directory, are left alone.  In other
+        ///   words, the contents of the zip file will be a union of the previous
+        ///   contents and the new files.
         /// </remarks>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateFile(string)"/>
@@ -880,8 +891,8 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateItem(string)"/>
         ///
         /// <param name="directoryName">
-        /// The path to the directory to be added to the zip archive, 
-        /// or updated in the zip archive.
+        ///   The path to the directory to be added to the zip archive, or updated in
+        ///   the zip archive.
         /// </param>
         /// 
         /// <returns>
@@ -894,17 +905,18 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Add or update a directory in the zip archive at the specified root directory
-        /// in the archive.
+        ///   Add or update a directory in the zip archive at the specified root
+        ///   directory in the archive.
         /// </summary>
         ///
         /// <remarks>
-        /// If the specified directory does not exist in the archive, then this method
-        /// is equivalent to calling <c>AddDirectory()</c>.  If the specified directory already
-        /// exists in the archive, then this method updates any existing entries, and
-        /// adds any new entries. Any entries that are in the zip archive but not in the
-        /// specified directory, are left alone.  In other words, the contents of the
-        /// zip file will be a union of the previous contents and the new files.
+        ///   If the specified directory does not exist in the archive, then this method
+        ///   is equivalent to calling <c>AddDirectory()</c>.  If the specified
+        ///   directory already exists in the archive, then this method updates any
+        ///   existing entries, and adds any new entries. Any entries that are in the
+        ///   zip archive but not in the specified directory, are left alone.  In other
+        ///   words, the contents of the zip file will be a union of the previous
+        ///   contents and the new files.
         /// </remarks>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateFile(string,string)"/>
@@ -912,22 +924,22 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateItem(string,string)"/>
         ///
         /// <param name="directoryName">
-        /// The path to the directory to be added to the zip archive, or updated in the
-        /// zip archive.
+        ///   The path to the directory to be added to the zip archive, or updated in the
+        ///   zip archive.
         /// </param>
         ///
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the
-        /// <c>directoryName</c>.  This path may, or may not, correspond to a real
-        /// directory in the current filesystem.  If the files within the zip are later
-        /// extracted, this is the path used for the extracted file.  Passing
-        /// <c>null</c> (<c>Nothing</c> in VB) will use the path on the
-        /// <c>directoryName</c>, if any.  Passing the empty string ("") will insert the
-        /// item at the root path within the archive.
+        ///   Specifies a directory path to use to override any path in the
+        ///   <c>directoryName</c>.  This path may, or may not, correspond to a real
+        ///   directory in the current filesystem.  If the files within the zip are
+        ///   later extracted, this is the path used for the extracted file.  Passing
+        ///   <c>null</c> (<c>Nothing</c> in VB) will use the path on the
+        ///   <c>directoryName</c>, if any.  Passing the empty string ("") will insert
+        ///   the item at the root path within the archive.
         /// </param>
         /// 
         /// <returns>
-        /// The <c>ZipEntry</c> corresponding to the Directory that was added or updated.
+        ///   The <c>ZipEntry</c> corresponding to the Directory that was added or updated.
         /// </returns>
         public ZipEntry UpdateDirectory(string directoryName, String directoryPathInArchive)
         {
@@ -939,25 +951,25 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Add or update a file or directory in the zip archive. 
+        ///   Add or update a file or directory in the zip archive. 
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// This is useful when the application is not sure or does not care if the item
-        /// to be added is a file or directory, and does not know or does not care if
-        /// the item already exists in the <c>ZipFile</c>. Calling this method is
-        /// equivalent to calling <c>RemoveEntry()</c> if an entry by the same name
-        /// already exists, followed calling by <c>AddItem()</c>.
+        ///   This is useful when the application is not sure or does not care if the
+        ///   item to be added is a file or directory, and does not know or does not
+        ///   care if the item already exists in the <c>ZipFile</c>. Calling this method
+        ///   is equivalent to calling <c>RemoveEntry()</c> if an entry by the same name
+        ///   already exists, followed calling by <c>AddItem()</c>.
         /// </para>
         ///
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to the <c>ZipEntry</c> added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         /// </remarks>
         ///
@@ -1009,13 +1021,13 @@ namespace Ionic.Zip
         ///
         /// <param name="itemName">The path for the File or Directory to be added or updated.</param>
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the
-        /// <c>itemName</c>.  This path may, or may not, correspond to a real directory
-        /// in the current filesystem.  If the files within the zip are later extracted,
-        /// this is the path used for the extracted file.  Passing <c>null</c>
-        /// (<c>Nothing</c> in VB) will use the path on the <c>itemName</c>, if any.
-        /// Passing the empty string ("") will insert the item at the root path within
-        /// the archive.
+        ///   Specifies a directory path to use to override any path in the
+        ///   <c>itemName</c>.  This path may, or may not, correspond to a real
+        ///   directory in the current filesystem.  If the files within the zip are
+        ///   later extracted, this is the path used for the extracted file.  Passing
+        ///   <c>null</c> (<c>Nothing</c> in VB) will use the path on the
+        ///   <c>itemName</c>, if any.  Passing the empty string ("") will insert the
+        ///   item at the root path within the archive.
         /// </param>
         public void UpdateItem(string itemName, string directoryPathInArchive)
         {
@@ -1091,8 +1103,8 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds a named entry into the zip archive, taking content for the entry
-        /// from a string.
+        ///   Adds a named entry into the zip archive, taking content for the entry
+        ///   from a string, and using the specified text encoding.
         /// </summary>
         ///
         /// <remarks>
@@ -1105,7 +1117,7 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        ///   The content for the entry is encoded using the given text
+        ///   The content for the entry, a string value, is encoded using the given text
         ///   encoding. No Byte-order-mark (BOM) is emitted into the file.
         /// </para>
         ///
@@ -1154,8 +1166,8 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        ///   Create an entry in the <c>ZipFile</c> using the given Stream as input.
-        ///   The entry will have the given filename and given directory path.
+        ///   Create an entry in the <c>ZipFile</c> using the given <c>Stream</c> as input.
+        ///   The entry will have the given filename. 
         /// </summary>
         ///
         /// <remarks>
@@ -1187,7 +1199,7 @@ namespace Ionic.Zip
         ///
         /// <example>
         /// <para>
-        /// This example adds a single entry to a ZipFile via a stream. 
+        ///   This example adds a single entry to a <c>ZipFile</c> via a <c>Stream</c>. 
         /// </para>
         ///
         /// <code lang="C#">
@@ -1221,10 +1233,10 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.UpdateEntry(string, System.IO.Stream)"/>
         ///
         /// <param name="entryName">
-        ///   the name, including any path, which is shown in the zip file for the added
+        ///   The name, including any path, which is shown in the zip file for the added
         ///   entry.
         /// </param>
-        /// <param name="stream">the input stream from which to grab content for the file</param>
+        /// <param name="stream">The input stream from which to grab content for the file</param>
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddEntry(string entryName, Stream stream)
         {
@@ -1274,9 +1286,11 @@ namespace Ionic.Zip
         /// <returns>the ZipEntry added</returns>
         ///
         /// <example>
-        /// This example shows an application filling a DataSet, then
-        /// saving the contents of that DataSet as XML, into a ZipEntry
-        /// in a ZipFile, using an anonymous delegate in C#.
+        ///
+        ///   This example shows an application filling a DataSet, then saving the
+        ///   contents of that DataSet as XML, into a ZipEntry in a ZipFile, using an
+        ///   anonymous delegate in C#.
+        ///
         /// <code lang="C#">
         /// var c1= new System.Data.SqlClient.SqlConnection(connstring1);
         /// var da = new System.Data.SqlClient.SqlDataAdapter()
@@ -1451,14 +1465,16 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Updates the given entry in the <c>ZipFile</c>, using the given string as content
-        /// for the <c>ZipEntry</c>. 
+        ///   Updates the given entry in the <c>ZipFile</c>, using the given string as
+        ///   content for the <c>ZipEntry</c>.
         /// </summary>
         ///
-        /// <remarks>Calling this method is equivalent to removing the <c>ZipEntry</c> for the
-        /// given file name and directory path, if it exists, and then calling <see
-        /// cref="AddEntry(String,String, System.Text.Encoding)" />.
-        /// See the documentation for that method for further explanation. </remarks>
+        /// <remarks>
+        ///   Calling this method is equivalent to removing the <c>ZipEntry</c> for the
+        ///   given file name and directory path, if it exists, and then calling <see
+        ///   cref="AddEntry(String,String, System.Text.Encoding)" />.  See the
+        ///   documentation for that method for further explanation.
+        /// </remarks>
         ///
         /// <param name="entryName">
         ///   The name, including any path, to use within the archive for the entry.
@@ -1494,31 +1510,31 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Updates the given entry in the <c>ZipFile</c>, using the given stream as
-        /// input, and the given filename and given directory Path.
+        ///   Updates the given entry in the <c>ZipFile</c>, using the given stream as
+        ///   input, and the given filename and given directory Path.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// Calling the method is equivalent to calling <c>RemoveEntry()</c> if an entry by the
-        /// same name already exists, and then calling <c>AddEntry()</c> with the given
-        /// <c>fileName</c> and stream.
+        ///   Calling the method is equivalent to calling <c>RemoveEntry()</c> if an
+        ///   entry by the same name already exists, and then calling <c>AddEntry()</c>
+        ///   with the given <c>fileName</c> and stream.
         /// </para>
         ///
         /// <para>
-        /// The stream must be open and readable during the call to 
-        /// <c>ZipFile.Save</c>.  You can dispense the stream on a just-in-time basis using
-        /// the <see cref="ZipEntry.InputStream"/> property. Check the documentation of that
-        /// property for more information. 
+        ///   The stream must be open and readable during the call to
+        ///   <c>ZipFile.Save</c>.  You can dispense the stream on a just-in-time basis
+        ///   using the <see cref="ZipEntry.InputStream"/> property. Check the
+        ///   documentation of that property for more information.
         /// </para>
         /// 
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to the <c>ZipEntry</c> added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to the
+        ///   <c>ZipEntry</c> added.
         /// </para>
         ///
         /// </remarks>
@@ -1618,37 +1634,37 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Adds the contents of a filesystem directory to a Zip file archive. 
+        ///   Adds the contents of a filesystem directory to a Zip file archive. 
         /// </summary>
         /// 
         /// <remarks>
         /// 
         /// <para>
-        /// The name of the directory may be a relative path or a fully-qualified
-        /// path. Any files within the named directory are added to the archive.  Any
-        /// subdirectories within the named directory are also added to the archive,
-        /// recursively.
+        ///   The name of the directory may be a relative path or a fully-qualified
+        ///   path. Any files within the named directory are added to the archive.  Any
+        ///   subdirectories within the named directory are also added to the archive,
+        ///   recursively.
         /// </para>
         /// 
         /// <para>
-        /// Top-level entries in the named directory will appear as top-level 
-        /// entries in the zip archive.  Entries in subdirectories in the named 
-        /// directory will result in entries in subdirectories in the zip archive.
+        ///   Top-level entries in the named directory will appear as top-level entries
+        ///   in the zip archive.  Entries in subdirectories in the named directory will
+        ///   result in entries in subdirectories in the zip archive.
         /// </para>
         /// 
         /// <para>
-        /// If you want the entries to appear in a containing directory in the zip
-        /// archive itself, then you should call the AddDirectory() overload that allows
-        /// you to explicitly specify a directory path for use in the archive.
+        ///   If you want the entries to appear in a containing directory in the zip
+        ///   archive itself, then you should call the AddDirectory() overload that
+        ///   allows you to explicitly specify a directory path for use in the archive.
         /// </para>
         /// 
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to each
+        ///   ZipEntry added.
         /// </para>
         ///
         /// </remarks>
@@ -1669,39 +1685,39 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Adds the contents of a filesystem directory to a Zip file archive, 
-        /// overriding the path to be used for entries in the archive. 
+        ///   Adds the contents of a filesystem directory to a Zip file archive,
+        ///   overriding the path to be used for entries in the archive.
         /// </summary>
         /// 
         /// <remarks>
         /// <para>
-        /// The name of the directory may be a relative path or a fully-qualified
-        /// path. The add operation is recursive, so that any files or subdirectories
-        /// within the name directory are also added to the archive.
+        ///   The name of the directory may be a relative path or a fully-qualified
+        ///   path. The add operation is recursive, so that any files or subdirectories
+        ///   within the name directory are also added to the archive.
         /// </para>
         /// 
         /// <para>
-        /// Top-level entries in the named directory will appear as top-level 
-        /// entries in the zip archive.  Entries in subdirectories in the named 
-        /// directory will result in entries in subdirectories in the zip archive.
+        ///   Top-level entries in the named directory will appear as top-level entries
+        ///   in the zip archive.  Entries in subdirectories in the named directory will
+        ///   result in entries in subdirectories in the zip archive.
         /// </para>
         /// 
         /// <para>
-        /// For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
-        /// cref="Password"/>, <see cref="SetCompression"/>, <see
-        /// cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
-        /// <see cref="ZipErrorAction"/>, 
-        /// and <see cref="CompressionLevel"/>, their respective values at the time of
-        /// this call will be applied to each ZipEntry added.
+        ///   For <c>ZipFile</c> properties including <see cref="Encryption"/>, <see
+        ///   cref="Password"/>, <see cref="SetCompression"/>, <see
+        ///   cref="ProvisionalAlternateEncoding"/>, <see cref="ExtractExistingFile"/>,
+        ///   <see cref="ZipErrorAction"/>, and <see cref="CompressionLevel"/>, their
+        ///   respective values at the time of this call will be applied to each
+        ///   ZipEntry added.
         /// </para>
         ///
         /// </remarks>
         /// 
         /// <example>
         /// <para>
-        /// In this code, calling the ZipUp() method with a value of "c:\reports" for the
-        /// directory parameter will result in a zip file structure in which all entries
-        /// are contained in a toplevel "reports" directory.
+        ///   In this code, calling the ZipUp() method with a value of "c:\reports" for
+        ///   the directory parameter will result in a zip file structure in which all
+        ///   entries are contained in a toplevel "reports" directory.
         /// </para>
         ///
         /// <code lang="C#">
@@ -1723,12 +1739,12 @@ namespace Ionic.Zip
         /// <param name="directoryName">The name of the directory to add.</param>
         /// 
         /// <param name="directoryPathInArchive">
-        /// Specifies a directory path to use to override any path in the DirectoryName.
-        /// This path may, or may not, correspond to a real directory in the current
-        /// filesystem.  If the zip is later extracted, this is the path used for the
-        /// extracted file or directory.  Passing <c>null</c> (<c>Nothing</c> in VB) or
-        /// the empty string ("") will insert the items at the root path within the
-        /// archive.
+        ///   Specifies a directory path to use to override any path in the
+        ///   DirectoryName.  This path may, or may not, correspond to a real directory
+        ///   in the current filesystem.  If the zip is later extracted, this is the
+        ///   path used for the extracted file or directory.  Passing <c>null</c>
+        ///   (<c>Nothing</c> in VB) or the empty string ("") will insert the items at
+        ///   the root path within the archive.
         /// </param>
         /// 
         /// <returns>The <c>ZipEntry</c> added.</returns>
@@ -1739,28 +1755,28 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Creates a directory in the zip archive.  
+        ///   Creates a directory in the zip archive.  
         /// </summary>
         /// 
         /// <remarks>
         /// 
         /// <para>
-        /// Use this when you want to create a directory in the archive but there is no
-        /// corresponding filesystem representation for that directory.
+        ///   Use this when you want to create a directory in the archive but there is
+        ///   no corresponding filesystem representation for that directory.
         /// </para>
         ///
         /// <para>
-        /// You will probably not need to do this in your code. One of the only times
-        /// you will want to do this is if you want an empty directory in the zip
-        /// archive.  The reason: if you add a file to a zip archive that is stored within a
-        /// multi-level directory, all of the directory tree is implicitly created in
-        /// the zip archive.  
+        ///   You will probably not need to do this in your code. One of the only times
+        ///   you will want to do this is if you want an empty directory in the zip
+        ///   archive.  The reason: if you add a file to a zip archive that is stored
+        ///   within a multi-level directory, all of the directory tree is implicitly
+        ///   created in the zip archive.
         /// </para>
         /// 
         /// </remarks>
         /// 
         /// <param name="directoryNameInArchive">
-        /// The name of the directory to create in the archive.
+        ///   The name of the directory to create in the archive.
         /// </param>
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddDirectoryByName(string directoryNameInArchive)

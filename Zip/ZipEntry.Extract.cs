@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-05 20:01:22>
+// Time-stamp: <2009-October-07 22:55:57>
 //
 // ------------------------------------------------------------------
 //
@@ -496,7 +496,7 @@ namespace Ionic.Zip
 
 
 
-        private Ionic.Zlib.CrcCalculatorStream InternalOpenReader(string password)
+        internal Ionic.Zlib.CrcCalculatorStream InternalOpenReader(string password)
         {
             ValidateCompression();
             ValidateEncryption();
@@ -506,28 +506,19 @@ namespace Ionic.Zip
             if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling OpenReader.");
 
+            Int64 LeftToRead = (CompressionMethod == 0x08) ? this.UncompressedSize : this._CompressedFileDataSize;
+
             Stream input = this.ArchiveStream;
 
             // change for workitem 8098
-             this.ArchiveStream.Seek(this.FileDataPosition, SeekOrigin.Begin);
+            this.ArchiveStream.Seek(this.FileDataPosition, SeekOrigin.Begin);
             //this._zipfile.SeekFromOrigin(this.FileDataPosition);
 
             // get a stream that either decrypts or not.
-            Stream input2 = input;
-            if (Encryption == EncryptionAlgorithm.PkzipWeak)
-                input2 = new ZipCipherStream(input, _zipCrypto, CryptoMode.Decrypt);
+            Stream input2 = GetExtractDecryptor(input);
+            Stream input3 = GetExtractDecompressor(input2);
 
-#if AESCRYPTO
-            else if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
-                     Encryption == EncryptionAlgorithm.WinZipAes256)
-            {
-                input2 = new WinZipAesCipherStream(input, _aesCrypto, _CompressedFileDataSize, CryptoMode.Decrypt);
-            }
-#endif
-            return new Ionic.Zlib.CrcCalculatorStream((CompressionMethod == 0x08)
-                                                      ? new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true)
-                                                      : input2,
-                                                      _UncompressedSize);
+            return new Ionic.Zlib.CrcCalculatorStream(input3, LeftToRead);
         }
 
 
@@ -688,31 +679,8 @@ namespace Ionic.Zip
 
                 if (_ioOperationCanceled)
                     goto ExitTry;
-                            
-#if AESCRYPTO
-                // After extracting, Validate the CRC32
-                if (ActualCrc32 != _Crc32)
-                {
-                    // CRC is not meaningful with WinZipAES and AES method 2 (AE-2)
-                    if ((Encryption != EncryptionAlgorithm.WinZipAes128 &&
-                         Encryption != EncryptionAlgorithm.WinZipAes256)
-                        || _WinZipAesMethod != 0x02)
-                        throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
-                                                  String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
-                }
 
-                // Read the MAC if appropriate
-                if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
-                    Encryption == EncryptionAlgorithm.WinZipAes256)
-                {
-                    _aesCrypto.ReadAndVerifyMac(this.ArchiveStream); // throws if MAC is bad
-                    // side effect: advances file position.
-                }
-#else
-                if (ActualCrc32 != _Crc32)
-                    throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
-                                              String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
-#endif
+                VerifyCrc(ActualCrc32);
 
 
                 if (TargetFile != null)
@@ -795,6 +763,34 @@ namespace Ionic.Zip
             }
         }
 
+        internal void VerifyCrc(Int32 ActualCrc32)
+        {
+#if AESCRYPTO
+                // After extracting, Validate the CRC32
+                if (ActualCrc32 != _Crc32)
+                {
+                    // CRC is not meaningful with WinZipAES and AES method 2 (AE-2)
+                    if ((Encryption != EncryptionAlgorithm.WinZipAes128 &&
+                         Encryption != EncryptionAlgorithm.WinZipAes256)
+                        || _WinZipAesMethod != 0x02)
+                        throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
+                                                  String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
+                }
+
+                // Read the MAC if appropriate
+                if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
+                    Encryption == EncryptionAlgorithm.WinZipAes256)
+                {
+                    _aesCrypto.ReadAndVerifyMac(this.ArchiveStream); // throws if MAC is bad
+                    // side effect: advances file position.
+                }
+#else
+            if (ActualCrc32 != _Crc32)
+                throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
+                                          String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
+#endif
+        }
+
 
         
         
@@ -870,30 +866,9 @@ namespace Ionic.Zip
             Int64 LeftToRead = (CompressionMethod == 0x08) ? this.UncompressedSize : this._CompressedFileDataSize;
 
             // Get a stream that either decrypts or not.
-            Stream input2 = null;
-            if (Encryption == EncryptionAlgorithm.PkzipWeak)
-                input2 = new ZipCipherStream(input, _zipCrypto, CryptoMode.Decrypt);
+            Stream input2 = GetExtractDecryptor(input);
 
-#if AESCRYPTO
-
-            else if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
-                 Encryption == EncryptionAlgorithm.WinZipAes256)
-                input2 = new WinZipAesCipherStream(input, _aesCrypto, _CompressedFileDataSize, CryptoMode.Decrypt);
-#endif
-
-            else
-                // Thu, 18 Jun 2009  01:45
-                // why do I need a CrcCalculatorStream?  couldn't I just assign input1 ?
-                //input2 = new Ionic.Zlib.CrcCalculatorStream(input, _CompressedFileDataSize);
-                input2 = input;
-
-
-            //Stream input2a = new TraceStream(input2);
-
-            // Using the above, now we get a stream that either decompresses or not.
-            Stream input3 = (CompressionMethod == 0x08)
-                ? new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true)
-                : input2;
+            Stream input3 = GetExtractDecompressor(input2);
 
             Int64 bytesWritten = 0;
             // As we read, we maybe decrypt, and then we maybe decompress. Then we write.
@@ -939,6 +914,37 @@ namespace Ionic.Zip
             }
 
             return CrcResult;
+        }
+
+        internal Stream GetExtractDecompressor(Stream input2)
+        {
+
+            // Using the above, now we get a stream that either decompresses or not.
+            Stream input3 = (CompressionMethod == 0x08)
+                ? new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true)
+                : input2;
+            return input3;
+        }
+
+
+        
+        internal Stream GetExtractDecryptor(Stream input)
+        {
+            Stream input2 = null;
+            if (Encryption == EncryptionAlgorithm.PkzipWeak)
+                input2 = new ZipCipherStream(input, _zipCrypto, CryptoMode.Decrypt);
+
+#if AESCRYPTO
+
+            else if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
+                 Encryption == EncryptionAlgorithm.WinZipAes256)
+                input2 = new WinZipAesCipherStream(input, _aesCrypto, _CompressedFileDataSize, CryptoMode.Decrypt);
+#endif
+
+            else
+                input2 = input;
+            
+            return input2;
         }
 
 
@@ -1113,7 +1119,7 @@ namespace Ionic.Zip
         }
 
 
-        private void ValidateEncryption()
+        internal void ValidateEncryption()
         {
             if (Encryption != EncryptionAlgorithm.PkzipWeak &&
 #if AESCRYPTO
@@ -1133,7 +1139,7 @@ namespace Ionic.Zip
         }
 
 
-        private void ValidateCompression()
+        internal void ValidateCompression()
         {
             if ((CompressionMethod != 0) && (CompressionMethod != 0x08))  // deflate
                 throw new ZipException(String.Format("Entry {0} uses an unsupported compression method (0x{1:X2}, {2})",
@@ -1141,13 +1147,16 @@ namespace Ionic.Zip
         }
 
 
-        private void SetupCrypto(string password)
+        internal  void SetupCrypto(string password)
         {
-            if (password == null)
+            if (Encryption == EncryptionAlgorithm.None)
                 return;
 
             if (Encryption == EncryptionAlgorithm.PkzipWeak)
             {
+                if (password == null)
+                    throw new ZipException("Missing password.");
+                    
                 // change for workitem 8098
                 this.ArchiveStream.Seek(this.FileDataPosition - 12, SeekOrigin.Begin);
                 //this._zipfile.SeekFromOrigin(this.FileDataPosition - 12);
@@ -1158,7 +1167,9 @@ namespace Ionic.Zip
             else if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
                  Encryption == EncryptionAlgorithm.WinZipAes256)
             {
-
+                if (password == null)
+                    throw new ZipException("Missing password.");
+                    
                 // if we already have a WinZipAesCrypto object in place, use it.
                 if (_aesCrypto != null)
                 {
@@ -1171,13 +1182,12 @@ namespace Ionic.Zip
                     this.ArchiveStream.Seek(this.FileDataPosition - sizeOfSaltAndPv, SeekOrigin.Begin);
                     //this._zipfile.SeekFromOrigin(this.FileDataPosition - sizeOfSaltAndPv);
                     _aesCrypto = WinZipAesCrypto.ReadFromStream(password, _KeyStrengthInBits, this.ArchiveStream);
-
                 }
             }
 #endif
-
         }
 
+        
 
         /// <summary>
         /// Validates that the args are consistent.  

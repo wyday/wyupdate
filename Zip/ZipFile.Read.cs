@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 20:52:31>
+// Time-stamp: <2009-October-07 20:46:38>
 //
 // ------------------------------------------------------------------
 //
@@ -1187,7 +1187,8 @@ namespace Ionic.Zip
 
             // work item 6647:  PK00 (packed to removable disk)
             bool firstEntry = true;
-            while ((e = ZipEntry.Read(zf, firstEntry)) != null)
+            ZipContainer zc = new ZipContainer(zf);
+            while ((e = ZipEntry.ReadEntry(zc, firstEntry)) != null)
             {
                 if (zf.Verbose)
                     zf.StatusMessageTextWriter.WriteLine("  {0}", e.FileName);
