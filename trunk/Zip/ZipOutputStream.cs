@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-07 16:31:58>
+// Time-stamp: <2009-October-08 16:05:02>
 //
 // ------------------------------------------------------------------
 //
@@ -50,15 +50,15 @@ using Ionic.Zip;
 namespace  Ionic.Zip
 {
     /// <summary>
-    ///   Provides a stream metaphor for generating zip files. Use this when
-    ///   creating zip files, as an alternative to the <see cref="ZipFile"/> class,
-    ///   when you wuold like to use a Stream class to write the zip file.
+    ///   Provides a stream metaphor for generating zip files. 
     /// </summary>
     /// 
     /// <remarks>
     /// <para>
-    ///   This class provides alternative programming model from the one enabled by the
-    ///   <see cref="ZipFile"/> class.
+    ///   This class provides an alternative programming model to the one enabled by the
+    ///   <see cref="ZipFile"/> class. Use this when creating zip files, as an
+    ///   alternative to the <see cref="ZipFile"/> class, when you would like to use a
+    ///   Stream class to write the zip file.
     /// </para>
     ///
     /// <para>
@@ -69,15 +69,29 @@ namespace  Ionic.Zip
     /// <para>
     ///   Both the <c>ZipOutputStream</c> class and the <c>ZipFile</c> class can be used
     ///   to create zip files. Both of them support many of the common zip features,
-    ///   including Unicode, different compression levels, and ZIP64. Aside from the
-    ///   differences in programming model, there are some other differences between the
-    ///   two classes.
+    ///   including Unicode, different compression levels, and ZIP64.  For example, when
+    ///   creating a zip file via calls to the <c>PutNextEntry()</c> and <c>Write()</c>
+    ///   methods on the <c>ZipOutputStream</c> class, the caller is responsible for
+    ///   opening the file, reading the bytes from the file, writing those bytes into
+    ///   the <c>ZipOutputStream</c>, setting the attributes on the <c>ZipEntry</c>, and
+    ///   setting the created, last modified, and last accessed timestamps on the zip
+    ///   entry. All of these things are done automatically by a call to <see
+    ///   cref="ZipFile.AddFile(string,string)">ZipFile.AddFile()</see>.  For this
+    ///   reason, the <c>ZipOutputStream</c> is generally recommended for when your
+    ///   application wants to emit the arbitrary data, not necessarily data from a
+    ///   filesystem file, directly into a zip file.
+    /// </para>
+    ///
+    /// <para>
+    ///   Aside from the differences in programming model, there are other 
+    ///   differences in capability between the two classes.
     /// </para>
     ///
     /// <list type="bullet">
     ///   <item>
     ///     <c>ZipFile</c> can be used to read and extract zip files, in addition to
-    ///     creating zip files. <c>ZipOutputStream</c> cannot read zip files.
+    ///     creating zip files. <c>ZipOutputStream</c> cannot read zip files. If you want
+    ///     to use a stream to read zip files, check out the <see cref="ZipInputStream"/> class. 
     ///   </item>
     ///
     ///   <item>
@@ -838,7 +852,7 @@ namespace  Ionic.Zip
         ///
         /// <para>
         ///   This method returns the <c>ZipEntry</c>.  You can modify public properties
-        ///   on the ZipEntry, such as <see cref="ZipEntry.Encryption"/>, <see
+        ///   on the <c>ZipEntry</c>, such as <see cref="ZipEntry.Encryption"/>, <see
         ///   cref="ZipEntry.Password"/>, and so on, until the first call to
         ///   <c>ZipOutputStream.Write()</c>.  If you modify the <c>ZipEntry</c>
         ///   <em>after</em> having called <c>Write()</c>, you may get a runtime
@@ -850,7 +864,7 @@ namespace  Ionic.Zip
         /// <example>
         ///
         ///   This example shows how to create a zip file, using the
-        ///   ZipOutputStream class.
+        ///   <c>ZipOutputStream</c> class.
         ///
         /// <code>
         /// private void Zipup()
@@ -1070,10 +1084,13 @@ namespace  Ionic.Zip
     {
         private ZipFile _zf;
         private ZipOutputStream _zos;
+        private ZipInputStream _zis;
+        
         public ZipContainer(Object o)
         {
             _zf= (o as ZipFile) ;
             _zos = (o as ZipOutputStream);
+            _zis = (o as ZipInputStream);
         }
 
         public ZipFile ZipFile
@@ -1144,6 +1161,24 @@ namespace  Ionic.Zip
         {
             if (_zf!=null) return _zf.ContainsEntry(name);
             return _zos.ContainsEntry(name);
+        }
+
+        public System.Text.Encoding ProvisionalAlternateEncoding
+        {
+            get
+            {
+                if (_zf!=null) return _zf.ProvisionalAlternateEncoding;
+                return _zis.ProvisionalAlternateEncoding;
+            }
+        }
+        
+        public Stream ReadStream
+        {
+            get
+            {
+                if (_zf!=null) return _zf.ReadStream;
+                return _zis.ReadStream;
+            }
         }
     }
     

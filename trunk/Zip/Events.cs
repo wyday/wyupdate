@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-06 23:23:11>
+// Time-stamp: <2009-October-08 16:29:56>
 //
 // ------------------------------------------------------------------
 //
@@ -30,14 +30,14 @@ using System.Text;
 namespace Ionic.Zip
 {
     /// <summary>
-    ///   Delegate in which the application writes the ZipEntry content for the named entry.
+    ///   Delegate in which the application writes the <c>ZipEntry</c> content for the named entry.
     /// </summary>
     ///
     /// <param name="entryName">The name of the entry that must be written.</param>
     /// <param name="stream">The stream to which the entry data should be written.</param>
     ///
     /// <remarks>
-    ///   When you add an entry and specify a WriteDelegate, via <see
+    ///   When you add an entry and specify a <c>WriteDelegate</c>, via <see
     ///   cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>, the application
     ///   code provides the logic that writes the entry data directly into the zip file.
     /// </remarks>

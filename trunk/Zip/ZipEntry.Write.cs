@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-07 15:34:11>
+// Time-stamp: <2009-October-07 22:46:58>
 //
 // ------------------------------------------------------------------
 //
@@ -1474,7 +1474,9 @@ namespace Ionic.Zip
                     s.Seek(_CompressedSize, SeekOrigin.Current);
                 }
             }
-            else
+
+            // emit the descriptor
+            if ((_BitField & 0x0008) == 0x0008)
             {
                 byte[] Descriptor = new byte[16 + (_OutputUsesZip64.Value ? 8 : 0)];
                 i = 0;

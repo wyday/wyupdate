@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-23 14:33:56>
+// Time-stamp: <2009-October-08 18:34:41>
 //
 // ------------------------------------------------------------------
 //
@@ -33,39 +33,48 @@ using System.IO;
 namespace Ionic.Zlib
 {
     /// <summary>
-    /// A class for compressing and decompressing GZIP streams.
+    ///   A class for compressing and decompressing GZIP streams.
     /// </summary>
     /// <remarks>
     ///
     /// <para>
-    /// The GZipStream is a <see
-    /// href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator</see> on a <see 
-    /// cref="Stream"/>.  It adds GZIP compression or decompression to any stream.
+    ///   The <c>GZipStream</c> is a <see
+    ///   href="http://en.wikipedia.org/wiki/Decorator_pattern">Decorator</see> on a
+    ///   <see cref="Stream"/>. It adds GZIP compression or decompression to any
+    ///   stream.
     /// </para>
     ///
-    /// <para> Like the <c>Compression.GZipStream</c> in the .NET Base
-    /// Class Library, the Ionic.Zlib.GZipStream can compress while writing, or decompress
-    /// while reading, but not vice versa.  The compression method used is GZIP, which is
-    /// documented in <see href="http://www.ietf.org/rfc/rfc1952.txt">IETF RFC 1952</see>,
-    /// "GZIP file format specification version 4.3".</para>
-    ///
-    /// <para> A GZipStream can be used to decompress data (through Read()) or to compress
-    /// data (through Write()), but not both.  </para>
-    ///
-    /// <para> If you wish to use the GZipStream to compress data, you must wrap it around a
-    /// write-able stream. As you call Write() on the GZipStream, the data will be
-    /// compressed into the GZIP format.  If you want to decompress data, you must wrap the
-    /// GZipStream around a readable stream that contains an IETF RFC 1952-compliant stream.
-    /// The data will be decompressed as you call Read() on the GZipStream.  </para>
-    ///
-    /// <para> Though the GZIP format allows data from multiple files to be concatenated
-    /// together, this stream handles only a single segment of GZIP format, typically
-    /// representing a single file.  </para>
+    /// <para>
+    ///   Like the <c>System.IO.Compression.GZipStream</c> in the .NET Base Class Library, the
+    ///   <c>Ionic.Zlib.GZipStream</c> can compress while writing, or decompress while
+    ///   reading, but not vice versa.  The compression method used is GZIP, which is
+    ///   documented in <see href="http://www.ietf.org/rfc/rfc1952.txt">IETF RFC
+    ///   1952</see>, "GZIP file format specification version 4.3".</para>
     ///
     /// <para>
-    /// This class is similar to <see cref="ZlibStream"/> and <see cref="DeflateStream"/>.
-    /// <c>ZlibStream</c> handles RFC1950-compliant streams.  <see cref="DeflateStream"/>
-    /// handles RFC1951-compliant streams. This class handles RFC1952-compliant streams.
+    ///   A <c>GZipStream</c> can be used to decompress data (through <c>Read()</c>) or
+    ///   to compress data (through <c>Write()</c>), but not both.
+    /// </para>
+    ///
+    /// <para>
+    ///   If you wish to use the <c>GZipStream</c> to compress data, you must wrap it
+    ///   around a write-able stream. As you call <c>Write()</c> on the <c>GZipStream</c>, the
+    ///   data will be compressed into the GZIP format.  If you want to decompress data,
+    ///   you must wrap the <c>GZipStream</c> around a readable stream that contains an
+    ///   IETF RFC 1952-compliant stream.  The data will be decompressed as you call
+    ///   <c>Read()</c> on the <c>GZipStream</c>.
+    /// </para>
+    ///
+    /// <para>
+    ///   Though the GZIP format allows data from multiple files to be concatenated
+    ///   together, this stream handles only a single segment of GZIP format, typically
+    ///   representing a single file.
+    /// </para>
+    ///
+    /// <para>
+    ///   This class is similar to <see cref="ZlibStream"/> and <see cref="DeflateStream"/>.
+    ///   <c>ZlibStream</c> handles RFC1950-compliant streams.  <see cref="DeflateStream"/>
+    ///   handles RFC1951-compliant streams. This class handles RFC1952-compliant streams.
     /// </para>
     ///
     /// </remarks>
@@ -113,20 +122,23 @@ namespace Ionic.Zlib
 
         
         /// <summary>
-        /// The Comment on the GZIP stream.
+        ///   The comment on the GZIP stream.
         /// </summary>
+        ///
         /// <remarks>
         /// <para>
-        /// The GZIP format allows for each file to optionally have an associated comment stored with the
-        /// file.  The comment is encoded with the ISO-8859-1 code page.  To include a comment in
-        /// a GZIP stream you create, set this property before calling Write() for the first time
-        /// on the GZipStream.  
+        ///   The GZIP format allows for each file to optionally have an associated
+        ///   comment stored with the file.  The comment is encoded with the ISO-8859-1
+        ///   code page.  To include a comment in a GZIP stream you create, set this
+        ///   property before calling <c>Write()</c> for the first time on the
+        ///   <c>GZipStream</c>.
         /// </para>
         ///
         /// <para>
-        /// When using GZipStream to decompress, you can retrieve this property after the first
-        /// call to Read().  If no comment has been set in the GZIP bytestream, the Comment
-        /// property will return null (Nothing in VB).
+        ///   When using <c>GZipStream</c> to decompress, you can retrieve this property
+        ///   after the first call to <c>Read()</c>.  If no comment has been set in the
+        ///   GZIP bytestream, the Comment property will return <c>null</c>
+        ///   (<c>Nothing</c> in VB).
         /// </para>
         /// </remarks>
         public String Comment
@@ -143,20 +155,26 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// The FileName for the GZIP stream.
+        ///   The FileName for the GZIP stream.
         /// </summary>
+        ///
         /// <remarks>
+        ///
         /// <para>
-        /// The GZIP format optionally allows each file to have an associated filename.  When
-        /// compressing data (through Write()), set this FileName before calling Write() the first
-        /// time on the GZipStream.  The actual filename is encoded into the GZIP bytestream with
-        /// the ISO-8859-1 code page, according to RFC 1952. It is the application's responsibility to 
-        /// insure that the FileName can be encoded and decoded correctly with this code page. 
+        ///   The GZIP format optionally allows each file to have an associated
+        ///   filename.  When compressing data (through <c>Write()</c>), set this
+        ///   FileName before calling <c>Write()</c> the first time on the <c>GZipStream</c>.
+        ///   The actual filename is encoded into the GZIP bytestream with the
+        ///   ISO-8859-1 code page, according to RFC 1952. It is the application's
+        ///   responsibility to insure that the FileName can be encoded and decoded
+        ///   correctly with this code page.
         /// </para>
+        ///
         /// <para>
-        /// When decompressing (through Read()), you can retrieve this value any time after the
-        /// first Read().  In the case where there was no filename encoded into the GZIP
-        /// bytestream, the property will return null (Nothing in VB).
+        ///   When decompressing (through <c>Read()</c>), you can retrieve this value
+        ///   any time after the first <c>Read()</c>.  In the case where there was no filename
+        ///   encoded into the GZIP bytestream, the property will return <c>null</c> (<c>Nothing</c>
+        ///   in VB).
         /// </para>
         /// </remarks>
         public String FileName
@@ -182,13 +200,15 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// The last modified time for the GZIP stream.
+        ///   The last modified time for the GZIP stream.
         /// </summary>
         ///
-        /// <remarks> GZIP allows the storage of a last modified time with each GZIP entry.
-        /// When compressing data, you can set this before the first call to Write().  When
-        /// decompressing, you can retrieve this value any time after the first call to
-        /// Read().  </remarks>
+        /// <remarks>
+        ///   GZIP allows the storage of a last modified time with each GZIP entry.
+        ///   When compressing data, you can set this before the first call to
+        ///   <c>Write()</c>.  When decompressing, you can retrieve this value any time
+        ///   after the first call to <c>Read()</c>.
+        /// </remarks>
         public DateTime? LastModified;
 
         /// <summary>
@@ -209,22 +229,27 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// Create a GZipStream using the specified CompressionMode. 
+        ///   Create a <c>GZipStream</c> using the specified <c>CompressionMode</c>. 
         /// </summary>
         /// <remarks>
         ///
-        /// <para> When mode is <c>CompressionMode.Compress</c>, the GZipStream will use the
-        /// default compression level.  </para>
+        /// <para>
+        ///   When mode is <c>CompressionMode.Compress</c>, the <c>GZipStream</c> will use the
+        ///   default compression level.
+        /// </para>
         ///
-        /// <para> As noted in the class documentation, the CompressionMode (Compress or
-        /// Decompress) also establishes the "direction" of the stream.  A GZipStream with
-        /// CompressionMode.Compress works only through Write().  A GZipStream with
-        /// CompressionMode.Decompress works only through Read().  </para>
+        /// <para>
+        ///   As noted in the class documentation, the <c>CompressionMode</c> (Compress
+        ///   or Decompress) also establishes the "direction" of the stream.  A
+        ///   <c>GZipStream</c> with <c>CompressionMode.Compress</c> works only through
+        ///   <c>Write()</c>.  A <c>GZipStream</c> with
+        ///   <c>CompressionMode.Decompress</c> works only through <c>Read()</c>.
+        /// </para>
         ///
         /// </remarks>
         ///
         /// <example>
-        /// This example shows how to use a GZipStream to compress data.
+        ///   This example shows how to use a GZipStream to compress data.
         /// <code>
         /// using (System.IO.Stream input = System.IO.File.OpenRead(fileToCompress))
         /// {
@@ -323,20 +348,25 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Create a GZipStream using the specified CompressionMode and the specified CompressionLevel.
+        ///   Create a <c>GZipStream</c> using the specified <c>CompressionMode</c> and
+        ///   the specified <c>CompressionLevel</c>.
         /// </summary>
         /// <remarks>
         ///
         /// <para>
-        /// The CompressionMode (Compress or Decompress) also establishes the "direction" of the
-        /// stream.  A GZipStream with CompressionMode.Compress works only through Write().  A
-        /// GZipStream with CompressionMode.Decompress works only through Read().
+        ///   The <c>CompressionMode</c> (Compress or Decompress) also establishes the
+        ///   "direction" of the stream.  A <c>GZipStream</c> with
+        ///   <c>CompressionMode.Compress</c> works only through <c>Write()</c>.  A
+        ///   <c>GZipStream</c> with <c>CompressionMode.Decompress</c> works only
+        ///   through <c>Read()</c>.
         /// </para>
         ///
         /// </remarks>
         ///
         /// <example>
-        /// This example shows how to use a GZipStream to compress a file into a .gz file.
+        ///
+        /// This example shows how to use a <c>GZipStream</c> to compress a file into a .gz file.
+        ///
         /// <code>
         /// using (System.IO.Stream input = System.IO.File.OpenRead(fileToCompress))
         /// {
@@ -375,7 +405,7 @@ namespace Ionic.Zlib
         /// </code>
         /// </example>
         /// <param name="stream">The stream to be read or written while deflating or inflating.</param>
-        /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
+        /// <param name="mode">Indicates whether the <c>GZipStream</c> will compress or decompress.</param>
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
         public GZipStream(Stream stream, CompressionMode mode, CompressionLevel level)
             : this(stream, mode, level, false)
@@ -383,65 +413,88 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Create a GZipStream using the specified CompressionMode, and explicitly
-        /// specify whether the stream should be left open after Deflation or Inflation.
+        ///   Create a <c>GZipStream</c> using the specified <c>CompressionMode</c>, and
+        ///   explicitly specify whether the stream should be left open after Deflation
+        ///   or Inflation.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// This constructor allows the application to request that the captive stream
-        /// remain open after the deflation or inflation occurs.  By default, after
-        /// Close() is called on the stream, the captive stream is also closed. In some
-        /// cases this is not desired, for example if the stream is a memory stream that
-        /// will be re-read after compressed data has been written to it.  Specify true
-        /// for the leaveOpen parameter to leave the stream open.
+        ///   This constructor allows the application to request that the captive stream
+        ///   remain open after the deflation or inflation occurs.  By default, after
+        ///   <c>Close()</c> is called on the stream, the captive stream is also
+        ///   closed. In some cases this is not desired, for example if the stream is a
+        ///   memory stream that will be re-read after compressed data has been written
+        ///   to it.  Specify true for the <paramref name="leaveOpen"/> parameter to leave
+        ///   the stream open.
         /// </para>
         /// 
         /// <para>
-        /// The <see cref="CompressionMode"/> (Compress or Decompress) also establishes
-        /// the "direction" of the stream.  A GZipStream with
-        /// <c>CompressionMode.Compress</c> works only through <c>Write()</c>.  A <c>GZipStream</c>
-        /// with <c>CompressionMode.Decompress</c> works only through <c>Read()</c>.
+        ///   The <see cref="CompressionMode"/> (Compress or Decompress) also
+        ///   establishes the "direction" of the stream.  A <c>GZipStream</c> with
+        ///   <c>CompressionMode.Compress</c> works only through <c>Write()</c>.  A <c>GZipStream</c>
+        ///   with <c>CompressionMode.Decompress</c> works only through <c>Read()</c>.
         /// </para>
+        ///
         /// <para>
-        /// The GZipStream will use the default compression level. If you want to
-        /// specify the compression level, see <see cref="GZipStream(Stream,
-        /// CompressionMode, CompressionLevel, bool)"/>.
+        ///   The <c>GZipStream</c> will use the default compression level. If you want
+        ///   to specify the compression level, see <see cref="GZipStream(Stream,
+        ///   CompressionMode, CompressionLevel, bool)"/>.
         /// </para>
+        ///
         /// <para>
-        /// See the other overloads of this constructor for example code.
+        ///   See the other overloads of this constructor for example code.
         /// </para>
+        ///
         /// </remarks>
-        /// <param name="stream">The stream which will be read or written. This is called the 
-        /// "captive" stream in other places in this documentation.</param>
-        /// <param name="mode">Indicates whether the GZipStream will compress or decompress.</param>
-        /// <param name="leaveOpen">true if the application would like the base stream to remain open after inflation/deflation.</param>
+        ///
+        /// <param name="stream">
+        ///   The stream which will be read or written. This is called the "captive"
+        ///   stream in other places in this documentation.
+        /// </param>
+        /// 
+        /// <param name="mode">Indicates whether the GZipStream will compress or decompress.
+        /// </param>
+        ///
+        /// <param name="leaveOpen">
+        ///   true if the application would like the base stream to remain open after
+        ///   inflation/deflation.
+        /// </param>
         public GZipStream(Stream stream, CompressionMode mode, bool leaveOpen)
             : this(stream, mode, CompressionLevel.Default, leaveOpen)
         {
         }
 
         /// <summary>
-        /// Create a GZipStream using the specified CompressionMode and the specified CompressionLevel,
-        /// and explicitly specify whether the stream should be left open after Deflation or Inflation.
+        ///   Create a <c>GZipStream</c> using the specified <c>CompressionMode</c> and the
+        ///   specified <c>CompressionLevel</c>, and explicitly specify whether the
+        ///   stream should be left open after Deflation or Inflation.
         /// </summary>
+        ///
         /// <remarks>
+        ///
         /// <para>
-        /// This constructor allows the application to request that the captive stream remain open after
-        /// the deflation or inflation occurs.  By default, after Close() is called on the stream, the 
-        /// captive stream is also closed. In some cases this is not desired, for example if the stream 
-        /// is a memory stream that will be re-read after compressed data has been written to it.  Specify true for the 
-        /// leaveOpen parameter to leave the stream open. 
+        ///   This constructor allows the application to request that the captive stream
+        ///   remain open after the deflation or inflation occurs.  By default, after
+        ///   <c>Close()</c> is called on the stream, the captive stream is also
+        ///   closed. In some cases this is not desired, for example if the stream is a
+        ///   memory stream that will be re-read after compressed data has been written
+        ///   to it.  Specify true for the <paramref name="leaveOpen"/> parameter to
+        ///   leave the stream open.
         /// </para>
+        ///
         /// <para>
-        /// As noted in the class documentation, 
-        /// the CompressionMode (Compress or Decompress) also establishes the "direction" of the stream.  
-        /// A GZipStream with CompressionMode.Compress works only through Write().  A GZipStream with 
-        /// CompressionMode.Decompress works only through Read().
+        ///   As noted in the class documentation, the <c>CompressionMode</c> (Compress
+        ///   or Decompress) also establishes the "direction" of the stream.  A
+        ///   <c>GZipStream</c> with <c>CompressionMode.Compress</c> works only through
+        ///   <c>Write()</c>.  A <c>GZipStream</c> with <c>CompressionMode.Decompress</c> works only
+        ///   through <c>Read()</c>.
         /// </para>
+        ///
         /// </remarks>
+        ///
         /// <example>
-        /// This example shows how to use a DeflateStream to compress data.
+        ///   This example shows how to use a <c>GZipStream</c> to compress data.
         /// <code>
         /// using (System.IO.Stream input = System.IO.File.OpenRead(fileToCompress))
         /// {
@@ -501,19 +554,20 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// The size of the working buffer for the compression codec. 
+        ///   The size of the working buffer for the compression codec. 
         /// </summary>
         ///
         /// <remarks>
         /// <para>
-        /// The working buffer is used for all stream operations.  The default size is 1024 bytes.
-        /// The minimum size is 128 bytes. You may get better performance with a larger buffer.
-        /// Then again, you might not.  You would have to test it.
+        ///   The working buffer is used for all stream operations.  The default size is
+        ///   1024 bytes.  The minimum size is 128 bytes. You may get better performance
+        ///   with a larger buffer.  Then again, you might not.  You would have to test
+        ///   it.
         /// </para>
         ///
         /// <para>
-        /// Set this before the first call to Read()  or Write() on the stream. If you try to set it 
-        /// afterwards, it will throw.
+        ///   Set this before the first call to <c>Read()</c> or <c>Write()</c> on the
+        ///   stream. If you try to set it afterwards, it will throw.
         /// </para>
         /// </remarks>
         public int BufferSize
@@ -560,8 +614,8 @@ namespace Ionic.Zlib
         /// Dispose the stream.  
         /// </summary>
         /// <remarks>
-        /// This may or may not result in a Close() call on the captive stream. 
-        /// See the ctor's with leaveOpen parameters for more information.
+        /// This may or may not result in a <c>Close()</c> call on the captive stream. 
+        /// See the doc on constructors that take a <paramref name="leaveOpen"/> parameter for more information.
         /// </remarks>
         protected override void Dispose(bool disposing)
         {
@@ -636,7 +690,7 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Reading this property always throws a NotImplementedException.
+        /// Reading this property always throws a <see cref="NotImplementedException"/>.
         /// </summary>
         public override long Length
         {
@@ -644,13 +698,15 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// The position of the stream pointer. 
+        ///   The position of the stream pointer. 
         /// </summary>
+        ///
         /// <remarks>
-        /// Writing this property always throws a NotImplementedException. Reading will
-        /// return the total bytes written out, if used in writing, or the total bytes 
-        /// read in, if used in reading.   The count may refer to compressed bytes or 
-        /// uncompressed bytes, depending on how you've used the stream.
+        ///   Setting this property always throws a <see
+        ///   cref="NotImplementedException"/>. Reading will return the total bytes
+        ///   written out, if used in writing, or the total bytes read in, if used in
+        ///   reading.  The count may refer to compressed bytes or uncompressed bytes,
+        ///   depending on how you've used the stream.
         /// </remarks>
         public override long Position
         {
@@ -667,11 +723,13 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Read and decompress data from the source stream.
+        ///   Read and decompress data from the source stream.
         /// </summary>
+        ///
         /// <remarks>
-        /// With a GZipStream, decompression is done through reading.
+        ///   With a <c>GZipStream</c>, decompression is done through reading.
         /// </remarks>
+        ///
         /// <example>
         /// <code>
         /// byte[] working = new byte[WORKING_BUFFER_SIZE];
@@ -715,7 +773,7 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// Calling this method always throws a <see cref="NotImplementedException"/>.
+        ///   Calling this method always throws a <see cref="NotImplementedException"/>.
         /// </summary>
         /// <param name="offset">irrelevant; it will always throw!</param>
         /// <param name="origin">irrelevant; it will always throw!</param>
@@ -726,7 +784,7 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Calling this method always throws a NotImplementedException.
+        ///   Calling this method always throws a <see cref="NotImplementedException"/>.
         /// </summary>
         /// <param name="value">irrelevant; this method will always throw!</param>
         public override void SetLength(long value)
@@ -735,19 +793,23 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Write data to the stream. 
+        ///   Write data to the stream.
         /// </summary>
+        ///
         /// <remarks>
         /// <para>
-        /// If you wish to use the GZipStream to compress data while writing, you can create a
-        /// GZipStream with CompressionMode.Compress, and a writable output stream.  Then call
-        /// Write() on that GZipStream, providing uncompressed data as input.  The data sent
-        /// to the output stream will be the compressed form of the data written.  
+        ///   If you wish to use the <c>GZipStream</c> to compress data while writing,
+        ///   you can create a <c>GZipStream</c> with <c>CompressionMode.Compress</c>, and a
+        ///   writable output stream.  Then call <c>Write()</c> on that <c>GZipStream</c>,
+        ///   providing uncompressed data as input.  The data sent to the output stream
+        ///   will be the compressed form of the data written.
         /// </para>
+        ///
         /// <para>
-        /// A GZipStream can be used for Read() or Write(), but not both. Writing implies compression. 
-        /// Reading implies decompression.
+        ///   A <c>GZipStream</c> can be used for <c>Read()</c> or <c>Write()</c>, but not
+        ///   both. Writing implies compression.  Reading implies decompression.
         /// </para>
+        ///
         /// </remarks>
         /// <param name="buffer">The buffer holding data to write to the stream.</param>
         /// <param name="offset">the offset within that data array to find the first byte to write.</param>
@@ -844,13 +906,22 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// Compress a string into a byte array.
+        ///   Compress a string into a byte array using GZip.
         /// </summary>
+        ///
+        /// <remarks>
+        ///   Uncompress it with <see cref="GZipStream.UncompressString(byte[])"/>.
+        /// </remarks>
+        ///
         /// <seealso cref="GZipStream.UncompressString(byte[])"/>
+        /// <seealso cref="GZipStream.CompressBuffer(byte[])"/>
+        ///
         /// <param name="s">
-        /// A string to compress.  The string will first be encoded
-        /// using UTF8, then compressed.
+        ///   A string to compress. The string will first be encoded
+        ///   using UTF8, then compressed.
         /// </param>
+        ///
+        /// <returns>The string in compressed form</returns>
         public static byte[] CompressString(String s)
         {
             return ZlibBaseStream.CompressString(s, typeof(GZipStream));
@@ -858,16 +929,21 @@ namespace Ionic.Zlib
 
                     
         /// <summary>
-        /// Compress a byte array into a new byte array.
+        ///   Compress a byte array into a new byte array using GZip.
         /// </summary>
+        ///
         /// <remarks>
-        /// Uncompress it with <see cref="GZipStream.UncompressBuffer(byte[])"/>.
+        ///   Uncompress it with <see cref="GZipStream.UncompressBuffer(byte[])"/>.
         /// </remarks>
+        ///
         /// <seealso cref="GZipStream.CompressString(string)"/>
         /// <seealso cref="GZipStream.UncompressBuffer(byte[])"/>
+        ///
         /// <param name="b">
-        /// A buffer to compress. 
+        ///   A buffer to compress. 
         /// </param>
+        ///
+        /// <returns>The data in compressed form</returns> 
         public static byte[] CompressBuffer(byte[] b)
         {
             return ZlibBaseStream.CompressBuffer(b, typeof(GZipStream));
@@ -875,25 +951,34 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        /// Uncompress a byte array into a single string.
+        ///   Uncompress a GZip'ed byte array into a single string.
         /// </summary>
+        ///
         /// <seealso cref="GZipStream.CompressString(String)"/>
+        /// <seealso cref="GZipStream.UncompressBuffer(byte[])"/>
+        ///
         /// <param name="compressed">
-        /// A buffer containing GZIP-compressed data.  
+        ///   A buffer containing GZIP-compressed data.  
         /// </param>
+        ///
+        /// <returns>The uncompressed string</returns>
         public static String UncompressString(byte[] compressed)
         {
             return ZlibBaseStream.UncompressString(compressed, typeof(GZipStream));
         }
 
         /// <summary>
-        /// Uncompress a byte array into a byte array.
+        ///   Uncompress a GZip'ed byte array into a byte array.
         /// </summary>
+        ///
         /// <seealso cref="GZipStream.CompressBuffer(byte[])"/>
         /// <seealso cref="GZipStream.UncompressString(byte[])"/>
+        ///
         /// <param name="compressed">
-        /// A buffer containing ZLIB-compressed data.  
+        ///   A buffer containing data that has been compressed with GZip.  
         /// </param>
+        ///
+        /// <returns>The data in uncompressed form</returns>
         public static byte[] UncompressBuffer(byte[] compressed)
         {
             return ZlibBaseStream.UncompressBuffer(compressed, typeof(GZipStream));
