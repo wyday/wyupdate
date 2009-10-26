@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-23 14:32:46>
+// Time-stamp: <2009-October-15 03:33:40>
 //
 // ------------------------------------------------------------------
 //
@@ -229,7 +229,7 @@ namespace Ionic.Zlib
     {
         private static readonly Int64 UnsetLengthLimit = -99;
         
-        private System.IO.Stream _innerStream;
+        internal System.IO.Stream _innerStream;
         private CRC32 _Crc32;
         private Int64 _lengthLimit = -99;
         private bool _leaveOpen;

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 16:29:56>
+// Time-stamp: <2009-October-23 18:56:24>
 //
 // ------------------------------------------------------------------
 //
@@ -41,9 +41,48 @@ namespace Ionic.Zip
     ///   cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>, the application
     ///   code provides the logic that writes the entry data directly into the zip file.
     /// </remarks>
+    ///
+    /// <example>
+    ///
+    /// This example shows how to define a WriteDelegate that obtains a DataSet, and then 
+    /// writes the XML for the DataSet into the zip archive.  There's no need to 
+    /// save the XML to a disk file first. 
+    /// 
+    /// <code lang="C#">
+    /// private void WriteEntry (String filename, Stream output)
+    /// {
+    ///     DataSet ds1 = ObtainDataSet();
+    ///     ds1.WriteXml(output);
+    /// }
+    /// 
+    /// private void Run()
+    /// {
+    ///     using (var zip = new ZipFile())
+    ///     {
+    ///         zip.AddEntry(zipEntryName, WriteEntry);
+    ///         zip.Save(zipFileName);
+    ///     }
+    /// }
+    /// </code>
+    ///
+    /// <code lang="vb">
+    /// Private Sub WriteEntry (ByVal filename As String, ByVal output As Stream) 
+    ///     DataSet ds1 = ObtainDataSet()
+    ///     ds1.WriteXml(stream)
+    /// End Sub
+    /// 
+    /// Public Sub Run()
+    ///     Using zip = New ZipFile
+    ///         zip.AddEntry(zipEntryName, New WriteDelegate(AddressOf WriteEntry))
+    ///         zip.Save(zipFileName)
+    ///     End Using
+    /// End Sub
+    /// </code> 
+    /// </example>
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>
     public delegate void WriteDelegate(string entryName, System.IO.Stream stream);
 
+    
     /// <summary>
     ///   Delegate in which the application opens the stream, just-in-time, for the named entry.
     /// </summary>
@@ -87,10 +126,10 @@ namespace Ionic.Zip
     ///
     /// <remarks>
     /// <para>
-    ///   Using this callback, the application can, for example, specify
-    ///   that previously-compressed files (.mp3, .png, .docx, etc)
-    ///   should not be compressed, or can set the compression level
-    ///   based on any other factor.
+    ///   Using this callback, the application can, for example, specify that
+    ///   previously-compressed files (.mp3, .png, .docx, etc) should use a
+    ///   <c>CompressionLevel</c> of <c>None</c>, or can set the compression level based
+    ///   on any other factor.
     /// </para>
     /// </remarks>
     /// <seealso cref="Ionic.Zip.ZipFile.SetCompression"/>
@@ -319,6 +358,7 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Total number of bytes that will be read or written for this entry.
+        /// This number will be -1 if the value cannot be determined. 
         /// </summary>
         public Int64 TotalBytesToTransfer
         {

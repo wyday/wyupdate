@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-23 15:21:31>
+// Time-stamp: <2009-October-21 17:08:19>
 //
 // ------------------------------------------------------------------
 //
@@ -162,7 +162,7 @@ namespace Ionic.Zlib
         /// filter or predictor.  By this definition, filtered data consists mostly of small
         /// values with a somewhat random distribution.  In this case, the compression algorithm
         /// is tuned to compress them better.  The effect of <c>Filtered</c> is to force more Huffman
-        /// coding and less string matching; it is a half-setp between <c>Default</c> and <c>HuffmanOnly</c>.
+        /// coding and less string matching; it is a half-step between <c>Default</c> and <c>HuffmanOnly</c>.
         /// </summary>
         Filtered = 1,
 

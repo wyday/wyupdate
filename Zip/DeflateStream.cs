@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 18:37:55>
+// Time-stamp: <2009-October-15 03:31:31>
 //
 // ------------------------------------------------------------------
 //
@@ -62,6 +62,7 @@ namespace Ionic.Zlib
     public class DeflateStream : System.IO.Stream
     {
         internal ZlibBaseStream _baseStream;
+        internal System.IO.Stream _innerStream;
         bool _disposed;
 
         /// <summary>
@@ -295,6 +296,7 @@ namespace Ionic.Zlib
         /// <param name="level">A tuning knob to trade speed for effectiveness.</param>
         public DeflateStream(System.IO.Stream stream, CompressionMode mode, CompressionLevel level, bool leaveOpen)
         {
+            _innerStream = stream;
             _baseStream = new ZlibBaseStream(stream, mode, level, ZlibStreamFlavor.DEFLATE, leaveOpen);
         }
 
@@ -413,7 +415,6 @@ namespace Ionic.Zlib
             {
                 base.Dispose(disposing);
             }
-    
         }
 
         

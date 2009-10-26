@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 17:20:54>
+// Time-stamp: <2009-October-23 21:01:16>
 //
 // ------------------------------------------------------------------
 //
@@ -105,7 +105,7 @@ namespace  Ionic.Zip
     public class ZipInputStream : Stream
     {
         /// <summary>
-        ///   Create a <c>ZipInputStream</c>.
+        ///   Create a <c>ZipInputStream</c>, wrapping it around an existing stream.
         /// </summary>
         ///
         /// <remarks>
@@ -176,12 +176,12 @@ namespace  Ionic.Zip
         ///   This example shows how to read a zip file, and extract entries, using the
         ///   <c>ZipInputStream</c> class.
         ///
-        /// <code>
+        /// <code lang="C#">
         /// private void Unzip()
         /// {
         ///     byte[] buffer= new byte[2048];
         ///     int n;
-        ///     using (var raw = File.Open(_outputFileName, FileMode.Open, FileAccess.Read))
+        ///     using (var raw = File.Open(inputFileName, FileMode.Open, FileAccess.Read))
         ///     {
         ///         using (var input= new ZipInputStream(raw))
         ///         {
@@ -189,10 +189,10 @@ namespace  Ionic.Zip
         ///             while (( e = input.GetNextEntry()) != null)
         ///             {
         ///                 if (e.IsDirectory) continue;
-        ///                 string outputPath = Path.Combine(_extractDir, e.FileName);
+        ///                 string outputPath = Path.Combine(extractDir, e.FileName);
         ///                 using (var output = File.Open(outputPath, FileMode.Create, FileAccess.ReadWrite))
         ///                 {
-        ///                     while ((n= input.Read(buffer,0,buffer.Length)) > 0)
+        ///                     while ((n= input.Read(buffer, 0, buffer.Length)) > 0)
         ///                     {
         ///                         output.Write(buffer,0,n);
         ///                     }
@@ -202,9 +202,116 @@ namespace  Ionic.Zip
         ///     }
         /// }
         /// </code>
+        ///
+        /// <code lang="VB">
+        /// Private Sub UnZip()
+        ///     Dim inputFileName As String = "MyArchive.zip"
+        ///     Dim extractDir As String = "extract"
+        ///     Dim buffer As Byte() = New Byte(2048) {}
+        ///     Using raw As FileStream = File.Open(inputFileName, FileMode.Open, FileAccess.Read)
+        ///         Using input As ZipInputStream = New ZipInputStream(raw)
+        ///             Dim e As ZipEntry
+        ///             Do While (Not e = input.GetNextEntry Is Nothing)
+        ///                 If Not e.IsDirectory Then
+        ///                     Using output As FileStream = File.Open(Path.Combine(extractDir, e.FileName), _
+        ///                                                            FileMode.Create, FileAccess.ReadWrite)
+        ///                         Dim n As Integer
+        ///                         Do While (n = input.Read(buffer, 0, buffer.Length) > 0)
+        ///                             output.Write(buffer, 0, n)
+        ///                         Loop
+        ///                     End Using
+        ///                 End If
+        ///             Loop
+        ///         End Using
+        ///     End Using
+        /// End Sub
+        /// </code>
         /// </example>
         public ZipInputStream(Stream stream)  : this (stream, false) { }
 
+
+        
+        /// <summary>
+        ///   Create a <c>ZipInputStream</c>, given the name of an existing zip file.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///
+        /// <para>
+        ///   This constructor opens a <c>FileStream</c> for the given zipfile, and
+        ///   wraps a <c>ZipInputStream</c> around that.  See the documentation for the
+        ///   <see cref="ZipInputStream(Stream)"/> constructor for full details.
+        /// </para>
+        ///
+        /// <para>
+        ///   While the <see cref="ZipFile"/> class is generally easier
+        ///   to use, this class provides an alternative to those
+        ///   applications that want to read from a zipfile directly,
+        ///   using a <see cref="System.IO.Stream"/>.
+        /// </para>
+        ///
+        /// </remarks>
+        ///
+        /// <param name="fileName">
+        ///   The name of the filesystem file to read. 
+        /// </param>
+        ///
+        /// <example>
+        ///
+        ///   This example shows how to read a zip file, and extract entries, using the
+        ///   <c>ZipInputStream</c> class.
+        ///
+        /// <code lang="C#">
+        /// private void Unzip()
+        /// {
+        ///     byte[] buffer= new byte[2048];
+        ///     int n;
+        ///     using (var input= new ZipInputStream(inputFileName))
+        ///     {
+        ///         ZipEntry e;
+        ///         while (( e = input.GetNextEntry()) != null)
+        ///         {
+        ///             if (e.IsDirectory) continue;
+        ///             string outputPath = Path.Combine(extractDir, e.FileName);
+        ///             using (var output = File.Open(outputPath, FileMode.Create, FileAccess.ReadWrite))
+        ///             {
+        ///                 while ((n= input.Read(buffer, 0, buffer.Length)) > 0)
+        ///                 {
+        ///                     output.Write(buffer,0,n);
+        ///                 }
+        ///             }
+        ///         }
+        ///     }
+        /// }
+        /// </code>
+        ///
+        /// <code lang="VB">
+        /// Private Sub UnZip()
+        ///     Dim inputFileName As String = "MyArchive.zip"
+        ///     Dim extractDir As String = "extract"
+        ///     Dim buffer As Byte() = New Byte(2048) {}
+        ///     Using input As ZipInputStream = New ZipInputStream(inputFileName)
+        ///         Dim e As ZipEntry
+        ///         Do While (Not e = input.GetNextEntry Is Nothing)
+        ///             If Not e.IsDirectory Then
+        ///                 Using output As FileStream = File.Open(Path.Combine(extractDir, e.FileName), _
+        ///                                                        FileMode.Create, FileAccess.ReadWrite)
+        ///                     Dim n As Integer
+        ///                     Do While (n = input.Read(buffer, 0, buffer.Length) > 0)
+        ///                         output.Write(buffer, 0, n)
+        ///                     Loop
+        ///                 End Using
+        ///             End If
+        ///         Loop
+        ///     End Using
+        /// End Sub
+        /// </code>
+        /// </example>
+        public ZipInputStream(String fileName)
+        {
+            Stream stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read );
+            _Init(stream, false);
+        }
 
         
         /// <summary>
@@ -228,7 +335,14 @@ namespace  Ionic.Zip
         /// </param>
         public ZipInputStream(Stream stream, bool leaveOpen)
         {
+            _Init(stream, leaveOpen);
+        }
+        
+        private void _Init(Stream stream, bool leaveOpen)
+        {
             _inputStream = stream;
+            if (!_inputStream.CanRead)
+                throw new ZipException("The stream must be readable.");
             _container= new ZipContainer(this);
             _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
             _leaveUnderlyingStreamOpen = leaveOpen;
@@ -262,12 +376,13 @@ namespace  Ionic.Zip
         /// </para>
         ///
         /// <para>
-        ///   This property is "provisional".  IBM437 is used to decode filenames and
-        ///   comments where possible, in other words, where no loss of data would
-        ///   result (when encoding and decoding is reflexive). This codepage is used
-        ///   when that encoding is not sufficient. It is possible, therefore, to have a
-        ///   given entry with a <c>Comment</c> encoded in IBM437 and a <c>FileName</c>
-        ///   encoded with the specified "provisional" codepage.
+        ///   This property is "provisional". When the entry in the zip archive is not
+        ///   explicitly marked as using UTF-8, then IBM437 is used to decode filenames
+        ///   and comments. If a loss of data would result from using IBM436 -
+        ///   specifically when encoding and decoding is not reflexive - the codepage
+        ///   specified here is used. It is possible, therefore, to have a given entry
+        ///   with a <c>Comment</c> encoded in IBM437 and a <c>FileName</c> encoded with
+        ///   the specified "provisional" codepage.
         /// </para>
         ///
         /// <para>
@@ -444,9 +559,9 @@ namespace  Ionic.Zip
 
             if (_LeftToRead == 0)
             {
-                _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
                 int CrcResult = _crcStream.Crc;
                 _currentEntry.VerifyCrc(CrcResult);
+                _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
             }
             
             return n;
@@ -544,12 +659,12 @@ namespace  Ionic.Zip
         /// <summary>
         /// Always returns true.
         /// </summary>
-        public override bool CanRead  { get { return true; } }
+        public override bool CanRead  { get { return true; }}
         
         /// <summary>
-        /// Always returns true.
+        /// Returns the value of <c>CanSeek</c> for the underlying (wrapped) stream.
         /// </summary>
-        public override bool CanSeek  { get { return true; } }
+        public override bool CanSeek  { get { return _inputStream.CanSeek; } }
         
         /// <summary>
         /// Always returns false.
@@ -605,9 +720,10 @@ namespace  Ionic.Zip
         ///   
         /// <para>
         ///   Applications can intermix calls to <c>Seek()</c> with calls to <see
-        ///   cref="GetNextEntry()"/>.  After a call to <c>Seek()</c>, <c>GetNextEntry()</c> will
-        ///   get the next <c>ZipEntry</c> that falls after the current position in the input
-        ///   stream.
+        ///   cref="GetNextEntry()"/>.  After a call to <c>Seek()</c>,
+        ///   <c>GetNextEntry()</c> will get the next <c>ZipEntry</c> that falls after
+        ///   the current position in the input stream. You're on your own for finding
+        ///   out just where to seek in the stream, to get to the various entries.
         /// </para>
         ///   
         /// </remarks>

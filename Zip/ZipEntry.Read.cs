@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 00:54:05>
+// Time-stamp: <2009-October-21 12:42:07>
 //
 // ------------------------------------------------------------------
 //
@@ -66,7 +66,7 @@ namespace Ionic.Zip
             // change for workitem 8098
             ze._RelativeOffsetOfLocalHeader = ze.ArchiveStream.Position;
 
-            int signature = Ionic.Zip.SharedUtilities.ReadSignature(ze.ArchiveStream);
+            int signature = Ionic.Zip.SharedUtilities.ReadEntrySignature(ze.ArchiveStream);
             bytesRead += 4;
 
             // Return false if this is not a local file header signature.

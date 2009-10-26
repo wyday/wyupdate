@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-05 19:45:28>
+// Time-stamp: <2009-October-19 16:44:38>
 //
 // ------------------------------------------------------------------
 //
@@ -87,6 +87,7 @@ namespace Ionic.Zip
                                           Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)) )
                     .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
                     .Append(string.Format("  Is Text?: {0}\n", this._IsText))
+                    .Append(string.Format("  Is Directory?: {0}\n", this._IsDirectory))
                     .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64)); 
                 if (!string.IsNullOrEmpty(this._Comment))
                 {
@@ -187,7 +188,6 @@ namespace Ionic.Zip
                 zde._LocalFileName = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
             }
 
-
             // Console.WriteLine("\nEntry : {0}", zde._LocalFileName);
             // Console.WriteLine("  V Madeby/Needed:      0x{0:X4} / 0x{1:X4}", zde._VersionMadeBy, zde._VersionNeeded);
             // Console.WriteLine("  BitField/Compression: 0x{0:X4} / 0x{1:X4}", zde._BitField, zde._CompressionMethod);
@@ -201,7 +201,6 @@ namespace Ionic.Zip
 
             // workitem 6898
             if (zde._LocalFileName.EndsWith("/")) zde.MarkAsDirectory();
-
 
             zde._CompressedFileDataSize = zde._CompressedSize;
             if ((zde._BitField & 0x01) == 0x01)
