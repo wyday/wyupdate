@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 16:52:16>
+// Time-stamp: <2009-October-21 09:24:39>
 //
 // ------------------------------------------------------------------
 //
@@ -52,8 +52,7 @@ namespace Ionic.Zip
         /// support COM Automation environments.
         /// </remarks>
         public ZipEntry() { }
-
-        //internal ZipEntry(int size) { BufferSize = size; }
+        
 
         /// <summary>
         ///   The time and date at which the file indicated by the <c>ZipEntry</c> was
@@ -2149,8 +2148,8 @@ namespace Ionic.Zip
                     // explicitly specify a pathname for this file  
                     result = Path.Combine(directoryPathInArchive, Path.GetFileName(filename));
                 }
-
             }
+            
             result = SharedUtilities.TrimVolumeAndSwapSlashes(result);
             result = SharedUtilities.NormalizeFwdSlashPath(result);
 
@@ -2264,14 +2263,6 @@ namespace Ionic.Zip
 
             return entry;
         }
-
-
-
-
-
-
-
-
 
 
 

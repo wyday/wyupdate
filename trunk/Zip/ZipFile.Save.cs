@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-05 20:10:09>
+// Time-stamp: <2009-October-22 13:50:33>
 //
 // ------------------------------------------------------------------
 //
@@ -159,7 +159,7 @@ namespace Ionic.Zip
                     // _temporaryFileName may remain null if we are writing to a stream.
                     // only close the stream if there is a file behind it. 
                     WriteStream.Close();
-#if !NETCF20
+#if !NETCF
                     WriteStream.Dispose();
 #endif
                     if (_saveOperationCanceled)
@@ -241,12 +241,10 @@ namespace Ionic.Zip
                 // close the stream if there is a file behind it. 
                 if (_writestream != null)
                 {
-                    //try { _writestream.Close(); }
-                    //catch { }
                     try
                     {
                         // workitem 7704
-#if NETCF20
+#if NETCF
                         _writestream.Close();
 #else
                         _writestream.Dispose();
@@ -386,7 +384,27 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
+        ///
+        /// <example>
+        ///
+        ///   This example saves the zipfile content into a MemoryStream, and
+        ///   then gets the array of bytes from that MemoryStream.
+        ///
+        /// <code lang="C#">
+        /// using (var zip = new Ionic.Zip.ZipFile())
+        /// {
+        ///     zip.CompressionLevel= Ionic.Zlib.CompressionLevel.BestCompression;
+        ///     zip.Password = "VerySecret.";
+        ///     zip.Encryption = EncryptionAlgorithm.WinZipAes128;
+        ///     zip.AddFile(sourceFileName);
+        ///     MemoryStream output = new MemoryStream();
+        ///     zip.Save(output);
         /// 
+        ///     byte[] zipbytes = output.ToArray();
+        /// }
+        /// </code>
+        /// </example>
+        ///
         /// <param name="outputStream">
         ///   The <c>System.IO.Stream</c> to write to. It must be writable.
         /// </param>
@@ -457,7 +475,7 @@ namespace Ionic.Zip
             // output stream.
 
             var output = s as CountingStream;
-            long Finish = (output != null) ? output.BytesWritten : s.Position;
+            long Finish = (output != null) ? output.ComputedPosition : s.Position;  // BytesWritten
             long Start = Finish - a.Length;
             
             // need to know which segment the EOCD record starts in
@@ -481,7 +499,18 @@ namespace Ionic.Zip
             if (needZip64CentralDirectory)
             {
                 if (zip64 == Zip64Option.Never)
-                    throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the UseZip64WhenSaving property.");
+                {
+#if NETCF
+                    throw new ZipException("The archive requires a ZIP64 Central Directory. Consider enabling ZIP64 extensions.");
+#else
+                    System.Diagnostics.StackFrame sf = new System.Diagnostics.StackFrame(1);
+                    if (sf.GetMethod().DeclaringType == typeof(ZipFile)) 
+                        throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipFile.UseZip64WhenSaving property.");
+                    else
+                        throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipOutputStream.EnableZip64 property.");
+#endif
+                    
+                }
 
                 a = GenZip64EndOfCentralDirectory(Start, Finish, countOfEntries, numSegments);
                 a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, encoding);
@@ -543,7 +572,7 @@ namespace Ionic.Zip
 
         private static byte[] GenCentralDirectoryFooter(long StartOfCentralDirectory,
                                                         long EndOfCentralDirectory,
-                                                          Zip64Option zip64,
+                                                        Zip64Option zip64,
                                                         int entryCount,
                                                         string comment,
                                                         System.Text.Encoding encoding)
@@ -712,8 +741,9 @@ namespace Ionic.Zip
             
             // offset 60
             // number of the disk with the start of the zip64 eocd
-            // (this will change later)
-            Array.Copy(BitConverter.GetBytes(numSegments-1), 0, bytes, i, 4);
+            // (this will change later)  (it will?)
+            uint x2 = (numSegments==0)?0:(uint)(numSegments-1);
+            Array.Copy(BitConverter.GetBytes(x2), 0, bytes, i, 4);
             i+=4;
 
             // offset 64

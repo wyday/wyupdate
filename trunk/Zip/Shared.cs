@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 15:57:31>
+// Time-stamp: <2009-October-21 12:41:44>
 //
 // ------------------------------------------------------------------
 //
@@ -171,14 +171,46 @@ namespace Ionic.Zip
 
         internal static int ReadSignature(System.IO.Stream s)
         {
-            // workitem 7711
-            //return _ReadFourBytes(s, "Could not read signature - no data!  (position 0x{0:X8})");
             int x = 0;
             try { x = _ReadFourBytes(s, "nul"); }
             catch (BadReadException) { }
             return x;
         }
 
+        
+        internal static int ReadEntrySignature(System.IO.Stream s)
+        {
+            // handle the case of ill-formatted zip archives - includes a data descriptor
+            // when none is expected.
+            int x = 0;
+            try
+            {
+                x = _ReadFourBytes(s, "nul");
+                if (x == ZipConstants.ZipEntryDataDescriptorSignature)
+                {
+                    // advance past data descriptor - 12 bytes if not zip64
+                    s.Seek(12, SeekOrigin.Current);
+                    x = _ReadFourBytes(s, "nul");
+                    if (x != ZipConstants.ZipEntrySignature)
+                    {
+                        // Maybe zip64 was in use for the prior entry.
+                        // Therefore, skip another 8 bytes.
+                        s.Seek(8, SeekOrigin.Current);
+                        x = _ReadFourBytes(s, "nul");
+                        if (x != ZipConstants.ZipEntrySignature)
+                        {
+                            // seek back to the first spot
+                            s.Seek(-24, SeekOrigin.Current);
+                            x = _ReadFourBytes(s, "nul");
+                        }
+                    }
+                }
+            }
+            catch (BadReadException) { }
+            return x;
+        }
+
+        
         internal static int ReadInt(System.IO.Stream s)
         {
             return _ReadFourBytes(s, "Could not read block - no data!  (position 0x{0:X8})");
@@ -257,6 +289,7 @@ namespace Ionic.Zip
                 }
                 else break;
                 if (success) break;
+                
             } while (true);
 
             if (!success)
@@ -562,6 +595,7 @@ namespace Ionic.Zip
         private System.IO.Stream _s;
         private Int64 _bytesWritten;
         private Int64 _bytesRead;
+        private Int64 _initialOffset;
 
         /// <summary>
         /// The  constructor.
@@ -571,6 +605,14 @@ namespace Ionic.Zip
             : base()
         {
             _s = s;
+            try
+            {
+                _initialOffset = _s.Position;
+            }
+            catch
+            {
+                _initialOffset = 0L;
+            }
         }
 
         public Int64 BytesWritten
@@ -630,6 +672,12 @@ namespace Ionic.Zip
             get { return _s.Length; }   // bytesWritten??
         }
 
+        public long ComputedPosition
+        {
+            get { return _initialOffset + _bytesWritten; }
+        }
+
+        
         public override long Position
         {
             get { return _s.Position; }

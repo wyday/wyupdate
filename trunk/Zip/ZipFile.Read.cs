@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-07 20:46:38>
+// Time-stamp: <2009-October-21 16:50:55>
 //
 // ------------------------------------------------------------------
 //
@@ -1020,8 +1020,9 @@ namespace Ionic.Zip
                 {
                     // workitem 8299
                     zf._locEndOfCDS = s.Position - 4;
+                    
                     byte[] block = new byte[16];
-                    zf.ReadStream.Read(block, 0, block.Length);
+                    s.Read(block, 0, block.Length);
 
                     zf._diskNumberWithCd = BitConverter.ToUInt16(block, 2);
                     
@@ -1062,7 +1063,7 @@ namespace Ionic.Zip
                     try
                     {
                         zf._readstream.Close();
-#if !NETCF20
+#if !NETCF
                         zf._readstream.Dispose();
 #endif
                         zf._readstream = null;
@@ -1387,9 +1388,10 @@ namespace Ionic.Zip
         /// Checks the given file to see if it appears to be a valid zip file.
         /// </summary>
         /// <remarks>
+        ///
         /// <para>
-        /// Calling this method is equivalent to calling <see cref="IsZipFile(string,
-        /// bool)"/> with the testExtract parameter set to false.
+        ///   Calling this method is equivalent to calling <see cref="IsZipFile(string,
+        ///   bool)"/> with the testExtract parameter set to false.
         /// </para>
         /// </remarks>
         /// 
@@ -1407,30 +1409,33 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// This method opens the specified zip file, reads in the zip archive,
-        /// verifying the ZIP metadata as it reads.  
+        ///   This method opens the specified zip file, reads in the zip archive,
+        ///   verifying the ZIP metadata as it reads.
         /// </para>
         /// 
         /// <para>
-        /// If everything succeeds, then the method returns true.  If anything fails -
-        /// for example if an incorrect signature or CRC is found, indicating a corrupt
-        /// file, the the method returns false.  This method also returns false for a
-        /// file that does not exist.
+        ///   If everything succeeds, then the method returns true.  If anything fails -
+        ///   for example if an incorrect signature or CRC is found, indicating a
+        ///   corrupt file, the the method returns false.  This method also returns
+        ///   false for a file that does not exist.
         /// </para>
         ///
         /// <para>
-        /// If <c>testExtract</c> is true, as part of its check, this method reads in
-        /// the content for each entry, expands it, and checks CRCs.  This provides an
-        /// additional check beyond verifying the zip header and directory data.
+        ///   If <paramref name="testExtract"/> is true, as part of its check, this
+        ///   method reads in the content for each entry, expands it, and checks CRCs.
+        ///   This provides an additional check beyond verifying the zip header and
+        ///   directory data.
         /// </para>
         ///
         /// <para>
-        /// If <c>testExtract</c> is true, and if any of the zip entries are protected
-        /// with a password, this method will return false.  If you want to verify a
-        /// ZipFile that has entries which are protected with a password, you will need
-        /// to do that manually.
+        ///   If <paramref name="testExtract"/> is true, and if any of the zip entries
+        ///   are protected with a password, this method will return false.  If you want
+        ///   to verify a <c>ZipFile</c> that has entries which are protected with a
+        ///   password, you will need to do that manually.
         /// </para>
+        ///
         /// </remarks>
+        ///
         /// <param name="fileName">The zip file to check.</param>
         /// <param name="testExtract">true if the caller wants to extract each entry.</param>
         /// <returns>true if the file contains a valid zip file.</returns>
