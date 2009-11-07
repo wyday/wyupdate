@@ -155,8 +155,9 @@ namespace wyUpdate
             AuthorizationRuleCollection auditCL = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
 
             DirectoryInfo infoEx = new DirectoryInfo(extracted);
-            AuthorizationRuleCollection cold = infoEx.GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-            AuthorizationRuleCollection coldAudit = infoEx.GetAccessControl(AccessControlSections.All).GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
+            DirectorySecurity dsEx = infoEx.GetAccessControl(AccessControlSections.All);
+            AuthorizationRuleCollection cold = dsEx.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+            AuthorizationRuleCollection coldAudit = dsEx.GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
             DirectorySecurity dsExNew = new DirectorySecurity();
 
             // add existing ACL rules to the new DirSec obj
@@ -167,8 +168,9 @@ namespace wyUpdate
                 dsExNew.AddAuditRule(audit);
 
             DirectoryInfo infoBack = new DirectoryInfo(backup);
-            cold = infoBack.GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-            coldAudit = infoBack.GetAccessControl(AccessControlSections.All).GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
+            DirectorySecurity dsBack = infoBack.GetAccessControl(AccessControlSections.All);
+            cold = dsBack.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+            coldAudit = dsBack.GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
             DirectorySecurity dsBackNew = new DirectorySecurity();
 
             // add existing ACL rules to the new DirSec obj
