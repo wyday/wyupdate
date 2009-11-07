@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 11:11:31>
+// Time-stamp: <2009-October-28 06:09:15>
 //
 // ------------------------------------------------------------------
 //
@@ -911,6 +911,7 @@ namespace Ionic
                         }
                         break;
 
+                    case "attrs":
                     case "attributes":
                         {
                             if (tokens.Length <= i + 2)

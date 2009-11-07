@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-09 21:44:00>
+// Time-stamp: <2009-November-03 15:40:51>
 //
 // ------------------------------------------------------------------
 //
@@ -142,7 +142,7 @@ namespace Ionic.Zlib
         internal DeflateManager dstate;
         internal InflateManager istate;
 
-        internal long _Adler32;
+        internal uint _Adler32;
 
         /// <summary>
         /// The compression level to use in this codec.  Useful only in compression mode.
@@ -179,7 +179,7 @@ namespace Ionic.Zlib
         /// <summary>
         /// The Adler32 checksum on the data transferred through the codec so far. You probably don't need to look at this.
         /// </summary>
-        public long Adler32 { get { return _Adler32; } }
+        public int Adler32 { get { return (int)_Adler32; } }
 
 
         /// <summary>
@@ -320,7 +320,7 @@ namespace Ionic.Zlib
         ///     {
         ///         decompressor.NextOut = 0;
         ///         decompressor.AvailableBytesOut = buffer.Length;
-        ///         rc = decompressor.Inflate(ZlibConstants.Z_NO_FLUSH);
+        ///         rc = decompressor.Inflate(FlushType.None);
         /// 
         ///         if (rc != ZlibConstants.Z_OK &amp;&amp; rc != ZlibConstants.Z_STREAM_END)
         ///             throw new Exception("inflating: " + decompressor.Message);
@@ -334,7 +334,7 @@ namespace Ionic.Zlib
         ///     {
         ///         decompressor.NextOut = 0;
         ///         decompressor.AvailableBytesOut = buffer.Length;
-        ///         rc = decompressor.Inflate(ZlibConstants.Z_FINISH);
+        ///         rc = decompressor.Inflate(FlushType.Finish);
         /// 
         ///         if (rc != ZlibConstants.Z_STREAM_END &amp;&amp; rc != ZlibConstants.Z_OK)
         ///             throw new Exception("inflating: " + decompressor.Message);
@@ -414,12 +414,12 @@ namespace Ionic.Zlib
         ///  
         ///  while (compressor.TotalBytesIn != TextToCompress.Length &amp;&amp; compressor.TotalBytesOut &lt; bufferSize)
         ///  {
-        ///    compressor.Deflate(ZlibConstants.Z_NO_FLUSH);
+        ///    compressor.Deflate(FlushType.None);
         ///  }
         ///  
         ///  while (true)
         ///  {
-        ///    int rc= compressor.Deflate(ZlibConstants.Z_FINISH);
+        ///    int rc= compressor.Deflate(FlushType.Finish);
         ///    if (rc == ZlibConstants.Z_STREAM_END) break;
         ///  }
         ///  
@@ -544,7 +544,7 @@ namespace Ionic.Zlib
         ///     {
         ///         compressor.NextOut = 0;
         ///         compressor.AvailableBytesOut = buffer.Length;
-        ///         rc = compressor.Deflate(ZlibConstants.Z_NO_FLUSH);
+        ///         rc = compressor.Deflate(FlushType.None);
         /// 
         ///         if (rc != ZlibConstants.Z_OK &amp;&amp; rc != ZlibConstants.Z_STREAM_END)
         ///             throw new Exception("deflating: " + compressor.Message);
@@ -558,7 +558,7 @@ namespace Ionic.Zlib
         ///     {
         ///         compressor.NextOut = 0;
         ///         compressor.AvailableBytesOut = buffer.Length;
-        ///         rc = compressor.Deflate(ZlibConstants.Z_FINISH);
+        ///         rc = compressor.Deflate(FlushType.Finish);
         /// 
         ///         if (rc != ZlibConstants.Z_STREAM_END &amp;&amp; rc != ZlibConstants.Z_OK)
         ///             throw new Exception("deflating: " + compressor.Message);
@@ -599,9 +599,10 @@ namespace Ionic.Zlib
         {
             if (dstate == null)
                 throw new ZlibException("No Deflate State!");
-            int ret = dstate.End();
+            // TODO: dinoch Tue, 03 Nov 2009  15:39 (test this)
+            //int ret = dstate.End();
             dstate = null;
-            return ret;
+            return ZlibConstants.Z_OK; //ret;
         }
 
         /// <summary>
@@ -675,10 +676,10 @@ namespace Ionic.Zlib
 
             Array.Copy(dstate.pending, dstate.nextPending, OutputBuffer, NextOut, len);
 
-            NextOut += len;
-            dstate.nextPending += len;
-            TotalBytesOut += len;
-            AvailableBytesOut -= len;
+            NextOut             += len;
+            dstate.nextPending  += len;
+            TotalBytesOut       += len;
+            AvailableBytesOut   -= len;
             dstate.pendingCount -= len;
             if (dstate.pendingCount == 0)
             {
@@ -712,14 +713,5 @@ namespace Ionic.Zlib
             return len;
         }
 
-
-#if SILLINESS_PREVAILS
-                public void Free()
-                {
-                        InputBuffer = null;
-                        OutputBuffer = null;
-                        Message = null;
-                }
-#endif
     }
 }

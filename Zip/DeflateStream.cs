@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-15 03:31:31>
+// Time-stamp: <2009-November-03 18:48:49>
 //
 // ------------------------------------------------------------------
 //
@@ -342,11 +342,11 @@ namespace Ionic.Zlib
             }
             set
             {
-            if (_disposed) throw new ObjectDisposedException("DeflateStream");
+                if (_disposed) throw new ObjectDisposedException("DeflateStream");
                 if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
                 if (value < ZlibConstants.WorkingBufferSizeMin)
-                    throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
+                    throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer, at least {1}.", value, ZlibConstants.WorkingBufferSizeMin));
                 this._baseStream._bufferSize = value;
             }
         }
@@ -613,7 +613,13 @@ namespace Ionic.Zlib
         /// <returns>The string in compressed form</returns>
         public static byte[] CompressString(String s)
         {
-            return ZlibBaseStream.CompressString(s, typeof(DeflateStream));
+            using (var ms = new System.IO.MemoryStream())
+            {
+                System.IO.Stream compressor =
+                    new DeflateStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression);
+                ZlibBaseStream.CompressString(s, compressor);
+                return ms.ToArray();
+            }
         }
 
                     
@@ -635,7 +641,14 @@ namespace Ionic.Zlib
         /// <returns>The data in compressed form</returns> 
         public static byte[] CompressBuffer(byte[] b)
         {
-            return ZlibBaseStream.CompressBuffer(b, typeof(DeflateStream));
+            using (var ms = new System.IO.MemoryStream())
+            {
+                System.IO.Stream compressor = 
+                    new DeflateStream( ms, CompressionMode.Compress, CompressionLevel.BestCompression );
+
+                ZlibBaseStream.CompressBuffer(b, compressor);
+                return ms.ToArray();
+            }
         }
 
 
@@ -653,8 +666,15 @@ namespace Ionic.Zlib
         /// <returns>The uncompressed string</returns>
         public static String UncompressString(byte[] compressed)
         {
-            return ZlibBaseStream.UncompressString(compressed, typeof(DeflateStream));
+            using (var input = new System.IO.MemoryStream(compressed))
+            {
+                System.IO.Stream decompressor =
+                    new DeflateStream(input, CompressionMode.Decompress);
+
+                return ZlibBaseStream.UncompressString(compressed, decompressor);
+            }
         }
+
 
         /// <summary>
         ///   Uncompress a DEFLATE'd byte array into a byte array.
@@ -670,7 +690,13 @@ namespace Ionic.Zlib
         /// <returns>The data in uncompressed form</returns>
         public static byte[] UncompressBuffer(byte[] compressed)
         {
-            return ZlibBaseStream.UncompressBuffer(compressed, typeof(DeflateStream));
+            using (var input = new System.IO.MemoryStream(compressed))
+            {
+                System.IO.Stream decompressor = 
+                    new DeflateStream( input, CompressionMode.Decompress );
+
+                return ZlibBaseStream.UncompressBuffer(compressed, decompressor);
+            }
         }
             
     }

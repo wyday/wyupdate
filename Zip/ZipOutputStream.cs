@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-23 21:02:12>
+// Time-stamp: <2009-November-03 18:16:30>
 //
 // ------------------------------------------------------------------
 //
@@ -112,11 +112,27 @@ namespace  Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
+        /// <para>
         ///   The <see cref="ZipFile"/> class is generally easier to use when creating
         ///   zip files. The ZipOutputStream offers a different metaphor for creating a
         ///   zip file, based on the <see cref="System.IO.Stream"/> class.
-        /// </remarks>
+        /// </para>
         ///
+        /// <para>
+        ///   On the desktop .NET Framework, DotNetZip can use a multi-threaded
+        ///   compression implementation that provides significant speed increases on
+        ///   large files, over 300k or so, at the cost of increased memory use at
+        ///   runtime.  (The output of the compression is almost exactly the same size).
+        ///   But, the multi-threaded approach incurs a performance hit on smaller
+        ///   files. There's no way for the ZipOutputStream to know whether parallel
+        ///   compression will be beneficial, because the ZipOutputStream does not know
+        ///   how much data you will write through the stream.  you may wish to set the
+        ///   <see cref="ParallelDeflateThreshold"/> property to zero, if you are
+        ///   compressing large files through <c>ZipOutputStream</c>.  This will cause
+        ///   parallel compression to be used, always.
+        /// </para>
+        /// </remarks>
+        /// 
         /// <param name="stream">
         /// The stream to wrap. It must be writable. This stream will be closed at
         /// the time the ZipOutputStream is closed.
@@ -279,6 +295,7 @@ namespace  Ionic.Zip
         {
             Stream stream = File.Open(fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None );
             _Init(stream, false);
+            _name = fileName;
         }
 
         
@@ -314,6 +331,10 @@ namespace  Ionic.Zip
             _zip64 = Zip64Option.Never;
             _leaveUnderlyingStreamOpen = leaveOpen;
             Strategy = Ionic.Zlib.CompressionStrategy.Default;
+            _name = "unknown";
+#if !NETCF    
+            ParallelDeflateThreshold = -1L;
+#endif
         }
 
         
@@ -853,6 +874,82 @@ namespace  Ionic.Zip
         }
         
 
+                
+#if !NETCF    
+        /// <summary>
+        ///   The size threshold for an entry, above which a parallel deflate is used.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///
+        ///   <para>
+        ///     DotNetZip will use multiple threads to compress any ZipEntry,
+        ///     if the entry is larger than the given size.  Zero means "always
+        ///     use parallel deflate", while -1 means "never use parallel
+        ///     deflate".
+        ///   </para>
+        ///
+        ///   <para>
+        ///     If the entry size cannot be known before compression, as with any entry
+        ///     added via a ZipOutputStream, then Parallel deflate will never be
+        ///     performed, unless the value of this property is zero.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     A parallel deflate operations will speed up the compression of
+        ///     large files, on computers with multiple CPUs or multiple CPU
+        ///     cores.  For files above 1mb, on a dual core or dual-cpu (2p)
+        ///     machine, the time required to compress the file can be 70% of the
+        ///     single-threaded deflate.  For very large files on 4p machines the
+        ///     compression can be done in 30% of the normal time.  The downside
+        ///     is that parallel deflate consumes extra memory during the deflate,
+        ///     and the deflation is slightly less effective.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     Parallel deflate tends to not be as effective as single-threaded deflate
+        ///     because the original data stream is split into multiple independent
+        ///     buffers, each of which is compressed in parallel.  But because they are
+        ///     treated independently, there is no opportunity to share compression
+        ///     dictionaries, and additional framing bytes must be added to the output
+        ///     stream.  For that reason, a deflated stream may be slightly larger when
+        ///     compressed using parallel deflate, as compared to a traditional
+        ///     single-threaded deflate. For files of about 512k, the increase over the
+        ///     normal deflate is as much as 5% of the total compressed size. For larger
+        ///     files, the difference can be as small as 0.1%.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     Multi-threaded compression does not give as much an advantage when using
+        ///     Encryption. This is primarily because encryption tends to slow down
+        ///     the entire pipeline. Also, multi-threaded compression gives less of an
+        ///     advantage when using lower compression levels, for example <see
+        ///     cref="Ionic.Zlib.CompressionLevel.BestSpeed"/>.  You may have to perform
+        ///     some tests to determine the best approach for your situation.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     The default value for this property is -1, which means parallel
+        ///     compression will not be performed unless you set it to zero.
+        ///   </para>
+        ///
+        /// </remarks>
+        public long ParallelDeflateThreshold
+        {
+            set
+            {
+                if ((value != 0) && (value != -1) && (value < 64 * 1024))
+                    throw new ArgumentException();
+                _ParallelDeflateThreshold = value;
+            }
+            get
+            {
+                return _ParallelDeflateThreshold;
+            }
+        }
+#endif
+        
+        
         private void InsureUniqueEntry(ZipEntry ze1)
         {
             foreach (ZipEntry ze2 in _entriesWritten)
@@ -873,6 +970,13 @@ namespace  Ionic.Zip
             }
         }
 
+        internal String Name
+        {
+            get
+            {
+                return _name; 
+            }
+        }
         
         /// <summary>
         ///   Returns true if an entry by the given name has already been written
@@ -1243,6 +1347,11 @@ namespace  Ionic.Zip
         private Stream _deflater;
         private Ionic.Zlib.CrcCalculatorStream _entryOutputStream;
         private bool _wantEntryHeader;
+        private string _name;
+#if !NETCF    
+        internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
+        private long _ParallelDeflateThreshold;
+#endif
     }
 
 
@@ -1268,6 +1377,15 @@ namespace  Ionic.Zip
         public ZipOutputStream ZipOutputStream
         {
             get { return _zos; }
+        }
+        
+        public string Name
+        {
+            get
+            {
+                if (_zf!=null) return _zf.Name;
+                return _zos.Name;
+            }
         }
         
         public string Password
@@ -1296,6 +1414,31 @@ namespace  Ionic.Zip
                 return 0;
             }
         }
+        
+#if !NETCF    
+        public Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater
+        {
+            get
+            {
+                if (_zf!=null) return _zf.ParallelDeflater;
+                return _zos.ParallelDeflater;
+            }
+            set
+            {
+                if (_zf!=null) _zf.ParallelDeflater= value;
+                else _zos.ParallelDeflater = value;
+            }
+        }
+        
+        public long ParallelDeflateThreshold
+        {
+            get
+            {
+                if (_zf!=null) return _zf.ParallelDeflateThreshold;
+                return _zos.ParallelDeflateThreshold;
+            }
+        }
+#endif
         
         public int CodecBufferSize
         {

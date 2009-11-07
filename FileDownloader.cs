@@ -40,7 +40,7 @@ namespace wyUpdate.Downloader
 
         public long Adler32;
 
-        long downloadedAdler32 = 1;
+        uint downloadedAdler32 = 1;
 
         public bool UseRelativeProgress;
 

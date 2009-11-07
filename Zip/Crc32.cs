@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-15 03:33:40>
+// Time-stamp: <2009-October-29 11:20:03>
 //
 // ------------------------------------------------------------------
 //
@@ -195,6 +195,100 @@ namespace Ionic.Zlib
         }
 
 
+
+
+        private uint gf2_matrix_times(uint[] matrix, uint vec)
+        {
+            uint sum = 0;
+            int i=0; 
+            while (vec != 0) 
+            {
+                if ((vec & 0x01)== 0x01)
+                    sum ^= matrix[i];
+                vec >>= 1;
+                i++;
+            }
+            return sum;
+        }
+
+        private void gf2_matrix_square(uint[] square, uint[] mat)
+        {
+            for (int i = 0; i < 32; i++)
+                square[i] = gf2_matrix_times(mat, mat[i]);
+        }
+
+
+
+        /// <summary>
+        /// Combines the given CRC32 value with the current running total.
+        /// </summary>
+        /// <remarks>
+        /// This is useful when using a divide-and-conquer approach to calculating a CRC.
+        /// Multiple threads can each calculate a CRC32 on a segment of the data, and then 
+        /// combine the individual CRC32 values at the end.
+        /// </remarks>
+        /// <param name="crc">the crc value to be combined with this one</param>
+        /// <param name="length">the length of data the CRC value was calculated on</param>
+        public void Combine(int crc, int length)
+        {
+            uint[] even = new uint[32];     // even-power-of-two zeros operator 
+            uint[] odd = new uint[32];      // odd-power-of-two zeros operator 
+
+            if (length == 0)
+                return;
+    
+            uint crc1= ~_RunningCrc32Result;
+            uint crc2= (uint) crc;
+
+            // put operator for one zero bit in odd 
+            odd[0] = 0xEDB88320;  // the CRC-32 polynomial
+            uint row = 1;
+            for (int i = 1; i < 32; i++) 
+            {
+                odd[i] = row;
+                row <<= 1;
+            }
+
+            // put operator for two zero bits in even 
+            gf2_matrix_square(even, odd);
+
+            // put operator for four zero bits in odd 
+            gf2_matrix_square(odd, even);
+
+            uint len2 = (uint) length;
+
+            // apply len2 zeros to crc1 (first square will put the operator for one
+            // zero byte, eight zero bits, in even) 
+            do {
+                // apply zeros operator for this bit of len2 
+                gf2_matrix_square(even, odd);
+
+                if ((len2 & 1)== 1)
+                    crc1 = gf2_matrix_times(even, crc1);
+                len2 >>= 1;
+
+                if (len2 == 0)
+                    break;
+
+                // another iteration of the loop with odd and even swapped 
+                gf2_matrix_square(odd, even);
+                if ((len2 & 1)==1)
+                    crc1 = gf2_matrix_times(odd, crc1);
+                len2 >>= 1;
+
+
+            } while (len2 != 0);
+
+            crc1 ^= crc2;
+
+            _RunningCrc32Result= ~crc1;
+
+            //return (int) crc1;
+            return;
+        }
+
+
+        
         // private member vars
         private Int64 _TotalBytesRead;
         private static readonly UInt32[] crc32Table;

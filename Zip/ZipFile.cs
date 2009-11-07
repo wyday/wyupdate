@@ -1861,6 +1861,79 @@ namespace Ionic.Zip
                 return unchecked((Int32)_numberOfSegmentsForMostRecentSave+1);
             }
         }
+
+
+#if !NETCF    
+        /// <summary>
+        ///   The size threshold for an entry, above which a parallel deflate is used.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///
+        ///   <para>
+        ///     DotNetZip will use multiple threads to compress any ZipEntry,
+        ///     if the entry is larger than the given size.  Zero means "always
+        ///     use parallel deflate", while -1 means "never use parallel
+        ///     deflate".
+        ///   </para>
+        ///
+        ///   <para>
+        ///     If the entry size cannot be known before compression, as with a
+        ///     read-forward stream, then Parallel deflate will never be
+        ///     performed, unless the value of this property is zero.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     A parallel deflate operations will speed up the compression of
+        ///     large files, on computers with multiple CPUs or multiple CPU
+        ///     cores.  For files above 1mb, on a dual core or dual-cpu (2p)
+        ///     machine, the time required to compress the file can be 70% of the
+        ///     single-threaded deflate.  For very large files on 4p machines the
+        ///     compression can be done in 30% of the normal time.  The downside
+        ///     is that parallel deflate consumes extra memory during the deflate,
+        ///     and the deflation is not as effective.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     Parallel deflate tends to not be as effective as single-threaded deflate
+        ///     because the original data stream is split into multiple independent
+        ///     buffers, each of which is compressed in parallel.  But because they are
+        ///     treated independently, there is no opportunity to share compression
+        ///     dictionaries.  For that reason, a deflated stream may be slightly larger
+        ///     when compressed using parallel deflate, as compared to a traditional
+        ///     single-threaded deflate. Sometimes the increase over the normal deflate
+        ///     is as much as 5% of the total compressed size. For larger files it can
+        ///     be as small as 0.1%.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     Multi-threaded compression does not give as much an advantage when using
+        ///     Encryption. This is primarily because encryption tends to slow down
+        ///     the entire pipeline. Also, multi-threaded compression gives less of an
+        ///     advantage when using lower compression levels, for example <see
+        ///     cref="Ionic.Zlib.CompressionLevel.BestSpeed"/>.  You may have to perform
+        ///     some tests to determine the best approach for your situation.
+        ///   </para>
+        ///
+        ///   <para>
+        ///     The default value for this property is 512k. The minimum value is 65536.
+        ///   </para>
+        ///
+        /// </remarks>
+        public long ParallelDeflateThreshold
+        {
+            set
+            {
+                if ((value != 0) && (value != -1) && (value < 64 * 1024))
+                    throw new ArgumentException();
+                _ParallelDeflateThreshold = value;
+            }
+            get
+            {
+                return _ParallelDeflateThreshold;
+            }
+        }
+#endif
         
 
         /// <summary>Provides a string representation of the instance.</summary>
@@ -2385,6 +2458,9 @@ namespace Ionic.Zip
             _contentsChanged = true;
             AddDirectoryWillTraverseReparsePoints = true;  // workitem 8617
             CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
+#if !NETCF    
+            ParallelDeflateThreshold = 512 * 1024;
+#endif            
             // workitem 7685
             _entries = new System.Collections.Generic.List<ZipEntry>();
             if (File.Exists(_name))
@@ -3148,12 +3224,22 @@ namespace Ionic.Zip
         internal bool _inExtractAll;
         private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437"); // default = IBM437
 
-        private int _BufferSize = 8192;
+        private int _BufferSize = IoBufferSizeDefault;
+        
+#if !NETCF    
+        internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
+        private long _ParallelDeflateThreshold;
+#endif
         
         internal Zip64Option _zip64 = Zip64Option.Default;
         #pragma warning disable 649
         private bool _SavingSfx; 
         #pragma warning restore 649
+
+            /// <summary>
+            ///   Default size of the buffer used for IO.
+            /// </summary>
+            public static readonly int IoBufferSizeDefault = 32768;
 
         #endregion
     }

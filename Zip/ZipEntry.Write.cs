@@ -1,3 +1,5 @@
+//#define Trace
+
 // ZipEntry.Write.cs
 // ------------------------------------------------------------------
 //
@@ -15,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 09:24:15>
+// Time-stamp: <2009-November-04 02:49:15>
 //
 // ------------------------------------------------------------------
 //
@@ -1133,7 +1135,7 @@ namespace Ionic.Zip
                 PrepOutputStream(s, fileLength, out entryCounter, out encryptor, out deflater, out output);
 
                 // as we emit the file, the flow is:
-                // crc -> deflate -> encrypt -> count -> actually write
+                // calc-crc -> deflate -> encrypt -> count -> actually write
 
                 if (this._Source == ZipEntrySource.WriteDelegate)
                 {
@@ -1142,6 +1144,7 @@ namespace Ionic.Zip
                 }
                 else
                 {
+                    // synchronously copy the input stream to the output stream-chain
                     byte[] buffer = new byte[BufferSize];
                     int n;
                     while ((n = SharedUtilities.ReadWithRetry(input, buffer, 0, buffer.Length, FileName)) != 0)
@@ -1238,7 +1241,11 @@ namespace Ionic.Zip
             // by calling Close() on the deflate stream, we write the footer bytes, as necessary.
             if ((deflater as Ionic.Zlib.DeflateStream) != null)
                 deflater.Close();
-
+#if !NETCF    
+            else if ((deflater as Ionic.Zlib.ParallelDeflateOutputStream) != null)
+                deflater.Close();
+#endif
+            
             encryptor.Flush();
             encryptor.Close();
 
@@ -1566,6 +1573,9 @@ namespace Ionic.Zip
                                        out Stream deflater,
                                        out Ionic.Zlib.CrcCalculatorStream output)
         {
+
+            TraceWriteLine("PrepOutputStream: e({0}) comp({1}) crypto({2}) zf({3})", FileName, CompressionLevel, Encryption, (_container).Name);
+                
             // Wrap a counting stream around the raw output stream:
             // This is the last thing that happens before the bits go to the 
             // application-provided stream. 
@@ -1580,7 +1590,7 @@ namespace Ionic.Zip
 
                 // Maybe wrap a DeflateStream around that.
                 // This will happen BEFORE encryption (if any) as we write data out.
-                deflater = MaybeApplyDeflation(encryptor);
+                deflater = MaybeApplyDeflation(encryptor, streamLength);
             }
             else
             {
@@ -1588,15 +1598,59 @@ namespace Ionic.Zip
             }
             // Wrap a CrcCalculatorStream around that.
             // This will happen BEFORE deflation (if any) as we write data out.
-            output = new Ionic.Zlib.CrcCalculatorStream(deflater);
+            output = new Ionic.Zlib.CrcCalculatorStream(deflater, true);
         }
 
 
         
-        private Stream MaybeApplyDeflation(Stream s)
+        private Stream MaybeApplyDeflation(Stream s, long streamLength)
         {
             if (CompressionMethod == 0x08 && CompressionLevel != Ionic.Zlib.CompressionLevel.None)
             {
+#if !NETCF    
+                // ParallelDeflateThreshold == 0    means ALWAYS use parallel deflate
+                // ParallelDeflateThreshold == -1L  means NEVER use parallel deflate
+                // Other values specify the 
+                if (_container.ParallelDeflateThreshold == 0L   ||
+                    (streamLength > _container.ParallelDeflateThreshold &&
+                     _container.ParallelDeflateThreshold > 0L))
+                {
+                    // This is sort of hacky.
+                    //
+                    // It's expensive to create a ParallelDeflateOutputStream, because
+                    // of the large memory buffers.  But the class is unlike most Stream
+                    // classes in that it can be re-used, so the caller can compress
+                    // multiple files with it, one file at a time.  The key is to call
+                    // Reset() on it, in between uses.
+                    //
+                    // The ParallelDeflateOutputStream is attached to the container
+                    // itself - there is just one for the entire ZipFile or
+                    // ZipOutputStream. So it gets created once, per save, and then
+                    // re-used many times.
+                    //
+                    // This approach will break when we go to a "paral1lel save"
+                    // approach, where multiple entries within the zip file are being
+                    // compressed and saved at the same time.  But for now it's ok.
+                    //
+
+                    // instantiate the ParallelDeflateOutputStream
+                    if (_container.ParallelDeflater == null)
+                    {
+                        _container.ParallelDeflater =
+                            new Ionic.Zlib.ParallelDeflateOutputStream(s, 
+                                                                       CompressionLevel,
+                                                                       _container.Strategy,
+                                                                       true);
+                        // can set the codec buffer size only before the first call to Write().
+                        if (_container.CodecBufferSize > 0)
+                            _container.ParallelDeflater.BufferSize = _container.CodecBufferSize;
+                    }
+                    // reset it with the new stream
+                    Ionic.Zlib.ParallelDeflateOutputStream o1 = _container.ParallelDeflater;
+                    o1.Reset(s);
+                    return o1;
+                } 
+#endif
                 var o = new Ionic.Zlib.DeflateStream(s, Ionic.Zlib.CompressionMode.Compress,
                                                      CompressionLevel,
                                                      true);
@@ -1614,13 +1668,22 @@ namespace Ionic.Zip
         private Stream MaybeApplyEncryption(Stream s)
         {
             if (Encryption == EncryptionAlgorithm.PkzipWeak)
+            {
+                TraceWriteLine("MaybeApplyEncryption: e({0}) PKZIP", FileName);
+                
                 return new ZipCipherStream(s, _zipCrypto, CryptoMode.Encrypt);
-
+            }
 #if AESCRYPTO
             if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
                      Encryption == EncryptionAlgorithm.WinZipAes256)
+            {
+                TraceWriteLine("MaybeApplyEncryption: e({0}) AES", FileName);
+                
                 return new WinZipAesCipherStream(s, _aesCrypto, CryptoMode.Encrypt);
+            }
 #endif
+                TraceWriteLine("MaybeApplyEncryption: e({0}) None", FileName);
+                
             return s;
         }
 
@@ -1792,6 +1855,10 @@ namespace Ionic.Zip
         internal void WriteSecurityMetadata(Stream outstream)
         {
             if (_Password == null) return;
+            
+            TraceWriteLine("WriteSecurityMetadata: e({0}) crypto({1}) pw({2})",
+                           FileName, Encryption.ToString(), _Password);
+            
             if (Encryption == EncryptionAlgorithm.PkzipWeak)
             {
                 // If PKZip (weak) encryption is in use, then the encrypted entry data
@@ -1853,12 +1920,16 @@ namespace Ionic.Zip
                 // If WinZip AES encryption is in use, then the encrypted entry data is
                 // preceded by a variable-sized Salt and a 2-byte "password
                 // verification" value for the entry.
-
+                
                 _aesCrypto = WinZipAesCrypto.Generate(_Password, _KeyStrengthInBits);
                 outstream.Write(_aesCrypto.Salt, 0, _aesCrypto._Salt.Length);
                 outstream.Write(_aesCrypto.GeneratedPV, 0, _aesCrypto.GeneratedPV.Length);
                 _LengthOfHeader += _aesCrypto._Salt.Length + _aesCrypto.GeneratedPV.Length;
-            }
+
+            TraceWriteLine("WriteSecurityMetadata: AES e({0}) keybits({1}) _LOH({2})",
+                           FileName, _KeyStrengthInBits, _LengthOfHeader);
+                
+                           }
 #endif
 
         }
@@ -2075,5 +2146,26 @@ namespace Ionic.Zip
             }
         }
 
+
+        
+
+        [System.Diagnostics.ConditionalAttribute("Trace")]
+        private void TraceWriteLine(string format, params object[] varParams)
+        {
+            lock(_outputLock)
+            {
+                int tid = System.Threading.Thread.CurrentThread.GetHashCode();
+#if !NETCF
+                Console.ForegroundColor = (ConsoleColor) (tid % 8 + 8);
+#endif                
+                Console.Write("{0:000} ZipEntry.Write ", tid);
+                Console.WriteLine(format, varParams);
+#if !NETCF
+                Console.ResetColor();
+#endif
+            }
+        }
+
+        private object _outputLock = new Object();
     }
 }

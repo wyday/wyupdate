@@ -307,7 +307,7 @@ namespace Ionic.Zip
 
         // If I have a time in the .NET environment, and I want to use it for 
         // SetWastWriteTime() etc, then I need to adjust it for Win32. 
-        internal static DateTime AdjustTime_DotNetToWin32(DateTime time)
+        internal static DateTime AdjustTime_Reverse(DateTime time)
         {
             if (time.Kind == DateTimeKind.Utc) return time;
             DateTime adjusted = time;
@@ -322,7 +322,7 @@ namespace Ionic.Zip
 
         // If I read a time from a file with GetLastWriteTime() (etc), I need
         // to adjust it for display in the .NET environment.  
-        internal static DateTime AdjustTime_Win32ToDotNet(DateTime time)
+        internal static DateTime AdjustTime_Forward(DateTime time)
         {
             if (time.Kind == DateTimeKind.Utc) return time;
             DateTime adjusted = time;
@@ -417,6 +417,8 @@ namespace Ionic.Zip
                 throw new ZipException(String.Format("Bad date/time format in the zip file. ({0})", msg));
 
             }
+            // workitem 6191
+            //d = AdjustTime_Reverse(d);
             d = DateTime.SpecifyKind(d, DateTimeKind.Local);
             return d;
         }
@@ -431,7 +433,7 @@ namespace Ionic.Zip
 
             time = time.ToLocalTime();
             // workitem 7966
-            time = AdjustTime_Win32ToDotNet(time);
+            //time = AdjustTime_Forward(time);
 
             // see http://www.vsft.com/hal/dostime.htm for the format
             UInt16 packedDate = (UInt16)((time.Day & 0x0000001F) | ((time.Month << 5) & 0x000001E0) | (((time.Year - 1980) << 9) & 0x0000FE00));
