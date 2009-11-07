@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-29 03:54:08>
+// Time-stamp: <2009-October-28 15:45:15>
 //
 // ------------------------------------------------------------------
 //
@@ -562,115 +562,64 @@ namespace Ionic.Zlib
         }
 
 
+        public static void CompressString(String s, Stream compressor)
+        {
+            byte[] uncompressed = System.Text.Encoding.UTF8.GetBytes(s);
+            using (compressor)
+            {
+                compressor.Write(uncompressed, 0, uncompressed.Length);
+            }
+        }        
 
-        public static byte[] CompressString(String s, System.Type type)
+        public static void CompressBuffer(byte[] b, Stream compressor)
         {
             // workitem 8460
-            var encoding = System.Text.Encoding.UTF8;
-            byte[] uncompressed = encoding.GetBytes(s);
-
-            using (var ms = new MemoryStream())
+            using (compressor)
             {
-                Stream compressor = (Stream)
-                    type.InvokeMember("This IS Ignored",
-                                      System.Reflection.BindingFlags.CreateInstance,
-                                      null,
-                                      null,
-                                      new object[] { ms, CompressionMode.Compress, CompressionLevel.BestCompression });
-
-                using (compressor)
-                {
-                    compressor.Write(uncompressed, 0, uncompressed.Length);
-                }
-                return ms.ToArray();
+                compressor.Write(b, 0, b.Length);
             }
         }
 
-
-
-        public static String UncompressString(byte[] compressed, System.Type type)
+        public static String UncompressString(byte[] compressed, Stream decompressor)
         {
             // workitem 8460
             byte[] working = new byte[1024];
             var encoding = System.Text.Encoding.UTF8;
             using (var output = new MemoryStream())
             {
-                using (var input = new MemoryStream(compressed))
+                using (decompressor)
                 {
-                    Stream decompressor = (Stream)
-                        type.InvokeMember("This IS Ignored",
-                                          System.Reflection.BindingFlags.CreateInstance,
-                                          null,
-                                          null,
-                                          new object[] { input, CompressionMode.Decompress });
-
-                    using (decompressor)
+                    int n;
+                    while ((n = decompressor.Read(working, 0, working.Length)) != 0)
                     {
-                        int n;
-                        while ((n = decompressor.Read(working, 0, working.Length)) != 0)
-                        {
-                            output.Write(working, 0, n);
-                        }
+                        output.Write(working, 0, n);
                     }
-
-                    // reset to allow read from start
-                    output.Seek(0, SeekOrigin.Begin);
-                    var sr = new StreamReader(output, encoding);
-                    return sr.ReadToEnd();
                 }
+
+                // reset to allow read from start
+                output.Seek(0, SeekOrigin.Begin);
+                var sr = new StreamReader(output, encoding);
+                return sr.ReadToEnd();
             }
         }
 
-
-        public static byte[] CompressBuffer(byte[] b, System.Type type)
-        {
-            // workitem 8460
-            using (var ms = new MemoryStream())
-            {
-                Stream compressor = (Stream)
-                    type.InvokeMember("This IS Ignored",
-                                      System.Reflection.BindingFlags.CreateInstance,
-                                      null,
-                                      null,
-                                      new object[] { ms, CompressionMode.Compress, CompressionLevel.BestCompression });
-
-                using (compressor)
-                {
-                    compressor.Write(b, 0, b.Length);
-                }
-                return ms.ToArray();
-            }
-        }
-
-
-        public static byte[] UncompressBuffer(byte[] compressed, System.Type type)
+        public static byte[] UncompressBuffer(byte[] compressed, Stream decompressor)
         {
             // workitem 8460
             byte[] working = new byte[1024];
             using (var output = new MemoryStream())
             {
-                using (var input = new MemoryStream(compressed))
+                using (decompressor)
                 {
-                    Stream decompressor = (Stream)
-                        type.InvokeMember("This IS Ignored",
-                                          System.Reflection.BindingFlags.CreateInstance,
-                                          null,
-                                          null,
-                                          new object[] { input, CompressionMode.Decompress });
-
-                    using (decompressor)
+                    int n;
+                    while ((n = decompressor.Read(working, 0, working.Length)) != 0)
                     {
-                        int n;
-                        while ((n = decompressor.Read(working, 0, working.Length)) != 0)
-                        {
-                            output.Write(working, 0, n);
-                        }
+                        output.Write(working, 0, n);
                     }
-                    return output.ToArray();
                 }
+                return output.ToArray();
             }
-        }
-
+        }        
 
     }
 

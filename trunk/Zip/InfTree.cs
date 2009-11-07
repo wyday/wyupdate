@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-May-31 09:17:05>
+// Time-stamp: <2009-October-28 12:43:54>
 //
 // ------------------------------------------------------------------
 //
@@ -415,26 +415,22 @@ namespace Ionic.Zlib
                                 u = new int[BMAX];
                                 x = new int[BMAX + 1];
                         }
-                        if (v.Length < vsize)
+                        else
                         {
+                            if (v.Length < vsize)
+                            {
                                 v = new int[vsize];
+                            }
+                            Array.Clear(v,0,vsize);
+                            Array.Clear(c,0,BMAX+1);
+                            r[0]=0; r[1]=0; r[2]=0;
+                            //  for(int i=0; i<BMAX; i++){u[i]=0;}
+                            //Array.Copy(c, 0, u, 0, BMAX);
+                            Array.Clear(u,0,BMAX);
+                            //  for(int i=0; i<BMAX+1; i++){x[i]=0;}
+                            //Array.Copy(c, 0, x, 0, BMAX + 1);
+                            Array.Clear(x,0,BMAX+1);
                         }
-                        for (int i = 0; i < vsize; i++)
-                        {
-                                v[i] = 0;
-                        }
-                        for (int i = 0; i < BMAX + 1; i++)
-                        {
-                                c[i] = 0;
-                        }
-                        for (int i = 0; i < 3; i++)
-                        {
-                                r[i] = 0;
-                        }
-                        //  for(int i=0; i<BMAX; i++){u[i]=0;}
-                        Array.Copy(c, 0, u, 0, BMAX);
-                        //  for(int i=0; i<BMAX+1; i++){x[i]=0;}
-                        Array.Copy(c, 0, x, 0, BMAX + 1);
                 }
         }
 }

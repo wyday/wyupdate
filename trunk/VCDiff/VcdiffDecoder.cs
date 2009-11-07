@@ -27,7 +27,7 @@ namespace wyUpdate.Compression.Vcdiff
 		/// </summary>
 		Stream output;
 
-	    long Adler32 = 1;
+	    uint Adler32 = 1;
 
 		/// <summary>
 		/// Code table to use for decoding.

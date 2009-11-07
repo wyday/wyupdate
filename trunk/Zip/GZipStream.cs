@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-08 18:34:41>
+// Time-stamp: <2009-November-03 18:48:42>
 //
 // ------------------------------------------------------------------
 //
@@ -582,7 +582,7 @@ namespace Ionic.Zlib
                 if (this._baseStream._workingBuffer != null)
                     throw new ZlibException("The working buffer is already set.");
                 if (value < ZlibConstants.WorkingBufferSizeMin)
-                    throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer.", value));
+                    throw new ZlibException(String.Format("Don't be silly. {0} bytes?? Use a bigger buffer, at least {1}.", value, ZlibConstants.WorkingBufferSizeMin));
                 this._baseStream._bufferSize = value;
             }
         }
@@ -924,7 +924,13 @@ namespace Ionic.Zlib
         /// <returns>The string in compressed form</returns>
         public static byte[] CompressString(String s)
         {
-            return ZlibBaseStream.CompressString(s, typeof(GZipStream));
+            using (var ms = new MemoryStream())
+            {
+                System.IO.Stream compressor =
+                    new GZipStream(ms, CompressionMode.Compress, CompressionLevel.BestCompression);
+                ZlibBaseStream.CompressString(s, compressor);
+                return ms.ToArray();
+            }
         }
 
                     
@@ -946,7 +952,14 @@ namespace Ionic.Zlib
         /// <returns>The data in compressed form</returns> 
         public static byte[] CompressBuffer(byte[] b)
         {
-            return ZlibBaseStream.CompressBuffer(b, typeof(GZipStream));
+            using (var ms = new MemoryStream())
+            {
+                System.IO.Stream compressor = 
+                    new GZipStream( ms, CompressionMode.Compress, CompressionLevel.BestCompression );
+
+                ZlibBaseStream.CompressBuffer(b, compressor);
+                return ms.ToArray();
+            }
         }
 
 
@@ -964,8 +977,13 @@ namespace Ionic.Zlib
         /// <returns>The uncompressed string</returns>
         public static String UncompressString(byte[] compressed)
         {
-            return ZlibBaseStream.UncompressString(compressed, typeof(GZipStream));
+            using (var input = new MemoryStream(compressed))
+            {
+                Stream decompressor = new GZipStream(input, CompressionMode.Decompress);
+                return ZlibBaseStream.UncompressString(compressed, decompressor);
+            }
         }
+
 
         /// <summary>
         ///   Uncompress a GZip'ed byte array into a byte array.
@@ -981,9 +999,15 @@ namespace Ionic.Zlib
         /// <returns>The data in uncompressed form</returns>
         public static byte[] UncompressBuffer(byte[] compressed)
         {
-            return ZlibBaseStream.UncompressBuffer(compressed, typeof(GZipStream));
+            using (var input = new System.IO.MemoryStream(compressed))
+            {
+                System.IO.Stream decompressor = 
+                    new GZipStream( input, CompressionMode.Decompress );
+
+                return ZlibBaseStream.UncompressBuffer(compressed, decompressor);
+            }
         }
-        
+   
         
     }
 }

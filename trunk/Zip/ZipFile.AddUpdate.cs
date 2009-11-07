@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 17:03:43>
+// Time-stamp: <2009-October-29 07:45:36>
 //
 // ------------------------------------------------------------------
 //
@@ -1811,7 +1811,7 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddDirectoryByName(string directoryNameInArchive)
         {
-            ZipEntry dir = ZipEntry.CreateFromFile(directoryNameInArchive, directoryNameInArchive);
+            ZipEntry dir = ZipEntry.CreateFromNothing(directoryNameInArchive);    // workitem 9073
             dir.MarkAsDirectory();
             dir.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;  // workitem 8984
             dir.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);

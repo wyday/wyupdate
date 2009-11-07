@@ -150,24 +150,30 @@ namespace wyUpdate
 
         static void SetACLOnFolders(string basis, string extracted, string backup)
         {
-            // get the acl of basis
-            AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-
-            DirectoryInfo infoEx = new DirectoryInfo(extracted);
-            DirectorySecurity dsEx = infoEx.GetAccessControl();
-
-            DirectoryInfo infoBack = new DirectoryInfo(backup);
-            DirectorySecurity dsBack = infoEx.GetAccessControl();
-
-            foreach (FileSystemAccessRule access in acl)
+            //try/catch HACK: find better fix for the "this access control list is not in canonical form and therefore cannot be modified"
+            //See: http://wyday.com/forum/viewtopic.php?f=1&p=398#p398
+            try
             {
-                // add proper ACL rules to extracted & backup
-                dsEx.AddAccessRule(access);
-                dsBack.AddAccessRule(access);
-            }
+                // get the acl of basis
+                AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
 
-            infoEx.SetAccessControl(dsEx);
-            infoBack.SetAccessControl(dsBack);
+                DirectoryInfo infoEx = new DirectoryInfo(extracted);
+                DirectorySecurity dsEx = infoEx.GetAccessControl();
+
+                DirectoryInfo infoBack = new DirectoryInfo(backup);
+                DirectorySecurity dsBack = infoEx.GetAccessControl();
+
+                foreach (FileSystemAccessRule access in acl)
+                {
+                    // add proper ACL rules to extracted & backup
+                    dsEx.AddAccessRule(access);
+                    dsBack.AddAccessRule(access);
+                }
+
+                infoEx.SetAccessControl(dsEx);
+                infoBack.SetAccessControl(dsBack);
+            }
+            catch { }
         }
 
         public void RunUpdateFiles()

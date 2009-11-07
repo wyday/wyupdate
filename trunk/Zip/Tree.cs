@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-23 15:16:09>
+// Time-stamp: <2009-October-28 13:29:50>
 //
 // ------------------------------------------------------------------
 //
@@ -283,12 +283,12 @@ namespace Ionic.Zlib
         //     also updated if stree is not null. The field max_code is set.
         internal void  build_tree(DeflateManager s)
         {
-            short[] tree = dyn_tree;
+            short[] tree  = dyn_tree;
             short[] stree = staticTree.treeCodes;
-            int elems = staticTree.elems;
-            int n, m; // iterate over heap elements
-            int max_code = - 1; // largest code with non zero frequency
-            int node; // new node being created
+            int elems     = staticTree.elems;
+            int n, m;            // iterate over heap elements
+            int max_code  = -1;  // largest code with non zero frequency
+            int node;            // new node being created
                         
             // Construct the initial heap, with least frequent element in
             // heap[1]. The sons of heap[n] are heap[2*n] and heap[2*n+1].
@@ -413,11 +413,11 @@ namespace Ionic.Zlib
             do 
             {
                 res |= code & 1;
-                code = SharedUtils.URShift(code, 1);
+                code >>= 1; //SharedUtils.URShift(code, 1);
                 res <<= 1;
             }
             while (--len > 0);
-            return SharedUtils.URShift(res, 1);
+            return res >> 1;
         }
     }
 }

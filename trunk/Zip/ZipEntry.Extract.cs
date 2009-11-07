@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 03:26:54>
+// Time-stamp: <2009-November-03 03:28:01>
 //
 // ------------------------------------------------------------------
 //
@@ -962,7 +962,6 @@ namespace Ionic.Zip
 
         internal void _SetTimes(string fileOrDirectory, bool isFile)
         {
-
             // workitem 8807: 
             // Because setting the time is not considered to be a fatal error,
             // and because other applications can interfere with the setting
@@ -971,62 +970,61 @@ namespace Ionic.Zip
             
             try
             {
-
-            if (_ntfsTimesAreSet)
-            {
+                if (_ntfsTimesAreSet)
+                {
 #if NETCF
-                // workitem 7944: set time should not be a fatal error on CF
-                int rc = NetCfFile.SetTimes(fileOrDirectory, _Ctime, _Atime, _Mtime);
-                if ( rc != 0)
-                {
-                    WriteStatus("Warning: SetTimes failed.  entry({0})  file({1})  rc({2})",
-                                                                   FileName, fileOrDirectory, rc);
-                }
-#else
-                if (isFile)
-                {
-                    // It's possible that the extract was cancelled, in which case,
-                    // the file does not exist.
-                    if (File.Exists(fileOrDirectory))
+                    // workitem 7944: set time should not be a fatal error on CF
+                    int rc = NetCfFile.SetTimes(fileOrDirectory, _Ctime, _Atime, _Mtime);
+                    if ( rc != 0)
                     {
-                        File.SetCreationTimeUtc(fileOrDirectory, _Ctime);
-                        File.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
-                        File.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                        WriteStatus("Warning: SetTimes failed.  entry({0})  file({1})  rc({2})",
+                                    FileName, fileOrDirectory, rc);
                     }
+#else
+                    if (isFile)
+                    {
+                        // It's possible that the extract was cancelled, in which case,
+                        // the file does not exist.
+                        if (File.Exists(fileOrDirectory))
+                        {
+                            File.SetCreationTimeUtc(fileOrDirectory, _Ctime);
+                            File.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
+                            File.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                        }
+                    }
+                    else
+                    {
+                        // It's possible that the extract was cancelled, in which case,
+                        // the directory does not exist.
+                        if (Directory.Exists(fileOrDirectory))
+                        {
+                            Directory.SetCreationTimeUtc(fileOrDirectory, _Ctime);
+                            Directory.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
+                            Directory.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
+                        }
+                    }
+#endif
                 }
                 else
                 {
-                    // It's possible that the extract was cancelled, in which case,
-                    // the directory does not exist.
-                    if (Directory.Exists(fileOrDirectory))
-                    {
-                        Directory.SetCreationTimeUtc(fileOrDirectory, _Ctime);
-                        Directory.SetLastAccessTimeUtc(fileOrDirectory, _Atime);
-                        Directory.SetLastWriteTimeUtc(fileOrDirectory, _Mtime);
-                    }
-                }
-#endif
-            }
-            else
-            {
-                // workitem 6191
-                DateTime AdjustedLastModified = Ionic.Zip.SharedUtilities.AdjustTime_DotNetToWin32(LastModified);
+                    // workitem 6191
+                    DateTime AdjustedLastModified = Ionic.Zip.SharedUtilities.AdjustTime_Reverse(LastModified);
 
 #if NETCF
-                int rc = NetCfFile.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
+                    int rc = NetCfFile.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
                         
-                if ( rc != 0)
-                {
-                    WriteStatus("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
-                                                                   FileName, fileOrDirectory, rc);
-                }
+                    if ( rc != 0)
+                    {
+                        WriteStatus("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
+                                    FileName, fileOrDirectory, rc);
+                    }
 #else
-                if (isFile)
-                    File.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
-                else
-                    Directory.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
+                    if (isFile)
+                        File.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
+                    else
+                        Directory.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
 #endif
-            }
+                }
             }
             catch (System.IO.IOException ioexc1)
             {

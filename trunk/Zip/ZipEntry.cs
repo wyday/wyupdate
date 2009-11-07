@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 09:24:39>
+// Time-stamp: <2009-November-04 02:48:28>
 //
 // ------------------------------------------------------------------
 //
@@ -40,7 +40,7 @@ namespace Ionic.Zip
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00004")]
     [Interop.ComVisible(true)]
 #if !NETCF
-    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]
+    [Interop.ClassInterface(Interop.ClassInterfaceType.AutoDispatch)]  // AutoDual
 #endif
     public partial class ZipEntry
     {
@@ -52,7 +52,6 @@ namespace Ionic.Zip
         /// support COM Automation environments.
         /// </remarks>
         public ZipEntry() { }
-        
 
         /// <summary>
         ///   The time and date at which the file indicated by the <c>ZipEntry</c> was
@@ -203,10 +202,8 @@ namespace Ionic.Zip
             {
                 _LastModified = (value.Kind == DateTimeKind.Unspecified)
                     ? DateTime.SpecifyKind(value, DateTimeKind.Local)
-                    : value;
-                //if (_ntfsTimesAreSet)
-                _Mtime = _LastModified.ToUniversalTime();
-
+                    : value.ToLocalTime();
+                _Mtime = Ionic.Zip.SharedUtilities.AdjustTime_Reverse(_LastModified).ToUniversalTime();
                 _metadataChanged = true;
             }
         }
@@ -1481,13 +1478,13 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// This is a readonly property on the entry.  When reading a zip file, the
-        /// value for the <c>ZipEntry</c> is determined by the data read from the zip
-        /// file.  After saving a ZipFile, the value of this property for each
-        /// <c>ZipEntry</c> indicates whether encryption was actually used (which will
-        /// have been true if the <see cref="Password"/> was set and the <see
-        /// cref="Encryption"/> property was something other than <see
-        /// cref="EncryptionAlgorithm.None"/>.
+        ///   This is a readonly property on the entry.  When reading a zip file,
+        ///   the value for the <c>ZipEntry</c> is determined by the data read
+        ///   from the zip file.  After saving a ZipFile, the value of this
+        ///   property for each <c>ZipEntry</c> indicates whether encryption was
+        ///   actually used (which will have been true if the <see
+        ///   cref="Password"/> was set and the <see cref="Encryption"/> property
+        ///   was something other than <see cref="EncryptionAlgorithm.None"/>.
         /// </para>
         /// </remarks>
         public bool UsesEncryption
@@ -1495,7 +1492,7 @@ namespace Ionic.Zip
             get { return (Encryption != EncryptionAlgorithm.None); }
         }
 
-
+        
         /// <summary>
         ///   Set this to specify which encryption algorithm to use for the entry when
         ///   saving it to a zip archive.
@@ -1508,11 +1505,11 @@ namespace Ionic.Zip
         ///   saved. When setting this property, you must also set a <see
         ///   cref="Password"/> on the entry.  If you set a value other than <see
         ///   cref="EncryptionAlgorithm.None"/> on this property and do not set a
-        /// <c>Password</c> then the entry will not be encrypted. The <c>ZipEntry</c>
-        /// data is encrypted as the <c>ZipFile</c> is saved, when you call <see
-        /// cref="ZipFile.Save()"/> or one of its cousins on the containing
-        /// <c>ZipFile</c> instance. You do not need to specify the <c>Encryption</c>
-        /// when extracting entries from an archive.
+        ///   <c>Password</c> then the entry will not be encrypted. The <c>ZipEntry</c>
+        ///   data is encrypted as the <c>ZipFile</c> is saved, when you call <see
+        ///   cref="ZipFile.Save()"/> or one of its cousins on the containing
+        ///   <c>ZipFile</c> instance. You do not need to specify the <c>Encryption</c>
+        ///   when extracting entries from an archive.
         /// </para>
         ///
         /// <para>
@@ -2158,6 +2155,12 @@ namespace Ionic.Zip
             return result;
         }
 
+        // workitem 9073
+        internal static ZipEntry CreateFromNothing(String nameInArchive)
+        {
+            return Create(nameInArchive, ZipEntrySource.None, null, null);
+        }
+
         internal static ZipEntry CreateFromFile(String filename, string nameInArchive)
         {
             return Create(nameInArchive, ZipEntrySource.FileSystem, filename, null);
@@ -2213,6 +2216,12 @@ namespace Ionic.Zip
             else if (source == ZipEntrySource.ZipOutputStream)
             {
             }
+            // workitem 9073
+            else if (source == ZipEntrySource.None)
+            {
+                // make this a valid value, for later.
+                entry._Source = ZipEntrySource.FileSystem;
+            }
             else
             {
                 String filename = (arg1 as String);   // must not be null
@@ -2224,14 +2233,12 @@ namespace Ionic.Zip
                 // adding a directory by name.  We test existence when necessary:
                 // when saving the ZipFile, or when getting the attributes, and so on. 
 
-                entry._Source = ZipEntrySource.FileSystem;
-
 #if NETCF
                 // workitem 6878
                 // Ionic.Zip.SharedUtilities.AdjustTime_Win32ToDotNet
-                entry._Mtime = Ionic.Zip.SharedUtilities.AdjustTime_Win32ToDotNet(File.GetLastWriteTime(filename));
-                entry._Ctime = Ionic.Zip.SharedUtilities.AdjustTime_Win32ToDotNet(File.GetCreationTime(filename));
-                entry._Atime = Ionic.Zip.SharedUtilities.AdjustTime_Win32ToDotNet(File.GetLastAccessTime(filename));
+                entry._Mtime = File.GetLastWriteTime(filename).ToUniversalTime();
+                entry._Ctime = File.GetCreationTime(filename).ToUniversalTime();
+                entry._Atime = File.GetLastAccessTime(filename).ToUniversalTime();
 
                 // workitem 7071
                 // can only get attributes of files that exist.
