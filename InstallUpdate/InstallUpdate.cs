@@ -150,30 +150,37 @@ namespace wyUpdate
 
         static void SetACLOnFolders(string basis, string extracted, string backup)
         {
-            //try/catch HACK: find better fix for the "this access control list is not in canonical form and therefore cannot be modified"
-            //See: http://wyday.com/forum/viewtopic.php?f=1&p=398#p398
-            try
+            // get the acl of basis
+            AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+
+            DirectoryInfo infoEx = new DirectoryInfo(extracted);
+            AuthorizationRuleCollection cold = infoEx.GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+            DirectorySecurity dsExNew = new DirectorySecurity();
+
+            // add existing ACL rules to the new DirSec obj
+            foreach (FileSystemAccessRule access in cold)
+                dsExNew.AddAccessRule(access);
+
+
+            DirectoryInfo infoBack = new DirectoryInfo(backup);
+            cold = infoBack.GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+
+            DirectorySecurity dsBackNew = new DirectorySecurity();
+
+            // add existing ACL rules to the new DirSec obj
+            foreach (FileSystemAccessRule access in cold)
+                dsBackNew.AddAccessRule(access);
+
+            // add proper ACL rules to extracted & backup
+            foreach (FileSystemAccessRule access in acl)
             {
-                // get the acl of basis
-                AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-
-                DirectoryInfo infoEx = new DirectoryInfo(extracted);
-                DirectorySecurity dsEx = infoEx.GetAccessControl();
-
-                DirectoryInfo infoBack = new DirectoryInfo(backup);
-                DirectorySecurity dsBack = infoEx.GetAccessControl();
-
-                foreach (FileSystemAccessRule access in acl)
-                {
-                    // add proper ACL rules to extracted & backup
-                    dsEx.AddAccessRule(access);
-                    dsBack.AddAccessRule(access);
-                }
-
-                infoEx.SetAccessControl(dsEx);
-                infoBack.SetAccessControl(dsBack);
+                dsExNew.AddAccessRule(access);
+                dsBackNew.AddAccessRule(access);
             }
-            catch { }
+
+            // apply the new ACL lists to the folders
+            infoEx.SetAccessControl(dsExNew);
+            infoBack.SetAccessControl(dsBackNew);
         }
 
         public void RunUpdateFiles()
