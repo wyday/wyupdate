@@ -247,6 +247,10 @@ namespace wyUpdate
                     error = clientLang.SelfUpdateInstallError;
                     errorDetails = ex.Message;
 
+                    // report error back to the app
+                    if (isAutoUpdateMode)
+                        updateHelper.SendFailed(error, errorDetails, autoUpdateStepProcessing);
+
                     ShowFrame(Frame.Error);
                 }
                 else if (frameOn == Frame.Checking)
