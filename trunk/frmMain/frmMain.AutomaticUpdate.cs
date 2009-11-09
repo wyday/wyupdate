@@ -614,6 +614,10 @@ namespace wyUpdate
                     // launch new wyUpdate
                     StartNewSelfAndClose();
                 }
+                else if (SelfUpdateState != SelfUpdateState.None)
+                {
+                    LoadClientServerFile();
+                }
             }
         }
     }
