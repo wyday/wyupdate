@@ -614,7 +614,7 @@ namespace wyUpdate
                     // launch new wyUpdate
                     StartNewSelfAndClose();
                 }
-                else if (SelfUpdateState != SelfUpdateState.None)
+                else if (SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.Downloaded)
                 {
                     LoadClientServerFile();
                 }
