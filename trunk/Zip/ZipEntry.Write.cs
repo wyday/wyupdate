@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-November-04 02:49:15>
+// Time-stamp: <2009-November-18 16:36:39>
 //
 // ------------------------------------------------------------------
 //
@@ -88,8 +88,8 @@ namespace Ionic.Zip
             bytes[i++] = (byte)(_BitField & 0x00FF);
             bytes[i++] = (byte)((_BitField & 0xFF00) >> 8);
 
-            bytes[i++] = (byte)(CompressionMethod & 0x00FF);
-            bytes[i++] = (byte)((CompressionMethod & 0xFF00) >> 8);
+            bytes[i++] = (byte)(_CompressionMethod & 0x00FF);
+            bytes[i++] = (byte)((_CompressionMethod & 0xFF00) >> 8);
 
 #if AESCRYPTO
             if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
@@ -855,8 +855,8 @@ namespace Ionic.Zip
             FigureCompressionMethodForWriting(cycle);
 
             // (i==8) compression method         
-            bytes[i++] = (byte)(CompressionMethod & 0x00FF);
-            bytes[i++] = (byte)((CompressionMethod & 0xFF00) >> 8);
+            bytes[i++] = (byte)(_CompressionMethod & 0x00FF);
+            bytes[i++] = (byte)((_CompressionMethod & 0xFF00) >> 8);
 
             if (cycle == 99)
             {
@@ -1337,8 +1337,8 @@ namespace Ionic.Zip
             }
 
             int i = 8;
-            _EntryHeader[i++] = (byte)(CompressionMethod & 0x00FF);
-            _EntryHeader[i++] = (byte)((CompressionMethod & 0xFF00) >> 8);
+            _EntryHeader[i++] = (byte)(_CompressionMethod & 0x00FF);
+            _EntryHeader[i++] = (byte)((_CompressionMethod & 0xFF00) >> 8);
 
             i = 14;
             // CRC - the correct value now
@@ -1605,7 +1605,7 @@ namespace Ionic.Zip
         
         private Stream MaybeApplyDeflation(Stream s, long streamLength)
         {
-            if (CompressionMethod == 0x08 && CompressionLevel != Ionic.Zlib.CompressionLevel.None)
+            if (_CompressionMethod == 0x08 && CompressionLevel != Ionic.Zlib.CompressionLevel.None)
             {
 #if !NETCF    
                 // ParallelDeflateThreshold == 0    means ALWAYS use parallel deflate

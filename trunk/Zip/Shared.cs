@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 12:41:44>
+// Time-stamp: <2009-November-13 10:05:23>
 //
 // ------------------------------------------------------------------
 //
@@ -220,7 +220,29 @@ namespace Ionic.Zip
         {
             int n = 0;
             byte[] block = new byte[4];
+#if NETCF
+            // workitem 9181
+            // Reading here in NETCF sometimes reads "backwards". Seems to happen for
+            // larger files.  Not sure why. Maybe an error in caching.  If the data is:
+            //
+            // 00100210: 9efa 0f00 7072 6f6a 6563 742e 6963 7750  ....project.icwP
+            // 00100220: 4b05 0600 0000 0006 0006 0091 0100 008e  K...............
+            // 00100230: 0010 0000 00                             .....
+            //
+            // ...and the stream Position is 10021F, then a Read of 4 bytes is returning
+            // 50776369, instead of 06054b50. This seems to happen the 2nd time Read()
+            // is called from that Position..
+            //
+            // submitted to connect.microsoft.com
+            // https://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=318918#tabs
+            //
+            for (int i = 0; i < block.Length; i++)
+            {
+                n+= s.Read(block, i, 1);
+            }
+#else
             n = s.Read(block, 0, block.Length);
+#endif
             if (n != block.Length) throw new BadReadException(String.Format(message, s.Position));
             int data = unchecked((((block[3] * 256 + block[2]) * 256) + block[1]) * 256 + block[0]);
             return data;

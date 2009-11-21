@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-05 21:06:45>
+// Time-stamp: <2009-November-19 11:18:42>
 //
 // ------------------------------------------------------------------
 //
@@ -50,7 +50,7 @@ namespace Ionic.Zip
         ZipFile,
         
         /// <summary>
-        /// The content for the ZipEntry will be provided by the WriteDelegate.
+        /// The content for the ZipEntry will be or was provided by the WriteDelegate.
         /// </summary>
         WriteDelegate,
         
@@ -61,7 +61,7 @@ namespace Ionic.Zip
         JitStream,
         
         /// <summary>
-        /// The content for the ZipEntry will be obtained from a <c>ZipOutputStream</c>.
+        /// The content for the ZipEntry will be or was obtained from a <c>ZipOutputStream</c>.
         /// </summary>
         ZipOutputStream,
     }

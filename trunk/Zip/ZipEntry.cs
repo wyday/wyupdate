@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-November-04 02:48:28>
+// Time-stamp: <2009-November-19 11:15:30>
 //
 // ------------------------------------------------------------------
 //
@@ -51,7 +51,10 @@ namespace Ionic.Zip
         /// Applications should never need to call this directly.  It is exposed to
         /// support COM Automation environments.
         /// </remarks>
-        public ZipEntry() { }
+        public ZipEntry()
+        {
+            _CompressionMethod = (Int16) CompressionMethod.Deflate;
+        }
 
         /// <summary>
         ///   The time and date at which the file indicated by the <c>ZipEntry</c> was
@@ -1305,10 +1308,10 @@ namespace Ionic.Zip
         /// </para>
         /// 
         /// <para>
-        ///   You may wish to set <c>CompressionMethod</c> to 0 (None) when zipping
+        ///   You may wish to set <c>CompressionMethod</c> to CompressionMethod.None (0) when zipping
         ///   previously compressed data like a jpg, png, or mp3 file.  This can save
         ///   time and cpu cycles. For practical purposes, setting
-        ///   <c>CompressionMethod</c> to 0 is equivalent to setting <see
+        ///   <c>CompressionMethod</c> to None is equivalent to setting <see
         ///   cref="CompressionLevel"/> to <see
         ///   cref="Ionic.Zlib.CompressionLevel.None">CompressionLevel.None</see>.
         /// </para>
@@ -1335,7 +1338,7 @@ namespace Ionic.Zip
         /// {
         ///   ZipEntry e1= zip.AddFile(@"notes\Readme.txt");
         ///   ZipEntry e2= zip.AddFile(@"music\StopThisTrain.mp3");
-        ///   e2.CompressionMethod = 0;
+        ///   e2.CompressionMethod = CompressionMethod.None;
         ///   zip.Save();
         /// }
         /// </code>
@@ -1344,27 +1347,32 @@ namespace Ionic.Zip
         /// Using zip As New ZipFile(ZipFileToCreate)
         ///   zip.AddFile("notes\Readme.txt")
         ///   Dim e2 as ZipEntry = zip.AddFile("music\StopThisTrain.mp3")
-        ///   e2.CompressionMethod = 0
+        ///   e2.CompressionMethod = CompressionMethod.None
         ///   zip.Save
         /// End Using
         /// </code>
         /// </example>
-        public Int16 CompressionMethod
+        public CompressionMethod CompressionMethod
         {
-            get { return _CompressionMethod; }
+            get { return (CompressionMethod)_CompressionMethod; }
             set
             {
-                if (value == _CompressionMethod) return; // nothing to do.
+                if (value == (CompressionMethod)_CompressionMethod) return; // nothing to do.
 
-                if (value != 0x00 && value != 0x08)
-                    throw new InvalidOperationException("Unsupported compression method. Specify 8 or 0.");
+                if (value != CompressionMethod.None && value != CompressionMethod.Deflate)
+                    throw new InvalidOperationException("Unsupported compression method. Specify CompressionMethod.Deflate or CompressionMethod.None.");
 
                 // If the source is a zip archive and there was encryption on the 
                 // entry, changing the compression method is not supported. 
                 if (this._Source == ZipEntrySource.ZipFile && _sourceIsEncrypted)
                     throw new InvalidOperationException("Cannot change compression method on encrypted entries read from archives.");
 
-                _CompressionMethod = value;
+                _CompressionMethod = (Int16) value;
+                
+                if (_CompressionMethod == (Int16) Ionic.Zip.CompressionMethod.None)
+                    CompressionLevel = Ionic.Zlib.CompressionLevel.None;
+                else
+                    CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
 
                 _restreamRequiredOnSave = true;
             }
@@ -2512,7 +2520,7 @@ namespace Ionic.Zip
         private Int64 _TotalEntrySize;
         internal int _LengthOfHeader;
         internal int _LengthOfTrailer;
-        private bool _InputUsesZip64;
+        internal bool _InputUsesZip64;
         private UInt32 _UnsupportedAlgorithmId;
 
         internal string _Password;
@@ -2627,6 +2635,35 @@ namespace Ionic.Zip
 
 
 
+    /// <summary>
+    ///   The method of compression to use for a particular ZipEntry.
+    /// </summary>
+    ///
+    /// <remarks>
+    ///   <see
+    ///   href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">PKWare's
+    ///   ZIP Specification</see> describes a number of distinct
+    ///   cmopression methods that can be used within a zip file. The
+    ///   standard DEFLATE method is the only one supported by this
+    ///   library.  Imploding, Deflate64, LZMA, and others are not
+    ///   supported by this library, either for reading or writing zip
+    ///   archives.
+    /// </remarks>
+    public enum CompressionMethod
+    {
+        /// <summary>
+        /// No compression at all. For COM environments, the value is 0 (zero).
+        /// </summary>
+        None = 0,
+        
+        /// <summary>
+        ///   DEFLATE cmopression, as described in <see
+        ///   href="http://www.ietf.org/rfc/rfc1951.txt">IETF RFC
+        ///   1951</see>.  This is the "normal" compression used in zip
+        ///   files. For COM environments, the value is 8. 
+        /// </summary>
+        Deflate = 8,
+    }
 
 
 #if NETCF

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 16:50:55>
+// Time-stamp: <2009-November-13 08:47:42>
 //
 // ------------------------------------------------------------------
 //
@@ -1156,10 +1156,8 @@ namespace Ionic.Zip
 
             // workitem 8299
             if (zf._locEndOfCDS > 0)
-            {
                 zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
-                //zf.SeekFromOrigin(zf._locEndOfCDS);
-            }
+
             ReadCentralDirectoryFooter(zf);
 
             if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
@@ -1173,6 +1171,8 @@ namespace Ionic.Zip
             zf.OnReadCompleted();
         }
 
+
+        
         
         // build the TOC by reading each entry in the file.
         private static void ReadIntoInstance_Orig(ZipFile zf)
@@ -1199,12 +1199,9 @@ namespace Ionic.Zip
             }
 
             // read the zipfile's central directory structure here.
-            //zf._direntries = new System.Collections.Generic.List<ZipDirEntry>();
-
             ZipEntry de;
             while ((de = ZipEntry.ReadDirEntry(zf)) != null)
             {
-                //zf._direntries.Add(de);
                 // Housekeeping: Since ZipFile exposes ZipEntry elements in the enumerator, 
                 // we need to copy the comment that we grab from the ZipDirEntry
                 // into the ZipEntry, so the application can access the comment. 
@@ -1223,19 +1220,12 @@ namespace Ionic.Zip
 
             // workitem 8299
             if (zf._locEndOfCDS > 0)
-            {
-                zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);                
-                //zf.SeekFromOrigin(zf._locEndOfCDS);
-            }
-
+                zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
 
             ReadCentralDirectoryFooter(zf);
 
             if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
                 zf.StatusMessageTextWriter.WriteLine("Zip file Comment: {0}", zf.Comment);
-
-            // when finished slurping in the zip, close the read stream
-            //zf.ReadStream.Close();
 
             zf.OnReadCompleted();
 
@@ -1306,7 +1296,7 @@ namespace Ionic.Zip
             if (signature != ZipConstants.EndOfCentralDirectorySignature)
             {
                 s.Seek(-4, SeekOrigin.Current);
-                throw new BadReadException(String.Format("  ZipFile::Read(): Bad signature ({0:X8}) at position 0x{1:X8}",
+                throw new BadReadException(String.Format("ZipFile::ReadCentralDirectoryFooter: Bad signature ({0:X8}) at position 0x{1:X8}",
                                                          signature, s.Position));
             }
 

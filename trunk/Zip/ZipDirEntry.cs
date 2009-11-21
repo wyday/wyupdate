@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-19 16:44:38>
+// Time-stamp: <2009-November-19 11:29:18>
 //
 // ------------------------------------------------------------------
 //
@@ -76,7 +76,7 @@ namespace Ionic.Zip
                 builder.Append(string.Format("ZipEntry: {0}\n", this.FileName))
                     .Append(string.Format("  Version Made By: 0x{0:X}\n", this._VersionMadeBy))
                     .Append(string.Format("  Version Needed: 0x{0:X}\n", this.VersionNeeded))
-                    .Append(string.Format("  Compression Method: 0x{0:X}\n", this.CompressionMethod))
+                    .Append(string.Format("  Compression Method: {0}\n", this.CompressionMethod))
                     .Append(string.Format("  Compressed: 0x{0:X}\n", this.CompressedSize))
                     .Append(string.Format("  Uncompressed: 0x{0:X}\n", this.UncompressedSize))
                     .Append(string.Format("  Disk Number: {0}\n", this._diskNumber))
@@ -151,7 +151,7 @@ namespace Ionic.Zip
                 zde._VersionMadeBy = (short)(block[i++] + block[i++] * 256);
                 zde._VersionNeeded = (short)(block[i++] + block[i++] * 256);
                 zde._BitField = (short)(block[i++] + block[i++] * 256);
-                zde._CompressionMethod = (short)(block[i++] + block[i++] * 256);
+                zde._CompressionMethod = (Int16)(block[i++] + block[i++] * 256);
                 zde._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
                 zde._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(zde._TimeBlob);
                 zde._timestamp |= ZipEntryTimestamp.DOS;

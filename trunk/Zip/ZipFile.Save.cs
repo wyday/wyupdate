@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-22 13:50:33>
+// Time-stamp: <2009-November-05 20:29:50>
 //
 // ------------------------------------------------------------------
 //
@@ -115,7 +115,7 @@ namespace Ionic.Zip
                         e.Write(WriteStream);
                         if (_saveOperationCanceled)
                             break;
-                        e._container = new ZipContainer(this);
+                        //e._container = new ZipContainer(this);  // not sure why I have this here. 
                         n++;
                         OnSaveEntry(n, e, false);
                         if (_saveOperationCanceled)

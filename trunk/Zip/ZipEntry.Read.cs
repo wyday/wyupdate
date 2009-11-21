@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-21 12:42:07>
+// Time-stamp: <2009-November-18 16:35:55>
 //
 // ------------------------------------------------------------------
 //
@@ -94,9 +94,9 @@ namespace Ionic.Zip
             bytesRead += n;
 
             int i = 0;
-            ze._VersionNeeded = (short)(block[i++] + block[i++] * 256);
-            ze._BitField = (short)(block[i++] + block[i++] * 256);
-            ze._CompressionMethod = (short)(block[i++] + block[i++] * 256);
+            ze._VersionNeeded = (Int16)(block[i++] + block[i++] * 256);
+            ze._BitField = (Int16)(block[i++] + block[i++] * 256);
+            ze._CompressionMethod = (Int16)(block[i++] + block[i++] * 256);
             ze._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
             // transform the time data into something usable (a DateTime)
             ze._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(ze._TimeBlob);

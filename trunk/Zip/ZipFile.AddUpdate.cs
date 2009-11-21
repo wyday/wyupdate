@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-29 07:45:36>
+// Time-stamp: <2009-November-05 10:12:58>
 //
 // ------------------------------------------------------------------
 //
@@ -1292,7 +1292,7 @@ namespace Ionic.Zip
         /// 
         /// </remarks>
         ///
-        /// <param name="entryName">name of the entry to add</param>
+        /// <param name="entryName">the name of the entry to add</param>
         /// <param name="writer">the delegate which will write the entry content</param>
         /// <returns>the ZipEntry added</returns>
         ///
@@ -1416,8 +1416,10 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <example>
+        ///
         ///   This example uses anonymous methods in C# to open and close
         ///   the input stream for the content for a zip entry.
+        ///
         /// <code lang="C#">
         /// using(Ionic.Zip.ZipFile zip = new Ionic.Zip.ZipFile())
         /// {
@@ -1430,6 +1432,12 @@ namespace Ionic.Zip
         /// }
         /// </code>
         /// </example>
+        ///
+        /// <param name="entryName">the name of the entry to add</param>
+        /// <param name="opener">the delegate that will be invoked to open the stream</param>
+        /// <param name="closer">the delegate that will be invoked to close the stream</param>
+        /// <returns>the ZipEntry added</returns>
+        ///
         public ZipEntry AddEntry(string entryName, OpenDelegate opener, CloseDelegate closer)
         {
             ZipEntry ze = ZipEntry.CreateForJitStreamProvider(entryName, opener, closer);
