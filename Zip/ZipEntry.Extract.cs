@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-November-03 03:28:01>
+// Time-stamp: <2009-November-18 16:33:49>
 //
 // ------------------------------------------------------------------
 //
@@ -506,7 +506,9 @@ namespace Ionic.Zip
             if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling OpenReader.");
 
-            Int64 LeftToRead = (CompressionMethod == 0x08) ? this.UncompressedSize : this._CompressedFileDataSize;
+            Int64 LeftToRead = (CompressionMethod == CompressionMethod.Deflate)
+                ? this.UncompressedSize
+                : this._CompressedFileDataSize;
 
             Stream input = this.ArchiveStream;
 
@@ -883,7 +885,9 @@ namespace Ionic.Zip
             // neither. So we need to check both the encryption flag and the compression flag,
             // and take the proper action in all cases.  
 
-            Int64 LeftToRead = (CompressionMethod == 0x08) ? this.UncompressedSize : this._CompressedFileDataSize;
+            Int64 LeftToRead = (CompressionMethod == CompressionMethod.Deflate)
+                ? this.UncompressedSize
+                : this._CompressedFileDataSize;
 
             // Get a stream that either decrypts or not.
             _inputDecryptorStream = GetExtractDecryptor(input);
@@ -930,7 +934,7 @@ namespace Ionic.Zip
         internal Stream GetExtractDecompressor(Stream input2)
         {
             // Using the above, now we get a stream that either decompresses or not.
-            Stream input3 = (CompressionMethod == 0x08)
+            Stream input3 = (CompressionMethod == CompressionMethod.Deflate)
                 ? new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true)
                 : input2;
             return input3;
@@ -1095,7 +1099,7 @@ namespace Ionic.Zip
             get
             {
                 string meth = String.Empty;
-                switch (_CompressionMethod)
+                switch ((int)_CompressionMethod)
                 {
                     case 0:
                         meth = "Store";
@@ -1149,9 +1153,9 @@ namespace Ionic.Zip
 
         internal void ValidateCompression()
         {
-            if ((CompressionMethod != 0) && (CompressionMethod != 0x08))  // deflate
+            if ((CompressionMethod != CompressionMethod.None) && (CompressionMethod != CompressionMethod.Deflate))
                 throw new ZipException(String.Format("Entry {0} uses an unsupported compression method (0x{1:X2}, {2})",
-                                                          FileName, CompressionMethod, UnsupportedCompressionMethod));
+                                                          FileName, _CompressionMethod, UnsupportedCompressionMethod));
         }
 
 

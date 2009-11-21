@@ -150,6 +150,13 @@ namespace wyUpdate
 
         static void SetACLOnFolders(string basis, string extracted, string backup)
         {
+            // This codes does 3 things:
+            // 1. Get the ACL for the current extracted & backup folder
+            // 2. Get the ACL for the target folder
+            // 3. Generates a new DirectorySecurity object for both the extracted & backup folders
+            //    (this solves the "ACL not in canonical form" problem http://social.msdn.microsoft.com/Forums/en/sqlgetstarted/thread/e4725808-bd1b-476a-87a4-5fd9dc24a3b7)
+            // 4. Set the gathered ACLs to the new DirectorySecurity objects (repeat process for Audit Rules)
+
             // get the acl of basis
             AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
             AuthorizationRuleCollection auditCL = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));

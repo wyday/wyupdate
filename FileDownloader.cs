@@ -6,7 +6,7 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using Ionic.Zlib;
+using wyUpdate.Common;
 
 namespace wyUpdate.Downloader
 {
@@ -40,7 +40,7 @@ namespace wyUpdate.Downloader
 
         public long Adler32;
 
-        uint downloadedAdler32 = 1;
+        Adler32 downloadedAdler32 = new Adler32();
 
         public bool UseRelativeProgress;
 
@@ -208,6 +208,9 @@ namespace wyUpdate.Downloader
                 data = DownloadData.Create(url, destFolder);
                 waitingForResponse = false;
 
+                //reset the adler
+                downloadedAdler32.Reset();
+
                 // Find out the name of the file that the web server gave us.
                 string destFileName = Path.GetFileName(data.Response.ResponseUri.ToString());
 
@@ -255,7 +258,7 @@ namespace wyUpdate.Downloader
 
                     // update the adler32 value
                     if (Adler32 != 0)
-                        downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, readCount);
+                        downloadedAdler32.Update(buffer, 0, readCount);
 
                     // save block to end of file
                     fs.Write(buffer, 0, readCount);
@@ -349,7 +352,7 @@ namespace wyUpdate.Downloader
         void ValidateDownload()
         {
             //if an Adler32 checksum is provided, check the file
-            if (!bw.CancellationPending && Adler32 != 0 && Adler32 != downloadedAdler32)
+            if (!bw.CancellationPending && Adler32 != 0 && Adler32 != downloadedAdler32.Value)
             {
                 // file failed to vaildate, throw an error
                 throw new Exception("The downloaded file failed the Adler32 validation.");
@@ -360,7 +363,7 @@ namespace wyUpdate.Downloader
         {
             byte[] buffer = new byte[BufferSize];
 
-            using (FileStream fs = new FileStream(fileName, FileMode.Open))
+            using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
                 int sourceBytes;
 
@@ -368,7 +371,7 @@ namespace wyUpdate.Downloader
                 {
                     sourceBytes = fs.Read(buffer, 0, buffer.Length);
 
-                    downloadedAdler32 = Adler.Adler32(downloadedAdler32, buffer, 0, sourceBytes);
+                    downloadedAdler32.Update(buffer, 0, sourceBytes);
 
                     // break on cancel
                     if (bw.CancellationPending)

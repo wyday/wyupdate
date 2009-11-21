@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-October-28 12:49:23>
+// Time-stamp: <2009-November-07 05:26:55>
 //
 // ------------------------------------------------------------------
 //
@@ -77,6 +77,8 @@ namespace Ionic.Zlib
     {
         /// <summary>
         /// None means that the data will be simply stored, with no change at all.
+        /// If you are producing ZIPs for use on Mac OSX, be aware that archives produced with CompressionLevel.None
+        /// cannot be opened with the default zip reader. Use a different CompressionLevel.
         /// </summary>
         None= 0,
         /// <summary>

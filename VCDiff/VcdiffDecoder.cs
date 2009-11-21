@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Ionic.Zlib;
+using wyUpdate.Common;
 
 namespace wyUpdate.Compression.Vcdiff
 {
@@ -27,7 +27,8 @@ namespace wyUpdate.Compression.Vcdiff
 		/// </summary>
 		Stream output;
 
-	    uint Adler32 = 1;
+
+        Adler32 adler = new Adler32();
 
 		/// <summary>
 		/// Code table to use for decoding.
@@ -101,7 +102,7 @@ namespace wyUpdate.Compression.Vcdiff
 			VcdiffDecoder instance = new VcdiffDecoder(original, delta, output);
 			instance.Decode();
 
-            if (adler != 0 && adler != instance.Adler32)
+            if (adler != 0 && adler != instance.adler.Value)
                 throw new Exception();
 		}
 		#endregion
@@ -181,7 +182,7 @@ namespace wyUpdate.Compression.Vcdiff
 			MemoryStream tableDelta = new MemoryStream(compressedTableData, false);
 			byte[] decompressedTableData = new byte[1536];
 			MemoryStream tableOutput = new MemoryStream(decompressedTableData, true);
-			VcdiffDecoder.Decode(tableOriginal, tableDelta, tableOutput, 0);
+			Decode(tableOriginal, tableDelta, tableOutput, 0);
 
 			if (tableOutput.Position != 1536)
 			{
@@ -362,7 +363,7 @@ namespace wyUpdate.Compression.Vcdiff
 			output.Write(targetData, 0, targetLength);
 			
             // update the adler for the current window
-		    Adler32 = Adler.Adler32(Adler32, targetData, 0, targetLength);
+            adler.Update(targetData, 0, targetLength);
             
 			return true;
 		}

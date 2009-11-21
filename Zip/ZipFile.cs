@@ -929,7 +929,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        ///   Describes whether the most recent <c>Save()</c> operation used ZIP64 extensions.
+        ///   Indicates whether the most recent <c>Save()</c> operation used ZIP64 extensions.
         /// </summary>
         ///
         /// <remarks>
@@ -973,6 +973,35 @@ namespace Ionic.Zip
             }
         }
 
+
+        /// <summary>
+        ///   Indicates whether the most recent <c>Read()</c> operation read a zip file that uses
+        ///   ZIP64 extensions.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   This property will return null (Nothing in VB) if you've added an entry after reading
+        ///   the zip file. 
+        /// </remarks>
+        public Nullable<bool> InputUsesZip64
+        {
+            get
+            {
+                if (_entries.Count > 65534)
+                    return true; 
+
+                foreach (ZipEntry e in this)
+                {
+                    // if any entry was added after reading the zip file, then the result is null
+                    if (e.Source != ZipEntrySource.ZipFile) return null;
+
+                    // if any entry read from the zip used zip64, then the result is true
+                    if (e._InputUsesZip64) return true;
+                }
+                return false;
+            }
+        }
+        
 
         /// <summary>
         ///   The text encoding to use when writing new entries to the <c>ZipFile</c>,
