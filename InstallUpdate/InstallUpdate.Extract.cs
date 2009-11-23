@@ -136,6 +136,10 @@ namespace wyUpdate
 
                     foreach (string dir in dirs)
                     {
+                        // delete everything but the self-update folder (AutoUpdate specific)
+                        if (Path.GetFileName(dir) == "selfupdate")
+                            continue;
+
                         try
                         {
                             Directory.Delete(dir, true);
