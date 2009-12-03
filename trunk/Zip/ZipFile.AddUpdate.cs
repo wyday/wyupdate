@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-November-05 10:12:58>
+// Time-stamp: <2009-November-22 10:29:33>
 //
 // ------------------------------------------------------------------
 //
@@ -1418,7 +1418,8 @@ namespace Ionic.Zip
         /// <example>
         ///
         ///   This example uses anonymous methods in C# to open and close
-        ///   the input stream for the content for a zip entry.
+        ///   the source stream for the content for a zip entry.  In a real application, the
+        ///   logic for the OpenDelegate would probably be more involved.  
         ///
         /// <code lang="C#">
         /// using(Ionic.Zip.ZipFile zip = new Ionic.Zip.ZipFile())
@@ -1430,6 +1431,45 @@ namespace Ionic.Zip
         ///         
         ///     zip.Save(zipFileName);
         /// }
+        /// </code>
+        ///
+        /// </example>
+        ///
+        /// <example>
+        ///
+        ///   This example uses delegates in VB.NET to open and close the 
+        ///   the source stream for the content for a zip entry.  VB 9.0 lacks
+        ///   support for "Sub" lambda expressions, and so the CloseDelegate must
+        ///   be an actual, named Sub.
+        ///
+        /// <code lang="VB">
+        ///
+        /// Function MyStreamOpener(ByVal entryName As String) As Stream
+        ///     '' This simply opens a file.  You probably want to do somethinig
+        ///     '' more involved here: open a stream to read from a database,
+        ///     '' open a stream on an HTTP connection, and so on. 
+        ///     Return File.OpenRead(entryName)
+        /// End Function
+        /// 
+        /// Sub MyStreamCloser(entryName As String, stream As Stream)
+        ///     stream.Close()
+        /// End Sub
+        /// 
+        /// Public Sub Run()
+        ///     Dim dirToZip As String = "fodder"
+        ///     Dim zipFileToCreate As String = "Archive.zip"
+        ///     Dim opener As OpenDelegate = AddressOf MyStreamOpener
+        ///     Dim closer As CloseDelegate = AddressOf MyStreamCloser
+        ///     Dim numFilestoAdd As Int32 = 4
+        ///     Using zip As ZipFile = New ZipFile
+        ///         Dim i As Integer
+        ///         For i = 0 To numFilesToAdd - 1
+        ///             zip.AddEntry(String.Format("content-{0:000}.txt"), opener, closer)
+        ///         Next i
+        ///         zip.Save(zipFileToCreate)
+        ///     End Using
+        /// End Sub
+        /// 
         /// </code>
         /// </example>
         ///

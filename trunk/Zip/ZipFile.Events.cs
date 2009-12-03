@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-September-11 10:59:41>
+// Time-stamp: <2009-November-20 10:58:43>
 //
 // ------------------------------------------------------------------
 //
@@ -470,6 +470,10 @@ namespace Ionic.Zip
         /// </code>
         ///
         /// </example>
+        ///
+        /// <seealso cref="Ionic.Zip.ZipFile.ReadProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.AddProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ExtractProgress"/>
         public event EventHandler<SaveProgressEventArgs> SaveProgress;
 
 
@@ -596,6 +600,10 @@ namespace Ionic.Zip
         ///
         /// </list>
         /// </remarks>
+        ///
+        /// <seealso cref="Ionic.Zip.ZipFile.SaveProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.AddProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ExtractProgress"/>
         public event EventHandler<ReadProgressEventArgs> ReadProgress;
 
         private void OnReadStarted()
@@ -807,6 +815,10 @@ namespace Ionic.Zip
         /// End Sub
         /// </code>
         /// </example>
+        ///
+        /// <seealso cref="Ionic.Zip.ZipFile.SaveProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ReadProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.AddProgress"/>
         public event EventHandler<ExtractProgressEventArgs> ExtractProgress;
 
 
@@ -935,12 +947,11 @@ namespace Ionic.Zip
         ///         case ZipProgressEventType.Adding_Started:
         ///             Console.WriteLine("Adding files to the zip...");
         ///             break;
-        ///          case ZipProgressEventType.Adding_AfterAddEntry:
+        ///         case ZipProgressEventType.Adding_AfterAddEntry:
         ///             _numEntriesAdded++;
         ///             Console.WriteLine(String.Format("Adding file {0}/{1} :: {2}",
         ///                                      _numEntriesAdded, _numEntriesToAdd, e.CurrentEntry.FileName));
         ///             break;
-        ///             
         ///         case ZipProgressEventType.Adding_Completed:
         ///             Console.WriteLine("Added all files");
         ///             break;
@@ -952,15 +963,46 @@ namespace Ionic.Zip
         ///     using (ZipFile zip = new ZipFile())
         ///     {
         ///         zip.AddProgress += AddProgressHandler;
-        ///         zip.AddDirectory(System.IO.Path.GetFileName(DirToZip));
-        ///         zip.BufferSize = 4096;
         ///         zip.SaveProgress += SaveProgressHandler;
+        ///         zip.AddDirectory(System.IO.Path.GetFileName(DirToZip));
         ///         zip.Save(ZipFileToCreate);
         ///     }
         /// }
         ///     
         /// </code>
+        ///
+        /// <code lang="VB">
+        /// 
+        /// Private Sub AddProgressHandler(ByVal sender As Object, ByVal e As AddProgressEventArgs)
+        ///     Select Case e.EventType
+        ///         Case ZipProgressEventType.Adding_Started
+        ///             Console.WriteLine("Adding files to the zip...")
+        ///             Exit Select
+        ///         Case ZipProgressEventType.Adding_AfterAddEntry
+        ///             Console.WriteLine(String.Format("Adding file {0}", e.CurrentEntry.FileName))
+        ///             Exit Select
+        ///         Case ZipProgressEventType.Adding_Completed
+        ///             Console.WriteLine("Added all files")
+        ///             Exit Select
+        ///     End Select
+        /// End Sub
+        /// 
+        /// Sub CreateTheZip()
+        ///     Using zip as ZipFile = New ZipFile
+        ///         AddHandler zip.AddProgress, AddressOf AddProgressHandler
+        ///         AddHandler zip.SaveProgress, AddressOf SaveProgressHandler
+        ///         zip.AddDirectory(System.IO.Path.GetFileName(DirToZip))
+        ///         zip.Save(ZipFileToCreate);
+        ///     End Using
+        /// End Sub
+        ///
+        /// </code>
+        ///
         /// </example>
+        ///
+        /// <seealso cref="Ionic.Zip.ZipFile.SaveProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ReadProgress"/>
+        /// <seealso cref="Ionic.Zip.ZipFile.ExtractProgress"/>
         public event EventHandler<AddProgressEventArgs> AddProgress;
 
         private void OnAddStarted()
@@ -1091,18 +1133,23 @@ namespace Ionic.Zip
         ///
         /// public void SaveTheFile()
         /// {
+        ///   string directoryToZip = "fodder";
+        ///   string directoryInArchive = "files";
+        ///   string zipFileToCreate = "Archive.zip";
         ///   using (var zip = new ZipFile())
         ///   {
+        ///     // set the event handler before adding any entries
         ///     zip.ZipError += MyZipError;
-        ///     zip.AddDirectory(directoryToZip,"fodder");
+        ///     zip.AddDirectory(directoryToZip, directoryInArchive);
         ///     zip.Save(zipFileToCreate);
         ///   }
         /// }
         /// </code>
         ///
         /// <code lang="VB">
-        /// Private Sub zipArchive_ZipError(ByVal sender As Object, ByVal e As Ionic.Zip.ZipErrorEventArgs)
-        ///     ' At this point, can prompt the user for an action to take
+        /// Private Sub MyZipError(ByVal sender As Object, ByVal e As Ionic.Zip.ZipErrorEventArgs)
+        ///     ' At this point, the application could prompt the user for an action to take.
+        ///     ' But in this case, this application will simply automatically skip the file, in case of error.
         ///     Console.WriteLine("Zip Error,  entry {0}", e.CurrentEntry.FileName)
         ///     Console.WriteLine("   Exception: {0}", e.exception)
         ///     ' set the desired ZipErrorAction on the CurrentEntry to communicate that to DotNetZip
@@ -1110,13 +1157,14 @@ namespace Ionic.Zip
         /// End Sub
         ///
         /// Public Sub SaveTheFile()
-        ///     Dim SourceFolder As String = "fodder"
-        ///     Dim DestFile As String =  "eHandler.zip"
+        ///     Dim directoryToZip As String = "fodder"
+        ///     Dim directoryInArchive As String = "files"
+        ///     Dim zipFileToCreate as String = "Archive.zip"
         ///     Using zipArchive As ZipFile = New ZipFile
         ///         ' set the event handler before adding any entries
-        ///         AddHandler zipArchive.ZipError, AddressOf zipArchive_ZipError
-        ///         zipArchive.AddDirectory(SourceFolder)
-        ///         zipArchive.Save(DestFile)
+        ///         AddHandler zipArchive.ZipError, AddressOf MyZipError
+        ///         zipArchive.AddDirectory(directoryToZip, directoryInArchive)
+        ///         zipArchive.Save(zipFileToCreate)
         ///     End Using
         /// End Sub    
         ///     
