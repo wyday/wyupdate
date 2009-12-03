@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-November-19 11:15:30>
+// Time-stamp: <2009-December-01 23:31:10>
 //
 // ------------------------------------------------------------------
 //
@@ -566,7 +566,7 @@ namespace Ionic.Zip
 
         /// <summary>
         ///   Specifies whether the Creation, Access, and Modified times for the given
-        ///   entry will be emitted in "Unix(tm) format" when the zip archive is saved.
+        ///   entry will be emitted in &quot;Unix(tm) format&quot; when the zip archive is saved.
         /// </summary>
         ///
         /// <remarks>

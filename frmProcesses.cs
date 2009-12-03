@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -9,11 +10,13 @@ namespace wyUpdate
 {
     public partial class frmProcesses : Form
     {
-        ClientLanguage clientLang;
+        readonly ClientLanguage clientLang;
+        readonly List<FileInfo> filenames;
         List<Process> runningProcesses = new List<Process>();
-        List<FileInfo> filenames;
 
         const int SidePadding = 12;
+
+        readonly BackgroundWorker bw = new BackgroundWorker();
 
         public frmProcesses(List<FileInfo> files, ClientLanguage cLang)
         {
@@ -32,9 +35,6 @@ namespace wyUpdate
             btnCloseAll.Text = clientLang.CloseAllPrc;
             btnCancel.Text = clientLang.CancelUpdate;
 
-            //begin checking the for the filenames
-            CheckProcesses();
-
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
 
             //reposition buttons
@@ -42,7 +42,85 @@ namespace wyUpdate
 
             //position all the components
             UpdateSizes();
+
+            bw.WorkerSupportsCancellation = true;
+            bw.DoWork += bw_DoWork;
+            bw.RunWorkerCompleted += bw_RunWorkerCompleted;
+
+            //begin checking the for the filenames
+            bw.RunWorkerAsync();
         }
+
+        private void bw_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Process[] aProcess = Process.GetProcesses();
+
+            // temp storing the running processes
+            List<Process> rProcs = new List<Process>();
+
+            foreach (Process proc in aProcess)
+            {
+                foreach (FileInfo filename in filenames)
+                {
+                    try
+                    {
+                        if (proc.MainModule != null
+                            && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower()
+
+                            //if the running process is not this wyUpdate instance
+                            && !InstallUpdate.ProcessIsSelf(proc.MainModule.FileName))
+                        {
+                            //add the running process to the list
+                            rProcs.Add(proc);
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            // remove any closed proccesses
+            for (int i = 0; i < rProcs.Count; i++)
+            {
+                if (rProcs[i].HasExited)
+                {
+                    rProcs.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            e.Result = rProcs.Count > 0 ? rProcs : null;
+        }
+
+        private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if(e.Result == null)
+            {
+                // we're done, close the form
+                DialogResult = DialogResult.OK;
+                chkProc.Enabled = false;
+                return;
+            }
+
+            List<Process> rProcs = (List<Process>)e.Result;
+
+            //check if list of process is sames as the semi-global one (runningProcesses)
+            //if diff, update listbox.
+            if (!SameProcs(rProcs, runningProcesses))
+            {
+                //update the running processes array
+                runningProcesses = rProcs;
+
+                listProc.Items.Clear();
+
+                foreach (Process proc in runningProcesses)
+                {
+                    listProc.Items.Add(proc.MainWindowTitle + " (" + proc.ProcessName + ".exe)");
+                }
+
+                listProc.SelectedIndex = 0;
+            }
+        }
+
 
         Rectangle m_DescripRect;
 
@@ -64,30 +142,40 @@ namespace wyUpdate
             try
             {
                 runningProcesses[listProc.SelectedIndex].CloseMainWindow();
+
+                string procDets = (string)listProc.Items[listProc.SelectedIndex];
+
+                if (!procDets.StartsWith("[closing]"))
+                    procDets = "[closing] " + procDets;
+
+                listProc.Items[listProc.SelectedIndex] = procDets;
             }
             catch { }
 
-
-
-            if (!CheckProcesses())
-            {
-                //exit, return OK
-                DialogResult = DialogResult.OK;
-            }
+            if (!bw.IsBusy)
+                bw.RunWorkerAsync();
         }
 
         void closeAll_Click(object sender, EventArgs e)
         {
-            foreach (Process proc in runningProcesses)
+            for (int i = 0; i < runningProcesses.Count; i++)
             {
-                proc.CloseMainWindow();
+                try
+                {
+                    runningProcesses[i].CloseMainWindow();
+
+                    string procDets = (string)listProc.Items[i];
+
+                    if (!procDets.StartsWith("[closing]"))
+                        procDets = "[closing] " + procDets;
+
+                    listProc.Items[i] = procDets;
+                }
+                catch { }
             }
 
-            if (!CheckProcesses())
-            {
-                //exit, return OK
-                DialogResult = DialogResult.OK;
-            }
+            if (!bw.IsBusy)
+                bw.RunWorkerAsync();
         }
 
         void btnCancel_Click(object sender, EventArgs e)
@@ -103,57 +191,6 @@ namespace wyUpdate
                 DialogResult = DialogResult.None;
                 chkProc.Enabled = true;
             }
-        }
-
-        bool CheckProcesses()
-        {
-            Process[] aProcess = Process.GetProcesses();
-
-            //temporarily storing the running processes
-            List<Process> rProcs = new List<Process>();
-
-            //Any processes left running (that need to be shut down)
-            bool procLeft = false;
-
-
-            foreach (Process proc in aProcess)
-            {
-                foreach (FileInfo filename in filenames)
-                {
-                    try
-                    {
-                        if (proc.MainModule != null
-                            && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower()
-
-                            //if the running process is not this wyUpdate client
-                            && !InstallUpdate.ProcessIsSelf(proc.MainModule.FileName))
-                        {
-                            //add the running process to the list
-                            rProcs.Add(proc);
-                            //there are processes still open
-                            procLeft = true;
-                        }
-                    }
-                    catch { }
-                }
-            }
-
-            //check if list of process is sames as the semi-global one (runningProcesses)
-            //if diff, update listbox.
-
-            if (!SameProcs(rProcs, runningProcesses))
-            {
-                //update the running processes array
-                runningProcesses = rProcs;
-
-                listProc.Items.Clear();
-                foreach (Process proc in runningProcesses)
-                {
-                    listProc.Items.Add(proc.MainWindowTitle);
-                }
-            }
-
-            return procLeft;
         }
 
         static bool SameProcs(List<Process> procs1, List<Process> procs2)
@@ -172,11 +209,8 @@ namespace wyUpdate
 
         void chkProc_Tick(object sender, EventArgs e)
         {
-            if (!CheckProcesses())
-            {
-                DialogResult = DialogResult.OK;
-                chkProc.Enabled = false;
-            }
+            if (!bw.IsBusy)
+                bw.RunWorkerAsync();
         }
 
         protected override void OnPaint(PaintEventArgs e)

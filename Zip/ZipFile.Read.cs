@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs): 
-// Time-stamp: <2009-November-13 08:47:42>
+// Time-stamp: <2009-November-20 13:40:30>
 //
 // ------------------------------------------------------------------
 //
@@ -1140,8 +1140,10 @@ namespace Ionic.Zip
             // knows when to open a spanned file when the volume number for the central
             // directory differs from the volume number for the zip entry.  The
             // _diskNumberWithCd was set when originally finding the offset for the
-            // start f the Central Directory.
-            
+            // start of the Central Directory.
+
+            // workitem 9214
+            bool inputUsesZip64 = false;
             ZipEntry de;
             while ((de = ZipEntry.ReadDirEntry(zf)) != null)
             {
@@ -1152,8 +1154,14 @@ namespace Ionic.Zip
                     zf.StatusMessageTextWriter.WriteLine("entry {0}", de.FileName);
 
                 zf._entries.Add(de);
+                
+                // workitem 9214
+                if (de._InputUsesZip64) inputUsesZip64 = true;
             }
 
+            // workitem 9214; auto-set the zip64 thing
+            if (inputUsesZip64) zf.UseZip64WhenSaving = Zip64Option.Always;
+                    
             // workitem 8299
             if (zf._locEndOfCDS > 0)
                 zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
