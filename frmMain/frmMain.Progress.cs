@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using wyUpdate.Common;
@@ -10,7 +11,7 @@ namespace wyUpdate
     {
         delegate void ShowProgressDelegate(int weightedPercentDone, int percentDone, bool statusDone, string extraStatus, Exception ex);
         delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
-        delegate void CheckProcessesDel(List<FileInfo> files, bool statusDone);
+        delegate void CheckProcessesDel(List<FileInfo> files, List<Process> rProcesses, bool statusDone);
 
         delegate void ChangeRollbackDelegate(bool rbRegistry);
 
@@ -352,39 +353,47 @@ namespace wyUpdate
             }
         }
 
-        void CheckProcess(List<FileInfo> files, bool done)
+        void CheckProcess(List<FileInfo> files, List<Process> rProcesses, bool done)
         {
             if (done)
             {
-                if (files != null)//if there are some files needing closing
+                if (rProcesses != null) //if there are some processes need closing
                 {
-                    // show myself, make topmost
-                    Show();
-                    TopMost = true;
-                    TopMost = false;
-
-                    // start the close processes form
-                    Form proc = new frmProcesses(files, clientLang);
-                    DialogResult result = proc.ShowDialog();
-
-                    if (result == DialogResult.Cancel)
+                    // remove processes that have exited since last checked
+                    for (int i = 0; i < rProcesses.Count; i++)
                     {
-                        //cancel the update process
-                        CancelUpdate(true);
+                        try
+                        {
+                            if (rProcesses[i].HasExited)
+                                rProcesses.RemoveAt(i);
+                        }
+                        catch { }
                     }
-                    else
+
+                    // only continue if processes are still running
+                    if (rProcesses.Count > 0)
                     {
-                        //processes closed, continue on
-                        update.CurrentlyUpdating += 1;
-                        InstallUpdates(update.CurrentlyUpdating);
+                        // show myself, make topmost
+                        Show();
+                        TopMost = true;
+                        TopMost = false;
+
+                        // start the close processes form
+                        Form proc = new frmProcesses(files, rProcesses, clientLang);
+                        DialogResult result = proc.ShowDialog();
+
+                        if (result == DialogResult.Cancel)
+                        {
+                            //cancel the update process
+                            CancelUpdate(true);
+                            return;
+                        }
                     }
                 }
-                else
-                {
-                    //no processes need to be closed, continue on
-                    update.CurrentlyUpdating += 1;
-                    InstallUpdates(update.CurrentlyUpdating);
-                }
+
+                // processes closed, continue on
+                update.CurrentlyUpdating += 1;
+                InstallUpdates(update.CurrentlyUpdating);
             }
         }
 

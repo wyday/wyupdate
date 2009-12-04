@@ -66,8 +66,6 @@ namespace wyUpdate
             // 
             this.listProc.FormattingEnabled = true;
             this.listProc.IntegralHeight = false;
-            this.listProc.Items.AddRange(new object[] {
-            "Generating list of open processes..."});
             this.listProc.Location = new System.Drawing.Point(3, 60);
             this.listProc.Name = "listProc";
             this.listProc.Size = new System.Drawing.Size(367, 117);

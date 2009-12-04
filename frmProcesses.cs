@@ -12,14 +12,16 @@ namespace wyUpdate
     {
         readonly ClientLanguage clientLang;
         readonly List<FileInfo> filenames;
-        List<Process> runningProcesses = new List<Process>();
+        List<Process> runningProcesses;
 
         const int SidePadding = 12;
 
         readonly BackgroundWorker bw = new BackgroundWorker();
 
-        public frmProcesses(List<FileInfo> files, ClientLanguage cLang)
+        public frmProcesses(List<FileInfo> files, List<Process> rProcesses, ClientLanguage cLang)
         {
+            runningProcesses = rProcesses;
+
             //sets to SegoeUI on Vista
             Font = SystemFonts.MessageBoxFont;
 
@@ -43,6 +45,9 @@ namespace wyUpdate
             //position all the components
             UpdateSizes();
 
+            // update the list with the running proccesses
+            UpdateList();
+
             bw.WorkerSupportsCancellation = true;
             bw.DoWork += bw_DoWork;
             bw.RunWorkerCompleted += bw_RunWorkerCompleted;
@@ -51,7 +56,7 @@ namespace wyUpdate
             bw.RunWorkerAsync();
         }
 
-        private void bw_DoWork(object sender, DoWorkEventArgs e)
+        void bw_DoWork(object sender, DoWorkEventArgs e)
         {
             Process[] aProcess = Process.GetProcesses();
 
@@ -91,7 +96,7 @@ namespace wyUpdate
             e.Result = rProcs.Count > 0 ? rProcs : null;
         }
 
-        private void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if(e.Result == null)
             {
@@ -110,17 +115,21 @@ namespace wyUpdate
                 //update the running processes array
                 runningProcesses = rProcs;
 
-                listProc.Items.Clear();
-
-                foreach (Process proc in runningProcesses)
-                {
-                    listProc.Items.Add(proc.MainWindowTitle + " (" + proc.ProcessName + ".exe)");
-                }
-
-                listProc.SelectedIndex = 0;
+                UpdateList();
             }
         }
 
+        void UpdateList()
+        {
+            listProc.Items.Clear();
+
+            foreach (Process proc in runningProcesses)
+            {
+                listProc.Items.Add(proc.MainWindowTitle + " (" + proc.ProcessName + ".exe)");
+            }
+
+            listProc.SelectedIndex = 0;
+        }
 
         Rectangle m_DescripRect;
 
