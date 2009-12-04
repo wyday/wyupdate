@@ -16,15 +16,16 @@ namespace wyUpdate
             //check for (and delete) a newer client if it exists
             DeleteClientInPath(ProgramDirectory, Path.Combine(TempDirectory, "base"));
 
-            bool procNeedClosing = ProcessesNeedClosing(files);
+            List<Process> rProcesses = ProcessesNeedClosing(files);
 
-            if (!procNeedClosing)
+            if (rProcesses.Count == 0)
             {
                 //no processes need closing, all done
                 files = null;
+                rProcesses = null;
             }
 
-            Sender.BeginInvoke(SenderDelegate, new object[] { files, true });
+            Sender.BeginInvoke(SenderDelegate, new object[] { files, rProcesses, true });
         }
 
         static void RemoveSelfFromProcesses(List<FileInfo> files)
@@ -57,11 +58,11 @@ namespace wyUpdate
             return false;
         }
 
-        static bool ProcessesNeedClosing(List<FileInfo> baseFiles)
+        static List<Process> ProcessesNeedClosing(List<FileInfo> baseFiles)
         {
             Process[] aProcess = Process.GetProcesses();
 
-            bool ProcNeedClosing = false;
+            List<Process> rProcesses = new List<Process>();
 
             foreach (Process proc in aProcess)
             {
@@ -72,14 +73,14 @@ namespace wyUpdate
                         //are one of the exe's in baseDir running?
                         if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower())
                         {
-                            ProcNeedClosing = true;
+                            rProcesses.Add(proc);
                         }
                     }
                     catch { }
                 }
             }
 
-            return ProcNeedClosing;
+            return rProcesses;
         }
     }
 }
