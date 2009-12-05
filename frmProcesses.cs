@@ -150,7 +150,11 @@ namespace wyUpdate
         {
             try
             {
-                runningProcesses[listProc.SelectedIndex].CloseMainWindow();
+                // if there's no window handle, just kill the process
+                if (runningProcesses[listProc.SelectedIndex].MainWindowHandle == IntPtr.Zero)
+                    runningProcesses[listProc.SelectedIndex].Kill();
+                else
+                    runningProcesses[listProc.SelectedIndex].CloseMainWindow();
 
                 string procDets = (string)listProc.Items[listProc.SelectedIndex];
 
@@ -171,7 +175,11 @@ namespace wyUpdate
             {
                 try
                 {
-                    runningProcesses[i].CloseMainWindow();
+                    // if there's no window handle, just kill the process
+                    if (runningProcesses[i].MainWindowHandle == IntPtr.Zero)
+                        runningProcesses[i].Kill();
+                    else
+                        runningProcesses[i].CloseMainWindow();
 
                     string procDets = (string)listProc.Items[i];
 
