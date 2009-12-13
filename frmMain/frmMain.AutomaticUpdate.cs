@@ -377,23 +377,15 @@ namespace wyUpdate
 
         string CreateAutoUpdateTempFolder()
         {
-            bool newCacheFolderCreated = false;
-            string newCacheFolder = GetCacheFolder(update.GUID, ref newCacheFolderCreated);
             oldAUTempFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "wyUpdate AU\\cache\\" + update.GUID);
 
-            if (Directory.Exists(oldAUTempFolder))
-            {
-                // if the new cache folder was just created
-                // copy over all the files
-                if (newCacheFolderCreated)
-                    CopyFiles(oldAUTempFolder, newCacheFolder);
-            }
-
-            return newCacheFolder;
+            // if we're upgrading from an pre v2.5.10 wyUpdate, then use old cache folder
+            // otherwise create the new one
+            return Directory.Exists(oldAUTempFolder) ? oldAUTempFolder : GetCacheFolder(update.GUID);
         }
 
         // gets / creates the cache folder for a GUID
-        static string GetCacheFolder(string guid, ref bool Created)
+        static string GetCacheFolder(string guid)
         {
             // C:\Users\USERNAME\wc
             string temp = Path.Combine(Environment.GetEnvironmentVariable("userprofile"), "wc");
@@ -425,8 +417,6 @@ namespace wyUpdate
             }
 
             // the folder doesn't exist, so we'll create it
-            Created = true;
-
             string guidCacheFolder = Path.Combine(temp, guid.Substring(0,
                                                                        closestMatch == null
                                                                            ? 1
@@ -439,29 +429,6 @@ namespace wyUpdate
 
             return guidCacheFolder;
         }
-
-        static void CopyFiles(string from, string to)
-        {
-            if (to[to.Length - 1] != Path.DirectorySeparatorChar)
-                to += Path.DirectorySeparatorChar;
-
-            if (!Directory.Exists(to))
-                Directory.CreateDirectory(to);
-
-            string[] Files = Directory.GetFileSystemEntries(from);
-
-            foreach (string Element in Files)
-            {
-                // Sub directories
-                if (Directory.Exists(Element))
-                    CopyFiles(Element, to + Path.GetFileName(Element));
-
-                // Files in directory
-                else
-                    File.Copy(Element, to + Path.GetFileName(Element), true);
-            }
-        }
-
 
         void PrepareStepOn(UpdateStepOn step)
         {
