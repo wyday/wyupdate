@@ -438,8 +438,8 @@ namespace wyUpdate
                 // only generate a temp directory if we're not in AutoUpdate mode
                 if (!isAutoUpdateMode)
                 {
-                    //create my own "random" temp dir.
-                    tempDirectory = Path.Combine(Path.GetTempPath(), @"wyup" + DateTime.Now.ToString("ddMMssfff"));
+                    // create "random" temp dir.
+                    tempDirectory = Path.Combine(Path.GetTempPath(), @"wu" + DateTime.Now.ToString("sfff"));
                     Directory.CreateDirectory(tempDirectory);
                 }
 
