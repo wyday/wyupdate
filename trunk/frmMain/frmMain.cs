@@ -502,23 +502,14 @@ namespace wyUpdate
         /// </summary>
         void RemoveTempDirectory()
         {
-            if (Directory.Exists(oldAUTempFolder))
-            {
-                try
-                {
-                    Directory.Delete(oldAUTempFolder, true);
-                }
-                catch { }
-            }
+            if (!Directory.Exists(tempDirectory))
+                return;
 
-            if(Directory.Exists(tempDirectory))
+            try
             {
-                try
-                {
-                    Directory.Delete(tempDirectory, true);
-                }
-                catch { }
+                Directory.Delete(tempDirectory, true);
             }
+            catch { }
         }
     }
 }
