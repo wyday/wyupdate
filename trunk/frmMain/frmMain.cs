@@ -439,7 +439,7 @@ namespace wyUpdate
                 if (!isAutoUpdateMode)
                 {
                     // create "random" temp dir.
-                    tempDirectory = Path.Combine(Path.GetTempPath(), @"wu" + DateTime.Now.ToString("sfff"));
+                    tempDirectory = Path.Combine(Path.GetTempPath(), @"w" + DateTime.Now.ToString("sff"));
                     Directory.CreateDirectory(tempDirectory);
                 }
 
@@ -502,14 +502,23 @@ namespace wyUpdate
         /// </summary>
         void RemoveTempDirectory()
         {
-            if (!Directory.Exists(tempDirectory))
-                return;
-
-            try
+            if (Directory.Exists(oldAUTempFolder))
             {
-                Directory.Delete(tempDirectory, true);
+                try
+                {
+                    Directory.Delete(oldAUTempFolder, true);
+                }
+                catch { }
             }
-            catch { }
+
+            if(Directory.Exists(tempDirectory))
+            {
+                try
+                {
+                    Directory.Delete(tempDirectory, true);
+                }
+                catch { }
+            }
         }
     }
 }
