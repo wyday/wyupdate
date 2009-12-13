@@ -97,8 +97,8 @@ namespace wyUpdate
 
                     //replace
                     File.Copy(tempFiles[i].FullName, origFile, true);
-                    
-                    if(resetAttributes)
+
+                    if (resetAttributes)
                         File.SetAttributes(origFile, atr);
 
                     //Old method (didn't work on Win 98/ME):

@@ -24,6 +24,7 @@ namespace wyUpdate
 
         bool beginAutoUpdateInstallation;
 
+        string oldAUTempFolder;
 
         void SetupAutoupdateMode()
         {
@@ -376,22 +377,89 @@ namespace wyUpdate
 
         string CreateAutoUpdateTempFolder()
         {
-            string temp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                       "wyUpdate AU");
+            bool newCacheFolderCreated = false;
+            string newCacheFolder = GetCacheFolder(update.GUID, ref newCacheFolderCreated);
+            oldAUTempFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "wyUpdate AU\\cache\\" + update.GUID);
 
-            // if the folder temp folder doesn't exist, create the folder with hiden attributes
-            if(!Directory.Exists(temp))
+            if (Directory.Exists(oldAUTempFolder))
+            {
+                // if the new cache folder was just created
+                // copy over all the files
+                if (newCacheFolderCreated)
+                    CopyFiles(oldAUTempFolder, newCacheFolder);
+            }
+
+            return newCacheFolder;
+        }
+
+        // gets / creates the cache folder for a GUID
+        static string GetCacheFolder(string guid, ref bool Created)
+        {
+            // C:\Users\USERNAME\wc
+            string temp = Path.Combine(Environment.GetEnvironmentVariable("userprofile"), "wc");
+
+            // if the folder temp folder doesn't exist, create the folder with hidden attributes
+            if (!Directory.Exists(temp))
             {
                 Directory.CreateDirectory(temp);
-
                 File.SetAttributes(temp, FileAttributes.System | FileAttributes.Hidden);
             }
 
-            temp = Path.Combine(temp, "cache\\" + update.GUID);
+            string closestMatch = null;
 
-            Directory.CreateDirectory(temp);
+            string[] dirs = Directory.GetDirectories(temp);
 
-            return temp;
+            // loop through the directories - stop at the first partial match this GUID
+            for (int i = 0; i < dirs.Length; i++)
+            {
+                string name = Path.GetFileName(dirs[i]);
+
+                if (guid.IndexOf(name) == 0)
+                {
+                    // see if the partial-matching folder contains an empty GUID file
+                    if (File.Exists(Path.Combine(dirs[i], guid)))
+                        return dirs[i];
+
+                    closestMatch = name;
+                }
+            }
+
+            // the folder doesn't exist, so we'll create it
+            Created = true;
+
+            string guidCacheFolder = Path.Combine(temp, guid.Substring(0,
+                                                                       closestMatch == null
+                                                                           ? 1
+                                                                           : closestMatch.Length + 1));
+
+            Directory.CreateDirectory(guidCacheFolder);
+            
+            // create the blank GUID file
+            using (File.Create(Path.Combine(guidCacheFolder, guid))) ;
+
+            return guidCacheFolder;
+        }
+
+        static void CopyFiles(string from, string to)
+        {
+            if (to[to.Length - 1] != Path.DirectorySeparatorChar)
+                to += Path.DirectorySeparatorChar;
+
+            if (!Directory.Exists(to))
+                Directory.CreateDirectory(to);
+
+            string[] Files = Directory.GetFileSystemEntries(from);
+
+            foreach (string Element in Files)
+            {
+                // Sub directories
+                if (Directory.Exists(Element))
+                    CopyFiles(Element, to + Path.GetFileName(Element));
+
+                // Files in directory
+                else
+                    File.Copy(Element, to + Path.GetFileName(Element), true);
+            }
         }
 
 
@@ -487,8 +555,11 @@ namespace wyUpdate
                 WriteFiles.WriteString(fs, 0x05, clientSFLoc);
 
             // temp directory
+            if (!string.IsNullOrEmpty(oldAUTempFolder))
+                WriteFiles.WriteString(fs, 0x06, oldAUTempFolder);
+
             if (!string.IsNullOrEmpty(tempDirectory))
-                WriteFiles.WriteString(fs, 0x06, tempDirectory);
+                WriteFiles.WriteString(fs, 0x0B, tempDirectory);
 
             // the update filename
             if (!string.IsNullOrEmpty(updateFilename))
@@ -557,6 +628,10 @@ namespace wyUpdate
                             break;
 
                         case 0x06: // Temp directory
+                            oldAUTempFolder = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x0B:
                             tempDirectory = ReadFiles.ReadString(fs);
                             break;
 
@@ -579,6 +654,8 @@ namespace wyUpdate
                         case 0x0A:
                             oldSelfLocation = ReadFiles.ReadString(fs);
                             break;
+
+
 
                         default:
                             ReadFiles.SkipField(fs, bType);

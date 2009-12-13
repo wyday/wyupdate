@@ -32,7 +32,7 @@ namespace wyDay.Controls
 
         readonly string[] filenames = new string[2];
 
-        public AutoUpdaterInfo(string auID, string tempFolder)
+        public AutoUpdaterInfo(string auID, string oldAUTempFolder)
         {
             autoUpdateID = auID;
             AutoUpdaterStatus = AutoUpdaterStatus.Nothing;
@@ -42,13 +42,13 @@ namespace wyDay.Controls
 
 #if CLIENT
             // if tempFolder is not in ApplicationData, then we're updating on behalf of a limited user
-            if (tempFolder != null && !SystemFolders.IsDirInDir(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), tempFolder))
+            if (oldAUTempFolder != null && !SystemFolders.IsDirInDir(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), oldAUTempFolder))
             {
                 // AutoUpdateFiles are stored in: %appdata%\wyUpdate AU\
                 // The tempFolder is:             %appdata%\wyUpdate AU\cache\AppGUID\
 
                 // get the limited user's AutoUpdate file
-                filenames[1] = Path.Combine(tempFolder, "..\\..\\" + AutoUpdateID + ".autoupdate");
+                filenames[1] = Path.Combine(oldAUTempFolder, "..\\..\\" + AutoUpdateID + ".autoupdate");
 
                 // check if LimitedUser AutoUpdateFile exists
                 if (!File.Exists(filenames[1]))

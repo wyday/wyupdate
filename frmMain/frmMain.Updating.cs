@@ -205,7 +205,7 @@ namespace wyUpdate
 
                         if (frameNum == Frame.Error)
                         {
-                            auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID, tempDirectory)
+                            auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID, oldAUTempFolder)
                                          {
                                              AutoUpdaterStatus = AutoUpdaterStatus.UpdateFailed,
                                              ErrorTitle = error,
@@ -214,7 +214,7 @@ namespace wyUpdate
                         }
                         else
                         {
-                            auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID, tempDirectory)
+                            auInfo = new AutoUpdaterInfo(updateHelper.AutoUpdateID, oldAUTempFolder)
                                          {
                                              AutoUpdaterStatus = AutoUpdaterStatus.UpdateSucceeded,
                                              UpdateVersion = ServerFile.NewVersion,
