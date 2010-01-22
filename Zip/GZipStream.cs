@@ -1,28 +1,28 @@
 // GZipStream.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-03 18:48:42>
+// last saved (in emacs):
+// Time-stamp: <2010-January-09 12:04:28>
 //
 // ------------------------------------------------------------------
 //
 // This module defines the GZipStream class, which can be used as a replacement for
 // the System.IO.Compression.GZipStream class in the .NET BCL.  NB: The design is not
-// completely OO clean: there is some intelligence in the ZlibBaseStream that reads the 
-// GZip header.  
+// completely OO clean: there is some intelligence in the ZlibBaseStream that reads the
+// GZip header.
 //
 // ------------------------------------------------------------------
 
@@ -85,22 +85,22 @@ namespace Ionic.Zlib
     {
         // GZip format
         // source: http://tools.ietf.org/html/rfc1952
-        // 
+        //
         //  header id:           2 bytes    1F 8B
         //  compress method      1 byte     8= DEFLATE (none other supported)
         //  flag                 1 byte     bitfield (See below)
         //  mtime                4 bytes    time_t (seconds since jan 1, 1970 UTC of the file.
         //  xflg                 1 byte     2 = max compress used , 4 = max speed (can be ignored)
-        //  OS                   1 byte     OS for originating archive. set to 0xFF in compression. 
+        //  OS                   1 byte     OS for originating archive. set to 0xFF in compression.
         //  extra field length   2 bytes    optional - only if FEXTRA is set.
-        //  extra field          varies     
+        //  extra field          varies
         //  filename             varies     optional - if FNAME is set.  zero terminated. ISO-8859-1.
         //  file comment         varies     optional - if FCOMMENT is set. zero terminated. ISO-8859-1.
         //  crc16                1 byte     optional - present only if FHCRC bit is set
         //  compressed data      varies
-        //  CRC32                4 bytes   
+        //  CRC32                4 bytes
         //  isize                4 bytes    data size modulo 2^32
-        // 
+        //
         //     FLG (FLaGs)
         //                bit 0   FTEXT - indicates file is ASCII text (can be safely ignored)
         //                bit 1   FHCRC - there is a CRC16 for the header immediately following the header
@@ -110,17 +110,17 @@ namespace Ionic.Zlib
         //                bit 5   reserved
         //                bit 6   reserved
         //                bit 7   reserved
-        // 
-        // On consumption: 
-        // Extra field is a bunch of nonsense and can be safely ignored. 
+        //
+        // On consumption:
+        // Extra field is a bunch of nonsense and can be safely ignored.
         // Header CRC and OS, likewise.
-        // 
+        //
         // on generation:
         // all optional fields get 0, except for the OS, which gets 255.
-        // 
+        //
 
 
-        
+
         /// <summary>
         ///   The comment on the GZIP stream.
         /// </summary>
@@ -150,7 +150,7 @@ namespace Ionic.Zlib
             set
             {
                 if (_disposed) throw new ObjectDisposedException("GZipStream");
-                _Comment = value;                
+                _Comment = value;
             }
         }
 
@@ -212,7 +212,7 @@ namespace Ionic.Zlib
         public DateTime? LastModified;
 
         /// <summary>
-        /// The CRC on the GZIP stream. 
+        /// The CRC on the GZIP stream.
         /// </summary>
         /// <remarks>
         /// This is used for internal error checking. You probably don't need to look at this property.
@@ -229,7 +229,7 @@ namespace Ionic.Zlib
 
 
         /// <summary>
-        ///   Create a <c>GZipStream</c> using the specified <c>CompressionMode</c>. 
+        ///   Create a <c>GZipStream</c> using the specified <c>CompressionMode</c>.
         /// </summary>
         /// <remarks>
         ///
@@ -305,7 +305,7 @@ namespace Ionic.Zlib
         ///                 while (n !=0)
         ///                 {
         ///                     n= decompressor.Read(working, 0, working.Length);
-        ///                     if (n > 0) 
+        ///                     if (n > 0)
         ///                     {
         ///                         output.Write(working, 0, n);
         ///                     }
@@ -315,7 +315,7 @@ namespace Ionic.Zlib
         ///     }
         /// }
         /// </code>
-        /// 
+        ///
         /// <code lang="VB">
         /// Private Sub GunZipFile(ByVal filename as String)
         ///     If Not (filename.EndsWith(".gz)) Then
@@ -373,7 +373,7 @@ namespace Ionic.Zlib
         ///     using (var raw = System.IO.File.Create(fileToCompress + ".gz"))
         ///     {
         ///         using (Stream compressor = new GZipStream(raw,
-        ///                                                   CompressionMode.Compress, 
+        ///                                                   CompressionMode.Compress,
         ///                                                   CompressionLevel.BestCompression))
         ///         {
         ///             byte[] buffer = new byte[WORKING_BUFFER_SIZE];
@@ -428,7 +428,7 @@ namespace Ionic.Zlib
         ///   to it.  Specify true for the <paramref name="leaveOpen"/> parameter to leave
         ///   the stream open.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   The <see cref="CompressionMode"/> (Compress or Decompress) also
         ///   establishes the "direction" of the stream.  A <c>GZipStream</c> with
@@ -452,7 +452,7 @@ namespace Ionic.Zlib
         ///   The stream which will be read or written. This is called the "captive"
         ///   stream in other places in this documentation.
         /// </param>
-        /// 
+        ///
         /// <param name="mode">Indicates whether the GZipStream will compress or decompress.
         /// </param>
         ///
@@ -542,7 +542,7 @@ namespace Ionic.Zlib
         #region Zlib properties
 
         /// <summary>
-        /// This property sets the flush behavior on the stream.  
+        /// This property sets the flush behavior on the stream.
         /// </summary>
         virtual public FlushType FlushMode
         {
@@ -554,7 +554,7 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        ///   The size of the working buffer for the compression codec. 
+        ///   The size of the working buffer for the compression codec.
         /// </summary>
         ///
         /// <remarks>
@@ -609,13 +609,13 @@ namespace Ionic.Zlib
         #endregion
 
         #region Stream methods
-        
+
         /// <summary>
-        /// Dispose the stream.  
+        /// Dispose the stream.
         /// </summary>
         /// <remarks>
-        /// This may or may not result in a <c>Close()</c> call on the captive stream. 
-        /// See the doc on constructors that take a <paramref name="leaveOpen"/> parameter for more information.
+        /// This may or may not result in a <c>Close()</c> call on the captive stream.
+        /// See the doc on constructors that take a <c>leaveOpen</c> parameter for more information.
         /// </remarks>
         protected override void Dispose(bool disposing)
         {
@@ -636,7 +636,7 @@ namespace Ionic.Zlib
                 base.Dispose(disposing);
             }
         }
-        
+
 
         /// <summary>
         /// Indicates whether the stream can be read.
@@ -698,7 +698,7 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        ///   The position of the stream pointer. 
+        ///   The position of the stream pointer.
         /// </summary>
         ///
         /// <remarks>
@@ -933,7 +933,7 @@ namespace Ionic.Zlib
             }
         }
 
-                    
+
         /// <summary>
         ///   Compress a byte array into a new byte array using GZip.
         /// </summary>
@@ -946,15 +946,15 @@ namespace Ionic.Zlib
         /// <seealso cref="GZipStream.UncompressBuffer(byte[])"/>
         ///
         /// <param name="b">
-        ///   A buffer to compress. 
+        ///   A buffer to compress.
         /// </param>
         ///
-        /// <returns>The data in compressed form</returns> 
+        /// <returns>The data in compressed form</returns>
         public static byte[] CompressBuffer(byte[] b)
         {
             using (var ms = new MemoryStream())
             {
-                System.IO.Stream compressor = 
+                System.IO.Stream compressor =
                     new GZipStream( ms, CompressionMode.Compress, CompressionLevel.BestCompression );
 
                 ZlibBaseStream.CompressBuffer(b, compressor);
@@ -971,7 +971,7 @@ namespace Ionic.Zlib
         /// <seealso cref="GZipStream.UncompressBuffer(byte[])"/>
         ///
         /// <param name="compressed">
-        ///   A buffer containing GZIP-compressed data.  
+        ///   A buffer containing GZIP-compressed data.
         /// </param>
         ///
         /// <returns>The uncompressed string</returns>
@@ -993,7 +993,7 @@ namespace Ionic.Zlib
         /// <seealso cref="GZipStream.UncompressString(byte[])"/>
         ///
         /// <param name="compressed">
-        ///   A buffer containing data that has been compressed with GZip.  
+        ///   A buffer containing data that has been compressed with GZip.
         /// </param>
         ///
         /// <returns>The data in uncompressed form</returns>
@@ -1001,13 +1001,13 @@ namespace Ionic.Zlib
         {
             using (var input = new System.IO.MemoryStream(compressed))
             {
-                System.IO.Stream decompressor = 
+                System.IO.Stream decompressor =
                     new GZipStream( input, CompressionMode.Decompress );
 
                 return ZlibBaseStream.UncompressBuffer(compressed, decompressor);
             }
         }
-   
-        
+
+
     }
 }

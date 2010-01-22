@@ -1,21 +1,21 @@
 // ZipFile.Read.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa.  
+// Copyright (c) 2009 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-20 13:40:30>
+// last saved (in emacs):
+// Time-stamp: <2010-January-05 13:12:34>
 //
 // ------------------------------------------------------------------
 //
@@ -35,9 +35,9 @@ namespace Ionic.Zip
     public partial class ZipFile
     {
         /// <summary>
-        /// Reads a zip file archive and returns the instance.  
+        /// Reads a zip file archive and returns the instance.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// The stream is read using the default <c>System.Text.Encoding</c>, which is the
@@ -51,12 +51,12 @@ namespace Ionic.Zip
         /// including specific exceptions if a file is not found, an unauthorized access
         /// exception, exceptions for poorly formatted filenames, and so on.
         /// </exception>
-        /// 
+        ///
         /// <param name="fileName">
         /// The name of the zip archive to open.  This can be a fully-qualified or relative
         /// pathname.
         /// </param>
-        /// 
+        ///
         /// <overloads>This method has a bunch of interesting overloads. They are all
         /// static (Shared in VB).  One of them is bound to be right for you.  The
         /// reason there are so many is that there are a few properties on the
@@ -65,7 +65,7 @@ namespace Ionic.Zip
         /// Probably there are still too many, though.</overloads>
         ///
         /// <returns>The instance read from the zip archive.</returns>
-        /// 
+        ///
         public static ZipFile Read(string fileName)
         {
             return ZipFile.Read(fileName, null, DefaultEncoding);
@@ -73,20 +73,20 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Reads a zip file archive and returns the instance, using the specified
-        /// ReadProgress event handler.  
+        /// ReadProgress event handler.
         /// </summary>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <returns>The instance read from the zip archive.</returns>
-        /// 
+        ///
         public static ZipFile Read(string fileName, EventHandler<ReadProgressEventArgs> readProgress)
         {
             return ZipFile.Read(fileName, null, DefaultEncoding, readProgress);
@@ -96,22 +96,22 @@ namespace Ionic.Zip
         /// Reads a zip file archive using the specified text encoding, and returns the
         /// instance.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        /// This version of the method allows the caller to pass in a <c>TextWriter</c>.  
-        /// The ZipFile is read in using the default IBM437 encoding for entries where UTF-8 
+        /// This version of the method allows the caller to pass in a <c>TextWriter</c>.
+        /// The ZipFile is read in using the default IBM437 encoding for entries where UTF-8
         /// encoding is not explicitly specified.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <example>
         /// <code lang="C#">
         /// var sw = new System.IO.StringWriter();
         /// using (ZipFile zip =  ZipFile.Read("PackedDocuments.zip", sw))
         /// {
         ///   var Threshold = new DateTime(2007,7,4);
-        ///   // We cannot remove the entry from the list, within the context of 
+        ///   // We cannot remove the entry from the list, within the context of
         ///   // an enumeration of said list.
         ///   // So we add the doomed entry to a list to be removed later.
         ///   // pass 1: mark the entries for removal
@@ -121,7 +121,7 @@ namespace Ionic.Zip
         ///     if (e.LastModified &lt; Threshold)
         ///       MarkedEntries.Add(e);
         ///   }
-        ///   // pass 2: actually remove the entry. 
+        ///   // pass 2: actually remove the entry.
         ///   foreach (ZipEntry zombie in MarkedEntries)
         ///      zip.RemoveEntry(zombie);
         ///   zip.Comment = "This archive has been updated.";
@@ -134,7 +134,7 @@ namespace Ionic.Zip
         ///   Dim sw As New System.IO.StringWriter
         ///   Using zip As ZipFile = ZipFile.Read("PackedDocuments.zip", sw)
         ///       Dim Threshold As New DateTime(2007, 7, 4)
-        ///       ' We cannot remove the entry from the list, within the context of 
+        ///       ' We cannot remove the entry from the list, within the context of
         ///       ' an enumeration of said list.
         ///       ' So we add the doomed entry to a list to be removed later.
         ///       ' pass 1: mark the entries for removal
@@ -145,7 +145,7 @@ namespace Ionic.Zip
         ///               MarkedEntries.Add(e)
         ///           End If
         ///       Next
-        ///       ' pass 2: actually remove the entry. 
+        ///       ' pass 2: actually remove the entry.
         ///       Dim zombie As ZipEntry
         ///       For Each zombie In MarkedEntries
         ///           zip.RemoveEntry(zombie)
@@ -156,20 +156,20 @@ namespace Ionic.Zip
         ///   ' can now use contents of sw, eg store in an audit log
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <exception cref="System.Exception">
-        /// Thrown if the zipfile cannot be read. The implementation of this 
+        /// Thrown if the zipfile cannot be read. The implementation of this
         /// method relies on <c>System.IO.File.OpenRead</c>, which can throw
         /// a variety of exceptions, including specific exceptions if a file
         /// is not found, an unauthorized access exception, exceptions for
-        /// poorly formatted filenames, and so on. 
+        /// poorly formatted filenames, and so on.
         /// </exception>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="statusMessageWriter">
         /// The <c>System.IO.TextWriter</c> to use for writing verbose status messages
         /// during operations on the zip archive.  A console application may wish to
@@ -177,9 +177,9 @@ namespace Ionic.Zip
         /// or headless application may wish to capture the messages in a different
         /// <c>TextWriter</c>, such as a <c>System.IO.StringWriter</c>.
         /// </param>
-        /// 
+        ///
         /// <returns>The instance read from the zip archive.</returns>
-        /// 
+        ///
         public static ZipFile Read(string fileName, TextWriter statusMessageWriter)
         {
             return ZipFile.Read(fileName, statusMessageWriter, DefaultEncoding);
@@ -188,18 +188,18 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Reads a zip file archive using the specified text encoding, and the
-        /// specified ReadProgress event handler, and returns the instance.  
+        /// specified ReadProgress event handler, and returns the instance.
         /// </summary>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <param name="statusMessageWriter">
         /// The <c>System.IO.TextWriter</c> to use for writing verbose status messages
         /// during operations on the zip archive.  A console application may wish to
@@ -207,9 +207,9 @@ namespace Ionic.Zip
         /// or headless application may wish to capture the messages in a different
         /// <c>TextWriter</c>, such as a <c>System.IO.StringWriter</c>.
         /// </param>
-        /// 
+        ///
         /// <returns>The instance read from the zip archive.</returns>
-        /// 
+        ///
         public static ZipFile Read(string fileName,
                    TextWriter statusMessageWriter,
                    EventHandler<ReadProgressEventArgs> readProgress)
@@ -218,17 +218,17 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Reads a zip file archive using the specified text encoding, and returns the instance.  
+        /// Reads a zip file archive using the specified text encoding, and returns the instance.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        /// This version of the method allows the caller to pass in an <c>Encoding</c>.  
+        /// This version of the method allows the caller to pass in an <c>Encoding</c>.
         /// The ZipFile is read in using the specified encoding for entries where UTF-8
         /// encoding is not explicitly specified.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <example>
         /// This example shows how to read a zip file using the Big-5 Chinese code page
         /// (950), and extract each entry in the zip file.  For this code to work as
@@ -260,29 +260,29 @@ namespace Ionic.Zip
         /// </example>
         ///
         /// <exception cref="System.Exception">
-        /// Thrown if the zipfile cannot be read. The implementation of this 
+        /// Thrown if the zipfile cannot be read. The implementation of this
         /// method relies on <c>System.IO.File.OpenRead</c>, which can throw
         /// a variety of exceptions, including specific exceptions if a file
         /// is not found, an unauthorized access exception, exceptions for
-        /// poorly formatted filenames, and so on. 
+        /// poorly formatted filenames, and so on.
         /// </exception>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The <c>System.Text.Encoding</c> to use when reading in the zip archive. Be
         /// careful specifying the encoding.  If the value you use here is not the same
         /// as the Encoding used when the zip archive was created (possibly by a
         /// different archiver) you will get unexpected results and possibly exceptions.
         /// </param>
-        /// 
+        ///
         /// <seealso cref="ProvisionalAlternateEncoding"/>.
         ///
         /// <returns>The instance read from the zip archive.</returns>
-        /// 
+        ///
         public static ZipFile Read(string fileName, System.Text.Encoding encoding)
         {
             return ZipFile.Read(fileName, null, encoding);
@@ -291,25 +291,25 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Reads a zip file archive using the specified text encoding and ReadProgress
-        /// event handler, and returns the instance.  
+        /// event handler, and returns the instance.
         /// </summary>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The <c>System.Text.Encoding</c> to use when reading in the zip archive. Be
         /// careful specifying the encoding.  If the value you use here is not the same
         /// as the Encoding used when the zip archive was created (possibly by a
         /// different archiver) you will get unexpected results and possibly exceptions.
         /// </param>
-        /// 
+        ///
         /// <returns>The instance read from the zip archive.</returns>
         ///
         public static ZipFile Read(string fileName,
@@ -322,9 +322,9 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Reads a zip file archive using the specified text encoding and the specified
-        /// TextWriter for status messages, and returns the instance.  
+        /// TextWriter for status messages, and returns the instance.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// This version of the method allows the caller to pass in a <c>TextWriter</c>
@@ -332,8 +332,8 @@ namespace Ionic.Zip
         /// for entries where UTF-8 encoding is not explicitly specified.
         /// </para>
         /// </remarks>
-        /// 
-        /// 
+        ///
+        ///
         /// <example>
         /// This example shows how to read a zip file using the Big-5 Chinese code page
         /// (950), and extract each entry in the zip file, while sending status messages
@@ -352,18 +352,18 @@ namespace Ionic.Zip
         /// </example>
         ///
         /// <exception cref="System.Exception">
-        /// Thrown if the zipfile cannot be read. The implementation of this 
+        /// Thrown if the zipfile cannot be read. The implementation of this
         /// method relies on <c>System.IO.File.OpenRead</c>, which can throw
         /// a variety of exceptions, including specific exceptions if a file
         /// is not found, an unauthorized access exception, exceptions for
-        /// poorly formatted filenames, and so on. 
+        /// poorly formatted filenames, and so on.
         /// </exception>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="statusMessageWriter">
         /// The <c>System.IO.TextWriter</c> to use for writing verbose status messages
         /// during operations on the zip archive.  A console application may wish to
@@ -371,18 +371,18 @@ namespace Ionic.Zip
         /// or headless application may wish to capture the messages in a different
         /// <c>TextWriter</c>, such as a <c>System.IO.StringWriter</c>.
         /// </param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The <c>System.Text.Encoding</c> to use when reading in the zip archive. Be
         /// careful specifying the encoding.  If the value you use here is not the same
         /// as the Encoding used when the zip archive was created (possibly by a
         /// different archiver) you will get unexpected results and possibly exceptions.
         /// </param>
-        /// 
+        ///
         /// <seealso cref="ProvisionalAlternateEncoding"/>
         ///
         /// <returns>The instance read from the zip archive.</returns>
-        /// 
+        ///
         public static ZipFile Read(string fileName,
                                    TextWriter statusMessageWriter,
                                    System.Text.Encoding encoding)
@@ -392,19 +392,19 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Reads a zip file archive using the specified text encoding,  the specified
-        /// TextWriter for status messages, and the specified ReadProgress event handler, 
-        /// and returns the instance.  
+        /// TextWriter for status messages, and the specified ReadProgress event handler,
+        /// and returns the instance.
         /// </summary>
-        /// 
+        ///
         /// <param name="fileName">
-        /// The name of the zip archive to open.  
+        /// The name of the zip archive to open.
         /// This can be a fully-qualified or relative pathname.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <param name="statusMessageWriter">
         /// The <c>System.IO.TextWriter</c> to use for writing verbose status messages
         /// during operations on the zip archive.  A console application may wish to
@@ -412,14 +412,14 @@ namespace Ionic.Zip
         /// or headless application may wish to capture the messages in a different
         /// <c>TextWriter</c>, such as a <c>System.IO.StringWriter</c>.
         /// </param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The <c>System.Text.Encoding</c> to use when reading in the zip archive. Be
         /// careful specifying the encoding.  If the value you use here is not the same
         /// as the Encoding used when the zip archive was created (possibly by a
         /// different archiver) you will get unexpected results and possibly exceptions.
         /// </param>
-        /// 
+        ///
         /// <returns>The instance read from the zip archive.</returns>
         ///
         public static ZipFile Read(string fileName,
@@ -438,7 +438,7 @@ namespace Ionic.Zip
 
             ReadIntoInstance(zf);
             zf._fileAlreadyExists = true;
-            
+
             return zf;
         }
 
@@ -482,7 +482,7 @@ namespace Ionic.Zip
         /// zip archive.  A file by that name is not created in the filesystem.  The I/O
         /// is done strictly with the given streams.
         /// </para>
-        /// 
+        ///
         /// <code>
         /// using (ZipFile zip = ZipFile.Read(InputStream))
         /// {
@@ -513,7 +513,7 @@ namespace Ionic.Zip
         /// When opening large zip archives, you may want to display a progress bar or
         /// other indicator of status progress while reading.  This Read() method allows
         /// you to specify a ReadProgress Event Handler directly.  The stream is read
-        /// using the default encoding (IBM437).  
+        /// using the default encoding (IBM437).
         /// </para>
         ///
         /// <para>
@@ -535,7 +535,7 @@ namespace Ionic.Zip
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile corresponding to the stream being read.</returns>
         public static ZipFile Read(Stream zipStream,
                                    EventHandler<ReadProgressEventArgs> readProgress)
@@ -548,20 +548,20 @@ namespace Ionic.Zip
         /// Reads a zip archive from a stream, using the specified TextWriter for status
         /// messages.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        /// This method is useful when when the zip archive content is available from 
+        /// This method is useful when when the zip archive content is available from
         /// an already-open stream. The stream must be open and readable when calling this
-        /// method.  The stream is left open when the reading is completed. 
+        /// method.  The stream is left open when the reading is completed.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// The stream is read using the default <c>System.Text.Encoding</c>, which is
         /// the <c>IBM437</c> codepage.  For more information on the encoding, see the
         /// <see cref="ProvisionalAlternateEncoding"/> property.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// Reading of zip content begins at the current position in the stream.  This
         /// means if you have a stream that concatenates regular data and zip data, if
@@ -576,9 +576,9 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
-        /// 
+        ///
         /// <param name="zipStream">the stream containing the zip data.</param>
-        /// 
+        ///
         /// <param name="statusMessageWriter">
         /// The <c>System.IO.TextWriter</c> to which verbose status messages are written
         /// during operations on the <c>ZipFile</c>.  For example, in a console
@@ -586,7 +586,7 @@ namespace Ionic.Zip
         /// added to the ZipFile.  If the TextWriter is <c>null</c>, no verbose messages
         /// are written.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile</returns>
         public static ZipFile Read(Stream zipStream, TextWriter statusMessageWriter)
         {
@@ -605,7 +605,7 @@ namespace Ionic.Zip
         /// the <c>IBM437</c> codepage.  For more information on the encoding, see the
         /// <see cref="ProvisionalAlternateEncoding"/> property.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// Reading of zip content begins at the current position in the stream.  This
         /// means if you have a stream that concatenates regular data and zip data, if
@@ -621,7 +621,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <param name="zipStream">the stream containing the zip data.</param>
-        /// 
+        ///
         /// <param name="statusMessageWriter">
         /// The <c>System.IO.TextWriter</c> to which verbose status messages are written
         /// during operations on the <c>ZipFile</c>.  For example, in a console
@@ -629,11 +629,11 @@ namespace Ionic.Zip
         /// added to the ZipFile.  If the TextWriter is <c>null</c>, no verbose messages
         /// are written.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile</returns>
         public static ZipFile Read(Stream zipStream,
                                    TextWriter statusMessageWriter,
@@ -645,12 +645,12 @@ namespace Ionic.Zip
         /// <summary>
         /// Reads a zip archive from a stream, using the specified encoding.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        /// This method is useful when when the zip archive content is available from 
+        /// This method is useful when when the zip archive content is available from
         /// an already-open stream. The stream must be open and readable when calling this
-        /// method.  The stream is left open when the reading is completed. 
+        /// method.  The stream is left open when the reading is completed.
         /// </para>
         ///
         /// <para>
@@ -668,7 +668,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <param name="zipStream">the stream containing the zip data.</param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The text encoding to use when reading entries that do not have the UTF-8
         /// encoding bit set.  Be careful specifying the encoding.  If the value you use
@@ -677,7 +677,7 @@ namespace Ionic.Zip
         /// possibly exceptions.  See the <see cref="ProvisionalAlternateEncoding"/>
         /// property for more information.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile</returns>
         public static ZipFile Read(Stream zipStream, System.Text.Encoding encoding)
         {
@@ -688,7 +688,7 @@ namespace Ionic.Zip
         /// Reads a zip archive from a stream, using the specified encoding, and
         /// and the specified ReadProgress event handler.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// Reading of zip content begins at the current position in the stream.  This
@@ -705,7 +705,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <param name="zipStream">the stream containing the zip data.</param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The text encoding to use when reading entries that do not have the UTF-8
         /// encoding bit set.  Be careful specifying the encoding.  If the value you use
@@ -714,11 +714,11 @@ namespace Ionic.Zip
         /// possibly exceptions.  See the <see cref="ProvisionalAlternateEncoding"/>
         /// property for more information.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile</returns>
         public static ZipFile Read(Stream zipStream,
                                    System.Text.Encoding encoding,
@@ -728,7 +728,7 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Reads a zip archive from a stream, using the specified text Encoding and the 
+        /// Reads a zip archive from a stream, using the specified text Encoding and the
         /// specified TextWriter for status messages.
         /// </summary>
         ///
@@ -772,7 +772,7 @@ namespace Ionic.Zip
         /// possibly exceptions.  See the <see cref="ProvisionalAlternateEncoding"/>
         /// property for more information.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile</returns>
         public static ZipFile Read(Stream zipStream,
                    TextWriter statusMessageWriter,
@@ -783,8 +783,8 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Reads a zip archive from a stream, using the specified text Encoding, the 
-        /// specified TextWriter for status messages, 
+        /// Reads a zip archive from a stream, using the specified text Encoding, the
+        /// specified TextWriter for status messages,
         /// and the specified ReadProgress event handler.
         /// </summary>
         ///
@@ -821,11 +821,11 @@ namespace Ionic.Zip
         /// possibly exceptions.  See the <see cref="ProvisionalAlternateEncoding"/>
         /// property for more information.
         /// </param>
-        /// 
+        ///
         /// <param name="readProgress">
         /// An event handler for Read operations.
         /// </param>
-        /// 
+        ///
         /// <returns>an instance of ZipFile</returns>
         public static ZipFile Read(Stream zipStream,
                                    TextWriter statusMessageWriter,
@@ -854,19 +854,19 @@ namespace Ionic.Zip
         /// <summary>
         /// Reads a zip archive from a byte array.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
-        /// This is useful when the data for the zipfile is contained in a byte array, 
+        /// This is useful when the data for the zipfile is contained in a byte array,
         /// for example, downloaded from an FTP server without being saved to a
-        /// filesystem. 
+        /// filesystem.
         /// </remarks>
-        /// 
+        ///
         /// <param name="buffer">
-        /// The byte array containing the zip data.  
-        /// (I don't know why, but sometimes the compiled helpfile (.chm) indicates a 2d 
+        /// The byte array containing the zip data.
+        /// (I don't know why, but sometimes the compiled helpfile (.chm) indicates a 2d
         /// array when it is just one-dimensional.  This is a one-dimensional array.)
         /// </param>
-        /// 
+        ///
         /// <returns>
         /// an instance of ZipFile. The name on the <c>ZipFile</c> will be <c>null</c>
         /// (<c>Nothing</c> in VB).
@@ -882,7 +882,7 @@ namespace Ionic.Zip
         /// <summary>
         /// Reads a zip archive from a byte array, using the given StatusMessageWriter.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// This method is useful when the data for the zipfile is contained in a byte
@@ -890,9 +890,9 @@ namespace Ionic.Zip
         /// non-filesystem store.  The default Text Encoding (IBM437) is used to read
         /// the zipfile data.
         /// </para>
-        /// 
+        ///
         /// </remarks>
-        /// 
+        ///
         /// <param name="buffer">the byte array containing the zip data.</param>
         ///
         /// <param name="statusMessageWriter">
@@ -902,11 +902,11 @@ namespace Ionic.Zip
         /// added to the ZipFile.  If the TextWriter is <c>null</c>, no verbose messages
         /// are written.
         /// </param>
-        /// 
+        ///
         /// <returns>
         /// an instance of ZipFile. The name is set to <c>null</c> (<c>Nothing</c> in VB).
         /// </returns>
-        /// 
+        ///
         public static ZipFile Read(byte[] buffer, TextWriter statusMessageWriter)
         {
             return Read(buffer, statusMessageWriter, DefaultEncoding);
@@ -916,16 +916,16 @@ namespace Ionic.Zip
         /// <summary>
         /// Reads a zip archive from a byte array, using the given StatusMessageWriter and text Encoding.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// This method is useful when the data for the zipfile is contained in a byte
         /// array, for example when retrieving the data from a database or other
         /// non-filesystem store.
         /// </para>
-        /// 
+        ///
         /// </remarks>
-        /// 
+        ///
         /// <param name="buffer">the byte array containing the zip data.</param>
         ///
         /// <param name="statusMessageWriter">
@@ -935,7 +935,7 @@ namespace Ionic.Zip
         /// added to the ZipFile.  If the TextWriter is <c>null</c>, no verbose messages
         /// are written.
         /// </param>
-        /// 
+        ///
         /// <param name="encoding">
         /// The text encoding to use when reading entries that do not have the UTF-8
         /// encoding bit set.  Be careful specifying the encoding.  If the value you use
@@ -944,11 +944,11 @@ namespace Ionic.Zip
         /// possibly exceptions.  See the <see cref="ProvisionalAlternateEncoding"/>
         /// property for more information.
         /// </param>
-        /// 
+        ///
         /// <returns>
         /// an instance of ZipFile. The name is set to <c>null</c> (<c>Nothing</c> in VB).
         /// </returns>
-        /// 
+        ///
         public static ZipFile Read(byte[] buffer, TextWriter statusMessageWriter, System.Text.Encoding encoding)
         {
             ZipFile zf = new ZipFile();
@@ -979,7 +979,7 @@ namespace Ionic.Zip
                 // change for workitem 8098
                 //zf._originPosition = s.Position;
 
-                // Try reading the central directory, rather than scanning the file. 
+                // Try reading the central directory, rather than scanning the file.
 
                 uint datum = VerifyBeginningOfZipFile(s);
 
@@ -988,7 +988,7 @@ namespace Ionic.Zip
 
 
                 // start at the end of the file...
-                // seek backwards a bit, then look for the EoCD signature. 
+                // seek backwards a bit, then look for the EoCD signature.
                 int nTries = 0;
                 bool success = false;
 
@@ -1020,17 +1020,17 @@ namespace Ionic.Zip
                 {
                     // workitem 8299
                     zf._locEndOfCDS = s.Position - 4;
-                    
+
                     byte[] block = new byte[16];
                     s.Read(block, 0, block.Length);
 
                     zf._diskNumberWithCd = BitConverter.ToUInt16(block, 2);
-                    
+
                     if (zf._diskNumberWithCd == 0xFFFF)
                         throw new ZipException("Spanned archives with more than 65534 segments are not supported at this time.");
 
                     zf._diskNumberWithCd++; // I think the number in the file differs from reality by 1
-                    
+
                     int i = 12;
 
                     uint offset32 = (uint) BitConverter.ToUInt32(block, i);
@@ -1087,7 +1087,7 @@ namespace Ionic.Zip
             byte[] block = new byte[16];
 
             // seek back to find the ZIP64 EoCD
-            // I think this might not work for .NET CF ? 
+            // I think this might not work for .NET CF ?
             s.Seek(-40, SeekOrigin.Current);
             s.Read(block, 0, 16);
 
@@ -1153,15 +1153,15 @@ namespace Ionic.Zip
                 if (zf.Verbose)
                     zf.StatusMessageTextWriter.WriteLine("entry {0}", de.FileName);
 
-                zf._entries.Add(de);
-                
+                zf._entries.Add(de.FileName,de);
+
                 // workitem 9214
                 if (de._InputUsesZip64) inputUsesZip64 = true;
             }
 
             // workitem 9214; auto-set the zip64 thing
             if (inputUsesZip64) zf.UseZip64WhenSaving = Zip64Option.Always;
-                    
+
             // workitem 8299
             if (zf._locEndOfCDS > 0)
                 zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
@@ -1171,7 +1171,7 @@ namespace Ionic.Zip
             if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
                 zf.StatusMessageTextWriter.WriteLine("Zip file Comment: {0}", zf.Comment);
 
-            // We keep the read stream open after reading. 
+            // We keep the read stream open after reading.
 
             if (zf.Verbose)
                 zf.StatusMessageTextWriter.WriteLine("read in {0} entries.", zf._entries.Count);
@@ -1180,13 +1180,15 @@ namespace Ionic.Zip
         }
 
 
-        
-        
+
+
         // build the TOC by reading each entry in the file.
         private static void ReadIntoInstance_Orig(ZipFile zf)
         {
             zf.OnReadStarted();
-            zf._entries = new System.Collections.Generic.List<ZipEntry>();
+            //zf._entries = new System.Collections.Generic.List<ZipEntry>();
+            zf._entries = new System.Collections.Generic.Dictionary<String,ZipEntry>();
+
             ZipEntry e;
             if (zf.Verbose)
                 if (zf.Name == null)
@@ -1202,41 +1204,44 @@ namespace Ionic.Zip
                 if (zf.Verbose)
                     zf.StatusMessageTextWriter.WriteLine("  {0}", e.FileName);
 
-                zf._entries.Add(e);
+                zf._entries.Add(e.FileName,e);
                 firstEntry = false;
             }
 
             // read the zipfile's central directory structure here.
-            ZipEntry de;
-            while ((de = ZipEntry.ReadDirEntry(zf)) != null)
+            // workitem 9912
+            // But, because it may be corrupted, ignore errors.
+            try
             {
-                // Housekeeping: Since ZipFile exposes ZipEntry elements in the enumerator, 
-                // we need to copy the comment that we grab from the ZipDirEntry
-                // into the ZipEntry, so the application can access the comment. 
-                // Also since ZipEntry is used to Write zip files, we need to copy the 
-                // file attributes to the ZipEntry as appropriate. 
-                foreach (ZipEntry e1 in zf._entries)
+                ZipEntry de;
+                while ((de = ZipEntry.ReadDirEntry(zf)) != null)
                 {
-                    if (e1.FileName == de.FileName)
-                    {
+                    // Housekeeping: Since ZipFile exposes ZipEntry elements in the enumerator,
+                    // we need to copy the comment that we grab from the ZipDirEntry
+                    // into the ZipEntry, so the application can access the comment.
+                    // Also since ZipEntry is used to Write zip files, we need to copy the
+                    // file attributes to the ZipEntry as appropriate.
+                    ZipEntry e1 = zf._entries[de.FileName];
+                    if (e1 != null){
                         e1._Comment = de.Comment;
-                        if (de.AttributesIndicateDirectory) e1.MarkAsDirectory();
-                        break;
+                        if (de.IsDirectory) e1.MarkAsDirectory();
                     }
                 }
+
+                // workitem 8299
+                if (zf._locEndOfCDS > 0)
+                    zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
+
+                ReadCentralDirectoryFooter(zf);
+
+                if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
+                    zf.StatusMessageTextWriter.WriteLine("Zip file Comment: {0}", zf.Comment);
+            }
+            catch
+            {
             }
 
-            // workitem 8299
-            if (zf._locEndOfCDS > 0)
-                zf.ReadStream.Seek(zf._locEndOfCDS, SeekOrigin.Begin);
-
-            ReadCentralDirectoryFooter(zf);
-
-            if (zf.Verbose && !String.IsNullOrEmpty(zf.Comment))
-                zf.StatusMessageTextWriter.WriteLine("Zip file Comment: {0}", zf.Comment);
-
             zf.OnReadCompleted();
-
         }
 
 
@@ -1252,7 +1257,7 @@ namespace Ionic.Zip
             if (signature == ZipConstants.Zip64EndOfCentralDirectoryRecordSignature)
             {
                 // We have a ZIP64 EOCD
-                // This data block is 4 bytes sig, 8 bytes size, 44 bytes fixed data, 
+                // This data block is 4 bytes sig, 8 bytes size, 44 bytes fixed data,
                 // followed by a variable-sized extension block.  We have read the sig already.
                 // 8 - datasize (64 bits)
                 // 2 - version made by
@@ -1260,7 +1265,7 @@ namespace Ionic.Zip
                 // 4 - number of this disk
                 // 4 - number of the disk with the start of the CD
                 // 8 - total number of entries in the CD on this disk
-                // 8 - total number of entries in the CD 
+                // 8 - total number of entries in the CD
                 // 8 - size of the CD
                 // 8 - offset of the CD
                 // -----------------------
@@ -1280,9 +1285,9 @@ namespace Ionic.Zip
                 j += 2;
                 zf._diskNumberWithCd = BitConverter.ToUInt32(block, j);
                 j += 2;
-                
+
                 //zf._diskNumberWithCd++; // hack!!
-                    
+
                 // read the extended block
                 block = new byte[DataSize - 44];
                 s.Read(block, 0, block.Length);
@@ -1310,26 +1315,26 @@ namespace Ionic.Zip
 
             // read the End-of-Central-Directory-Record
             block = new byte[16];
-            zf.ReadStream.Read(block, 0, block.Length); 
+            zf.ReadStream.Read(block, 0, block.Length);
 
             // off sz  data
             // -------------------------------------------------------
             //  0   4  end of central dir signature (0x06054b50)
-            //  4   2  number of this disk 
+            //  4   2  number of this disk
             //  6   2  number of the disk with start of the central directory
-            //  8   2  total number of entries in the  central directory on this disk 
-            // 10   2  total number of entries in  the central directory 
-            // 12   4  size of the central directory 
-            // 16   4  offset of start of central directory with respect to the starting disk number 
-            // 20   2  ZIP file comment length 
-            // 22  ??  ZIP file comment 
+            //  8   2  total number of entries in the  central directory on this disk
+            // 10   2  total number of entries in  the central directory
+            // 12   4  size of the central directory
+            // 16   4  offset of start of central directory with respect to the starting disk number
+            // 20   2  ZIP file comment length
+            // 22  ??  ZIP file comment
 
             if (zf._diskNumberWithCd == 0)
             {
                 zf._diskNumberWithCd = BitConverter.ToUInt16(block, 2);
                 //zf._diskNumberWithCd++; // hack!!
             }
-         
+
             // read the comment here
             ReadZipFileComment(zf);
         }
@@ -1381,7 +1386,7 @@ namespace Ionic.Zip
         }
 
 
-        
+
         /// <summary>
         /// Checks the given file to see if it appears to be a valid zip file.
         /// </summary>
@@ -1392,7 +1397,7 @@ namespace Ionic.Zip
         ///   bool)"/> with the testExtract parameter set to false.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="fileName">The file to check.</param>
         /// <returns>true if the file appears to be a zip file.</returns>
         public static bool IsZipFile(string fileName)
@@ -1410,7 +1415,7 @@ namespace Ionic.Zip
         ///   This method opens the specified zip file, reads in the zip archive,
         ///   verifying the ZIP metadata as it reads.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   If everything succeeds, then the method returns true.  If anything fails -
         ///   for example if an incorrect signature or CRC is found, indicating a
@@ -1461,10 +1466,10 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// This method reads the zip archive contained in the specified stream, verifying
-        /// the ZIP metadata as it reads.  If testExtract is true, this method also extracts 
+        /// the ZIP metadata as it reads.  If testExtract is true, this method also extracts
         /// each entry in the archive, dumping all the bits into <see cref="Stream.Null"/>.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// If everything succeeds, then the method returns true.  If anything fails -
         /// for example if an incorrect signature or CRC is found, indicating a corrupt

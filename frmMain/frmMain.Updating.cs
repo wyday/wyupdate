@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Windows.Forms;
 using wyDay.Controls;
 using wyUpdate.Common;
-using System.Windows.Forms;
 
 namespace wyUpdate
 {

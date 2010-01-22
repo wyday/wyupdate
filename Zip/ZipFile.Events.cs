@@ -1,21 +1,21 @@
 // ZipFile.Events.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-20 10:58:43>
+// last saved (in emacs):
+// Time-stamp: <2010-January-11 18:14:17>
 //
 // ------------------------------------------------------------------
 //
@@ -27,12 +27,10 @@
 using System;
 using System.IO;
 
-
 namespace Ionic.Zip
 {
-    public partial class ZipFile 
+    public partial class ZipFile
     {
-
         private string ArchiveNameForEvent
         {
             get
@@ -40,7 +38,6 @@ namespace Ionic.Zip
                 return (_name != null) ? _name : "(stream)";
             }
         }
-
 
         #region Save
 
@@ -52,105 +49,134 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// Depending on the particular event, different properties on the
-        /// <see cref="SaveProgressEventArgs"/> parameter are set.  The following table 
-        /// summarizes the available EventTypes and the conditions under which this 
+        /// <see cref="SaveProgressEventArgs"/> parameter are set.  The following table
+        /// summarizes the available EventTypes and the conditions under which this
         /// event handler is invoked with a <c>SaveProgressEventArgs</c> with the given EventType.
         /// </para>
-        /// 
+        ///
         /// <list type="table">
         /// <listheader>
         /// <term>value of EntryType</term>
         /// <description>Meaning and conditions</description>
         /// </listheader>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_Started</term>
-        /// <description>Fired when ZipFile.Save() begins. 
+        /// <description>Fired when ZipFile.Save() begins.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_BeforeSaveEntry</term>
-        /// <description>Fired within ZipFile.Save(), just before writing data for each particular entry. 
+        /// <description>Fired within ZipFile.Save(), just before writing data for each particular entry.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_AfterSaveEntry</term>
-        /// <description>Fired within ZipFile.Save(), just after having finished writing data for each 
-        /// particular entry. 
+        /// <description>Fired within ZipFile.Save(), just after having finished writing data for each
+        /// particular entry.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_Completed</term>
-        /// <description>Fired when ZipFile.Save() has completed. 
+        /// <description>Fired when ZipFile.Save() has completed.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_AfterSaveTempArchive</term>
         /// <description>Fired after the temporary file has been created.  This happens only
         /// when saving to a disk file.  This event will not be invoked when saving to a stream.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_BeforeRenameTempArchive</term>
-        /// <description>Fired just before renaming the temporary file to the permanent location.  This 
+        /// <description>Fired just before renaming the temporary file to the permanent location.  This
         /// happens only when saving to a disk file.  This event will not be invoked when saving to a stream.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_AfterRenameTempArchive</term>
-        /// <description>Fired just after renaming the temporary file to the permanent location.  This 
+        /// <description>Fired just after renaming the temporary file to the permanent location.  This
         /// happens only when saving to a disk file.  This event will not be invoked when saving to a stream.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_AfterCompileSelfExtractor</term>
-        /// <description>Fired after a self-extracting archive has finished compiling. 
+        /// <description>Fired after a self-extracting archive has finished compiling.
         /// This EventType is used only within SaveSelfExtractor().
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Saving_BytesRead</term>
-        /// <description>Set during the save of a particular entry, to update progress of the Save(). 
-        /// When this EventType is set, the BytesTransferred is the number of bytes that have been read from the 
+        /// <description>Set during the save of a particular entry, to update progress of the Save().
+        /// When this EventType is set, the BytesTransferred is the number of bytes that have been read from the
         /// source stream.  The TotalBytesToTransfer is the number of bytes in the uncompressed file.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// </list>
         /// </remarks>
         ///
         /// <example>
+        ///
+        ///    This example uses an anonymous method to handle the
+        ///    SaveProgress event, by updating a progress bar.
+        ///
+        /// <code lang="C#">
+        /// progressBar1.Value = 0;
+        /// progressBar1.Max = listbox1.Items.Count;
+        /// using (ZipFile zip = new ZipFile())
+        /// {
+        ///    // listbox1 contains a list of filenames
+        ///    zip.AddFiles(listbox1.Items);
+        ///
+        ///    // do the progress bar:
+        ///    zip.SaveProgress += (sender, e) => {
+        ///       if (e.EventType == ZipProgressEventType.Saving_BeforeWriteEntry) {
+        ///          progressBar1.PerformStep();
+        ///       }
+        ///    };
+        ///
+        ///    zip.Save(fs);
+        /// }
+        /// </code>
+        /// </example>
+        ///
+        /// <example>
+        ///   This example uses a named method as the
+        ///   <c>SaveProgress</c> event handler, to update the user, in a
+        ///   console-based application.
+        ///
         /// <code lang="C#">
         /// static bool justHadByteUpdate= false;
         /// public static void SaveProgress(object sender, SaveProgressEventArgs e)
         /// {
         ///     if (e.EventType == ZipProgressEventType.Saving_Started)
         ///         Console.WriteLine("Saving: {0}", e.ArchiveName);
-        /// 
+        ///
         ///     else if (e.EventType == ZipProgressEventType.Saving_Completed)
         ///     {
-        ///         justHadByteUpdate= false; 
+        ///         justHadByteUpdate= false;
         ///         Console.WriteLine();
         ///         Console.WriteLine("Done: {0}", e.ArchiveName);
         ///     }
-        /// 
+        ///
         ///     else if (e.EventType == ZipProgressEventType.Saving_BeforeWriteEntry)
         ///     {
-        ///         if (justHadByteUpdate) 
+        ///         if (justHadByteUpdate)
         ///             Console.WriteLine();
-        ///         Console.WriteLine("  Writing: {0} ({1}/{2})",  
+        ///         Console.WriteLine("  Writing: {0} ({1}/{2})",
         ///                           e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal);
         ///         justHadByteUpdate= false;
         ///     }
-        /// 
+        ///
         ///     else if (e.EventType == ZipProgressEventType.Saving_EntryBytesRead)
         ///     {
         ///         if (justHadByteUpdate)
@@ -160,11 +186,11 @@ namespace Ionic.Zip
         ///         justHadByteUpdate= true;
         ///     }
         /// }
-        /// 
+        ///
         /// public static ZipUp(string targetZip, string directory)
         /// {
         ///   using (var zip = new ZipFile()) {
-        ///     zip.SaveProgress += SaveProgress; 
+        ///     zip.SaveProgress += SaveProgress;
         ///     zip.AddDirectory(directory);
         ///     zip.Save(targetZip);
         ///   }
@@ -174,35 +200,31 @@ namespace Ionic.Zip
         ///
         /// <code lang="VB">
         /// Public Sub ZipUp(ByVal targetZip As String, ByVal directory As String)
-        ///     Try 
-        ///         Using zip As ZipFile = New ZipFile
-        ///             AddHandler zip.SaveProgress, AddressOf MySaveProgress
-        ///             zip.AddDirectory(directory)
-        ///             zip.Save(targetZip)
-        ///         End Using
-        ///     Catch ex1 As Exception
-        ///         Console.Error.WriteLine(("exception: " &amp; ex1.ToString))
-        ///     End Try
+        ///     Using zip As ZipFile = New ZipFile
+        ///         AddHandler zip.SaveProgress, AddressOf MySaveProgress
+        ///         zip.AddDirectory(directory)
+        ///         zip.Save(targetZip)
+        ///     End Using
         /// End Sub
-        /// 
+        ///
         /// Private Shared justHadByteUpdate As Boolean = False
-        /// 
+        ///
         /// Public Shared Sub MySaveProgress(ByVal sender As Object, ByVal e As SaveProgressEventArgs)
         ///     If (e.EventType Is ZipProgressEventType.Saving_Started) Then
         ///         Console.WriteLine("Saving: {0}", e.ArchiveName)
-        /// 
+        ///
         ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_Completed) Then
         ///         justHadByteUpdate = False
         ///         Console.WriteLine
         ///         Console.WriteLine("Done: {0}", e.ArchiveName)
-        /// 
+        ///
         ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_BeforeWriteEntry) Then
         ///         If justHadByteUpdate Then
         ///             Console.WriteLine
         ///         End If
         ///         Console.WriteLine("  Writing: {0} ({1}/{2})", e.CurrentEntry.FileName, e.EntriesSaved, e.EntriesTotal)
         ///         justHadByteUpdate = False
-        /// 
+        ///
         ///     ElseIf (e.EventType Is ZipProgressEventType.Saving_EntryBytesRead) Then
         ///         If justHadByteUpdate Then
         ///             Console.SetCursorPosition(0, Console.CursorTop)
@@ -214,11 +236,15 @@ namespace Ionic.Zip
         ///     End If
         /// End Sub
         /// </code>
+        /// </example>
         ///
-        /// <para>
-        /// This is an example of using the SaveProgress events in a WinForms app.
-        /// </para>
-        /// <code>
+        /// <example>
+        ///
+        /// This is a more complete example of using the SaveProgress
+        /// events in a Windows Forms application, with a
+        /// Thread object.
+        ///
+        /// <code lang="C#">
         /// delegate void SaveEntryProgress(SaveProgressEventArgs e);
         /// delegate void ButtonClick(object sender, EventArgs e);
         ///
@@ -268,8 +294,8 @@ namespace Ionic.Zip
         ///     // check for existence of the zip file:
         ///     if (System.IO.File.Exists(this.tbZipName.Text))
         ///     {
-        ///         var dlgResult = MessageBox.Show(String.Format("The file you have specified ({0}) already exists." + 
-        ///                                                       "  Do you want to overwrite this file?", this.tbZipName.Text), 
+        ///         var dlgResult = MessageBox.Show(String.Format("The file you have specified ({0}) already exists." +
+        ///                                                       "  Do you want to overwrite this file?", this.tbZipName.Text),
         ///                                         "Confirmation is Required", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         ///         if (dlgResult != DialogResult.Yes) return;
         ///         System.IO.File.Delete(this.tbZipName.Text);
@@ -554,43 +580,43 @@ namespace Ionic.Zip
         /// <remarks>
         /// <para>
         /// Depending on the particular event being signaled, different properties on the
-        /// <see cref="ReadProgressEventArgs"/> parameter are set.  The following table 
-        /// summarizes the available EventTypes and the conditions under which this 
+        /// <see cref="ReadProgressEventArgs"/> parameter are set.  The following table
+        /// summarizes the available EventTypes and the conditions under which this
         /// event handler is invoked with a <c>ReadProgressEventArgs</c> with the given EventType.
         /// </para>
-        /// 
+        ///
         /// <list type="table">
         /// <listheader>
         /// <term>value of EntryType</term>
         /// <description>Meaning and conditions</description>
         /// </listheader>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Reading_Started</term>
         /// <description>Fired just as ZipFile.Read() begins. Meaningful properties: ArchiveName.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Reading_Completed</term>
         /// <description>Fired when ZipFile.Read() has completed. Meaningful properties: ArchiveName.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Reading_ArchiveBytesRead</term>
-        /// <description>Fired while reading, updates the number of bytes read for the entire archive. 
+        /// <description>Fired while reading, updates the number of bytes read for the entire archive.
         /// Meaningful properties: ArchiveName, CurrentEntry, BytesTransferred, TotalBytesToTransfer.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Reading_BeforeReadEntry</term>
         /// <description>Indicates an entry is about to be read from the archive.
         /// Meaningful properties: ArchiveName, EntriesTotal.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Reading_AfterReadEntry</term>
         /// <description>Indicates an entry has just been read from the archive.
@@ -678,58 +704,58 @@ namespace Ionic.Zip
 
         #region Extract
         /// <summary>
-        /// An event handler invoked before, during, and after extraction of entries 
-        /// in the zip archive. 
+        /// An event handler invoked before, during, and after extraction of entries
+        /// in the zip archive.
         /// </summary>
         ///
         /// <remarks>
         /// <para>
         /// Depending on the particular event, different properties on the
-        /// <see cref="ExtractProgressEventArgs"/> parameter are set.  The following table 
-        /// summarizes the available EventTypes and the conditions under which this 
+        /// <see cref="ExtractProgressEventArgs"/> parameter are set.  The following table
+        /// summarizes the available EventTypes and the conditions under which this
         /// event handler is invoked with a <c>ExtractProgressEventArgs</c> with the given EventType.
         /// </para>
-        /// 
+        ///
         /// <list type="table">
         /// <listheader>
         /// <term>value of EntryType</term>
         /// <description>Meaning and conditions</description>
         /// </listheader>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Extracting_BeforeExtractAll</term>
         /// <description>Set when ExtractAll() begins.  The ArchiveName, Overwrite,
         /// and ExtractLocation properties are meaningful.</description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Extracting_AfterExtractAll</term>
-        /// <description>Set when ExtractAll() has completed.  The ArchiveName, 
+        /// <description>Set when ExtractAll() has completed.  The ArchiveName,
         /// Overwrite, and ExtractLocation properties are meaningful.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Extracting_BeforeExtractEntry</term>
-        /// <description>Set when an Extract() on an entry in the ZipFile has begun.  
-        /// Properties that are meaningful:  ArchiveName, EntriesTotal, CurrentEntry, Overwrite, 
+        /// <description>Set when an Extract() on an entry in the ZipFile has begun.
+        /// Properties that are meaningful:  ArchiveName, EntriesTotal, CurrentEntry, Overwrite,
         /// ExtractLocation, EntriesExtracted.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Extracting_AfterExtractEntry</term>
-        /// <description>Set when an Extract() on an entry in the ZipFile has completed.  
-        /// Properties that are meaningful:  ArchiveName, EntriesTotal, CurrentEntry, Overwrite, 
+        /// <description>Set when an Extract() on an entry in the ZipFile has completed.
+        /// Properties that are meaningful:  ArchiveName, EntriesTotal, CurrentEntry, Overwrite,
         /// ExtractLocation, EntriesExtracted.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// <item>
         /// <term>ZipProgressEventType.Extracting_EntryBytesWritten</term>
         /// <description>Set within a call to Extract() on an entry in the ZipFile, as
-        /// data is extracted for the entry.  Properties that are meaningful:  ArchiveName, 
-        /// CurrentEntry, BytesTransferred, TotalBytesToTransfer. 
+        /// data is extracted for the entry.  Properties that are meaningful:  ArchiveName,
+        /// CurrentEntry, BytesTransferred, TotalBytesToTransfer.
         /// </description>
         /// </item>
         ///
@@ -741,9 +767,9 @@ namespace Ionic.Zip
         /// to <c>InvokeExtractProgressEvent</c>.
         /// </description>
         /// </item>
-        /// 
+        ///
         /// </list>
-        /// 
+        ///
         /// </remarks>
         ///
         /// <example>
@@ -762,7 +788,7 @@ namespace Ionic.Zip
         ///   }
         ///   else if(e.EventType == ZipProgressEventType.Extracting_BeforeExtractEntry)
         ///   {
-        ///     if (justHadByteUpdate) 
+        ///     if (justHadByteUpdate)
         ///       Console.WriteLine();
         ///     Console.WriteLine("Extracting: {0}", e.CurrentEntry.FileName);
         ///     justHadByteUpdate= false;
@@ -773,7 +799,7 @@ namespace Ionic.Zip
         /// {
         ///   string TargetDirectory= "extract";
         ///   using (var zip = ZipFile.Read(zipToExtract)) {
-        ///     zip.ExtractProgress += ExtractProgress; 
+        ///     zip.ExtractProgress += ExtractProgress;
         ///     foreach (var e in zip1)
         ///     {
         ///       e.Extract(TargetDirectory, true);
@@ -795,9 +821,9 @@ namespace Ionic.Zip
         ///         Next
         ///     End Using
         /// End Sub
-        /// 
+        ///
         /// Private Shared justHadByteUpdate As Boolean = False
-        /// 
+        ///
         /// Public Shared Sub MyExtractProgress(ByVal sender As Object, ByVal e As ExtractProgressEventArgs)
         ///     If (e.EventType = ZipProgressEventType.Extracting_EntryBytesWritten) Then
         ///         If ExtractTest.justHadByteUpdate Then
@@ -957,22 +983,21 @@ namespace Ionic.Zip
         ///             break;
         ///     }
         /// }
-        ///    
+        ///
         /// void CreateTheZip()
         /// {
         ///     using (ZipFile zip = new ZipFile())
         ///     {
         ///         zip.AddProgress += AddProgressHandler;
-        ///         zip.SaveProgress += SaveProgressHandler;
         ///         zip.AddDirectory(System.IO.Path.GetFileName(DirToZip));
         ///         zip.Save(ZipFileToCreate);
         ///     }
         /// }
-        ///     
+        ///
         /// </code>
         ///
         /// <code lang="VB">
-        /// 
+        ///
         /// Private Sub AddProgressHandler(ByVal sender As Object, ByVal e As AddProgressEventArgs)
         ///     Select Case e.EventType
         ///         Case ZipProgressEventType.Adding_Started
@@ -986,11 +1011,10 @@ namespace Ionic.Zip
         ///             Exit Select
         ///     End Select
         /// End Sub
-        /// 
+        ///
         /// Sub CreateTheZip()
         ///     Using zip as ZipFile = New ZipFile
         ///         AddHandler zip.AddProgress, AddressOf AddProgressHandler
-        ///         AddHandler zip.SaveProgress, AddressOf SaveProgressHandler
         ///         zip.AddDirectory(System.IO.Path.GetFileName(DirToZip))
         ///         zip.Save(ZipFileToCreate);
         ///     End Using
@@ -1044,7 +1068,7 @@ namespace Ionic.Zip
         #endregion
 
 
-        
+
         #region Error
         /// <summary>
         /// An event that is raised when an error occurs during open or read of files
@@ -1060,12 +1084,12 @@ namespace Ionic.Zip
         ///     handler, the library will throw an exception if it encounters an I/O
         ///     error during a call to <c>Save()</c>.
         ///  </para>
-        /// 
+        ///
         ///  <para>
         ///    Setting a handler implicitly sets <see cref="ZipFile.ZipErrorAction"/> to
         ///    <c>ZipErrorAction.InvokeErrorEvent</c>.
         ///  </para>
-        /// 
+        ///
         ///  <para>
         ///    The handler you add applies to all <see cref="ZipEntry"/> items that are
         ///    subsequently added to the <c>ZipFile</c> instance. If you set this
@@ -1097,7 +1121,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <example>
-        /// 
+        ///
         /// This example shows how to use an event handler to handle
         /// errors during save of the zip file.
         /// <code lang="C#">
@@ -1114,7 +1138,7 @@ namespace Ionic.Zip
         ///         Console.Write("Retry, Skip, Throw, or Cancel ? (R/S/T/C) ");
         ///         response = Console.ReadLine();
         ///         Console.WriteLine();
-        ///             
+        ///
         ///     } while (response != null &amp;&amp;
         ///              response[0]!='S' &amp;&amp; response[0]!='s' &amp;&amp;
         ///              response[0]!='R' &amp;&amp; response[0]!='r' &amp;&amp;
@@ -1166,8 +1190,8 @@ namespace Ionic.Zip
         ///         zipArchive.AddDirectory(directoryToZip, directoryInArchive)
         ///         zipArchive.Save(zipFileToCreate)
         ///     End Using
-        /// End Sub    
-        ///     
+        /// End Sub
+        ///
         /// </code>
         /// </example>
         ///

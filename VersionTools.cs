@@ -305,13 +305,19 @@ namespace wyUpdate.Common
             return sb.ToString();
         }
 
+
+        private static string thisVersion;
         /// <summary>
         /// Gets the file version of the currently executing assembly.
         /// </summary>
         /// <returns>The version of the currently executing assembly.</returns>
         public static string FromExecutingAssembly()
         {
-            return FileVersionInfo.GetVersionInfo(System.Windows.Forms.Application.ExecutablePath).FileVersion;
+            if (thisVersion == null)
+                thisVersion =
+                    FileVersionInfo.GetVersionInfo(System.Windows.Forms.Application.ExecutablePath).FileVersion;
+
+            return thisVersion;
         }
     }
 }

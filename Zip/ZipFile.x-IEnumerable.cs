@@ -1,21 +1,21 @@
 // ZipFile.x-IEnumerable.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-September-11 11:09:40>
+// last saved (in emacs):
+// Time-stamp: <2009-December-26 15:13:26>
 //
 // ------------------------------------------------------------------
 //
@@ -35,29 +35,29 @@ namespace Ionic.Zip
     // in the last source module.  The source modules are ordered alphabetically by
     // filename.  Not sure why this is true. In any case, we put the enumeration stuff
     // here in this oddly-named module, for this reason.
-    // 
+    //
 
 
 
-    public partial class ZipFile 
+    public partial class ZipFile
     {
 
 
 
 
         /// <summary>
-        /// Generic IEnumerator support, for use of a ZipFile in an enumeration.  
+        /// Generic IEnumerator support, for use of a ZipFile in an enumeration.
         /// </summary>
         ///
         /// <remarks>
-        /// You probably do not want to call <c>GetEnumerator</c> explicitly. Instead 
-        /// it is implicitly called when you use a <see langword="foreach"/> loop in C#, or a 
+        /// You probably do not want to call <c>GetEnumerator</c> explicitly. Instead
+        /// it is implicitly called when you use a <see langword="foreach"/> loop in C#, or a
         /// <c>For Each</c> loop in VB.NET.
         /// </remarks>
         ///
         /// <example>
-        /// This example reads a zipfile of a given name, then enumerates the 
-        /// entries in that zip file, and displays the information about each 
+        /// This example reads a zipfile of a given name, then enumerates the
+        /// entries in that zip file, and displays the information about each
         /// entry on the Console.
         /// <code>
         /// using (ZipFile zip = ZipFile.Read(zipfile))
@@ -116,11 +116,11 @@ namespace Ionic.Zip
         ///   End Using
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <returns>A generic enumerator suitable for use  within a foreach loop.</returns>
         public System.Collections.Generic.IEnumerator<ZipEntry> GetEnumerator()
         {
-            foreach (ZipEntry e in _entries)
+            foreach (ZipEntry e in _entries.Values)
                 yield return e;
         }
 
@@ -131,7 +131,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// An IEnumerator, for use of a ZipFile in a foreach construct.  
+        /// An IEnumerator, for use of a ZipFile in a foreach construct.
         /// </summary>
         ///
         /// <remarks>
@@ -142,7 +142,7 @@ namespace Ionic.Zip
         /// </remarks>
         ///
         /// <returns>
-        /// The IEnumerator over the entries in the ZipFile. 
+        /// The IEnumerator over the entries in the ZipFile.
         /// </returns>
         [System.Runtime.InteropServices.DispId(-4)]
         public System.Collections.IEnumerator GetNewEnum()          // the name of this method is not significant
