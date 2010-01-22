@@ -8,20 +8,20 @@
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-September-11 14:54:27>
+// last saved (in emacs):
+// Time-stamp: <2009-December-27 02:05:02>
 //
 // ------------------------------------------------------------------
 //
-// This module defines logic for streams that span disk files. 
+// This module defines logic for streams that span disk files.
 //
-// 
+//
 // ------------------------------------------------------------------
 
 
@@ -34,6 +34,7 @@ namespace Ionic.Zip
     {
         private int rw;
         private string _baseName;
+        private string _baseDir;
         private string _currentName;
         private string _currentTempName;
         private uint _currentDiskNumber;
@@ -45,12 +46,14 @@ namespace Ionic.Zip
 
         public static ZipSegmentedStream ForReading(string name, uint initialDiskNumber, uint maxDiskNumber)
         {
-            ZipSegmentedStream zss = new ZipSegmentedStream();
-            zss.rw = 1;  // 1 == readonly
-            zss.CurrentSegment = initialDiskNumber;
-            zss._maxDiskNumber = maxDiskNumber;
-            zss._baseName = name;
-            //Console.WriteLine("ZipSegmentedStream: reading ({0})", name);
+            ZipSegmentedStream zss = new ZipSegmentedStream()
+                {
+                    rw = 1,  // 1 == readonly
+                    CurrentSegment = initialDiskNumber,
+                    _maxDiskNumber = maxDiskNumber,
+                    _baseName = name,
+                };
+
             zss._SetReadStream();
             return zss;
         }
@@ -58,28 +61,40 @@ namespace Ionic.Zip
 
         public static ZipSegmentedStream ForWriting(string name, int maxSegmentSize)
         {
-            ZipSegmentedStream zss = new ZipSegmentedStream();
-            zss.rw = 2; // 2 == write
-            zss.CurrentSegment = 0;
-            zss._baseName = name;
-            zss._maxSegmentSize = maxSegmentSize;
-            // Console.WriteLine("***ZipSegmentedStream: writing ({0})", name);
-            // Console.WriteLine("***ZipSegmentedStream: curname ({0})", zss.CurrentName);
+            ZipSegmentedStream zss = new ZipSegmentedStream()
+                {
+                    rw = 2, // 2 == write
+                    CurrentSegment = 0,
+                    _baseName = name,
+                    _maxSegmentSize = maxSegmentSize,
+                    _baseDir = Path.GetDirectoryName(name)
+                };
+
+            // workitem 9522
+            if (zss._baseDir=="") zss._baseDir=".";
+
             zss._SetWriteStream(0);
             return zss;
         }
 
+
         public static ZipSegmentedStream ForUpdate(string name, uint diskNumber)
         {
-            ZipSegmentedStream zss = new ZipSegmentedStream();
-            zss.rw = 3;  // 3 == update
-            zss.CurrentSegment = diskNumber;
-            zss._baseName = name;
-            zss._maxSegmentSize = Int32.MaxValue;  // insure no rollover
-            
-            // The assumption is that the update will not expand the size of the segment.
-            // It's an in-place update of zip metadata. 
-            
+            // ForUpdate is used only when updating the zip entry metadata for
+            // a segmented zip file, when the starting segment is earlier
+            // than the ending segment, for a particular entry.
+
+            ZipSegmentedStream zss = new ZipSegmentedStream()
+                {
+                    rw = 3,  // 3 == update
+                    CurrentSegment = diskNumber,
+                    _baseName = name,
+                    _maxSegmentSize = Int32.MaxValue  // insure no rollover
+                };
+
+            // It's safe to assume that the update will not expand the size of the segment.
+            // It's an in-place update of zip metadata.
+
             // Console.WriteLine("ZipSegmentedStream: update ({0})", name);
             zss._SetUpdateStream();
             return zss;
@@ -114,7 +129,7 @@ namespace Ionic.Zip
             get
             {
                 if (_currentName==null)
-                    _currentName = _NameForSegment(CurrentSegment); 
+                    _currentName = _NameForSegment(CurrentSegment);
 
                 return _currentName;
             }
@@ -128,16 +143,16 @@ namespace Ionic.Zip
                                  diskNumber + 1);
         }
 
-        
+
         // Returns the segment that WILL be current if writing
         // a block of the given length.
         // This isn't exactly true. It could roll over beyond
-        // this number.  
+        // this number.
         public UInt32 ComputeSegment(int length)
         {
             if (_innerStream.Position + length > _maxSegmentSize)
                 // the block will go AT LEAST into the next segment
-                return CurrentSegment + 1; 
+                return CurrentSegment + 1;
 
             // it will fit in the current segment
             return CurrentSegment;
@@ -176,7 +191,7 @@ namespace Ionic.Zip
 //                                                       Path.GetFileNameWithoutExtension(_baseName)),
 //                                          CurrentSegment + 1);
 //             }
-            
+
             //Console.WriteLine("ZipSegmentedStream::SetReadStream  ({0})", CcurrentName);
             _innerStream = File.OpenRead(CurrentName);
         }
@@ -236,16 +251,19 @@ namespace Ionic.Zip
             if (increment > 0)
                 CurrentSegment += increment;
 
-            _currentTempName = SharedUtilities.GetTempFilename();
+            SharedUtilities.CreateAndOpenUniqueTempFile(_baseDir,
+                                                        out _innerStream,
+                                                        out _currentTempName);
+
             //Console.WriteLine("ZipSegmentedStream::SetWriteStream  ({0})", CurrentName);
-            _innerStream = new FileStream(_currentTempName, FileMode.CreateNew);
+
             if (CurrentSegment == 0)
                 _innerStream.Write(BitConverter.GetBytes(ZipConstants.SplitArchiveSignature), 0, 4);
         }
 
 
         /// <summary>
-        /// Write to the stream. 
+        /// Write to the stream.
         /// </summary>
         /// <param name="buffer">the buffer from which to write</param>
         /// <param name="offset">the offset at which to start writing</param>
@@ -284,7 +302,7 @@ namespace Ionic.Zip
                 //                  CurrentName, _innerStream.Position, offset, count);
 
                 _innerStream.Write(buffer, offset, count);
-                
+
             }
             else if (rw == 3)
             {
@@ -300,19 +318,19 @@ namespace Ionic.Zip
         {
             // Console.WriteLine("***ZSS.Trunc to disk {0}", diskNumber);
             // Console.WriteLine("***ZSS.Trunc:  current disk {0}", CurrentSegment);
-            
+
             if (rw!=2)
                 throw new ZipException("bad state.");
-            
+
             // Seek back in the segmented stream to a (maybe) prior segment.
 
             // Check if it is the same segment.  If it is, very simple.
             if (diskNumber == CurrentSegment)
                 return _innerStream.Seek(offset, SeekOrigin.Begin);
 
-            // Seeking back to a prior segment.  
+            // Seeking back to a prior segment.
             // The current segment and any intervening segments must be removed.
-            // First, remove the current segment. 
+            // First, remove the current segment.
             if (_innerStream != null)
             {
                 _innerStream.Close();
@@ -331,8 +349,21 @@ namespace Ionic.Zip
 
             // now, open the desired segment.  It must exist.
             CurrentSegment = diskNumber;
-            _currentTempName = SharedUtilities.GetTempFilename();
-            File.Move(CurrentName, _currentTempName);  // move the .z01 file back to a temp name
+
+            // get a new temp file, try 3 times:
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    _currentTempName = SharedUtilities.InternalGetTempFileName();
+                    File.Move(CurrentName, _currentTempName);  // move the .z0x file back to a temp name
+                }
+                catch(IOException)
+                {
+                    if (i == 2) throw;
+                }
+            }
+
             _innerStream = new FileStream(_currentTempName, FileMode.Open);
 
             return _innerStream.Seek(offset, SeekOrigin.Begin);

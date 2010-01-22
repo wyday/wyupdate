@@ -1,28 +1,28 @@
 // Shared.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-13 10:05:23>
+// last saved (in emacs):
+// Time-stamp: <2009-December-31 19:22:52>
 //
 // ------------------------------------------------------------------
 //
 // This module defines some shared utility classes and methods.
 //
 // Created: Tue, 27 Mar 2007  15:30
-// 
+//
 
 using System;
 using System.IO;
@@ -44,7 +44,7 @@ namespace Ionic.Zip
         {
             if (!File.Exists(fileName))
                 throw new System.IO.FileNotFoundException(fileName);
-            
+
             long fileLength = 0L;
             FileShare fs = FileShare.ReadWrite;
 #if !NETCF
@@ -58,10 +58,10 @@ namespace Ionic.Zip
             return fileLength;
         }
 
-                        
+
 #if LEGACY
         /// <summary>
-        /// Round the given DateTime value to an even second value.  
+        /// Round the given DateTime value to an even second value.
         /// </summary>
         ///
         /// <remarks>
@@ -95,6 +95,7 @@ namespace Ionic.Zip
         }
 #endif
 
+#if YOU_LIKE_REDUNDANT_CODE
         internal static string NormalizePath(string path)
         {
             // remove leading single dot slash
@@ -108,30 +109,44 @@ namespace Ionic.Zip
             path = re.Replace(path, "$1$3");
             return path;
         }
+#endif
 
-        internal static string NormalizeFwdSlashPath(string path)
+        private static string SimplifyFwdSlashPath(string path)
         {
             if (path.StartsWith("./")) path = path.Substring(2);
             path = path.Replace("/./", "/");
-            var re = new System.Text.RegularExpressions.Regex(@"^(.*/)b?([^/\\.]+/\\.\\./)(.+)$");
+            // Replace foo/anything/../bar with foo/bar
+            var re = new System.Text.RegularExpressions.Regex(@"^(.*/)?([^/\\.]+/\\.\\./)(.+)$");
             path = re.Replace(path, "$1$3");
             return path;
         }
 
+
         /// <summary>
-        /// Utility routine for transforming path names. 
+        /// Utility routine for transforming path names from filesystem format (on Windows that means backslashes) to
+        /// a format suitable for use within zipfiles. This means trimming the volume letter and colon (if any) And
+        /// swapping backslashes for forward slashes.
         /// </summary>
         /// <param name="pathName">source path.</param>
         /// <returns>transformed path</returns>
-        public static string TrimVolumeAndSwapSlashes(string pathName)
+        public static string NormalizePathForUseInZipFile(string pathName)
         {
-            //return (((pathname[1] == ':') && (pathname[2] == '\\')) ? pathname.Substring(3) : pathname)
-            //    .Replace('\\', '/');
+            // boundary case
             if (String.IsNullOrEmpty(pathName)) return pathName;
-            if (pathName.Length < 2) return pathName.Replace('\\', '/');
-            return (((pathName[1] == ':') && (pathName[2] == '\\')) ? pathName.Substring(3) : pathName)
-                .Replace('\\', '/');
+
+            // trim volume if necessary
+            if ((pathName.Length >= 2)  && ((pathName[1] == ':') && (pathName[2] == '\\')))
+                pathName =  pathName.Substring(3);
+
+            // swap slashes
+            pathName = pathName.Replace('\\', '/');
+
+            // trim all leading slashes
+            while (pathName.StartsWith("/")) pathName = pathName.Substring(1);
+
+            return SimplifyFwdSlashPath(pathName);
         }
+
 
         static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
         static System.Text.Encoding utf8 = System.Text.Encoding.GetEncoding("UTF-8");
@@ -177,7 +192,7 @@ namespace Ionic.Zip
             return x;
         }
 
-        
+
         internal static int ReadEntrySignature(System.IO.Stream s)
         {
             // handle the case of ill-formatted zip archives - includes a data descriptor
@@ -210,7 +225,7 @@ namespace Ionic.Zip
             return x;
         }
 
-        
+
         internal static int ReadInt(System.IO.Stream s)
         {
             return _ReadFourBytes(s, "Could not read block - no data!  (position 0x{0:X8})");
@@ -251,8 +266,8 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        ///   Finds a signature in the zip stream. This is useful for finding 
-        ///   the end of a zip entry, for example, or the beginning of the next ZipEntry. 
+        ///   Finds a signature in the zip stream. This is useful for finding
+        ///   the end of a zip entry, for example, or the beginning of the next ZipEntry.
         /// </summary>
         ///
         /// <remarks>
@@ -311,7 +326,7 @@ namespace Ionic.Zip
                 }
                 else break;
                 if (success) break;
-                
+
             } while (true);
 
             if (!success)
@@ -327,8 +342,8 @@ namespace Ionic.Zip
         }
 
 
-        // If I have a time in the .NET environment, and I want to use it for 
-        // SetWastWriteTime() etc, then I need to adjust it for Win32. 
+        // If I have a time in the .NET environment, and I want to use it for
+        // SetWastWriteTime() etc, then I need to adjust it for Win32.
         internal static DateTime AdjustTime_Reverse(DateTime time)
         {
             if (time.Kind == DateTimeKind.Utc) return time;
@@ -343,7 +358,7 @@ namespace Ionic.Zip
         }
 
         // If I read a time from a file with GetLastWriteTime() (etc), I need
-        // to adjust it for display in the .NET environment.  
+        // to adjust it for display in the .NET environment.
         internal static DateTime AdjustTime_Forward(DateTime time)
         {
             if (time.Kind == DateTimeKind.Utc) return time;
@@ -415,7 +430,7 @@ namespace Ionic.Zip
                 // can mess up a simple date format.
                 else
                 {
-                    try 
+                    try
                     {
                         while (year < 1980) year++;
                         while (year > 2030) year--;
@@ -451,7 +466,7 @@ namespace Ionic.Zip
         {
             // The time is passed in here only for purposes of writing LastModified to the
             // zip archive. It should always be LocalTime, but we convert anyway.  And,
-            // since the time is being written out, it needs to be adjusted. 
+            // since the time is being written out, it needs to be adjusted.
 
             time = time.ToLocalTime();
             // workitem 7966
@@ -466,54 +481,73 @@ namespace Ionic.Zip
         }
 
 
-        private static System.Random _rnd = new System.Random();
-
         /// <summary>
-        /// Return a random filename, suitable for use as a temporary file.
+        /// Create a pseudo-random filename, suitable for use as a temporary file, and open it.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// The System.IO.Path.GetRandomFileName() method is not available on the Compact
-        /// Framework, so this library provides its own substitute. 
+        /// Framework, so this library provides its own substitute on NETCF.
+        /// </para>
+        /// <para>
+        /// produces a filename of the form DotNetZip-xxxxxxxx.tmp, where xxxxxxxx is replaced
+        /// by randomly chosen characters, and creates that file.
+        /// </para>
         /// </remarks>
-        /// <returns>a filename of the form DotNetZip-xxxxxxxx.tmp, where xxxxxxxx is replaced 
-        /// by randomly chosen characters.</returns>
-        public static string GetTempFilename()
+        public static void CreateAndOpenUniqueTempFile(string dir, out Stream fs, out string filename)
         {
-            string candidate = null;
-            do
+            // workitem 9763
+            // http://dotnet.org.za/markn/archive/2006/04/15/51594.aspx
+            // try 3 times:
+            for (int i = 0; i < 3; i++)
             {
-                candidate = "DotNetZip-" + GenerateRandomStringImpl(8, 97) + ".tmp";
-            } while (System.IO.File.Exists(candidate));
-
-            return candidate;
+                try
+                {
+                    filename = Path.Combine(dir, InternalGetTempFileName());
+                    fs = new FileStream(filename, FileMode.CreateNew);
+                    return;
+                }
+                catch (IOException)
+                {
+                    if (i == 2) throw;
+                }
+            }
+            throw new IOException();
         }
 
+#if NETCF
+        public static string InternalGetTempFileName()
+        {
+            return "DotNetZip-" + GenerateRandomStringImpl(8,0) + ".tmp";
+        }
 
         private static string GenerateRandomStringImpl(int length, int delta)
         {
             bool WantMixedCase = (delta == 0);
+            System.Random rnd = new System.Random();
 
             string result = "";
             char[] a = new char[length];
 
             for (int i = 0; i < length; i++)
             {
+               // delta == 65 means uppercase
+               // delta == 97 means lowercase
                 if (WantMixedCase)
-                    delta = (_rnd.Next(2) == 0) ? 65 : 97;
-                a[i] = GetOneRandomChar(delta);
+                    delta = (rnd.Next(2) == 0) ? 65 : 97;
+                a[i] = (char)(rnd.Next(26) + delta);
             }
 
             result = new System.String(a);
             return result;
         }
-
-
-        private static char GetOneRandomChar(int delta)
+#else
+        public static string InternalGetTempFileName()
         {
-            // delta == 65 means uppercase
-            // delta == 97 means lowercase
-            return (char)(_rnd.Next(26) + delta);
+            return "DotNetZip-" + Path.GetRandomFileName().Substring(0, 8) + ".tmp";
         }
+
+#endif
 
 
         /// <summary>
@@ -521,7 +555,7 @@ namespace Ionic.Zip
         /// </summary>
         /// <remarks>
         /// This could be gracefully handled with an extension attribute, but
-        /// This assembly is built for .NET 2.0, so I cannot use them. 
+        /// This assembly is built for .NET 2.0, so I cannot use them.
         /// </remarks>
         internal static int ReadWithRetry(System.IO.Stream s, byte[] buffer, int offset, int count, string FileName)
         {
@@ -539,7 +573,7 @@ namespace Ionic.Zip
                 {
 
 #if !NETCF
-                    // Check if we can call GetHRForException, 
+                    // Check if we can call GetHRForException,
                     // which makes unmanaged code calls.
                     var p = new SecurityPermission(SecurityPermissionFlag.UnmanagedCode);
                     if (p.IsUnrestricted())
@@ -605,7 +639,7 @@ namespace Ionic.Zip
 
 
 
-    /// <summary> 
+    /// <summary>
     /// A Stream wrapper, used for bookkeeping on input or output
     /// streams.  In some cases, it is not possible to get the Position
     /// of a stream, let's say, on a write-only output stream like
@@ -636,6 +670,14 @@ namespace Ionic.Zip
             catch
             {
                 _initialOffset = 0L;
+            }
+        }
+
+        public Stream WrappedStream
+        {
+            get
+            {
+                return _s;
             }
         }
 
@@ -676,6 +718,7 @@ namespace Ionic.Zip
         {
             get { return _s.CanRead; }
         }
+
         public override bool CanSeek
         {
             get { return _s.CanSeek; }
@@ -701,7 +744,7 @@ namespace Ionic.Zip
             get { return _initialOffset + _bytesWritten; }
         }
 
-        
+
         public override long Position
         {
             get { return _s.Position; }
@@ -720,6 +763,7 @@ namespace Ionic.Zip
         {
             _s.SetLength(value);
         }
+
     }
 
 

@@ -1,21 +1,21 @@
 // ZipFile.Extract.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa.  
+// Copyright (c) 2009 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-September-11 12:03:40>
+// last saved (in emacs):
+// Time-stamp: <2009-December-26 15:08:43>
 //
 // ------------------------------------------------------------------
 //
@@ -34,7 +34,7 @@ namespace Ionic.Zip
 
     public partial class ZipFile
     {
-        
+
         /// <summary>
         /// Extracts all of the items in the zip archive, to the specified path in the
         /// filesystem.  The path can be relative or fully-qualified.
@@ -42,7 +42,7 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// This method will extract all entries in the <c>ZipFile</c> to the specified path. 
+        /// This method will extract all entries in the <c>ZipFile</c> to the specified path.
         /// </para>
         ///
         /// <para>
@@ -121,7 +121,7 @@ namespace Ionic.Zip
         ///     zip.ExtractAll(TargetDirectory);
         /// }
         /// </code>
-        /// 
+        ///
         /// <code lang="VB">
         /// Dim TargetDirectory As String = "unpack"
         /// Using zip As ZipFile = ZipFile.Read(ZipFileToExtract)
@@ -130,13 +130,13 @@ namespace Ionic.Zip
         /// End Using
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <seealso cref="Ionic.Zip.ZipFile.ExtractProgress"/>
         /// <seealso cref="Ionic.Zip.ZipFile.ExtractExistingFile"/>
         ///
         /// <param name="path">
         /// The path to which the contents of the zipfile will be extracted.
-        /// The path can be relative or fully-qualified. 
+        /// The path can be relative or fully-qualified.
         /// </param>
         ///
         public void ExtractAll(string path)
@@ -190,7 +190,7 @@ namespace Ionic.Zip
         ///   zip.ExtractAll(TargetDirectory, ExtractExistingFileAction.DontOverwrite);
         /// }
         /// </code>
-        /// 
+        ///
         /// <code lang="VB">
         /// Dim TargetDirectory As String = "c:\unpack"
         /// Using zip As ZipFile = ZipFile.Read(ZipFileToExtract)
@@ -198,10 +198,10 @@ namespace Ionic.Zip
         /// End Using
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <param name="path">
         /// The path to which the contents of the zipfile will be extracted.
-        /// The path can be relative or fully-qualified. 
+        /// The path can be relative or fully-qualified.
         /// </param>
         ///
         /// <param name="extractExistingFile">
@@ -224,7 +224,7 @@ namespace Ionic.Zip
                 OnExtractAllStarted(path);
 
                 int n = 0;
-                foreach (ZipEntry e in _entries)
+                foreach (ZipEntry e in _entries.Values)
                 {
                     if (header)
                     {
@@ -256,12 +256,12 @@ namespace Ionic.Zip
 
                 }
 
-                // workitem 8264: 
+                // workitem 8264:
                 // now, set times on directory entries, again.
                 // The problem is, extracting a file changes the times on the parent
                 // directory.  So after all files have been extracted, we have to
-                // run through the directories again. 
-                foreach (ZipEntry e in _entries)
+                // run through the directories again.
+                foreach (ZipEntry e in _entries.Values)
                 {
                     // check if it is a directory
                     if ((e.IsDirectory) || (e.FileName.EndsWith("/")))
@@ -269,11 +269,11 @@ namespace Ionic.Zip
                         string outputFile = (e.FileName.StartsWith("/"))
                             ? Path.Combine(path, e.FileName.Substring(1))
                             : Path.Combine(path, e.FileName);
-                        
+
                         e._SetTimes(outputFile, false);
                     }
                 }
-                
+
                 OnExtractAllCompleted(path);
             }
             finally
@@ -283,6 +283,6 @@ namespace Ionic.Zip
             }
         }
 
-        
+
     }
 }

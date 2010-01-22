@@ -49,6 +49,8 @@ namespace wyUpdate.Downloader
         public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex);
         public event ProgressChangedHandler ProgressChanged;
 
+        public static WebProxy CustomProxy;
+
         public FileDownloader(List<string> urls, string downloadfolder)
         {
             urlList = urls;
@@ -80,6 +82,7 @@ namespace wyUpdate.Downloader
             }
 
             // try each url in the list until one suceeds
+            WebRequest.DefaultWebProxy = CustomProxy;
 
             bool allFailedWaitingForResponse = true;
             Exception ex = null;
@@ -114,7 +117,7 @@ namespace wyUpdate.Downloader
              internet connection is shot, or the Proxy is shot. Either way it can't 
              hurt to try downloading without the proxy:
             */
-            if (allFailedWaitingForResponse)
+            if (allFailedWaitingForResponse && CustomProxy == null)
             {
                 //try the sites again without the proxy
                 WebRequest.DefaultWebProxy = null;
@@ -464,8 +467,8 @@ namespace wyUpdate.Downloader
             if (response is HttpWebResponse)
             {
                 HttpWebResponse httpResponse = (HttpWebResponse)response;
-                // If it's an HTML page, it's probably an error page. Comment this
-                // out to enable downloading of HTML pages.
+
+                // If it's an HTML page, it's probably an error page.
                 if (httpResponse.ContentType.Contains("text/html") || httpResponse.StatusCode == HttpStatusCode.NotFound)
                 {
                     throw new Exception(
@@ -504,7 +507,12 @@ namespace wyUpdate.Downloader
             WebRequest request = WebRequest.Create(url);
 
             if (request is HttpWebRequest)
+            {
                 request.Credentials = CredentialCache.DefaultCredentials;
+
+                // use a proper user agent
+                ((HttpWebRequest)request).UserAgent = "wyUpdate / " + VersionTools.FromExecutingAssembly();
+            }
 
             return request;
         }
@@ -528,6 +536,7 @@ namespace wyUpdate.Downloader
             {
                 if (start == size)
                     return Stream.Null;
+
                 if (stream == null)
                     stream = response.GetResponseStream();
 

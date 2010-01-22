@@ -1,21 +1,21 @@
 // FileSelector.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-October-28 06:09:15>
+// last saved (in emacs):
+// Time-stamp: <2010-January-20 17:57:23>
 //
 // ------------------------------------------------------------------
 //
@@ -23,9 +23,9 @@
 // set of inclusion criteria, including filename, size, file time, and
 // potentially file attributes.  The criteria are given in a string with
 // a simple expression language. Examples:
-// 
-// find all .txt files: 
-//     name = *.txt 
+//
+// find all .txt files:
+//     name = *.txt
 //
 // shorthand for the above
 //     *.txt
@@ -57,7 +57,7 @@ namespace Ionic
 {
 
     /// <summary>
-    /// Enumerates the options for a logical conjunction. This enum is intended for use 
+    /// Enumerates the options for a logical conjunction. This enum is intended for use
     /// internally by the FileSelector class.
     /// </summary>
     internal enum LogicalConjunction
@@ -237,7 +237,7 @@ namespace Ionic
                 {
                     _MatchingFileSpec = value;
                 }
-                
+
                 _regexString = "^" +
                 Regex.Escape(_MatchingFileSpec)
                 .Replace(@"\*\.\*", @"([^\.]+|.*\.[^\\\.]*)")
@@ -257,7 +257,7 @@ namespace Ionic
         public override String ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("name = ").Append(_MatchingFileSpec);
+            sb.Append("name ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(_MatchingFileSpec);
             return sb.ToString();
         }
 
@@ -269,7 +269,7 @@ namespace Ionic
 
         private bool _Evaluate(string fullpath)
         {
-            // No slash in the pattern implicitly means recurse, which means compare to 
+            // No slash in the pattern implicitly means recurse, which means compare to
             // filename only, not full path.
             String f = (_MatchingFileSpec.IndexOf('\\') == -1)
                 ? System.IO.Path.GetFileName(fullpath)
@@ -486,12 +486,12 @@ namespace Ionic
     ///   match the filename; the last modified, created, or last accessed time of the
     ///   file; the size of the file; and the attributes of the file.
     /// </para>
-    /// 
+    ///
     /// <para>
     ///   Consult the documentation for <see cref="SelectionCriteria"/>
     ///   for more information on specifying the selection criteria.
     /// </para>
-    /// 
+    ///
     /// </remarks>
     public partial class FileSelector
     {
@@ -499,7 +499,7 @@ namespace Ionic
 
 #if NOTUSED
         /// <summary>
-        /// The default constructor.  
+        /// The default constructor.
         /// </summary>
         /// <remarks>
         /// Typically, applications won't use this constructor.  Instead they'll call the
@@ -512,25 +512,25 @@ namespace Ionic
         /// <summary>
         /// Constructor that allows the caller to specify file selection criteria.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// This constructor allows the caller to specify a set of criteria for selection of files.
         /// </para>
-        /// 
+        ///
         /// <para>
-        /// See <see cref="FileSelector.SelectionCriteria"/> for a description of the syntax of 
+        /// See <see cref="FileSelector.SelectionCriteria"/> for a description of the syntax of
         /// the selectionCriteria string.
         /// </para>
-        /// 
+        ///
         /// <para>
-        /// By default the FileSelector will traverse NTFS Reparse Points. 
+        /// By default the FileSelector will traverse NTFS Reparse Points.
         /// To change this, use <see cref="FileSelector(String, bool)">FileSelector(String, bool)</see>.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="selectionCriteria">The criteria for file selection.</param>
-        public FileSelector(String selectionCriteria) 
+        public FileSelector(String selectionCriteria)
         : this(selectionCriteria, true)
         {
         }
@@ -538,18 +538,18 @@ namespace Ionic
         /// <summary>
         /// Constructor that allows the caller to specify file selection criteria.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// This constructor allows the caller to specify a set of criteria for selection of files.
         /// </para>
-        /// 
+        ///
         /// <para>
-        /// See <see cref="FileSelector.SelectionCriteria"/> for a description of the syntax of 
+        /// See <see cref="FileSelector.SelectionCriteria"/> for a description of the syntax of
         /// the selectionCriteria string.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="selectionCriteria">The criteria for file selection.</param>
         /// <param name="traverseDirectoryReparsePoints">
         /// whether to traverse NTFS reparse points (junctions).
@@ -567,13 +567,13 @@ namespace Ionic
         /// The string specifying which files to include when retrieving.
         /// </summary>
         /// <remarks>
-        ///         
+        ///
         /// <para>
         /// Specify the criteria in statements of 3 elements: a noun, an operator, and a value.
         /// Consider the string "name != *.doc" .  The noun is "name".  The operator is "!=",
         /// implying "Not Equal".  The value is "*.doc".  That criterion, in English, says "all
         /// files with a name that does not end in the .doc extension."
-        /// </para> 
+        /// </para>
         ///
         /// <para>
         /// Supported nouns include "name" for the filename; "atime", "mtime", and "ctime" for
@@ -582,30 +582,28 @@ namespace Ionic
         /// The "attributes" and "name" nouns both support = and != as operators.  The "size",
         /// "atime", "mtime", and "ctime" nouns support = and !=, and &gt;, &gt;=, &lt;, &lt;=
         /// as well.
-        /// </para> 
+        /// </para>
         ///
         /// <para>
         /// Specify values for the file attributes as a string with one or more of the
-        /// characters H,R,S,A,I in any order, implying Hidden, ReadOnly, System, Archive,
-        /// and NotContextIndexed, 
-        /// respectively.  To specify a time, use YYYY-MM-DD-HH:mm:ss as the format.  If you
-        /// omit the HH:mm:ss portion, it is assumed to be 00:00:00 (midnight). The value for a
-        /// size criterion is expressed in integer quantities of bytes, kilobytes (use k or kb
-        /// after the number), megabytes (m or mb), or gigabytes (g or gb).  The value for a
-        /// name is a pattern to match against the filename, potentially including wildcards.
-        /// The pattern follows CMD.exe glob rules: * implies one or more of any character,
-        /// while ? implies one character.  If the name pattern contains any slashes, it is
-        /// matched to the entire filename, including the path; otherwise, it is matched
-        /// against only the filename without the path.  This means a pattern of "*\*.*" matches 
-        /// all files one directory level deep, while a pattern of "*.*" matches all files in 
-        /// all directories.    
-        /// </para> 
+        /// characters H,R,S,A,I in any order, implying Hidden, ReadOnly, System, Archive, and
+        /// NotContextIndexed, respectively.  To specify a time, use YYYY-MM-DD-HH:mm:ss or
+        /// YYYY/MM/DD-HH:mm:ss as the format.  If you omit the HH:mm:ss portion, it is assumed
+        /// to be 00:00:00 (midnight). The value for a size criterion is expressed in integer
+        /// quantities of bytes, kilobytes (use k or kb after the number), megabytes (m or mb),
+        /// or gigabytes (g or gb).  The value for a name is a pattern to match against the
+        /// filename, potentially including wildcards.  The pattern follows CMD.exe glob rules:
+        /// * implies one or more of any character, while ?  implies one character.  If the name
+        /// pattern contains any slashes, it is matched to the entire filename, including the
+        /// path; otherwise, it is matched against only the filename without the path.  This
+        /// means a pattern of "*\*.*" matches all files one directory level deep, while a
+        /// pattern of "*.*" matches all files in all directories.  </para>
         ///
         /// <para>
         /// To specify a name pattern that includes spaces, use single quotes around the pattern.
-        /// A pattern of "'* *.*'" will match all files that have spaces in the filename.  The full 
-        /// criteria string for that would be "name = '* *.*'" . 
-        /// </para> 
+        /// A pattern of "'* *.*'" will match all files that have spaces in the filename.  The full
+        /// criteria string for that would be "name = '* *.*'" .
+        /// </para>
         ///
         /// <para>
         /// Some examples:
@@ -616,49 +614,55 @@ namespace Ionic
         ///     <term>criteria</term>
         ///     <description>Files retrieved</description>
         ///   </listheader>
-        /// 
+        ///
         ///   <item>
         ///     <term>name != *.xls </term>
         ///     <description>any file with an extension that is not .xls
         ///     </description>
         ///   </item>
-        ///   
+        ///
         ///   <item>
         ///     <term>name = *.mp3 </term>
         ///     <description>any file with a .mp3 extension.
         ///     </description>
         ///   </item>
-        ///   
+        ///
         ///   <item>
         ///     <term>*.mp3</term>
         ///     <description>(same as above) any file with a .mp3 extension.
         ///     </description>
         ///   </item>
-        ///   
+        ///
         ///   <item>
         ///     <term>attributes = A </term>
         ///     <description>all files whose attributes include the Archive bit.
         ///     </description>
         ///   </item>
-        ///   
+        ///
         ///   <item>
         ///     <term>attributes != H </term>
         ///     <description>all files whose attributes do not include the Hidden bit.
         ///     </description>
         ///   </item>
-        ///   
+        ///
         ///   <item>
         ///     <term>mtime > 2009-01-01</term>
         ///     <description>all files with a last modified time after January 1st, 2009.
         ///     </description>
         ///   </item>
-        ///   
+        ///
+        ///   <item>
+        ///     <term>ctime > 2009/01/01-03:00:00</term>
+        ///     <description>all files with a created time after 3am (local time), on January 1st, 2009.
+        ///     </description>
+        ///   </item>
+        ///
         ///   <item>
         ///     <term>size > 2gb</term>
         ///     <description>all files whose uncompressed size is greater than 2gb.
         ///     </description>
         ///   </item>
-        /// 
+        ///
         /// </list>
         ///
         /// <para>
@@ -689,10 +693,10 @@ namespace Ionic
         ///
         /// <para>
         /// The syntax allows one special case: if you provide a string with no spaces, it is treated as
-        /// a pattern to match for the filename.  Therefore a string like "*.xls" will be equivalent to 
+        /// a pattern to match for the filename.  Therefore a string like "*.xls" will be equivalent to
         /// specifying "name = *.xls".  This "shorthand" notation does not work with compound criteria.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// There is no logic in this class that insures that the inclusion criteria
         /// are internally consistent.  For example, it's possible to specify criteria that
@@ -700,7 +704,7 @@ namespace Ionic
         /// is greater than 1000 bytes.  Obviously no file will ever satisfy such criteria,
         /// but this class does not check for or detect such inconsistencies.
         /// </para>
-        /// 
+        ///
         /// </remarks>
         ///
         /// <exception cref="System.Exception">
@@ -727,10 +731,10 @@ namespace Ionic
         /// </summary>
         public bool TraverseReparsePoints
         {
-            get; set;    
+            get; set;
         }
 
-        
+
         private enum ParseState
         {
             Start,
@@ -746,19 +750,31 @@ namespace Ionic
         {
             if (s == null) return null;
 
+            // inject spaces after open paren and before close paren
+            string[][] prPairs =
+                {
+                    new string[] { @"\(\(", "( (" },
+                    new string[] { @"\)\)", ") )" },
+                    new string[] { @"\((\S)", "( $1" },
+                    new string[] { @"(\S)\)", "$1 )" },
+                    new string[] { @"(\S)\(", "$1 (" },
+                    new string[] { @"\)(\S)", ") $1" },
+                    new string[] { @"([^ ]+)>([^ ]+)", "$1 > $2" },
+                    new string[] { @"([^ ]+)<([^ ]+)", "$1 < $2" },
+                    new string[] { @"([^ ]+)!=([^ ]+)", "$1 != $2" },
+                    new string[] { @"([^ ]+)=([^ ]+)", "$1 = $2" },
+                };
+            for (int i = 0; i < prPairs.Length; i++)
+            {
+                Regex rgx = new Regex(prPairs[i][0]);
+                s = rgx.Replace(s, prPairs[i][1]);
+            }
+
             // shorthand for filename glob
             if (s.IndexOf(" ") == -1)
                 s = "name = " + s;
 
-            // inject spaces after open paren and before close paren
-            string[] prPairs = { @"\((\S)", "( $1", @"(\S)\)", "$1 )", };
-            for (int i = 0; i + 1 < prPairs.Length; i += 2)
-            {
-                Regex rgx = new Regex(prPairs[i]);
-                s = rgx.Replace(s, prPairs[i + 1]);
-            }
-
-            // split the expression into tokens 
+            // split the expression into tokens
             string[] tokens = s.Trim().Split(' ', '\t');
 
             if (tokens.Length < 3) throw new ArgumentException(s);
@@ -826,7 +842,28 @@ namespace Ionic
                         }
                         catch (FormatException)
                         {
-                            t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd", null);
+                            try
+                            {
+                                t = DateTime.ParseExact(tokens[i + 2], "yyyy/MM/dd-HH:mm:ss", null);
+                            }
+                            catch (FormatException)
+                            {
+                                try
+                                {
+                                    t = DateTime.ParseExact(tokens[i + 2], "yyyy/MM/dd", null);
+                                }
+                                catch (FormatException)
+                                {
+                                    try
+                                    {
+                                        t = DateTime.ParseExact(tokens[i + 2], "MM/dd/yyyy", null);
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        t = DateTime.ParseExact(tokens[i + 2], "yyyy-MM-dd", null);
+                                    }
+                                }
+                            }
                         }
                         t= DateTime.SpecifyKind(t, DateTimeKind.Local).ToUniversalTime();
                         current = new TimeCriterion
@@ -953,7 +990,7 @@ namespace Ionic
                             var cc = critStack.Pop() as CompoundCriterion;
                             cc.Right = current;
                             current = cc; // mark the parent as current (walk up the tree)
-                            stateStack.Pop();   // the conjunction is no longer pending 
+                            stateStack.Pop();   // the conjunction is no longer pending
 
                             state = stateStack.Pop();
                             if (state != ParseState.CriterionDone)
@@ -995,7 +1032,7 @@ namespace Ionic
         /// </summary>
         ///
         /// <remarks>
-        /// This is equivalent to calling <see cref="SelectFiles(String, bool)"/> 
+        /// This is equivalent to calling <see cref="SelectFiles(String, bool)"/>
         /// with recurseDirectories = false.
         /// </remarks>
         ///
@@ -1019,9 +1056,9 @@ namespace Ionic
         /// </summary>
         ///
         /// <remarks>
-        /// This method applies the file selection criteria contained in the FileSelector to the 
-        /// files contained in the given directory, and returns the names of files that 
-        /// conform to the criteria. 
+        /// This method applies the file selection criteria contained in the FileSelector to the
+        /// files contained in the given directory, and returns the names of files that
+        /// conform to the criteria.
         /// </remarks>
         ///
         /// <param name="directory">
@@ -1048,7 +1085,7 @@ namespace Ionic
                 {
                     String[] filenames = System.IO.Directory.GetFiles(directory);
 
-                    // add the files: 
+                    // add the files:
                     foreach (String filename in filenames)
                     {
                         if (Evaluate(filename))
@@ -1062,12 +1099,12 @@ namespace Ionic
                         foreach (String dir in dirnames)
                         {
                             if (this.TraverseReparsePoints ||
-                                ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0)) 
+                                ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0))
 
                                 list.AddRange(this.SelectFiles(dir, recurseDirectories));
                         }
                     }
-                } 
+                }
             }
             // can get System.UnauthorizedAccessException here
             catch (System.UnauthorizedAccessException)
@@ -1106,7 +1143,7 @@ namespace Ionic
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more 
+        /// Converts the string representation of the name or numeric value of one or more
         /// enumerated constants to an equivalent enumerated object.
         /// Note: use the DescriptionAttribute on enum values to enable this.
         /// </summary>
@@ -1119,7 +1156,7 @@ namespace Ionic
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more 
+        /// Converts the string representation of the name or numeric value of one or more
         /// enumerated constants to an equivalent enumerated object.
         /// A parameter specified whether the operation is case-sensitive.
         /// Note: use the DescriptionAttribute on enum values to enable this.
@@ -1248,7 +1285,7 @@ namespace Ionic
     }
 
 #endif
- 
+
 
 
 

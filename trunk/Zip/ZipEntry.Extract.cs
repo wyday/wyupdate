@@ -8,20 +8,20 @@
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-18 16:33:49>
+// last saved (in emacs):
+// Time-stamp: <2010-January-06 02:10:47>
 //
 // ------------------------------------------------------------------
 //
 // This module defines logic for Extract methods on the ZipEntry class.
 //
-// 
+//
 // ------------------------------------------------------------------
 
 
@@ -34,12 +34,12 @@ namespace Ionic.Zip
     public partial class ZipEntry
     {
         /// <summary>
-        /// Extract the entry to the filesystem, starting at the current working directory. 
+        /// Extract the entry to the filesystem, starting at the current working directory.
         /// </summary>
-        /// 
+        ///
         /// <overloads>
         /// This method has a bunch of overloads! One of them is sure to be
-        /// the right one for you... If you don't like these, check out the 
+        /// the right one for you... If you don't like these, check out the
         /// <c>ExtractWithPassword()</c> methods.
         /// </overloads>
         ///
@@ -55,11 +55,11 @@ namespace Ionic.Zip
         ///
         /// <para>
         /// The action taken when extraction an entry would overwrite an existing file
-        /// is determined by the <see cref="ExtractExistingFile" /> property. 
+        /// is determined by the <see cref="ExtractExistingFile" /> property.
         /// </para>
         ///
         /// <para>
-        /// See the remarks the <see cref="LastModified"/> property, for some details 
+        /// See the remarks the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the file is set after extraction.
         /// </para>
         ///
@@ -71,16 +71,16 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Extract the entry to a file in the filesystem, using the specified behavior 
+        /// Extract the entry to a file in the filesystem, using the specified behavior
         /// when extraction would overwrite an existing file.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the file is set after extraction.
         /// </para>
         /// </remarks>
-        /// <param name="extractExistingFile">The action to take if extraction would 
+        /// <param name="extractExistingFile">The action to take if extraction would
         /// overwrite an existing file.</param>
         public void Extract(ExtractExistingFileAction extractExistingFile)
         {
@@ -89,11 +89,11 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Extracts the entry to the specified stream. 
+        /// Extracts the entry to the specified stream.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
-        /// 
+        ///
         /// <para>
         /// The caller can specify any write-able stream, for example <see
         /// cref="System.Console.OpenStandardOutput()"/>, a <see
@@ -102,34 +102,34 @@ namespace Ionic.Zip
         /// The content will be decrypted and decompressed as necessary. If the entry is
         /// encrypted and no password is provided, this method will throw.
         /// </para>
-        /// 
+        ///
         /// </remarks>
-        /// 
+        ///
         /// <param name="stream">the stream to which the entry should be extracted.  </param>
-        /// 
+        ///
         public void Extract(Stream stream)
         {
             InternalExtract(null, stream, null);
         }
 
         /// <summary>
-        /// Extract the entry to the filesystem, starting at the specified base directory. 
+        /// Extract the entry to the filesystem, starting at the specified base directory.
         /// </summary>
-        /// 
+        ///
         /// <param name="baseDirectory">the pathname of the base directory</param>
-        /// 
+        ///
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.Extract(string, ExtractExistingFileAction)"/>
-        /// 
+        ///
         /// <example>
-        /// This example extracts only the entries in a zip file that are .txt files, 
+        /// This example extracts only the entries in a zip file that are .txt files,
         /// into a directory called "textfiles".
         /// <code lang="C#">
         /// using (ZipFile zip = ZipFile.Read("PackedDocuments.zip"))
         /// {
         ///   foreach (string s1 in zip.EntryFilenames)
         ///   {
-        ///     if (s1.EndsWith(".txt")) 
+        ///     if (s1.EndsWith(".txt"))
         ///     {
         ///       zip[s1].Extract("textfiles");
         ///     }
@@ -147,7 +147,7 @@ namespace Ionic.Zip
         ///   End Using
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <remarks>
         ///
         /// <para> Using this method, existing entries in the filesystem will not be
@@ -156,7 +156,7 @@ namespace Ionic.Zip
         /// ExtractExistingFileAction)"/>. </para>
         ///
         /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
@@ -173,10 +173,10 @@ namespace Ionic.Zip
         /// Extract the entry to the filesystem, starting at the specified base directory, and
         /// using the specified behavior when extraction would overwrite an existing file.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
@@ -196,7 +196,7 @@ namespace Ionic.Zip
         ///   }
         /// }
         /// </code>
-        /// 
+        ///
         /// <code lang="VB">
         /// Dim sZipPath as String = "Airborne.zip"
         /// Dim sFilePath As String = "Readme.txt"
@@ -224,14 +224,14 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Extract the entry to the filesystem, using the current working directory
-        /// and the specified password. 
+        /// and the specified password.
         /// </summary>
         ///
         /// <overloads>
         /// This method has a bunch of overloads! One of them is sure to be
         /// the right one for you...
         /// </overloads>
-        ///         
+        ///
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractWithPassword(ExtractExistingFileAction, string)"/>
         ///
@@ -243,11 +243,11 @@ namespace Ionic.Zip
         /// cref="ExtractWithPassword(ExtractExistingFileAction,string)"/>.</para>
         ///
         /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property for some details 
+        /// See the remarks on the <see cref="LastModified"/> property for some details
         /// about how the "last modified" time of the created file is set.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <example>
         /// In this example, entries that use encryption are extracted using a particular password.
         /// <code>
@@ -270,7 +270,7 @@ namespace Ionic.Zip
         ///           e.ExtractWithPassword("Secret!")
         ///         Else
         ///           e.Extract
-        ///         End If 
+        ///         End If
         ///     Next
         /// End Using
         /// </code>
@@ -283,9 +283,9 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Extract the entry to the filesystem, starting at the specified base directory,
-        /// and using the specified password. 
+        /// and using the specified password.
         /// </summary>
-        /// 
+        ///
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractExistingFile"/>
         /// <seealso cref="Ionic.Zip.ZipEntry.ExtractWithPassword(string, ExtractExistingFileAction, string)"/>
         ///
@@ -296,11 +296,11 @@ namespace Ionic.Zip
         /// cref="ExtractWithPassword(ExtractExistingFileAction,string)"/>.</para>
         ///
         /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="baseDirectory">The pathname of the base directory.</param>
         /// <param name="password">The Password to use for decrypting the entry.</param>
         public void ExtractWithPassword(string baseDirectory, string password)
@@ -315,16 +315,16 @@ namespace Ionic.Zip
         /// Extract the entry to a file in the filesystem, relative to the current directory,
         /// using the specified behavior when extraction would overwrite an existing file.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the created file is set.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="password">The Password to use for decrypting the entry.</param>
-        /// 
+        ///
         /// <param name="extractExistingFile">
         /// The action to take if extraction would overwrite an existing file.
         /// </param>
@@ -340,9 +340,9 @@ namespace Ionic.Zip
         /// Extract the entry to the filesystem, starting at the specified base directory, and
         /// using the specified behavior when extraction would overwrite an existing file.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the created file is set.
         /// </remarks>
         ///
@@ -362,12 +362,12 @@ namespace Ionic.Zip
         /// Extracts the entry to the specified stream, using the specified Password.
         /// For example, the caller could extract to Console.Out, or to a MemoryStream.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
-        /// See the remarks on the <see cref="LastModified"/> property, for some details 
+        /// See the remarks on the <see cref="LastModified"/> property, for some details
         /// about how the last modified time of the created file is set.
         /// </remarks>
-        /// 
+        ///
         /// <param name="stream">the stream to which the entry should be extracted.  </param>
         /// <param name="password">The password to use for decrypting the entry.</param>
         public void ExtractWithPassword(Stream stream, string password)
@@ -377,14 +377,14 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Opens the backing stream for the zip entry in the archive, for reading. 
+        /// Opens the backing stream for the zip entry in the archive, for reading.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         ///
         /// <para>
         /// DotNetZip offers a variety of ways to extract entries from a zip file.  This
-        /// method allows an application to extract and entry by reading a Stream. 
+        /// method allows an application to extract and entry by reading a Stream.
         /// </para>
         ///
         /// <para>
@@ -393,7 +393,7 @@ namespace Ionic.Zip
         /// cref="Stream.Read(byte[], int, int)"/> on that stream will be decrypted and
         /// decompressed.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// CrcCalculatorStream adds one additional feature: it keeps a CRC32 checksum
         /// on the bytes of the stream as it is read.  The CRC value is available in the
@@ -404,7 +404,7 @@ namespace Ionic.Zip
         /// have to validate the entry using the CRC, but you should. Check the example
         /// for how to do this.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// If the entry is protected with a password, then you need to provide a
         /// password prior to calling <see cref="OpenReader()"/>, either by setting the
@@ -413,15 +413,15 @@ namespace Ionic.Zip
         /// use <see cref="OpenReader(String)" />, the overload of OpenReader that
         /// accepts a password parameter.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// If you want to extract entry data into a stream that is already opened, like
         /// a <see cref="System.IO.FileStream"/>, consider the <see
         /// cref="Extract(Stream)"/> method.
         /// </para>
-        /// 
+        ///
         /// </remarks>
-        /// 
+        ///
         /// <example>
         /// This example shows how to open a zip archive, then read in a named entry via
         /// a stream.  After the read loop is complete, the code compares the calculated
@@ -437,7 +437,7 @@ namespace Ionic.Zip
         ///     int n, totalBytesRead= 0;
         ///     do {
         ///       n = s.Read(buffer,0, buffer.Length);
-        ///       totalBytesRead+=n; 
+        ///       totalBytesRead+=n;
         ///     } while (n&gt;0);
         ///      if (s.Crc32 != e1.Crc32)
         ///       throw new Exception(string.Format("The Zip Entry failed the CRC Check. (0x{0:X8}!=0x{1:X8})", s.Crc32, e1.Crc32));
@@ -476,9 +476,9 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Opens the backing stream for an encrypted zip entry in the archive, for reading. 
+        /// Opens the backing stream for an encrypted zip entry in the archive, for reading.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// See the documentation on the <see cref="OpenReader()"/> method for full
@@ -486,7 +486,7 @@ namespace Ionic.Zip
         /// <c>ZipEntry</c> to be read.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="password">The password to use for decrypting the entry.</param>
         /// <returns>The Stream for reading.</returns>
         public Ionic.Zlib.CrcCalculatorStream OpenReader(string password)
@@ -500,15 +500,19 @@ namespace Ionic.Zip
         {
             ValidateCompression();
             ValidateEncryption();
-            SetupCrypto(password);
+            SetupCryptoForExtract(password);
 
             // workitem 7958
             if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling OpenReader.");
 
-            Int64 LeftToRead = (CompressionMethod == CompressionMethod.Deflate)
-                ? this.UncompressedSize
-                : this._CompressedFileDataSize;
+            // LeftToRead is a count of bytes remaining to be read (out)
+            // from the stream AFTER decompression and decryption.
+            // It is the uncompressed size, unless ... there is no compression in which
+            // case ...?  :< I'm not sure why it's not always UncompressedSize
+            Int64 LeftToRead = (_CompressionMethod_FromZipFile == (short)CompressionMethod.None)
+                ? this._CompressedFileDataSize
+                : this.UncompressedSize;
 
             Stream input = this.ArchiveStream;
 
@@ -531,7 +535,7 @@ namespace Ionic.Zip
 
         private void OnBeforeExtract(string path)
         {
-            // When in the context of a ZipFile.ExtractAll, the events are generated from 
+            // When in the context of a ZipFile.ExtractAll, the events are generated from
             // the ZipFile method, not from within the ZipEntry instance. (why?)
             // Therefore we suppress the events originating from the ZipEntry method.
             if (_container.ZipFile != null)
@@ -545,7 +549,7 @@ namespace Ionic.Zip
 
         private void OnAfterExtract(string path)
         {
-            // When in the context of a ZipFile.ExtractAll, the events are generated from 
+            // When in the context of a ZipFile.ExtractAll, the events are generated from
             // the ZipFile method, not from within the ZipEntry instance. (why?)
             // Therefore we suppress the events originating from the ZipEntry method.
             if (_container.ZipFile != null)
@@ -583,8 +587,8 @@ namespace Ionic.Zip
             if (_container.ZipFile != null && _container.ZipFile.Verbose) _container.ZipFile.StatusMessageTextWriter.WriteLine(format, args);
         }
 
-        
-        // Pass in either basedir or s, but not both. 
+
+        // Pass in either basedir or s, but not both.
         // In other words, you can extract to a stream or to a directory (filesystem), but not both!
         // The Password param is required for encrypted entries.
         private void InternalExtract(string baseDir, Stream outstream, string password)
@@ -594,7 +598,7 @@ namespace Ionic.Zip
                 throw new BadStateException("This ZipEntry is an orphan.");
 
             _container.ZipFile.Reset();
-            
+
             if (this._Source != ZipEntrySource.ZipFile)
                 throw new BadStateException("You must call ZipFile.Save before calling any Extract method.");
 
@@ -621,11 +625,11 @@ namespace Ionic.Zip
                 // if no password explicitly specified, use the password on the entry itself,
                 // or on the zipfile itself.
                 string p = password ?? this._Password ?? this._container.Password;
-                if (UsesEncryption)
+                if (_Encryption_FromZipFile != EncryptionAlgorithm.None)
                 {
                     if (p == null)
                         throw new BadPasswordException();
-                    SetupCrypto(p);
+                    SetupCryptoForExtract(p);
                 }
 
                 // set up the output stream
@@ -638,7 +642,7 @@ namespace Ionic.Zip
                         // we create the directory here, but we do not set the
                         // create/modified/accessed times on it because it is being
                         // created implicitly, not explcitly. There's no entry in the
-                        // zip archive for the directory. 
+                        // zip archive for the directory.
                         Directory.CreateDirectory(Path.GetDirectoryName(TargetFile));
                     }
                     else
@@ -673,8 +677,7 @@ namespace Ionic.Zip
                 if (_ioOperationCanceled)
                     goto ExitTry;
 
-                VerifyCrc(ActualCrc32);
-
+                VerifyCrcAfterExtract(ActualCrc32);
 
                 if (TargetFile != null)
                 {
@@ -690,7 +693,7 @@ namespace Ionic.Zip
                         // directory, every time a file is extracted into it.  If there is a
                         // directory with 1000 files, then I set the time on the dir, 1000
                         // times. This allows the directory to have times that reflect the
-                        // actual time on the entry in the zip archive. 
+                        // actual time on the entry in the zip archive.
 
                         // String.Contains is not available on .NET CF 2.0
                         if (this.FileName.IndexOf('/') != -1)
@@ -710,9 +713,9 @@ namespace Ionic.Zip
 
 #else
                     // workitem 7071
-                    // We can only apply attributes if they are relevant to the NTFS OS. 
+                    // We can only apply attributes if they are relevant to the NTFS OS.
                     // Must do this LAST because it may involve a ReadOnly bit, which would prevent
-                    // us from setting the time, etc. 
+                    // us from setting the time, etc.
                     // workitem 7926 - version made by OS can be zero (FAT) or 10 (NTFS)
                     if ((_VersionMadeBy & 0xFF00) == 0x0a00 || (_VersionMadeBy & 0xFF00) == 0x0000)
                         File.SetAttributes(TargetFile, (FileAttributes)_ExternalFileAttrs);
@@ -720,7 +723,7 @@ namespace Ionic.Zip
                 }
 
                 OnAfterExtract(baseDir);
-                
+
                 ExitTry: ;
             }
             catch (Exception)
@@ -770,15 +773,15 @@ namespace Ionic.Zip
                 {
                     xxx;
                 }
-                    
+
             }
         }
 #endif
 
-        
-        internal void VerifyCrc(Int32 ActualCrc32)
+
+        internal void VerifyCrcAfterExtract(Int32 ActualCrc32)
         {
-                        
+
 #if AESCRYPTO
                 // After extracting, Validate the CRC32
                 if (ActualCrc32 != _Crc32)
@@ -791,20 +794,20 @@ namespace Ionic.Zip
                                                   String.Format("Expected 0x{0:X8}, Actual 0x{1:X8}", _Crc32, ActualCrc32));
                 }
 
-                // calculate the MAC 
+                // calculate the MAC
                 if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
                     Encryption == EncryptionAlgorithm.WinZipAes256)
                 {
                     WinZipAesCipherStream wzs = _inputDecryptorStream as WinZipAesCipherStream;
-                    _aesCrypto.CalculatedMac = wzs.FinalAuthentication;
-            
-                    _aesCrypto.ReadAndVerifyMac(this.ArchiveStream); // throws if MAC is bad
+                    _aesCrypto_forExtract.CalculatedMac = wzs.FinalAuthentication;
+
+                    _aesCrypto_forExtract.ReadAndVerifyMac(this.ArchiveStream); // throws if MAC is bad
                     // side effect: advances file position.
                 }
 
 
 
-                
+
 #else
             if (ActualCrc32 != _Crc32)
                 throw new BadCrcException("CRC error: the file being extracted appears to be corrupted. " +
@@ -813,8 +816,8 @@ namespace Ionic.Zip
         }
 
 
-        
-        
+
+
         private int CheckExtractExistingFile(string baseDir, string TargetFile)
         {
             int loop = 0;
@@ -844,7 +847,7 @@ namespace Ionic.Zip
 
                         // loop around
                         break;
-                    
+
                     case ExtractExistingFileAction.Throw:
                     default:
                         throw new ZipException(String.Format("The file {0} already exists.", TargetFile));
@@ -866,16 +869,15 @@ namespace Ionic.Zip
 
 
         private Stream _inputDecryptorStream;
-        
+
         private Int32 _ExtractOne(Stream output)
         {
             Stream input = this.ArchiveStream;
 
             // change for workitem 8098
             input.Seek(this.FileDataPosition, SeekOrigin.Begin);
-            //this._zipfile.SeekFromOrigin(this.FileDataPosition);
 
-            // to validate the CRC. 
+            // to validate the CRC.
             Int32 CrcResult = 0;
 
             byte[] bytes = new byte[BufferSize];
@@ -883,9 +885,9 @@ namespace Ionic.Zip
             // The extraction process varies depending on how the entry was stored.
             // It could have been encrypted, and it coould have been compressed, or both, or
             // neither. So we need to check both the encryption flag and the compression flag,
-            // and take the proper action in all cases.  
+            // and take the proper action in all cases.
 
-            Int64 LeftToRead = (CompressionMethod == CompressionMethod.Deflate)
+            Int64 LeftToRead = (_CompressionMethod_FromZipFile == (short)CompressionMethod.Deflate)
                 ? this.UncompressedSize
                 : this._CompressedFileDataSize;
 
@@ -930,34 +932,33 @@ namespace Ionic.Zip
         }
 
 
-        
+
         internal Stream GetExtractDecompressor(Stream input2)
         {
             // Using the above, now we get a stream that either decompresses or not.
-            Stream input3 = (CompressionMethod == CompressionMethod.Deflate)
-                ? new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true)
-                : input2;
+            Stream input3 = (_CompressionMethod_FromZipFile == (short)CompressionMethod.None)
+                ? input2
+                : new Ionic.Zlib.DeflateStream(input2, Ionic.Zlib.CompressionMode.Decompress, true);
             return input3;
         }
 
 
-        
+
         internal Stream GetExtractDecryptor(Stream input)
         {
             Stream input2 = null;
-            if (Encryption == EncryptionAlgorithm.PkzipWeak)
-                input2 = new ZipCipherStream(input, _zipCrypto, CryptoMode.Decrypt);
+            if (_Encryption_FromZipFile == EncryptionAlgorithm.PkzipWeak)
+                input2 = new ZipCipherStream(input, _zipCrypto_forExtract, CryptoMode.Decrypt);
 
 #if AESCRYPTO
-
-            else if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
-                 Encryption == EncryptionAlgorithm.WinZipAes256)
-                input2 = new WinZipAesCipherStream(input, _aesCrypto, _CompressedFileDataSize, CryptoMode.Decrypt);
+            else if (_Encryption_FromZipFile == EncryptionAlgorithm.WinZipAes128 ||
+                 _Encryption_FromZipFile == EncryptionAlgorithm.WinZipAes256)
+                input2 = new WinZipAesCipherStream(input, _aesCrypto_forExtract, _CompressedFileDataSize, CryptoMode.Decrypt);
 #endif
 
             else
                 input2 = input;
-            
+
             return input2;
         }
 
@@ -966,12 +967,12 @@ namespace Ionic.Zip
 
         internal void _SetTimes(string fileOrDirectory, bool isFile)
         {
-            // workitem 8807: 
+            // workitem 8807:
             // Because setting the time is not considered to be a fatal error,
             // and because other applications can interfere with the setting
             // of a time on a directory, we're going to swallow IO exceptions
             // in this method.
-            
+
             try
             {
                 if (_ntfsTimesAreSet)
@@ -1016,7 +1017,7 @@ namespace Ionic.Zip
 
 #if NETCF
                     int rc = NetCfFile.SetLastWriteTime(fileOrDirectory, AdjustedLastModified);
-                        
+
                     if ( rc != 0)
                     {
                         WriteStatus("Warning: SetLastWriteTime failed.  entry({0})  file({1})  rc({2})",
@@ -1151,58 +1152,56 @@ namespace Ionic.Zip
         }
 
 
-        internal void ValidateCompression()
+        private void ValidateCompression()
         {
-            if ((CompressionMethod != CompressionMethod.None) && (CompressionMethod != CompressionMethod.Deflate))
+            if ((_CompressionMethod_FromZipFile != (short)CompressionMethod.None) && (_CompressionMethod_FromZipFile != (short)CompressionMethod.Deflate))
                 throw new ZipException(String.Format("Entry {0} uses an unsupported compression method (0x{1:X2}, {2})",
-                                                          FileName, _CompressionMethod, UnsupportedCompressionMethod));
+                                                          FileName, _CompressionMethod_FromZipFile, UnsupportedCompressionMethod));
         }
 
 
-        internal  void SetupCrypto(string password)
+        private void SetupCryptoForExtract(string password)
         {
-            if (Encryption == EncryptionAlgorithm.None)
-                return;
+            //if (password == null) return;
+            if (_Encryption_FromZipFile == EncryptionAlgorithm.None) return;
 
-            if (Encryption == EncryptionAlgorithm.PkzipWeak)
+            if (_Encryption_FromZipFile == EncryptionAlgorithm.PkzipWeak)
             {
                 if (password == null)
                     throw new ZipException("Missing password.");
-                    
-                // change for workitem 8098
+
                 this.ArchiveStream.Seek(this.FileDataPosition - 12, SeekOrigin.Begin);
-                //this._zipfile.SeekFromOrigin(this.FileDataPosition - 12);
-                _zipCrypto = ZipCrypto.ForRead(password, this);
+                _zipCrypto_forExtract = ZipCrypto.ForRead(password, this);
             }
 
 #if AESCRYPTO
-            else if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
-                 Encryption == EncryptionAlgorithm.WinZipAes256)
+            else if (_Encryption_FromZipFile == EncryptionAlgorithm.WinZipAes128 ||
+                 _Encryption_FromZipFile == EncryptionAlgorithm.WinZipAes256)
             {
                 if (password == null)
                     throw new ZipException("Missing password.");
-                    
-                // if we already have a WinZipAesCrypto object in place, use it.
-                if (_aesCrypto != null)
+
+                // If we already have a WinZipAesCrypto object in place, use it.
+                // It can be set up in the ReadDirEntry(), or during a previous Extract.
+                if (_aesCrypto_forExtract != null)
                 {
-                    _aesCrypto.Password = password;
+                    _aesCrypto_forExtract.Password = password;
                 }
                 else
                 {
-                    int sizeOfSaltAndPv = LengthOfCryptoHeaderBytes;
-                    // change for workitem 8098
+                    int sizeOfSaltAndPv = GetLengthOfCryptoHeaderBytes(_Encryption_FromZipFile);
                     this.ArchiveStream.Seek(this.FileDataPosition - sizeOfSaltAndPv, SeekOrigin.Begin);
-                    //this._zipfile.SeekFromOrigin(this.FileDataPosition - sizeOfSaltAndPv);
-                    _aesCrypto = WinZipAesCrypto.ReadFromStream(password, _KeyStrengthInBits, this.ArchiveStream);
+                    int keystrength = GetKeyStrengthInBits(_Encryption_FromZipFile);
+                    _aesCrypto_forExtract = WinZipAesCrypto.ReadFromStream(password, keystrength, this.ArchiveStream);
                 }
             }
 #endif
         }
 
-        
+
 
         /// <summary>
-        /// Validates that the args are consistent.  
+        /// Validates that the args are consistent.
         /// </summary>
         /// <remarks>
         /// Only one of {baseDir, outStream} can be non-null.
@@ -1213,8 +1212,8 @@ namespace Ionic.Zip
             if (basedir != null)
             {
                 // Sometimes the name on the entry starts with a slash.
-                // Rather than unpack to the root of the volume, we're going to 
-                // drop the slash and unpack to the specified base directory. 
+                // Rather than unpack to the root of the volume, we're going to
+                // drop the slash and unpack to the specified base directory.
                 string f = this.FileName;
                 if (f.StartsWith("/"))
                     f= this.FileName.Substring(1);
@@ -1224,7 +1223,7 @@ namespace Ionic.Zip
                 if (_container.ZipFile.FlattenFoldersOnExtract)
                     OutputFile = Path.Combine(basedir,
                                               (f.IndexOf('/') != -1) ? Path.GetFileName(f) : f);
-                else 
+                else
                     OutputFile = Path.Combine(basedir, f);
 
 
@@ -1239,11 +1238,11 @@ namespace Ionic.Zip
                     }
                     else
                     {
-                        // the dir exists, maybe we want to overwrite times. 
+                        // the dir exists, maybe we want to overwrite times.
                         if (ExtractExistingFile == ExtractExistingFileAction.OverwriteSilently)
                             _SetTimes(OutputFile, false);
                     }
-                    return true;  // true == all done, caller will return 
+                    return true;  // true == all done, caller will return
                 }
                 return false;  // false == work to do by caller.
             }

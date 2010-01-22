@@ -1,21 +1,21 @@
 // ZipFile.Save.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa.  
+// Copyright (c) 2009 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-05 20:29:50>
+// last saved (in emacs):
+// Time-stamp: <2010-January-06 15:24:43>
 //
 // ------------------------------------------------------------------
 //
@@ -36,7 +36,7 @@ namespace Ionic.Zip
     {
 
         /// <summary>
-        /// Saves the Zip archive to a file, specified by the Name property of the <c>ZipFile</c>. 
+        /// Saves the Zip archive to a file, specified by the Name property of the <c>ZipFile</c>.
         /// </summary>
         ///
         /// <remarks>
@@ -96,35 +96,44 @@ namespace Ionic.Zip
 
                 if (_name != null && _name.EndsWith(".exe") && !_SavingSfx)
                     throw new BadStateException("You specified an EXE for a plain zip file.");
-                
-                // check if modified, before saving. 
-                if (!_contentsChanged) return;
-                
+
+                // check if modified, before saving.
+                if (!_contentsChanged)
+                {
+                    OnSaveCompleted();
+                    if (Verbose) StatusMessageTextWriter.WriteLine("No save is necessary....");
+                    return;
+                }
+
+
                 if (Verbose) StatusMessageTextWriter.WriteLine("saving....");
 
                 // validate the number of entries
                 if (_entries.Count >= 0xFFFF && _zip64 == Zip64Option.Never)
                     throw new ZipException("The number of entries is 65535 or greater. Consider setting the UseZip64WhenSaving property on the ZipFile instance.");
 
-                {
+
                     // write an entry in the zip for each file
                     int n = 0;
-                    foreach (ZipEntry e in _entries)
+                    // workitem 9831
+                    ICollection<ZipEntry> c = (SortEntriesBeforeSaving) ? EntriesSorted : Entries;
+                    foreach (ZipEntry e in c) // _entries.Values
                     {
                         OnSaveEntry(n, e, true);
                         e.Write(WriteStream);
                         if (_saveOperationCanceled)
                             break;
-                        //e._container = new ZipContainer(this);  // not sure why I have this here. 
+
                         n++;
                         OnSaveEntry(n, e, false);
                         if (_saveOperationCanceled)
                             break;
 
+                        // Some entries can be skipped during the save.
                         if (e.IncludedInMostRecentSave)
                             thisSaveUsedZip64 |= e.OutputUsedZip64.Value;
                     }
-                }
+
 
 
                 if (_saveOperationCanceled)
@@ -135,10 +144,10 @@ namespace Ionic.Zip
                 _numberOfSegmentsForMostRecentSave = (zss!=null)
                     ? zss.CurrentSegment
                     : 1;
-                    
+
                 bool directoryNeededZip64 = ZipOutput.WriteCentralDirectoryStructure(WriteStream,
-                                                         _entries,
-                                                         _numberOfSegmentsForMostRecentSave, 
+                                                         c,
+                                                         _numberOfSegmentsForMostRecentSave,
                                                          _zip64,
                                                          Comment,
                                                          ProvisionalAlternateEncoding);
@@ -153,21 +162,21 @@ namespace Ionic.Zip
 
 
                 // do the rename as necessary
-                if (_name != null &&  
+                if (_name != null &&
                     (_temporaryFileName!=null || zss != null))
                 {
                     // _temporaryFileName may remain null if we are writing to a stream.
-                    // only close the stream if there is a file behind it. 
+                    // only close the stream if there is a file behind it.
                     WriteStream.Close();
 #if !NETCF
                     WriteStream.Dispose();
 #endif
                     if (_saveOperationCanceled)
                         return;
-                    
+
                     if ((_fileAlreadyExists) && (this._readstream != null))
                     {
-                        // This means we opened and read a zip file. 
+                        // This means we opened and read a zip file.
                         // If we are now saving to the same file, we need to close the
                         // orig file, first.
                         this._readstream.Close();
@@ -176,24 +185,24 @@ namespace Ionic.Zip
 
                     if (_fileAlreadyExists)
                     {
-                        // We do not just call File.Replace() here because 
-                        // there is a possibility that the TEMP volume is different 
+                        // We do not just call File.Replace() here because
+                        // there is a possibility that the TEMP volume is different
                         // that the volume for the final file (c:\ vs d:\).
-                        // So we need to do a Delete+Move pair. 
+                        // So we need to do a Delete+Move pair.
                         //
-                        // Ideally this would be transactional. 
-                        // 
-                        // It's possible that the delete succeeds and the move fails.  
+                        // Ideally this would be transactional.
+                        //
+                        // It's possible that the delete succeeds and the move fails.
                         // in that case, we're hosed, and we'll throw.
                         //
                         // Could make this more complicated by moving (renaming) the first file, then
                         // moving the second, then deleting the first file. But the
                         // error handling and unwrap logic just gets more complicated.
                         //
-                        // Better to just keep it simple. 
+                        // Better to just keep it simple.
                         File.Delete(_name);
                     }
-                    
+
                     OnSaveEvent(ZipProgressEventType.Saving_BeforeRenameTempArchive);
                     File.Move((zss != null) ? zss.CurrentName : _temporaryFileName, _name);
                     OnSaveEvent(ZipProgressEventType.Saving_AfterRenameTempArchive);
@@ -201,6 +210,7 @@ namespace Ionic.Zip
                     _fileAlreadyExists = true;
                 }
 
+                NotifyEntriesSaveComplete(c);
                 OnSaveCompleted();
                 _JustSaved = true;
             }
@@ -214,7 +224,15 @@ namespace Ionic.Zip
             return;
         }
 
-        
+
+
+        private void NotifyEntriesSaveComplete(ICollection<ZipEntry> c)
+        {
+            foreach (ZipEntry e in  c)
+            {
+                e.NotifySaveComplete();
+            }
+        }
 
 
         private void RemoveTempFile()
@@ -238,7 +256,7 @@ namespace Ionic.Zip
         {
             if (_name != null)
             {
-                // close the stream if there is a file behind it. 
+                // close the stream if there is a file behind it.
                 if (_writestream != null)
                 {
                     try
@@ -253,7 +271,7 @@ namespace Ionic.Zip
                     catch { }
                 }
                 _writestream = null;
-                
+
                 if (_temporaryFileName != null)
                 {
                     RemoveTempFile();
@@ -264,16 +282,16 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Save the file to a new zipfile, with the given name. 
+        /// Save the file to a new zipfile, with the given name.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         /// This method allows the application to explicitly specify the name of the zip
-        /// file when saving. Use this when creating a new zip file, or when 
-        /// updating a zip archive.  
+        /// file when saving. Use this when creating a new zip file, or when
+        /// updating a zip archive.
         /// </para>
-        /// 
+        ///
         /// <para>
         /// An application can also save a zip archive in several places by calling this
         /// method multiple times in succession, with different filenames.
@@ -288,13 +306,13 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
-        /// 
+        ///
         /// <exception cref="System.ArgumentException">
         /// Thrown if you specify a directory for the filename.
         /// </exception>
         ///
         /// <param name="fileName">
-        /// The name of the zip archive to save to. Existing files will 
+        /// The name of the zip archive to save to. Existing files will
         /// be overwritten with great prejudice.
         /// </param>
         ///
@@ -337,9 +355,9 @@ namespace Ionic.Zip
         /// </example>
         public void Save(String fileName)
         {
-            // Check for the case where we are re-saving a zip archive 
-            // that was originally instantiated with a stream.  In that case, 
-            // the _name will be null. If so, we set _writestream to null, 
+            // Check for the case where we are re-saving a zip archive
+            // that was originally instantiated with a stream.  In that case,
+            // the _name will be null. If so, we set _writestream to null,
             // which insures that we'll cons up a new WriteStream (with a filesystem
             // file backing it) in the Save() method.
             if (_name == null)
@@ -357,7 +375,7 @@ namespace Ionic.Zip
         /// <summary>
         ///   Save the zip archive to the specified stream.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         ///   The <c>ZipFile</c> instance is written to storage - typically a zip file
@@ -399,7 +417,7 @@ namespace Ionic.Zip
         ///     zip.AddFile(sourceFileName);
         ///     MemoryStream output = new MemoryStream();
         ///     zip.Save(output);
-        /// 
+        ///
         ///     byte[] zipbytes = output.ToArray();
         /// }
         /// </code>
@@ -413,7 +431,7 @@ namespace Ionic.Zip
             if (!outputStream.CanWrite)
                 throw new ArgumentException("The outputStream must be a writable stream.");
 
-            // if we had a filename to save to, we are now obliterating it. 
+            // if we had a filename to save to, we are now obliterating it.
             _name = null;
 
             _writestream = new CountingStream(outputStream);
@@ -427,13 +445,13 @@ namespace Ionic.Zip
     }
 
 
-    
+
 
     internal class ZipOutput
     {
 
         public static bool WriteCentralDirectoryStructure(Stream s,
-                                                          List<ZipEntry> _entries,
+                                                          ICollection<ZipEntry> entries,
                                                           uint numSegments,
                                                           Zip64Option zip64,
                                                           String comment,
@@ -446,13 +464,13 @@ namespace Ionic.Zip
             // write to a memory stream in order to keep the
             // CDR contiguous
             var ms = new MemoryStream();
-            
-            foreach (ZipEntry e in _entries)
+
+            foreach (ZipEntry e in entries)
             {
                 if (e.IncludedInMostRecentSave)
                 {
                     // this writes a ZipDirEntry corresponding to the ZipEntry
-                    e.WriteCentralDirectoryEntry(ms);  
+                    e.WriteCentralDirectoryEntry(ms);
                 }
             }
             var a = ms.ToArray();
@@ -477,16 +495,16 @@ namespace Ionic.Zip
             var output = s as CountingStream;
             long Finish = (output != null) ? output.ComputedPosition : s.Position;  // BytesWritten
             long Start = Finish - a.Length;
-            
+
             // need to know which segment the EOCD record starts in
             UInt32 startSegment = (zss != null)
                 ? zss.CurrentSegment
                 : 0;
-            
+
             Int64 SizeOfCentralDirectory = Finish - Start;
 
-            int countOfEntries = CountEntries(_entries);
-            
+            int countOfEntries = CountEntries(entries);
+
             bool needZip64CentralDirectory =
                 zip64 == Zip64Option.Always ||
                 countOfEntries >= 0xFFFF ||
@@ -494,7 +512,7 @@ namespace Ionic.Zip
                 Start > 0xFFFFFFFF;
 
             byte[] a2 = null;
-            
+
             // emit ZIP64 extensions as required
             if (needZip64CentralDirectory)
             {
@@ -504,12 +522,12 @@ namespace Ionic.Zip
                     throw new ZipException("The archive requires a ZIP64 Central Directory. Consider enabling ZIP64 extensions.");
 #else
                     System.Diagnostics.StackFrame sf = new System.Diagnostics.StackFrame(1);
-                    if (sf.GetMethod().DeclaringType == typeof(ZipFile)) 
+                    if (sf.GetMethod().DeclaringType == typeof(ZipFile))
                         throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipFile.UseZip64WhenSaving property.");
                     else
                         throw new ZipException("The archive requires a ZIP64 Central Directory. Consider setting the ZipOutputStream.EnableZip64 property.");
 #endif
-                    
+
                 }
 
                 a = GenZip64EndOfCentralDirectory(Start, Finish, countOfEntries, numSegments);
@@ -524,21 +542,21 @@ namespace Ionic.Zip
                     // number of the disk with the start of the central directory
                     //Array.Copy(BitConverter.GetBytes(startSegment), 0, a, i, 4);
                     Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
-                    
+
                     i = 60;
                     // offset 60
                     // number of the disk with the start of the zip64 eocd
                     Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
                     i += 4;
                     i += 8;
-                    
+
                     // offset 72
                     // total number of disks
                     Array.Copy(BitConverter.GetBytes(thisSegment), 0, a, i, 4);
                 }
                 s.Write(a, 0, a.Length);
             }
-            else 
+            else
                 a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, encoding);
 
 
@@ -547,7 +565,7 @@ namespace Ionic.Zip
             {
                 // The assumption is the central directory is never split across
                 // segment boundaries.
-                
+
                 UInt16 thisSegment = (UInt16) zss.ComputeSegment(a2.Length);
                 int i = 4;
                 // number of this disk
@@ -594,7 +612,7 @@ namespace Ionic.Zip
             byte[] sig = BitConverter.GetBytes(ZipConstants.EndOfCentralDirectorySignature);
             Array.Copy(sig, 0, bytes, i, 4);
             i+=4;
-            
+
             // number of this disk
             // (this number may change later)
             bytes[i++] = 0;
@@ -605,7 +623,7 @@ namespace Ionic.Zip
             bytes[i++] = 0;
             bytes[i++] = 0;
 
-            // handle ZIP64 extensions for the end-of-central-directory 
+            // handle ZIP64 extensions for the end-of-central-directory
             if (entryCount >= 0xFFFF || zip64 == Zip64Option.Always)
             {
                 // the ZIP64 version.
@@ -649,7 +667,7 @@ namespace Ionic.Zip
             }
 
 
-            // zip archive comment 
+            // zip archive comment
             if ((comment == null) || (comment.Length == 0))
             {
                 // no comment!
@@ -679,7 +697,7 @@ namespace Ionic.Zip
         }
 
 
-        
+
         private static byte[] GenZip64EndOfCentralDirectory(long StartOfCentralDirectory,
                                                             long EndOfCentralDirectory,
                                                             int entryCount,
@@ -694,7 +712,7 @@ namespace Ionic.Zip
             byte[] sig = BitConverter.GetBytes(ZipConstants.Zip64EndOfCentralDirectoryRecordSignature);
             Array.Copy(sig, 0, bytes, i, 4);
             i+=4;
-            
+
             // There is a possibility to include "Extensible" data in the zip64
             // end-of-central-dir record.  I cannot figure out what it might be used to
             // store, so the size of this record is always fixed.  Maybe it is used for
@@ -738,7 +756,7 @@ namespace Ionic.Zip
             sig = BitConverter.GetBytes(ZipConstants.Zip64EndOfCentralDirectoryLocatorSignature);
             Array.Copy(sig, 0, bytes, i, 4);
             i+=4;
-            
+
             // offset 60
             // number of the disk with the start of the zip64 eocd
             // (this will change later)  (it will?)
@@ -761,8 +779,8 @@ namespace Ionic.Zip
         }
 
 
-        
-        private static int CountEntries(List<ZipEntry> _entries)
+
+        private static int CountEntries(ICollection<ZipEntry> _entries)
         {
             // Cannot just emit _entries.Count, because some of the entries
             // may have been skipped.
@@ -772,8 +790,8 @@ namespace Ionic.Zip
             return count;
         }
 
-        
-        
-        
+
+
+
     }
 }

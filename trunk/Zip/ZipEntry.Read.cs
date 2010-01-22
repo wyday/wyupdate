@@ -8,21 +8,21 @@
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-18 16:35:55>
+// last saved (in emacs):
+// Time-stamp: <2010-January-06 14:45:12>
 //
 // ------------------------------------------------------------------
 //
 // This module defines logic for Reading the ZipEntry from a
 // zip file.
 //
-// 
+//
 // ------------------------------------------------------------------
 
 
@@ -72,11 +72,11 @@ namespace Ionic.Zip
             // Return false if this is not a local file header signature.
             if (ZipEntry.IsNotValidSig(signature))
             {
-                // Getting "not a ZipEntry signature" is not always wrong or an error. 
-                // This will happen after the last entry in a zipfile.  In that case, we 
-                // expect to read : 
-                //    a ZipDirEntry signature (if a non-empty zip file) or 
-                //    a ZipConstants.EndOfCentralDirectorySignature.  
+                // Getting "not a ZipEntry signature" is not always wrong or an error.
+                // This will happen after the last entry in a zipfile.  In that case, we
+                // expect to read :
+                //    a ZipDirEntry signature (if a non-empty zip file) or
+                //    a ZipConstants.EndOfCentralDirectorySignature.
                 //
                 // Anything else is a surprise.
 
@@ -96,7 +96,7 @@ namespace Ionic.Zip
             int i = 0;
             ze._VersionNeeded = (Int16)(block[i++] + block[i++] * 256);
             ze._BitField = (Int16)(block[i++] + block[i++] * 256);
-            ze._CompressionMethod = (Int16)(block[i++] + block[i++] * 256);
+            ze._CompressionMethod_FromZipFile = ze._CompressionMethod = (Int16)(block[i++] + block[i++] * 256);
             ze._TimeBlob = block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256;
             // transform the time data into something usable (a DateTime)
             ze._LastModified = Ionic.Zip.SharedUtilities.PackedToDateTime(ze._TimeBlob);
@@ -104,13 +104,13 @@ namespace Ionic.Zip
 
             if ((ze._BitField & 0x01) == 0x01)
             {
-                ze._Encryption = EncryptionAlgorithm.PkzipWeak; // this *may* change after processing the Extra field
+                ze._Encryption_FromZipFile = ze._Encryption = EncryptionAlgorithm.PkzipWeak; // this *may* change after processing the Extra field
                 ze._sourceIsEncrypted = true;
             }
-            
-            // NB: if ((ze._BitField & 0x0008) != 0x0008), then the Compressed, uncompressed and 
-            // CRC values are not true values; the true values will follow the entry data.  
-            // But, regardless of the status of bit 3 in the bitfield, the slots for 
+
+            // NB: if ((ze._BitField & 0x0008) != 0x0008), then the Compressed, uncompressed and
+            // CRC values are not true values; the true values will follow the entry data.
+            // But, regardless of the status of bit 3 in the bitfield, the slots for
             // the three amigos may contain marker values for ZIP64.  So we must read them.
             {
                 ze._Crc32 = (Int32)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
@@ -139,10 +139,11 @@ namespace Ionic.Zip
             ze._FileNameInArchive = ze._actualEncoding.GetString(block, 0, block.Length);
 
             // when creating an entry by reading, the LocalFileName is the same as the FileNameInArchive
-            ze._LocalFileName = ze._FileNameInArchive;
+            // No, on second thought, I think it should be empty (null).
+            //ze._LocalFileName = ze._FileNameInArchive;
 
             // workitem 6898
-            if (ze._LocalFileName.EndsWith("/")) ze.MarkAsDirectory();
+            if (ze._FileNameInArchive.EndsWith("/")) ze.MarkAsDirectory();
 
             bytesRead += ze.ProcessExtraField(ze.ArchiveStream, extraFieldLength);
 
@@ -150,7 +151,7 @@ namespace Ionic.Zip
 
             // workitem 6607 - don't read for directories
             // actually get the compressed size and CRC if necessary
-            if (!ze._LocalFileName.EndsWith("/") && (ze._BitField & 0x0008) == 0x0008)
+            if (!ze._FileNameInArchive.EndsWith("/") && (ze._BitField & 0x0008) == 0x0008)
             {
                 // This descriptor exists only if bit 3 of the general
                 // purpose bit flag is set (see below).  It is byte aligned
@@ -164,9 +165,9 @@ namespace Ionic.Zip
                 // workitem 8098: ok (restore)
                 long posn = ze.ArchiveStream.Position;
 
-                // Here, we're going to loop until we find a ZipEntryDataDescriptorSignature and 
-                // a consistent data record after that.   To be consistent, the data record must 
-                // indicate the length of the entry data. 
+                // Here, we're going to loop until we find a ZipEntryDataDescriptorSignature and
+                // a consistent data record after that.   To be consistent, the data record must
+                // indicate the length of the entry data.
                 bool wantMore = true;
                 long SizeOfDataRead = 0;
                 int tries = 0;
@@ -188,7 +189,7 @@ namespace Ionic.Zip
                     long d = Ionic.Zip.SharedUtilities.FindSignature(ze.ArchiveStream, ZipConstants.ZipEntryDataDescriptorSignature);
                     if (d == -1) return false;
 
-                    // total size of data read (through all loops of this). 
+                    // total size of data read (through all loops of this).
                     SizeOfDataRead += d;
 
                     if (ze._InputUsesZip64)
@@ -200,7 +201,7 @@ namespace Ionic.Zip
 
                         // do not increment bytesRead - it is for entry header only.
                         // the data we have just read is a footer (falls after the file data)
-                        //bytesRead += n; 
+                        //bytesRead += n;
 
                         i = 0;
                         ze._Crc32 = (Int32)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
@@ -220,7 +221,7 @@ namespace Ionic.Zip
 
                         // do not increment bytesRead - it is for entry header only.
                         // the data we have just read is a footer (falls after the file data)
-                        //bytesRead += n; 
+                        //bytesRead += n;
 
                         i = 0;
                         ze._Crc32 = (Int32)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
@@ -235,12 +236,12 @@ namespace Ionic.Zip
 
                     if (wantMore)
                     {
-                        // Seek back to un-read the last 12 bytes  - maybe THEY contain 
+                        // Seek back to un-read the last 12 bytes  - maybe THEY contain
                         // the ZipEntryDataDescriptorSignature.
                         // (12 bytes for the CRC, Comp and Uncomp size.)
                         ze.ArchiveStream.Seek(-12, SeekOrigin.Current);
 
-                        // Adjust the size to account for the false signature read in 
+                        // Adjust the size to account for the false signature read in
                         // FindSignature().
                         SizeOfDataRead += 4;
                     }
@@ -261,11 +262,12 @@ namespace Ionic.Zip
                 if (ze.Encryption == EncryptionAlgorithm.WinZipAes128 ||
                     ze.Encryption == EncryptionAlgorithm.WinZipAes256)
                 {
+                    int bits = ZipEntry.GetKeyStrengthInBits(ze._Encryption_FromZipFile);
                     // read in the WinZip AES metadata: salt + PV. 18 bytes for AES256. 10 bytes for AES128.
-                    ze._aesCrypto = WinZipAesCrypto.ReadFromStream(null, ze._KeyStrengthInBits, ze.ArchiveStream);
-                    bytesRead += ze._aesCrypto.SizeOfEncryptionMetadata - 10; // MAC (follows crypto bytes)
-                    // according to WinZip, the CompressedSize includes the AES Crypto framing data. 
-                    ze._CompressedFileDataSize -= ze._aesCrypto.SizeOfEncryptionMetadata;
+                    ze._aesCrypto_forExtract = WinZipAesCrypto.ReadFromStream(null, bits, ze.ArchiveStream);
+                    bytesRead += ze._aesCrypto_forExtract.SizeOfEncryptionMetadata - 10; // MAC (follows crypto bytes)
+                    // according to WinZip, the CompressedSize includes the AES Crypto framing data.
+                    ze._CompressedFileDataSize -= ze._aesCrypto_forExtract.SizeOfEncryptionMetadata;
                     ze._LengthOfTrailer += 10;  // MAC
                 }
                 else
@@ -279,8 +281,8 @@ namespace Ionic.Zip
                 }
             }
 
-            // Remember the size of the blob for this entry. 
-            // We also have the starting position in the stream for this entry. 
+            // Remember the size of the blob for this entry.
+            // We also have the starting position in the stream for this entry.
             ze._LengthOfHeader = bytesRead;
             ze._TotalEntrySize = ze._LengthOfHeader + ze._CompressedFileDataSize + ze._LengthOfTrailer;
 
@@ -355,18 +357,17 @@ namespace Ionic.Zip
             // Store the position in the stream for this entry
             // change for workitem 8098
             entry.__FileDataPosition = entry.ArchiveStream.Position;
-            //entry.__FileDataPosition = entry._zipfile.RelativeOffset;
 
-            // seek past the data without reading it. We will read on Extract()            
+            // seek past the data without reading it. We will read on Extract()
             s.Seek(entry._CompressedFileDataSize + entry._LengthOfTrailer, SeekOrigin.Current);
 
             // ReadHeader moves the file pointer to the end of the entry header,
-            // as well as any encryption header. 
+            // as well as any encryption header.
 
             // CompressedFileDataSize includes:
             //   the maybe compressed, maybe encrypted file data
             //   the encryption trailer, if any
-            //   the bit 3 descriptor, if any 
+            //   the bit 3 descriptor, if any
 
             // workitem 5306
             // http://www.codeplex.com/DotNetZip/WorkItem/View.aspx?WorkItemId=5306
@@ -401,8 +402,8 @@ namespace Ionic.Zip
 
             // In some cases, the "data descriptor" is present, without a signature, even when
             // bit 3 of the BitField is NOT SET.  This is the CRC, followed
-            //    by the compressed length and the uncompressed length (4 bytes for each 
-            //    of those three elements).  Need to check that here.             
+            //    by the compressed length and the uncompressed length (4 bytes for each
+            //    of those three elements).  Need to check that here.
             //
             uint datum = (uint)Ionic.Zip.SharedUtilities.ReadInt(s);
             if (datum == entry._Crc32)
@@ -429,8 +430,8 @@ namespace Ionic.Zip
 
 
         // At current cursor position in the stream, read the extra field,
-        // and set the properties on the ZipEntry instance appropriately. 
-        // This can be called when processing the Extra field in the Central Directory, 
+        // and set the properties on the ZipEntry instance appropriately.
+        // This can be called when processing the Extra field in the Central Directory,
         // or in the local header.
         internal int ProcessExtraField(Stream s, Int16 extraFieldLength)
         {
@@ -466,7 +467,7 @@ namespace Ionic.Zip
 
                         case 0x5855:  // Info-zip Extra field (outdated)
                             // This is outdated, so the field is supported on
-                            // read only. 
+                            // read only.
                             j = ProcessExtraFieldInfoZipTimes(Buffer, j, DataSize, posn);
                             break;
 
@@ -505,15 +506,15 @@ namespace Ionic.Zip
             //           Flags     2 bytes  Processing flags
             //           CertData  TSize-8  Certificate decryption extra field data
             //                              (refer to the explanation for CertData
-            //                               in the section describing the 
-            //                               Certificate Processing Method under 
+            //                               in the section describing the
+            //                               Certificate Processing Method under
             //                               the Strong Encryption Specification)
             {
                 //Int16 format = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
                 j += 2;
                 _UnsupportedAlgorithmId = (UInt16)(Buffer[j] + Buffer[j + 1] * 256);
                 j += 2;
-                _Encryption = EncryptionAlgorithm.Unsupported;
+                _Encryption_FromZipFile = _Encryption = EncryptionAlgorithm.Unsupported;
 
                 // DotNetZip doesn't support this algorithm, but we don't need to throw here.
                 // we might just be reading the archive, which is fine.  We'll need to
@@ -548,22 +549,23 @@ namespace Ionic.Zip
                 if (vendorId != 0x4541)
                     throw new BadReadException(String.Format("  Unexpected vendor ID (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}", vendorId, posn));
 
-                this._KeyStrengthInBits = -1;
-                if (Buffer[j] == 1) _KeyStrengthInBits = 128;
-                if (Buffer[j] == 3) _KeyStrengthInBits = 256;
+                int keystrength= -1;
+                if (Buffer[j] == 1) keystrength = 128;
+                if (Buffer[j] == 3) keystrength = 256;
 
-                if (this._KeyStrengthInBits < 0)
-                    throw new BadReadException(String.Format("Invalid key strength ({0})", this._KeyStrengthInBits));
+                if (keystrength < 0)
+                    throw new BadReadException(String.Format("Invalid key strength ({0})", keystrength));
 
-                this._Encryption = (this._KeyStrengthInBits == 128)
+                _Encryption_FromZipFile = this._Encryption = (keystrength == 128)
                     ? EncryptionAlgorithm.WinZipAes128
                     : EncryptionAlgorithm.WinZipAes256;
 
                 j++;
 
                 // set the actual compression method
+                this._CompressionMethod_FromZipFile=
                 this._CompressionMethod = BitConverter.ToInt16(Buffer, j);
-                j += 2; // for the next segment of the extra field 
+                j += 2; // for the next segment of the extra field
             }
             return j;
         }
@@ -578,7 +580,7 @@ namespace Ionic.Zip
             // and the ZIP64 header may contain one or more of those.  If the
             // values are present, they will be found in the prescribed order.
             // There may also be a 4-byte "disk start number."
-            // This means that the DataSize must be 28 bytes or less.  
+            // This means that the DataSize must be 28 bytes or less.
 
             this._InputUsesZip64 = true;
 
@@ -709,7 +711,7 @@ namespace Ionic.Zip
             //
             // HeaderId   2 bytes    0x000a == NTFS stuff
             // Datasize   2 bytes    ?? (usually 32)
-            // reserved   4 bytes    ?? 
+            // reserved   4 bytes    ??
             // timetag    2 bytes    0x0001 == time
             // size       2 bytes    24 == 8 bytes each for ctime, mtime, atime
             // mtime      8 bytes    win32 ticks since win32epoch

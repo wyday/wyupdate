@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Net;
 using System.Windows.Forms;
 using wyDay.Controls;
 using wyUpdate.Common;
@@ -102,12 +103,13 @@ namespace wyUpdate
             panelDisplaying.TabIndex = 0;
             Controls.Add(panelDisplaying);
 
-            //process commandline argument
-            Arguments commands = new Arguments(args);
-            ProcessArguments(commands);
-
             try
             {
+                //process commandline argument
+                Arguments commands = new Arguments(args);
+                ProcessArguments(commands);
+
+
                 // load the self update information
                 if (!string.IsNullOrEmpty(selfUpdateFileLoc))
                 {
@@ -452,6 +454,21 @@ namespace wyUpdate
                 if (commands["server"] != null)
                     serverOverwrite = commands["server"];
 
+                if (commands["proxy"] != null)
+                {
+                    FileDownloader.CustomProxy = new WebProxy(commands["proxy"]);
+                    
+                    if (commands["proxyu"] != null)
+                    {
+                        FileDownloader.CustomProxy.Credentials = new NetworkCredential(
+                            commands["proxyu"],
+                            commands["proxyp"],
+
+                            // if the domain is null, use an empty string
+                            commands["proxyd"] ?? string.Empty
+                            );
+                    }
+                }
 
                 // only allow silent uninstalls 
                 if (uninstalling && commands["s"] != null)

@@ -3,21 +3,21 @@
 // ZipDirEntry.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006-2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2006-2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-19 11:29:18>
+// last saved (in emacs):
+// Time-stamp: <2010-January-06 14:44:15>
 //
 // ------------------------------------------------------------------
 //
@@ -25,7 +25,7 @@
 // Zip file central directory.
 //
 // Created: Tue, 27 Mar 2007  15:30
-// 
+//
 // ------------------------------------------------------------------
 
 
@@ -37,7 +37,7 @@ namespace Ionic.Zip
     partial class ZipEntry
     {
         /// <summary>
-        /// True if the referenced entry is a directory.  
+        /// True if the referenced entry is a directory.
         /// </summary>
         internal bool AttributesIndicateDirectory
         {
@@ -50,13 +50,13 @@ namespace Ionic.Zip
         {
             // __FileDataPosition is the position of the file data for an entry.
             // It is _RelativeOffsetOfLocalHeader + size of local header.
-            
+
             // We cannot know the __FileDataPosition until we read the local
             // header.
 
-            // You might think the local header is the same length as the record
-            // in the central directory, but that's not necessarily the case.
-            
+            // The local header is not necessarily the same length as the record
+            // in the central directory.
+
             // Set to -1, to indicate we need to read this later.
             this.__FileDataPosition = -1;
 
@@ -66,7 +66,7 @@ namespace Ionic.Zip
 #endif
 
         /// <summary>
-        /// Provides a human-readable string with information about the ZipEntry. 
+        /// Provides a human-readable string with information about the ZipEntry.
         /// </summary>
         public string Info
         {
@@ -88,7 +88,7 @@ namespace Ionic.Zip
                     .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
                     .Append(string.Format("  Is Text?: {0}\n", this._IsText))
                     .Append(string.Format("  Is Directory?: {0}\n", this._IsDirectory))
-                    .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64)); 
+                    .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64));
                 if (!string.IsNullOrEmpty(this._Comment))
                 {
                     builder.Append(string.Format("  Comment: {0}\n", this._Comment));
@@ -101,7 +101,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Reads one entry from the zip directory structure in the zip file. 
+        /// Reads one entry from the zip directory structure in the zip file.
         /// </summary>
         /// <param name="zf">
         /// The zipfile for which a directory entry will be read.  From this param, the
@@ -161,6 +161,8 @@ namespace Ionic.Zip
                 zde._UncompressedSize = (uint)(block[i++] + block[i++] * 256 + block[i++] * 256 * 256 + block[i++] * 256 * 256 * 256);
             }
 
+            // preserve
+            zde._CompressionMethod_FromZipFile = zde._CompressionMethod;
 
             zde._filenameLength = (short)(block[i++] + block[i++] * 256);
             zde._extraFieldLength = (short)(block[i++] + block[i++] * 256);
@@ -181,11 +183,11 @@ namespace Ionic.Zip
             if ((zde._BitField & 0x0800) == 0x0800)
             {
                 // UTF-8 is in use
-                zde._LocalFileName = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block);
+                zde._FileNameInArchive = Ionic.Zip.SharedUtilities.Utf8StringFromBuffer(block);
             }
             else
             {
-                zde._LocalFileName = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
+                zde._FileNameInArchive = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
             }
 
             // Console.WriteLine("\nEntry : {0}", zde._LocalFileName);
@@ -194,18 +196,17 @@ namespace Ionic.Zip
             // Console.WriteLine("  Lastmod:              {0}", zde._LastModified.ToString("u"));
             // Console.WriteLine("  CRC:                  0x{0:X8}", zde._Crc32);
             // Console.WriteLine("  Comp / Uncomp:        0x{0:X8} ({0})   0x{1:X8} ({1})", zde._CompressedSize, zde._UncompressedSize);
-            
-            zde._FileNameInArchive = zde._LocalFileName;
+
+            //zde._FileNameInArchive = zde._LocalFileName;
 
             if (zde.AttributesIndicateDirectory) zde.MarkAsDirectory();  // may append a slash to filename if nec.
-
             // workitem 6898
-            if (zde._LocalFileName.EndsWith("/")) zde.MarkAsDirectory();
+            else if (zde._FileNameInArchive.EndsWith("/")) zde.MarkAsDirectory();
 
             zde._CompressedFileDataSize = zde._CompressedSize;
             if ((zde._BitField & 0x01) == 0x01)
             {
-                zde._Encryption = EncryptionAlgorithm.PkzipWeak; // this may change after processing the Extra field
+                zde._Encryption_FromZipFile = zde._Encryption = EncryptionAlgorithm.PkzipWeak; // this may change after processing the Extra field
                 zde._sourceIsEncrypted = true;
             }
 
@@ -232,7 +233,7 @@ namespace Ionic.Zip
                         zde.Encryption == EncryptionAlgorithm.WinZipAes256)
             {
                 zde._CompressedFileDataSize = zde.CompressedSize -
-                    (zde.LengthOfCryptoHeaderBytes + 10); 
+                    (ZipEntry.GetLengthOfCryptoHeaderBytes(zde.Encryption) + 10);
                 zde._LengthOfTrailer = 10;
             }
 #endif
@@ -266,9 +267,9 @@ namespace Ionic.Zip
             return zde;
         }
 
-        
+
         /// <summary>
-        /// Returns true if the passed-in value is a valid signature for a ZipDirEntry. 
+        /// Returns true if the passed-in value is a valid signature for a ZipDirEntry.
         /// </summary>
         /// <param name="signature">the candidate 4-byte signature value.</param>
         /// <returns>true, if the signature is valid according to the PKWare spec.</returns>

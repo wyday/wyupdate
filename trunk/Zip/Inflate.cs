@@ -1,21 +1,21 @@
 // Inflate.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-October-28 13:59:21>
+// last saved (in emacs):
+// Time-stamp: <2010-January-08 18:32:12>
 //
 // ------------------------------------------------------------------
 //
@@ -26,22 +26,22 @@
 // reproducing the copyright to that code here.
 //
 // ------------------------------------------------------------------
-// 
+//
 // Copyright (c) 2000,2001,2002,2003 ymnk, JCraft,Inc. All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice,
 // this list of conditions and the following disclaimer.
-// 
-// 2. Redistributions in binary form must reproduce the above copyright 
-// notice, this list of conditions and the following disclaimer in 
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in
 // the documentation and/or other materials provided with the distribution.
-// 
+//
 // 3. The names of the authors may not be used to endorse or promote products
 // derived from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
 // INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
 // FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL JCRAFT,
@@ -52,7 +52,7 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 // -----------------------------------------------------------------------
 //
 // This program is based on zlib-1.1.3; credit to authors
@@ -87,32 +87,32 @@ namespace Ionic.Zlib
             BAD    = 9,                     // ot a data error--stuck here
         }
 
-        private InflateBlockMode mode;                    // current inflate_block mode 
+        private InflateBlockMode mode;                    // current inflate_block mode
 
-        internal int left;                                // if STORED, bytes left to copy 
+        internal int left;                                // if STORED, bytes left to copy
 
-        internal int table;                               // table lengths (14 bits) 
-        internal int index;                               // index into blens (or border) 
-        internal int[] blens;                             // bit lengths of codes 
-        internal int[] bb = new int[1];                   // bit length tree depth 
-        internal int[] tb = new int[1];                   // bit length decoding tree 
+        internal int table;                               // table lengths (14 bits)
+        internal int index;                               // index into blens (or border)
+        internal int[] blens;                             // bit lengths of codes
+        internal int[] bb = new int[1];                   // bit length tree depth
+        internal int[] tb = new int[1];                   // bit length decoding tree
 
-        internal InflateCodes codes = new InflateCodes(); // if CODES, current state 
+        internal InflateCodes codes = new InflateCodes(); // if CODES, current state
 
-        internal int last;                                // true if this block is the last block 
+        internal int last;                                // true if this block is the last block
 
         internal ZlibCodec _codec;                        // pointer back to this zlib stream
 
-                                                          // mode independent information 
-        internal int bitk;                                // bits in bit buffer 
-        internal int bitb;                                // bit buffer 
-        internal int[] hufts;                             // single malloc for tree space 
-        internal byte[] window;                           // sliding window 
-        internal int end;                                 // one byte after sliding window 
-        internal int readAt;                              // window read pointer 
-        internal int writeAt;                             // window write pointer 
-        internal System.Object checkfn;                   // check function 
-        internal uint check;                              // check on output 
+                                                          // mode independent information
+        internal int bitk;                                // bits in bit buffer
+        internal int bitb;                                // bit buffer
+        internal int[] hufts;                             // single malloc for tree space
+        internal byte[] window;                           // sliding window
+        internal int end;                                 // one byte after sliding window
+        internal int readAt;                              // window read pointer
+        internal int writeAt;                             // window write pointer
+        internal System.Object checkfn;                   // check function
+        internal uint check;                              // check on output
 
         internal InfTree inftree = new InfTree();
 
@@ -129,7 +129,7 @@ namespace Ionic.Zlib
 
         internal uint Reset()
         {
-            uint oldCheck = check; 
+            uint oldCheck = check;
             mode = InflateBlockMode.TYPE;
             bitk = 0;
             bitb = 0;
@@ -140,7 +140,7 @@ namespace Ionic.Zlib
             return oldCheck;
         }
 
-        
+
         internal int Process(int r)
         {
             int t; // temporary storage
@@ -194,7 +194,7 @@ namespace Ionic.Zlib
 
                         switch ((uint)t >> 1)
                         {
-                            case 0:  // stored 
+                            case 0:  // stored
                                 b >>= 3; k -= (3);
                                 t = k & 7; // go to byte boundary
                                 b >>= t; k -= t;
@@ -545,7 +545,7 @@ namespace Ionic.Zlib
                         tb[0] = -1;
                         {
                             int[] bl = new int[] { 9 };  // must be <= 9 for lookahead assumptions
-                            int[] bd = new int[] { 6 }; // must be <= 9 for lookahead assumptions                                                       
+                            int[] bd = new int[] { 6 }; // must be <= 9 for lookahead assumptions
                             int[] tl = new int[1];
                             int[] td = new int[1];
 
@@ -652,7 +652,7 @@ namespace Ionic.Zlib
             }
         }
 
-        
+
         internal void Free()
         {
             Reset();
@@ -667,7 +667,7 @@ namespace Ionic.Zlib
         }
 
         // Returns true if inflate is currently at the end of a block generated
-        // by Z_SYNC_FLUSH or Z_FULL_FLUSH. 
+        // by Z_SYNC_FLUSH or Z_FULL_FLUSH.
         internal int SyncPoint()
         {
             return mode == InflateBlockMode.LENS ? 1 : 0;
@@ -690,7 +690,7 @@ namespace Ionic.Zlib
                     // compute bytes to copy
                     nBytes = writeAt - readAt;
                 }
-                
+
                 // workitem 8870
                 if (nBytes == 0)
                 {
@@ -701,7 +701,7 @@ namespace Ionic.Zlib
 
                 if (nBytes > _codec.AvailableBytesOut)
                     nBytes = _codec.AvailableBytesOut;
-                
+
                 if (nBytes != 0 && r == ZlibConstants.Z_BUF_ERROR)
                     r = ZlibConstants.Z_OK;
 
@@ -734,7 +734,7 @@ namespace Ionic.Zlib
         }
     }
 
-    
+
     internal static class InternalInflateConstants
     {
         // And'ing with mask[n] masks the lower n bits
@@ -745,7 +745,7 @@ namespace Ionic.Zlib
             0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff };
     }
 
-    
+
     sealed class InflateCodes
     {
         // waiting for "i:"=input,
@@ -1509,7 +1509,7 @@ namespace Ionic.Zlib
             return ZlibConstants.Z_OK;
         }
 
-        
+
         internal int Inflate(FlushType flush)
         {
             int b;
@@ -1524,7 +1524,7 @@ namespace Ionic.Zlib
             // workitem 8870
             int f = ZlibConstants.Z_OK;
             int r = ZlibConstants.Z_BUF_ERROR;
-            
+
             while (true)
             {
                 switch (mode)
@@ -1551,7 +1551,7 @@ namespace Ionic.Zlib
                         mode = InflateManagerMode.FLAG;
                         break;
 
-                        
+
                     case InflateManagerMode.FLAG:
                         if (_codec.AvailableBytesIn == 0) return r;
                         r = f;
@@ -1610,14 +1610,14 @@ namespace Ionic.Zlib
                         mode = InflateManagerMode.DICT0;
                         return ZlibConstants.Z_NEED_DICT;
 
-                        
+
                     case InflateManagerMode.DICT0:
                         mode = InflateManagerMode.BAD;
                         _codec.Message = "need dictionary";
                         marker = 0; // can try inflateSync
                         return ZlibConstants.Z_STREAM_ERROR;
 
-                        
+
                     case InflateManagerMode.BLOCKS:
                         r = blocks.Process(r);
                         if (r == ZlibConstants.Z_DATA_ERROR)
@@ -1626,7 +1626,7 @@ namespace Ionic.Zlib
                             marker = 0; // can try inflateSync
                             break;
                         }
-                        
+
                         if (r == ZlibConstants.Z_OK) r = f;
 
                         if (r != ZlibConstants.Z_STREAM_END)
@@ -1722,7 +1722,7 @@ namespace Ionic.Zlib
             return ZlibConstants.Z_OK;
         }
 
-        
+
         private static readonly byte[] mark = new byte[] { 0, 0, 0xff, 0xff };
 
         internal int Sync()
@@ -1781,7 +1781,7 @@ namespace Ionic.Zlib
             return ZlibConstants.Z_OK;
         }
 
-        
+
         // Returns true if inflate is currently at the end of a block generated
         // by Z_SYNC_FLUSH or Z_FULL_FLUSH. This function is used by one PPP
         // implementation to provide an additional safety check. PPP uses Z_SYNC_FLUSH

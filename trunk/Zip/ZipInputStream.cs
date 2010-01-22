@@ -2,29 +2,29 @@
 //
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa.  
+// Copyright (c) 2009 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-October-23 21:01:16>
+// last saved (in emacs):
+// Time-stamp: <2009-December-27 00:26:20>
 //
 // ------------------------------------------------------------------
 //
 // This module defines the ZipInputStream class, which is a stream metaphor for
 // reading zip files.  This class does not depend on Ionic.Zip.ZipFile, but rather
-// stands alongside it as an alternative "container" for ZipEntry, when reading zips. 
+// stands alongside it as an alternative "container" for ZipEntry, when reading zips.
 //
-// It adds one interesting method to the normal "stream" interface: GetNextEntry.  
+// It adds one interesting method to the normal "stream" interface: GetNextEntry.
 //
 // ------------------------------------------------------------------
 //
@@ -38,9 +38,9 @@ using Ionic.Zip;
 namespace  Ionic.Zip
 {
     /// <summary>
-    ///   Provides a stream metaphor for reading zip files. 
+    ///   Provides a stream metaphor for reading zip files.
     /// </summary>
-    /// 
+    ///
     /// <remarks>
     /// <para>
     ///   This class provides an alternative programming model for reading zip files to
@@ -96,7 +96,7 @@ namespace  Ionic.Zip
     ///     When reading larger files, <c>ZipInputStream</c> will always underperform
     ///     <c>ZipFile</c>. This is because the <c>ZipInputStream</c> does a full scan on the
     ///     zip file, while the <c>ZipFile</c> class reads the central directory of the
-    ///     zip file. 
+    ///     zip file.
     ///   </item>
     ///
     /// </list>
@@ -129,7 +129,7 @@ namespace  Ionic.Zip
         ///   file. All of these things are done automatically by a call to <see
         ///   cref="ZipEntry.Extract()">ZipEntry.Extract()</see>.  For this reason, the
         ///   <c>ZipInputStream</c> is generally recommended for when your application wants
-        ///   to extract the data, without storing that data into a file. 
+        ///   to extract the data, without storing that data into a file.
         /// </para>
         ///
         /// <para>
@@ -159,7 +159,7 @@ namespace  Ionic.Zip
         ///     When reading larger files, <c>ZipInputStream</c> will always underperform
         ///     <c>ZipFile</c>. This is because the <c>ZipInputStream</c> does a full scan on the
         ///     zip file, while the <c>ZipFile</c> class reads the central directory of the
-        ///     zip file. 
+        ///     zip file.
         ///   </item>
         ///
         /// </list>
@@ -230,7 +230,7 @@ namespace  Ionic.Zip
         public ZipInputStream(Stream stream)  : this (stream, false) { }
 
 
-        
+
         /// <summary>
         ///   Create a <c>ZipInputStream</c>, given the name of an existing zip file.
         /// </summary>
@@ -253,7 +253,7 @@ namespace  Ionic.Zip
         /// </remarks>
         ///
         /// <param name="fileName">
-        ///   The name of the filesystem file to read. 
+        ///   The name of the filesystem file to read.
         /// </param>
         ///
         /// <example>
@@ -313,7 +313,7 @@ namespace  Ionic.Zip
             _Init(stream, false);
         }
 
-        
+
         /// <summary>
         ///   Create a <c>ZipInputStream</c>, explicitly specifying whether to
         ///   keep the underlying stream open.
@@ -337,7 +337,7 @@ namespace  Ionic.Zip
         {
             _Init(stream, leaveOpen);
         }
-        
+
         private void _Init(Stream stream, bool leaveOpen)
         {
             _inputStream = stream;
@@ -355,7 +355,7 @@ namespace  Ionic.Zip
         ///   those entries whose filenames or comments cannot be encoded with the
         ///   default (IBM437) encoding.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         ///   In <see href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">its
@@ -413,8 +413,8 @@ namespace  Ionic.Zip
                 _provisionalAlternateEncoding = value;
             }
         }
-        
-        
+
+
         /// <summary>
         ///   Size of the work buffer to use for the ZLIB codec during decompression.
         /// </summary>
@@ -433,13 +433,13 @@ namespace  Ionic.Zip
             set;
         }
 
-        
+
         /// <summary>
         ///   Sets the password to be used on the <c>ZipInputStream</c> instance.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
-        /// 
+        ///
         /// <para>
         ///   When reading a zip archive, this password is used to read and decrypt the
         ///   entries that are encrypted within the zip file. When entries within a zip
@@ -451,14 +451,14 @@ namespace  Ionic.Zip
         ///   When reading an entry that is not encrypted, the value of this property is
         ///   ignored.
         /// </para>
-        /// 
+        ///
         /// </remarks>
         ///
         /// <example>
         ///
         ///   This example uses the ZipInputStream to read and extract entries from a
         ///   zip file, using a potentially different password for each entry.
-        /// 
+        ///
         /// <code lang="C#">
         /// byte[] buffer= new byte[2048];
         /// int n;
@@ -512,11 +512,11 @@ namespace  Ionic.Zip
         {
             get
             {
-                return _inputStream;    
+                return _inputStream;
             }
         }
 
-        
+
         /// <summary>
         ///   Read the data from the stream into the buffer.
         /// </summary>
@@ -524,7 +524,7 @@ namespace  Ionic.Zip
         /// <remarks>
         /// <para>
         ///   The data for the zipentry will be decrypted and uncompressed, as
-        ///   necessary, before being copied into the buffer.  
+        ///   necessary, before being copied into the buffer.
         /// </para>
         ///
         /// <para>
@@ -546,7 +546,7 @@ namespace  Ionic.Zip
                 _exceptionPending = true;
                 throw new System.InvalidOperationException("The stream has been closed.");
             }
-            
+
             if (_needSetup)
                 _SetupStream();
 
@@ -560,14 +560,14 @@ namespace  Ionic.Zip
             if (_LeftToRead == 0)
             {
                 int CrcResult = _crcStream.Crc;
-                _currentEntry.VerifyCrc(CrcResult);
+                _currentEntry.VerifyCrcAfterExtract(CrcResult);
                 _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
             }
-            
+
             return n;
         }
 
-        
+
 
         /// <summary>
         ///   Read the next entry from the zip file.
@@ -621,37 +621,45 @@ namespace  Ionic.Zip
             _findRequired= false;
             return _currentEntry;
         }
-        
+
 
         /// <summary>
-        ///   Close the stream.
+        ///   Dispose the stream.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        ///   This method closes the ZipInputStream.  It may also close the underlying stream, depending
-        ///   on which constructor was used. 
+        ///   This method disposes the ZipInputStream.  It may also close the underlying
+        ///   stream, depending on which constructor was used.
         /// </para>
         ///
         /// <para>
-        ///   Typically the application will call <c>Close()</c> implicitly, via a <c>using</c>
+        ///   Typically the application will call <c>Dispose()</c> implicitly, via a <c>using</c>
         ///   statement in C#, or a <c>Using</c> statement in VB.
         /// </para>
-        /// 
+        ///
         /// </remarks>
         ///
-        public override void Close()
+        protected override void Dispose(bool notCalledFromFinalizer)
         {
             if (_closed) return;
 
-            // When ZipInputStream is used within a using clause, and an exception is thrown,
-            // Close() is invoked.  But we don't want to try to write anything in that case.
-            // Eventually the exception will be propagated to the application.
-            if (_exceptionPending) return;
-            
-            if (!_leaveUnderlyingStreamOpen)
-                _inputStream.Close();
-            
+            if (notCalledFromFinalizer)
+            {
+                // When ZipInputStream is used within a using clause, and an exception is thrown,
+                // Close() is invoked.  But we don't want to try to write anything in that case.
+                // Eventually the exception will be propagated to the application.
+                if (_exceptionPending) return;
+
+                if (!_leaveUnderlyingStreamOpen)
+                {
+#if NETCF
+                    _inputStream.Close();
+#else
+                    _inputStream.Dispose();
+#endif
+                }
+            }
             _closed= true;
         }
 
@@ -660,17 +668,17 @@ namespace  Ionic.Zip
         /// Always returns true.
         /// </summary>
         public override bool CanRead  { get { return true; }}
-        
+
         /// <summary>
         /// Returns the value of <c>CanSeek</c> for the underlying (wrapped) stream.
         /// </summary>
         public override bool CanSeek  { get { return _inputStream.CanSeek; } }
-        
+
         /// <summary>
         /// Always returns false.
         /// </summary>
         public override bool CanWrite { get { return false; } }
-        
+
         /// <summary>
         /// Returns the length of the underlying stream.
         /// </summary>
@@ -696,7 +704,7 @@ namespace  Ionic.Zip
             throw new NotSupportedException("Flush");
         }
 
-                
+
         /// <summary>
         /// This method always throws a NotSupportedException.
         /// </summary>
@@ -708,7 +716,7 @@ namespace  Ionic.Zip
             throw new NotSupportedException("Write");
         }
 
-        
+
         /// <summary>
         ///   This method seeks in the underlying stream.
         /// </summary>
@@ -717,7 +725,7 @@ namespace  Ionic.Zip
         /// <para>
         ///   Call this method if you want to seek around within the zip file for random access.
         /// </para>
-        ///   
+        ///
         /// <para>
         ///   Applications can intermix calls to <c>Seek()</c> with calls to <see
         ///   cref="GetNextEntry()"/>.  After a call to <c>Seek()</c>,
@@ -725,7 +733,7 @@ namespace  Ionic.Zip
         ///   the current position in the input stream. You're on your own for finding
         ///   out just where to seek in the stream, to get to the various entries.
         /// </para>
-        ///   
+        ///
         /// </remarks>
         ///
         /// <param name="offset">the offset point to seek to</param>
@@ -746,7 +754,7 @@ namespace  Ionic.Zip
             throw new NotSupportedException();
         }
 
-        
+
         private Stream _inputStream;
         private System.Text.Encoding _provisionalAlternateEncoding;
         private ZipEntry _currentEntry;
@@ -757,7 +765,7 @@ namespace  Ionic.Zip
         private Int64 _LeftToRead;
         private String _password;
         private Int64 _endOfEntry;
-        
+
         private bool _leaveUnderlyingStreamOpen;
         private bool _closed;
         private bool _findRequired;
@@ -765,5 +773,5 @@ namespace  Ionic.Zip
     }
 
 
-   
+
 }

@@ -2,21 +2,21 @@
 //
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa.  
+// Copyright (c) 2009 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-November-03 18:16:30>
+// last saved (in emacs):
+// Time-stamp: <2010-January-06 14:14:40>
 //
 // ------------------------------------------------------------------
 //
@@ -28,14 +28,14 @@
 //  - Comment
 //  - Encryption
 //  - Password
-//  - CodecBufferSize 
+//  - CodecBufferSize
 //  - CompressionLevel
 //  - EnableZip64 (UseZip64WhenSaving)
+//  - IgnoreCase (!CaseSensitiveRetrieval)
 //
 // It adds these novel methods:
 //
 //  - PutNextEntry
-//  - Close
 //
 //
 // ------------------------------------------------------------------
@@ -47,12 +47,12 @@ using System.Collections.Generic;
 using System.IO;
 using Ionic.Zip;
 
-namespace  Ionic.Zip
+namespace Ionic.Zip
 {
     /// <summary>
-    ///   Provides a stream metaphor for generating zip files. 
+    ///   Provides a stream metaphor for generating zip files.
     /// </summary>
-    /// 
+    ///
     /// <remarks>
     /// <para>
     ///   This class provides an alternative programming model to the one enabled by the
@@ -63,7 +63,7 @@ namespace  Ionic.Zip
     ///
     /// <para>
     ///   Some designs require a writable stream for output.  This stream can be used to
-    ///   produce a zip file, as it is written.  
+    ///   produce a zip file, as it is written.
     /// </para>
     ///
     /// <para>
@@ -83,7 +83,7 @@ namespace  Ionic.Zip
     /// </para>
     ///
     /// <para>
-    ///   Aside from the differences in programming model, there are other 
+    ///   Aside from the differences in programming model, there are other
     ///   differences in capability between the two classes.
     /// </para>
     ///
@@ -91,7 +91,7 @@ namespace  Ionic.Zip
     ///   <item>
     ///     <c>ZipFile</c> can be used to read and extract zip files, in addition to
     ///     creating zip files. <c>ZipOutputStream</c> cannot read zip files. If you want
-    ///     to use a stream to read zip files, check out the <see cref="ZipInputStream"/> class. 
+    ///     to use a stream to read zip files, check out the <see cref="ZipInputStream"/> class.
     ///   </item>
     ///
     ///   <item>
@@ -100,7 +100,7 @@ namespace  Ionic.Zip
     ///   </item>
     ///
     ///   <item>
-    ///     <c>ZipOutputStream</c> cannot produce a self-extracting archive. 
+    ///     <c>ZipOutputStream</c> cannot produce a self-extracting archive.
     ///   </item>
     /// </list>
     ///
@@ -132,7 +132,7 @@ namespace  Ionic.Zip
         ///   parallel compression to be used, always.
         /// </para>
         /// </remarks>
-        /// 
+        ///
         /// <param name="stream">
         /// The stream to wrap. It must be writable. This stream will be closed at
         /// the time the ZipOutputStream is closed.
@@ -151,19 +151,19 @@ namespace  Ionic.Zip
         ///         System.Console.WriteLine("Nothing to do.");
         ///         return;
         ///     }
-        /// 
+        ///
         ///     using (var raw = File.Open(_outputFileName, FileMode.Create, FileAccess.ReadWrite ))
         ///     {
         ///         using (var output= new ZipOutputStream(raw))
         ///         {
         ///             output.Password = "VerySecret!";
         ///             output.Encryption = EncryptionAlgorithm.WinZipAes256;
-        /// 
+        ///
         ///             foreach (string inputFileName in filesToZip)
         ///             {
         ///                 System.Console.WriteLine("file: {0}", inputFileName);
-        /// 
-        ///                 output.PutNextEntry(inputFileName); 
+        ///
+        ///                 output.PutNextEntry(inputFileName);
         ///                 using (var input = File.Open(inputFileName, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Write ))
         ///                 {
         ///                     byte[] buffer= new byte[2048];
@@ -208,7 +208,7 @@ namespace  Ionic.Zip
         /// End Sub
         /// </code>
         /// </example>
-        public ZipOutputStream(Stream stream)  : this (stream, false) { }
+        public ZipOutputStream(Stream stream) : this(stream, false) { }
 
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace  Ionic.Zip
         /// </remarks>
         ///
         /// <param name="fileName">
-        ///   The name of the zip file to create. 
+        ///   The name of the zip file to create.
         /// </param>
         ///
         /// <example>
@@ -238,7 +238,7 @@ namespace  Ionic.Zip
         ///         System.Console.WriteLine("Nothing to do.");
         ///         return;
         ///     }
-        /// 
+        ///
         ///     using (var output= new ZipOutputStream(outputFileName))
         ///     {
         ///         output.Password = "VerySecret!";
@@ -248,7 +248,7 @@ namespace  Ionic.Zip
         ///         {
         ///             System.Console.WriteLine("file: {0}", inputFileName);
         ///
-        ///             output.PutNextEntry(inputFileName); 
+        ///             output.PutNextEntry(inputFileName);
         ///             using (var input = File.Open(inputFileName, FileMode.Open, FileAccess.Read,
         ///                                          FileShare.Read | FileShare.Write ))
         ///             {
@@ -293,12 +293,12 @@ namespace  Ionic.Zip
         /// </example>
         public ZipOutputStream(String fileName)
         {
-            Stream stream = File.Open(fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None );
+            Stream stream = File.Open(fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
             _Init(stream, false);
             _name = fileName;
         }
 
-        
+
         /// <summary>
         ///   Create a ZipOutputStream.
         /// </summary>
@@ -324,32 +324,33 @@ namespace  Ionic.Zip
 
         private void _Init(Stream stream, bool leaveOpen)
         {
-            _outputStream = stream;
+            // workitem 9307
+            _outputStream = stream.CanRead ? stream : new CountingStream(stream);
             CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
             _encryption = EncryptionAlgorithm.None;
-            _entriesWritten = new List<ZipEntry>();
+            _entriesWritten = new Dictionary<String, ZipEntry>(StringComparer.Ordinal);
             _zip64 = Zip64Option.Never;
             _leaveUnderlyingStreamOpen = leaveOpen;
             Strategy = Ionic.Zlib.CompressionStrategy.Default;
             _name = "unknown";
-#if !NETCF    
+#if !NETCF
             ParallelDeflateThreshold = -1L;
 #endif
         }
 
-        
+
         /// <summary>
         ///   Sets the password to be used on the <c>ZipOutputStream</c> instance.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
-        /// 
+        ///
         /// <para>
         ///   When writing a zip archive, this password is applied to the entries, not
         ///   to the zip archive itself. It applies to any <c>ZipEntry</c> subsequently
         ///   written to the <c>ZipOutputStream</c>.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   Using a password does not encrypt or protect the "directory" of the
         ///   archive - the list of entries contained in the archive.  If you set the
@@ -359,7 +360,7 @@ namespace  Ionic.Zip
         ///   will appear in clear text, but the contents of the individual files are
         ///   encrypted.  This is how Zip encryption works.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   If you set this property, and then add a set of entries to the archive via
         ///   calls to <c>PutNextEntry</c>, then each entry is encrypted with that
@@ -368,7 +369,7 @@ namespace  Ionic.Zip
         ///   password to <c>null</c> (<c>Nothing</c> in VB), and add another entry, the
         ///   first entry is encrypted and the second is not.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   When setting the <c>Password</c>, you may also want to explicitly set the <see
         ///   cref="Encryption"/> property, to specify how to encrypt the entries added
@@ -378,7 +379,7 @@ namespace  Ionic.Zip
         ///   you set the password to a <c>null</c> value (<c>Nothing</c> in VB),
         ///   <c>Encryption</c> is reset to None.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   Special case: if you wrap a ZipOutputStream around a non-seekable stream,
         ///   and use encryption, and emit an entry of zero bytes, the <c>Close()</c> or
@@ -390,12 +391,12 @@ namespace  Ionic.Zip
         {
             set
             {
-                if (_closed)
+                if (_disposed)
                 {
                     _exceptionPending = true;
                     throw new System.InvalidOperationException("The stream has been closed.");
                 }
-                
+
                 _password = value;
                 if (_password == null)
                 {
@@ -408,7 +409,7 @@ namespace  Ionic.Zip
             }
         }
 
-        
+
         /// <summary>
         ///   The Encryption to use for entries added to the <c>ZipOutputStream</c>.
         /// </summary>
@@ -416,9 +417,9 @@ namespace  Ionic.Zip
         /// <remarks>
         /// <para>
         ///   The specified Encryption is applied to the entries subsequently
-        ///   written to the <c>ZipOutputStream</c> instance.  
+        ///   written to the <c>ZipOutputStream</c> instance.
         /// </para>
-        /// 
+        ///
         /// <para>
         ///   If you set this to something other than
         ///   EncryptionAlgorithm.None, you will also need to set the
@@ -438,7 +439,7 @@ namespace  Ionic.Zip
             }
             set
             {
-                if (_closed)
+                if (_disposed)
                 {
                     _exceptionPending = true;
                     throw new System.InvalidOperationException("The stream has been closed.");
@@ -448,7 +449,7 @@ namespace  Ionic.Zip
                     _exceptionPending = true;
                     throw new InvalidOperationException("You may not set Encryption to that value.");
                 }
-                _encryption= value;
+                _encryption = value;
             }
         }
 
@@ -469,7 +470,7 @@ namespace  Ionic.Zip
             set;
         }
 
-        
+
         /// <summary>
         ///   The compression strategy to use for all entries.
         /// </summary>
@@ -484,8 +485,8 @@ namespace  Ionic.Zip
         /// </remarks>
         public Ionic.Zlib.CompressionStrategy Strategy
         {
-            get ;
-            set ;
+            get;
+            set;
         }
 
 
@@ -505,16 +506,16 @@ namespace  Ionic.Zip
             }
             set
             {
-                if (_closed)
+                if (_disposed)
                 {
                     _exceptionPending = true;
                     throw new System.InvalidOperationException("The stream has been closed.");
                 }
-                _timestamp= value;
+                _timestamp = value;
             }
         }
 
-        
+
         /// <summary>
         ///   Sets the compression level to be used for entries subsequently added to
         ///   the zip archive.
@@ -529,11 +530,11 @@ namespace  Ionic.Zip
         ///
         ///  <para>
         ///    As with some other properties on the <c>ZipOutputStream</c> class, like <see
-        ///    cref="Password"/>, and <see cref="Encryption"/>, 
+        ///    cref="Password"/>, and <see cref="Encryption"/>,
         ///    setting this property on a <c>ZipOutputStream</c>
         ///    instance will cause the specified <c>CompressionLevel</c> to be used on all
         ///    <see cref="ZipEntry"/> items that are subsequently added to the
-        ///    <c>ZipOutputStream</c> instance. 
+        ///    <c>ZipOutputStream</c> instance.
         ///  </para>
         ///
         ///  <para>
@@ -552,7 +553,7 @@ namespace  Ionic.Zip
             set;
         }
 
-                
+
         /// <summary>
         ///   A comment attached to the zip archive.
         /// </summary>
@@ -578,7 +579,7 @@ namespace  Ionic.Zip
         ///   you want an encoded Comment, for example using code page 950 "Big-5
         ///   Chinese".  DotNetZip will encode the comment in the code page specified by
         ///   <see cref="ProvisionalAlternateEncoding"/>, at the time of the call to
-        ///   <c>Close()</c>.
+        ///   <c>Close()</c> or <c>Dispose</c>.
         /// </para>
         ///
         /// </remarks>
@@ -587,7 +588,7 @@ namespace  Ionic.Zip
             get { return _comment; }
             set
             {
-                if (_closed)
+                if (_disposed)
                 {
                     _exceptionPending = true;
                     throw new System.InvalidOperationException("The stream has been closed.");
@@ -599,7 +600,7 @@ namespace  Ionic.Zip
 
 
         /// <summary>
-        ///   Specify whether to use ZIP64 extensions when saving a zip archive. 
+        ///   Specify whether to use ZIP64 extensions when saving a zip archive.
         /// </summary>
         ///
         /// <remarks>
@@ -611,7 +612,7 @@ namespace  Ionic.Zip
         /// </para>
         ///
         /// <para>
-        ///   You must set this property before calling <c>Write()</c>. 
+        ///   You must set this property before calling <c>Write()</c>.
         /// </para>
         ///
         /// </remarks>
@@ -623,7 +624,7 @@ namespace  Ionic.Zip
             }
             set
             {
-                if (_closed)
+                if (_disposed)
                 {
                     _exceptionPending = true;
                     throw new System.InvalidOperationException("The stream has been closed.");
@@ -634,11 +635,11 @@ namespace  Ionic.Zip
 
 
         /// <summary>
-        ///   Indicates whether ZIP64 extensions were used when saving the zip archive. 
+        ///   Indicates whether ZIP64 extensions were used when saving the zip archive.
         /// </summary>
         ///
         /// <remarks>
-        ///   This is interesting after the <c>ZipOutputStream</c> has been closed.
+        ///   The value is defined only after the <c>ZipOutputStream</c> has been closed.
         /// </remarks>
         public bool OutputUsedZip64
         {
@@ -648,6 +649,39 @@ namespace  Ionic.Zip
             }
         }
 
+
+        /// <summary>
+        ///   Whether the ZipOutputStream should use case-insensitive comparisons when
+        ///   checking for uniqueness of zip entries.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   <para>
+        ///   Though the zip specification doesn't prohibit zipfiles with duplicate
+        ///   entries, Sane zip files have no duplicates, and the DotNetZip library
+        ///   cannot create zip files with duplicate entries. If an application attempts
+        ///   to call <see cref="PutNextEntry(String)"/> with a name that duplicates one
+        ///   already used within the archive, the library will throw an Exception.
+        ///   </para>
+        ///   <para>
+        ///   This property allows the application to specify whether the
+        ///   ZipOutputStream instance considers ordinal case when checking for
+        ///   uniqueness of zip entries.
+        ///   </para>
+        /// </remarks>
+        public bool IgnoreCase
+        {
+          get
+          {
+              return !_DontIgnoreCase;
+          }
+
+          set
+          {
+              _DontIgnoreCase = !value;
+          }
+
+        }
 
 
         /// <summary>
@@ -785,7 +819,7 @@ namespace  Ionic.Zip
         ///   those entries whose filenames or comments cannot be encoded with the
         ///   default (IBM437) encoding.
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
         ///   In <see href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">its
@@ -812,7 +846,7 @@ namespace  Ionic.Zip
         /// </para>
         ///
         /// <para>
-        ///   Be aware that a zip file created after you've explicitly set the 
+        ///   Be aware that a zip file created after you've explicitly set the
         ///   <c>ProvisionalAlternateEncoding</c> property to a value other than
         ///   IBM437 may not be compliant to the PKWare specification, and may not be
         ///   readable by compliant archivers.  On the other hand, many (most?)
@@ -872,10 +906,10 @@ namespace  Ionic.Zip
                 _provisionalAlternateEncoding = value;
             }
         }
-        
 
-                
-#if !NETCF    
+
+
+#if !NETCF
         /// <summary>
         ///   The size threshold for an entry, above which a parallel deflate is used.
         /// </summary>
@@ -948,25 +982,23 @@ namespace  Ionic.Zip
             }
         }
 #endif
-        
-        
+
+
         private void InsureUniqueEntry(ZipEntry ze1)
         {
-            foreach (ZipEntry ze2 in _entriesWritten)
+            if (_entriesWritten.ContainsKey(ze1.FileName))
             {
-                if (SharedUtilities.TrimVolumeAndSwapSlashes(ze1.FileName) == ze2.FileName)
-                {
-                    _exceptionPending = true;
-                    throw new ArgumentException(String.Format("The entry '{0}' already exists in the zip archive.", ze1.FileName));
-                }
+                _exceptionPending = true;
+                throw new ArgumentException(String.Format("The entry '{0}' already exists in the zip archive.", ze1.FileName));
             }
         }
+
 
         internal Stream OutputStream
         {
             get
             {
-                return _outputStream; 
+                return _outputStream;
             }
         }
 
@@ -974,15 +1006,15 @@ namespace  Ionic.Zip
         {
             get
             {
-                return _name; 
+                return _name;
             }
         }
-        
+
         /// <summary>
         ///   Returns true if an entry by the given name has already been written
         ///   to the ZipOutputStream.
         /// </summary>
-        /// 
+        ///
         /// <param name="name">
         ///   The name of the entry to scan for.
         /// </param>
@@ -992,15 +1024,10 @@ namespace  Ionic.Zip
         /// </returns>
         public bool ContainsEntry(string name)
         {
-            foreach (var e in _entriesWritten)
-            {
-                if (e.FileName == name)
-                    return true;
-            }
-            return false;
+            return _entriesWritten.ContainsKey(SharedUtilities.NormalizePathForUseInZipFile(name));
         }
 
-        
+
         /// <summary>
         ///   Write the data from the buffer to the stream.
         /// </summary>
@@ -1017,32 +1044,32 @@ namespace  Ionic.Zip
         /// <param name="count">the number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (_closed)
+            if (_disposed)
             {
                 _exceptionPending = true;
                 throw new System.InvalidOperationException("The stream has been closed.");
             }
-            
-            if (_currentEntry==null)
+
+            if (_currentEntry == null)
             {
                 _exceptionPending = true;
                 throw new System.InvalidOperationException("You must call PutNextEntry() before calling Write().");
             }
-            
+
             if (_currentEntry.IsDirectory)
             {
                 _exceptionPending = true;
                 throw new System.InvalidOperationException("You cannot Write() data for an entry that is a directory.");
             }
-            
-            if (_wantEntryHeader)
+
+            if (_needToWriteEntryHeader)
                 _InitiateCurrentEntry(false);
 
             _entryOutputStream.Write(buffer, offset, count);
         }
 
 
-        
+
         /// <summary>
         ///   Specify the name of the next entry that will be written to the zip file.
         /// </summary>
@@ -1052,8 +1079,8 @@ namespace  Ionic.Zip
         ///   Call this method just before calling <see cref="Write(byte[], int, int)"/>, to
         ///   specify the name of the entry that the next set of bytes written to
         ///   the <c>ZipOutputStream</c> belongs to. All subsequent calls to <c>Write</c>,
-        ///   until the next call to <c>PutNextEntry</c>, 
-        ///   will be inserted into the named entry in the zip file. 
+        ///   until the next call to <c>PutNextEntry</c>,
+        ///   will be inserted into the named entry in the zip file.
         /// </para>
         ///
         /// <para>
@@ -1072,7 +1099,7 @@ namespace  Ionic.Zip
         ///
         /// <para>
         ///   Because <c>PutNextEntry()</c> closes out the prior entry, if any, this
-        ///   method may throw if there is a problem with the prior entry.   
+        ///   method may throw if there is a problem with the prior entry.
         /// </para>
         ///
         /// <para>
@@ -1102,11 +1129,11 @@ namespace  Ionic.Zip
         ///             output.Password = "VerySecret!";
         ///             output.Encryption = EncryptionAlgorithm.WinZipAes256;
         ///             output.PutNextEntry("entry1.txt");
-        ///             byte[] buffer= System.Text.Encoding.ASCII.GetBytes("This is the content for entry #1."); 
+        ///             byte[] buffer= System.Text.Encoding.ASCII.GetBytes("This is the content for entry #1.");
         ///             output.Write(buffer,0,buffer.Length);
         ///             output.PutNextEntry("entry2.txt");  // this will be zero length
-        ///             output.PutNextEntry("entry3.txt"); 
-        ///             buffer= System.Text.Encoding.ASCII.GetBytes("This is the content for entry #3."); 
+        ///             output.PutNextEntry("entry3.txt");
+        ///             buffer= System.Text.Encoding.ASCII.GetBytes("This is the content for entry #3.");
         ///             output.Write(buffer,0,buffer.Length);
         ///         }
         ///     }
@@ -1116,7 +1143,7 @@ namespace  Ionic.Zip
         ///
         /// <param name="entryName">
         ///   The name of the entry to be added, including any path to be used
-        ///   within the zip file. 
+        ///   within the zip file.
         /// </param>
         ///
         /// <returns>
@@ -1125,7 +1152,7 @@ namespace  Ionic.Zip
         ///
         public ZipEntry PutNextEntry(String entryName)
         {
-            if (_closed)
+            if (_disposed)
             {
                 _exceptionPending = true;
                 throw new System.InvalidOperationException("The stream has been closed.");
@@ -1134,26 +1161,24 @@ namespace  Ionic.Zip
             _FinishCurrentEntry();
             _currentEntry = ZipEntry.CreateForZipOutputStream(entryName);
             _currentEntry._container = new ZipContainer(this);
-            //_currentEntry.FileName = ZipEntry.NameInArchive(entryName,null);
             _currentEntry._BitField |= 0x0008;  // workitem 8932
-            _currentEntry.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
+            _currentEntry.SetEntryTimes(DateTime.Now, DateTime.Now, DateTime.Now);
             _currentEntry.CompressionLevel = CompressionLevel;
             _currentEntry.Encryption = Encryption;
             _currentEntry.Password = _password;
 
-            if (entryName.EndsWith("/") || entryName.EndsWith("\\") ) _currentEntry.MarkAsDirectory();
-            
+            if (entryName.EndsWith("/"))  _currentEntry.MarkAsDirectory();
+
             _currentEntry.EmitTimesInWindowsFormatWhenSaving = ((_timestamp & ZipEntryTimestamp.Windows) != 0);
             _currentEntry.EmitTimesInUnixFormatWhenSaving = ((_timestamp & ZipEntryTimestamp.Unix) != 0);
-            _currentEntry._container = new ZipContainer(this);
             InsureUniqueEntry(_currentEntry);
-            _wantEntryHeader= true;
+            _needToWriteEntryHeader = true;
 
             return _currentEntry;
         }
 
 
-        
+
         private void _InitiateCurrentEntry(bool finishing)
         {
             // If finishing==true, this means we're initiating the entry at the time of
@@ -1161,18 +1186,18 @@ namespace  Ionic.Zip
             // for the entry - Write() was never called.  (The usual case us to call
             // _InitiateCurrentEntry(bool) from within Write().)  If finishing==true,
             // the entry could be either a zero-byte file or a directory.
-            
-            _entriesWritten.Add(_currentEntry);
+
+            _entriesWritten.Add(_currentEntry.FileName,_currentEntry);
             _entryCount++; // could use _entriesWritten.Count, but I don't want to incur
-                           // the cost.
-            
+            // the cost.
+
             if (_entryCount > 65534 && _zip64 == Zip64Option.Never)
             {
                 _exceptionPending = true;
                 throw new System.InvalidOperationException("Too many entries. Consider setting ZipOutputStream.EnableZip64.");
             }
-                
-            // Write out the header. 
+
+            // Write out the header.
             //
             // If finishing, and encryption is in use, then we don't want to emit the
             // normal encryption header.  Signal that with a cycle=99 to turn off
@@ -1182,103 +1207,132 @@ namespace  Ionic.Zip
             // stream length.  Passing stream length == 0 allows an optimization so as
             // not to setup an encryption or deflation stream, when stream length is
             // zero.
-            
+
             _currentEntry.WriteHeader(_outputStream, finishing ? 99 : 0);
-            
+            _currentEntry.StoreRelativeOffset();
+
             if (!_currentEntry.IsDirectory)
             {
                 _currentEntry.WriteSecurityMetadata(_outputStream);
                 _currentEntry.PrepOutputStream(_outputStream,
-                                               finishing ? 0 : -1, 
+                                               finishing ? 0 : -1,
                                                out _outputCounter,
                                                out _encryptor,
                                                out _deflater,
                                                out _entryOutputStream);
             }
-            _wantEntryHeader = false;
+            _needToWriteEntryHeader = false;
         }
 
-        
+
 
         private void _FinishCurrentEntry()
         {
-            if (_currentEntry!=null)
+            if (_currentEntry != null)
             {
-                if (_wantEntryHeader)
-                    _InitiateCurrentEntry(true);
-                
+                if (_needToWriteEntryHeader)
+                    _InitiateCurrentEntry(true); // an empty entry - no writes
+
                 _currentEntry.FinishOutputStream(_outputStream, _outputCounter, _encryptor, _deflater, _entryOutputStream);
                 _currentEntry.PostProcessOutput(_outputStream);
                 _anyEntriesUsedZip64 |= _currentEntry.OutputUsedZip64.Value;
                 // reset all the streams
-                _outputCounter = null; _encryptor = _deflater = null; _entryOutputStream = null; 
+                _outputCounter = null; _encryptor = _deflater = null; _entryOutputStream = null;
             }
         }
 
 
+
         /// <summary>
-        ///   Close the stream.
+        /// Dispose the stream
         /// </summary>
-        /// 
+        ///
         /// <remarks>
         /// <para>
-        ///   This method writes the Zip Central directory, then Closes the stream.  The
-        ///   application must call Close() in order to produce a valid zip file. 
+        ///   This method writes the Zip Central directory, then closes the stream.  The
+        ///   application must call Dispose() (or Close) in order to produce a valid zip file.
         /// </para>
         ///
         /// <para>
-        ///   Typically the application will call <c>Close()</c> implicitly, via a <c>using</c>
+        ///   Typically the application will call <c>Dispose()</c> implicitly, via a <c>using</c>
         ///   statement in C#, or a <c>Using</c> statement in VB.
         /// </para>
-        /// 
+        ///
         /// </remarks>
         ///
-        public override void Close()
+        /// <param name="notCalledFromFinalizer">set this to true, always.</param>
+        protected override void Dispose(bool notCalledFromFinalizer)
         {
-            if (_closed) return;
+            if (_disposed) return;
 
-            // When ZipOutputStream is used within a using clause, and an exception is
-            // thrown within the scope of the using, Close() is invoked implicitly
-            // before processing the initial exception.  In that case, _exceptionPending
-            // is true, and we don't want to try to write anything.  It can cause
-            // additional exceptions that mask the original one.  Eventually the
-            // original exception will be propagated to the application.
-            if (_exceptionPending) return;
+            if (notCalledFromFinalizer)
+            {
+                // When ZipOutputStream is used within a using clause, and an exception is
+                // thrown within the scope of the using, Close()/Dispose() is invoked implicitly
+                // before processing the initial exception.  In that case, _exceptionPending
+                // is true, and we don't want to try to write anything.  It can cause
+                // additional exceptions that mask the original one.  Eventually the
+                // original exception will be propagated to the application.
+                if (!_exceptionPending)
+                {
+                    _FinishCurrentEntry();
+                    _directoryNeededZip64 = ZipOutput.WriteCentralDirectoryStructure(_outputStream,
+                                                                                     _entriesWritten.Values,
+                                                                                     1, // _numberOfSegmentsForMostRecentSave,
+                                                                                     _zip64,
+                                                                                     Comment,
+                                                                                     ProvisionalAlternateEncoding);
+                    Stream wrappedStream = null;
+                    CountingStream cs = _outputStream as CountingStream;
+                    if (cs != null)
+                    {
+                        wrappedStream = cs.WrappedStream;
+#if NETCF
+                    cs.Close();
+#else
+                        cs.Dispose();
+#endif
+                    }
+                    else
+                    {
+                        wrappedStream = _outputStream;
+                    }
 
-            _FinishCurrentEntry();
-            _directoryNeededZip64 = ZipOutput.WriteCentralDirectoryStructure(_outputStream,
-                                                                             _entriesWritten,
-                                                                             1, // _numberOfSegmentsForMostRecentSave, 
-                                                                             _zip64,
-                                                                             Comment,
-                                                                             ProvisionalAlternateEncoding);
-            
-            if (!_leaveUnderlyingStreamOpen)
-                _outputStream.Close();
-            
-            _closed= true;
+                    if (!_leaveUnderlyingStreamOpen)
+                    {
+#if NETCF
+                    wrappedStream.Close();
+#else
+                        wrappedStream.Dispose();
+#endif
+                    }
+                    _outputStream = null;
+                }
+            }
+            _disposed = true;
         }
 
 
+
         /// <summary>
         /// Always returns false.
         /// </summary>
-        public override bool CanRead  { get { return false; } }
-        
+        public override bool CanRead { get { return false; } }
+
         /// <summary>
         /// Always returns false.
         /// </summary>
-        public override bool CanSeek  { get { return false; } }
-        
+        public override bool CanSeek { get { return false; } }
+
         /// <summary>
         /// Always returns true.
         /// </summary>
         public override bool CanWrite { get { return true; } }
-        
+
         /// <summary>
         /// Always returns a NotSupportedException.
         /// </summary>
-        public override long Length   { get { throw new NotSupportedException(); }}
+        public override long Length { get { throw new NotSupportedException(); } }
 
         /// <summary>
         /// Setting this property always returns a NotSupportedException. Getting it
@@ -1286,8 +1340,8 @@ namespace  Ionic.Zip
         /// </summary>
         public override long Position
         {
-            get { return _outputStream.Position;}
-            set { throw new NotSupportedException();}
+            get { return _outputStream.Position; }
+            set { throw new NotSupportedException(); }
         }
 
         /// <summary>
@@ -1327,7 +1381,7 @@ namespace  Ionic.Zip
             throw new NotSupportedException();
         }
 
-        
+
         private EncryptionAlgorithm _encryption;
         private ZipEntryTimestamp _timestamp;
         internal String _password;
@@ -1335,36 +1389,37 @@ namespace  Ionic.Zip
         private Stream _outputStream;
         private ZipEntry _currentEntry;
         internal Zip64Option _zip64;
-        private List<ZipEntry> _entriesWritten;
+        private Dictionary<String, ZipEntry> _entriesWritten;
         private int _entryCount;
         private System.Text.Encoding _provisionalAlternateEncoding;
         private bool _leaveUnderlyingStreamOpen;
-        private bool _closed;
+        private bool _disposed;
         private bool _exceptionPending;
         private bool _anyEntriesUsedZip64, _directoryNeededZip64;
         private CountingStream _outputCounter;
         private Stream _encryptor;
         private Stream _deflater;
         private Ionic.Zlib.CrcCalculatorStream _entryOutputStream;
-        private bool _wantEntryHeader;
+        private bool _needToWriteEntryHeader;
         private string _name;
-#if !NETCF    
+        private bool _DontIgnoreCase;
+#if !NETCF
         internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
         private long _ParallelDeflateThreshold;
 #endif
     }
 
 
-    
+
     internal class ZipContainer
     {
         private ZipFile _zf;
         private ZipOutputStream _zos;
         private ZipInputStream _zis;
-        
+
         public ZipContainer(Object o)
         {
-            _zf= (o as ZipFile) ;
+            _zf = (o as ZipFile);
             _zos = (o as ZipOutputStream);
             _zis = (o as ZipInputStream);
         }
@@ -1373,87 +1428,87 @@ namespace  Ionic.Zip
         {
             get { return _zf; }
         }
-        
+
         public ZipOutputStream ZipOutputStream
         {
             get { return _zos; }
         }
-        
+
         public string Name
         {
             get
             {
-                if (_zf!=null) return _zf.Name;
+                if (_zf != null) return _zf.Name;
                 return _zos.Name;
             }
         }
-        
+
         public string Password
         {
             get
             {
-                if (_zf!=null) return _zf._Password;
+                if (_zf != null) return _zf._Password;
                 return _zos._password;
             }
         }
-        
+
         public Zip64Option Zip64
         {
             get
             {
-                if (_zf!=null) return _zf._zip64;
+                if (_zf != null) return _zf._zip64;
                 return _zos._zip64;
             }
         }
-        
+
         public int BufferSize
         {
             get
             {
-                if (_zf!=null) return _zf.BufferSize;
+                if (_zf != null) return _zf.BufferSize;
                 return 0;
             }
         }
-        
-#if !NETCF    
+
+#if !NETCF
         public Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater
         {
             get
             {
-                if (_zf!=null) return _zf.ParallelDeflater;
+                if (_zf != null) return _zf.ParallelDeflater;
                 return _zos.ParallelDeflater;
             }
             set
             {
-                if (_zf!=null) _zf.ParallelDeflater= value;
+                if (_zf != null) _zf.ParallelDeflater = value;
                 else _zos.ParallelDeflater = value;
             }
         }
-        
+
         public long ParallelDeflateThreshold
         {
             get
             {
-                if (_zf!=null) return _zf.ParallelDeflateThreshold;
+                if (_zf != null) return _zf.ParallelDeflateThreshold;
                 return _zos.ParallelDeflateThreshold;
             }
         }
 #endif
-        
+
         public int CodecBufferSize
         {
             get
             {
-                if (_zf!=null) return _zf.CodecBufferSize;
+                if (_zf != null) return _zf.CodecBufferSize;
                 return _zos.CodecBufferSize;
             }
         }
-        
+
         public Ionic.Zlib.CompressionStrategy Strategy
         {
             get
             {
-                if (_zf!=null) return _zf.Strategy;
+                if (_zf != null) return _zf.Strategy;
                 return _zos.Strategy;
             }
         }
@@ -1462,34 +1517,28 @@ namespace  Ionic.Zip
         {
             get
             {
-                if (_zf!=null) return _zf.UseZip64WhenSaving;
+                if (_zf != null) return _zf.UseZip64WhenSaving;
                 return _zos.EnableZip64;
             }
-        }
-        
-        public bool ContainsEntry(string name)
-        {
-            if (_zf!=null) return _zf.ContainsEntry(name);
-            return _zos.ContainsEntry(name);
         }
 
         public System.Text.Encoding ProvisionalAlternateEncoding
         {
             get
             {
-                if (_zf!=null) return _zf.ProvisionalAlternateEncoding;
+                if (_zf != null) return _zf.ProvisionalAlternateEncoding;
                 return _zis.ProvisionalAlternateEncoding;
             }
         }
-        
+
         public Stream ReadStream
         {
             get
             {
-                if (_zf!=null) return _zf.ReadStream;
+                if (_zf != null) return _zf.ReadStream;
                 return _zis.ReadStream;
             }
         }
     }
-    
+
 }
