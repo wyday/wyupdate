@@ -76,6 +76,7 @@ namespace wyUpdate
         // start hidden, close if no update, show if update
         bool QuickCheck;
         bool QuickCheckNoErr;
+        bool QuickCheckJustCheck;
 
         #endregion Private variables
 
@@ -392,6 +393,9 @@ namespace wyUpdate
 
                     if (commands["noerr"] != null)
                         QuickCheckNoErr = true;
+
+                    if (commands["justcheck"] != null)
+                        QuickCheckJustCheck = true;
                 }
 
                 //client data file
