@@ -46,6 +46,14 @@ namespace wyUpdate
 
                     if (QuickCheck)
                     {
+                        // return 2 if we're just checking
+                        if (QuickCheckJustCheck)
+                        {
+                            ReturnCode = 2;
+                            Close();
+                            return;
+                        }
+
                         // show the update window
                         Visible = true;
                         TopMost = true;

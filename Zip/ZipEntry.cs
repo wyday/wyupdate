@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 23:22:39>
+// Time-stamp: <2010-January-21 02:53:43>
 //
 // ------------------------------------------------------------------
 //
@@ -1359,7 +1359,7 @@ namespace Ionic.Zip
                 else if (CompressionLevel == Ionic.Zlib.CompressionLevel.None)
                     _CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
 
-                _container.ZipFile.NotifyEntryChanged();
+                if (_container.ZipFile != null) _container.ZipFile.NotifyEntryChanged();
                 _restreamRequiredOnSave = true;
             }
         }
