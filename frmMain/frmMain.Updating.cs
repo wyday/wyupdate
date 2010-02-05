@@ -50,6 +50,9 @@ namespace wyUpdate
                         if (QuickCheckJustCheck)
                         {
                             ReturnCode = 2;
+                            WindowState = FormWindowState.Minimized;
+                            ShowInTaskbar = false;
+                            Visible = true;
                             Close();
                             return;
                         }
@@ -199,6 +202,9 @@ namespace wyUpdate
                     }
                     else
                     {
+                        WindowState = FormWindowState.Minimized;
+                        ShowInTaskbar = false;
+                        Visible = true;
                         Close();
                         return;
                     }
