@@ -1,7 +1,7 @@
 // ZipEntry.Read.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c)  2009 Dino Chiesa
+// Copyright (c) 2009-2010 Dino Chiesa
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,13 +15,12 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 14:45:12>
+// Time-stamp: <2010-February-11 17:30:55>
 //
 // ------------------------------------------------------------------
 //
 // This module defines logic for Reading the ZipEntry from a
 // zip file.
-//
 //
 // ------------------------------------------------------------------
 
@@ -40,7 +39,8 @@ namespace Ionic.Zip
             // workitem 8098: ok (restore)
             long posn = this.ArchiveStream.Position;
             this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
-            //this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
 
             byte[] block = new byte[30];
             this.ArchiveStream.Read(block, 0, block.Length);
@@ -50,11 +50,15 @@ namespace Ionic.Zip
 
             // workitem 8098: ok (relative)
             this.ArchiveStream.Seek(filenameLength, SeekOrigin.Current);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
 
             ProcessExtraField(this.ArchiveStream, extraFieldLength);
 
             // workitem 8098: ok (restore)
             this.ArchiveStream.Seek(posn, SeekOrigin.Begin);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
             _readExtraDepth--;
         }
 
@@ -81,6 +85,8 @@ namespace Ionic.Zip
                 // Anything else is a surprise.
 
                 ze.ArchiveStream.Seek(-4, SeekOrigin.Current); // unread the signature
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(ze.ArchiveStream);
                 if (ZipEntry.IsNotValidZipDirEntrySig(signature) && (signature != ZipConstants.EndOfCentralDirectorySignature))
                 {
                     throw new BadReadException(String.Format("  ZipEntry::ReadHeader(): Bad signature (0x{0:X8}) at position  0x{1:X8}", signature, ze.ArchiveStream.Position));
@@ -240,6 +246,8 @@ namespace Ionic.Zip
                         // the ZipEntryDataDescriptorSignature.
                         // (12 bytes for the CRC, Comp and Uncomp size.)
                         ze.ArchiveStream.Seek(-12, SeekOrigin.Current);
+                        // workitem 10178
+                        Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(ze.ArchiveStream);
 
                         // Adjust the size to account for the false signature read in
                         // FindSignature().
@@ -250,6 +258,8 @@ namespace Ionic.Zip
                 // seek back to previous position, to prepare to read file data
                 // workitem 8098: ok (restore)
                 ze.ArchiveStream.Seek(posn, SeekOrigin.Begin);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(ze.ArchiveStream);
             }
 
             ze._CompressedFileDataSize = ze._CompressedSize;
@@ -360,6 +370,8 @@ namespace Ionic.Zip
 
             // seek past the data without reading it. We will read on Extract()
             s.Seek(entry._CompressedFileDataSize + entry._LengthOfTrailer, SeekOrigin.Current);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
 
             // ReadHeader moves the file pointer to the end of the entry header,
             // as well as any encryption header.
@@ -391,6 +403,8 @@ namespace Ionic.Zip
             if (datum != ZipConstants.PackedToRemovableMedia)
             {
                 s.Seek(-4, SeekOrigin.Current); // unread the block
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
             }
         }
 
@@ -417,13 +431,28 @@ namespace Ionic.Zip
                         // ignore everything and discard it.
                     }
                     else
+                    {
                         s.Seek(-12, SeekOrigin.Current); // unread the three blocks
+
+                        // workitem 10178
+                        Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
+                    }
                 }
                 else
+                {
                     s.Seek(-8, SeekOrigin.Current); // unread the two blocks
+
+                    // workitem 10178
+                    Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
+                }
             }
             else
+            {
                 s.Seek(-4, SeekOrigin.Current); // unread the block
+
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
+            }
 
         }
 
@@ -445,7 +474,7 @@ namespace Ionic.Zip
                 additionalBytesRead = s.Read(Buffer, 0, Buffer.Length);
                 long posn = s.Position - additionalBytesRead;
                 int j = 0;
-                while (j < Buffer.Length)
+                while (j+3 < Buffer.Length)
                 {
                     int start = j;
 
@@ -464,13 +493,20 @@ namespace Ionic.Zip
                             j = ProcessExtraFieldUnixTimes(Buffer, j, DataSize, posn);
                             break;
 
-
                         case 0x5855:  // Info-zip Extra field (outdated)
                             // This is outdated, so the field is supported on
                             // read only.
                             j = ProcessExtraFieldInfoZipTimes(Buffer, j, DataSize, posn);
                             break;
 
+                        case 0x7855:  // Unix uid/gid
+                            // ignored. DotNetZip does not handle this field.
+                            break;
+
+                        case 0x7875:  // ??
+                            // ignored.  I could not find documentation on this field,
+                            // though it appears in some zip files.
+                            break;
 
                         case 0x0001: // ZIP64
                             j = ProcessExtraFieldZip64(Buffer, j, DataSize, posn);
@@ -659,7 +695,7 @@ namespace Ionic.Zip
 
                 int remainingData = DataSize;
 
-                if (DataSize == 13 || _readExtraDepth > 1)
+                if (DataSize == 13 || _readExtraDepth > 0)
                 {
                     byte flag = Buffer[j++];
                     remainingData--;

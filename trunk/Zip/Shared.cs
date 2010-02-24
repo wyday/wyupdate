@@ -1,7 +1,7 @@
 // Shared.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.
+// Copyright (c) 2006-2010 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2009-December-31 19:22:52>
+// Time-stamp: <2010-February-14 18:38:37>
 //
 // ------------------------------------------------------------------
 //
@@ -33,11 +33,10 @@ namespace Ionic.Zip
     /// <summary>
     /// Collects general purpose utility methods.
     /// </summary>
-    internal class SharedUtilities
+    internal static class SharedUtilities
     {
         /// private null constructor
-        private SharedUtilities() { }
-
+        //private SharedUtilities() { }
 
         // workitem 8423
         public static Int64 GetFileLength(string fileName)
@@ -56,6 +55,16 @@ namespace Ionic.Zip
                 fileLength = s.Length;
             }
             return fileLength;
+        }
+
+
+        [System.Diagnostics.Conditional("NETCF")]
+        public static void Workaround_Ladybug318918(Stream s)
+        {
+            // This is a workaround for this issue:
+            // https://connect.microsoft.com/VisualStudio/feedback/details/318918
+            // It's required only on NETCF.
+            s.Flush();
         }
 
 
@@ -205,17 +214,23 @@ namespace Ionic.Zip
                 {
                     // advance past data descriptor - 12 bytes if not zip64
                     s.Seek(12, SeekOrigin.Current);
+                    // workitem 10178
+                    Workaround_Ladybug318918(s);
                     x = _ReadFourBytes(s, "nul");
                     if (x != ZipConstants.ZipEntrySignature)
                     {
                         // Maybe zip64 was in use for the prior entry.
                         // Therefore, skip another 8 bytes.
                         s.Seek(8, SeekOrigin.Current);
+                        // workitem 10178
+                        Workaround_Ladybug318918(s);
                         x = _ReadFourBytes(s, "nul");
                         if (x != ZipConstants.ZipEntrySignature)
                         {
                             // seek back to the first spot
                             s.Seek(-24, SeekOrigin.Current);
+                            // workitem 10178
+                            Workaround_Ladybug318918(s);
                             x = _ReadFourBytes(s, "nul");
                         }
                     }
@@ -286,7 +301,7 @@ namespace Ionic.Zip
         /// <param name="stream">The stream to search</param>
         /// <param name="SignatureToFind">The 4-byte signature to find</param>
         /// <returns>The number of bytes read</returns>
-        protected internal static long FindSignature(System.IO.Stream stream, int SignatureToFind)
+        internal static long FindSignature(System.IO.Stream stream, int SignatureToFind)
         {
             long startingPosition = stream.Position;
 
@@ -310,6 +325,8 @@ namespace Ionic.Zip
                         {
                             long curPosition = stream.Position;
                             stream.Seek(i - n, System.IO.SeekOrigin.Current);
+                            // workitem 10178
+                            Workaround_Ladybug318918(stream);
 
                             // workitem 7711
                             int sig = ReadSignature(stream);
@@ -318,6 +335,8 @@ namespace Ionic.Zip
                             if (!success)
                             {
                                 stream.Seek(curPosition, System.IO.SeekOrigin.Begin);
+                                // workitem 10178
+                                Workaround_Ladybug318918(stream);
                             }
                             else
                                 break; // out of for loop
@@ -332,6 +351,8 @@ namespace Ionic.Zip
             if (!success)
             {
                 stream.Seek(startingPosition, System.IO.SeekOrigin.Begin);
+                // workitem 10178
+                Workaround_Ladybug318918(stream);
                 return -1;  // or throw?
             }
 
@@ -751,6 +772,8 @@ namespace Ionic.Zip
             set
             {
                 _s.Seek(value, System.IO.SeekOrigin.Begin);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_s);
             }
         }
 

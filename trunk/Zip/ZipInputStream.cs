@@ -2,7 +2,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa.
+// Copyright (c) 2009-2010 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2009-December-27 00:26:20>
+// Time-stamp: <2010-February-14 18:43:49>
 //
 // ------------------------------------------------------------------
 //
@@ -310,7 +310,7 @@ namespace  Ionic.Zip
         public ZipInputStream(String fileName)
         {
             Stream stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read );
-            _Init(stream, false);
+            _Init(stream, false, fileName);
         }
 
 
@@ -335,10 +335,10 @@ namespace  Ionic.Zip
         /// </param>
         public ZipInputStream(Stream stream, bool leaveOpen)
         {
-            _Init(stream, leaveOpen);
+            _Init(stream, leaveOpen, null);
         }
 
-        private void _Init(Stream stream, bool leaveOpen)
+        private void _Init(Stream stream, bool leaveOpen, string name)
         {
             _inputStream = stream;
             if (!_inputStream.CanRead)
@@ -347,6 +347,20 @@ namespace  Ionic.Zip
             _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
             _leaveUnderlyingStreamOpen = leaveOpen;
             _findRequired= true;
+            _name = name ?? "(stream)";
+        }
+
+
+        /// <summary>Provides a string representation of the instance.</summary>
+        /// <remarks>
+        ///   <para>
+        ///     This can be useful for debugging purposes.
+        ///   </para>
+        /// </remarks>
+        /// <returns>a string representation of the instance.</returns>
+        public override String ToString()
+        {
+            return String.Format ("ZipInputStream::{0}(leaveOpen({1})))", _name, _leaveUnderlyingStreamOpen);
         }
 
 
@@ -562,6 +576,8 @@ namespace  Ionic.Zip
                 int CrcResult = _crcStream.Crc;
                 _currentEntry.VerifyCrcAfterExtract(CrcResult);
                 _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
             }
 
             return n;
@@ -612,6 +628,8 @@ namespace  Ionic.Zip
                 if (d == -1) return null;
                 // back up 4 bytes: ReadEntry assumes the file pointer is positioned before the entry signature
                 _inputStream.Seek(-4, SeekOrigin.Current);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
             }
 
             _currentEntry = ZipEntry.ReadEntry(_container, !_firstEntry);
@@ -693,7 +711,7 @@ namespace  Ionic.Zip
         public override long Position
         {
             get { return _inputStream.Position;}
-            set { Seek(value, SeekOrigin.Begin);}
+            set { Seek(value, SeekOrigin.Begin); }
         }
 
         /// <summary>
@@ -742,7 +760,10 @@ namespace  Ionic.Zip
         public override long Seek(long offset, SeekOrigin origin)
         {
             _findRequired= true;
-            return _inputStream.Seek(offset, origin);
+            var x = _inputStream.Seek(offset, origin);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
+            return x;
         }
 
         /// <summary>
@@ -765,6 +786,7 @@ namespace  Ionic.Zip
         private Int64 _LeftToRead;
         private String _password;
         private Int64 _endOfEntry;
+        private string _name;
 
         private bool _leaveUnderlyingStreamOpen;
         private bool _closed;

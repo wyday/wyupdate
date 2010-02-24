@@ -1,7 +1,9 @@
+//#define TRACE
+
 // FileSelector.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.
+// Copyright (c) 2008-2010 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-20 17:57:23>
+// Time-stamp: <2010-February-12 18:02:46>
 //
 // ------------------------------------------------------------------
 //
@@ -96,6 +98,12 @@ namespace Ionic
     internal abstract partial class SelectionCriterion
     {
         internal abstract bool Evaluate(string filename);
+
+        [System.Diagnostics.Conditional("TRACE")]
+        protected void CriterionTrace(string format, params object[] args)
+        {
+            System.Console.WriteLine("  " + format, args);
+        }
     }
 
 
@@ -180,6 +188,7 @@ namespace Ionic
                 default:
                     throw new ArgumentException("Operator");
             }
+            CriterionTrace("TimeCriterion({0},{1})= {2}", filename, Which.ToString(), x);
             return _Evaluate(x);
         }
 
@@ -211,7 +220,7 @@ namespace Ionic
                     throw new ArgumentException("Operator");
             }
 
-            //Console.WriteLine("TimeCriterion[{2}]({0})= {1}", filename, result, Which.ToString());
+            CriterionTrace("TimeCriterion: {0}", result);
             return result;
         }
     }
@@ -231,7 +240,7 @@ namespace Ionic
                 // workitem 8245
                 if (Directory.Exists(value))
                 {
-                    _MatchingFileSpec = value + "\\*.*";
+                    _MatchingFileSpec = ".\\" + value + "\\*";
                 }
                 else
                 {
@@ -246,9 +255,8 @@ namespace Ionic
                 .Replace(@"\?", @"[^\\\.]")
                 + "$";
 
-                // neither of these is correct
-                //if (!_regexString.StartsWith(@"\\")) _regexString = @"\\" + _regexString;
-                //if (_regexString.IndexOf("\\") == -1)  _regexString = @"\\" + _regexString;
+                CriterionTrace("NameCriterion regexString({0})", _regexString);
+
                 _re = new Regex(_regexString, RegexOptions.IgnoreCase);
             }
         }
@@ -269,6 +277,7 @@ namespace Ionic
 
         private bool _Evaluate(string fullpath)
         {
+            CriterionTrace("NameCriterion::Evaluate({0})", fullpath);
             // No slash in the pattern implicitly means recurse, which means compare to
             // filename only, not full path.
             String f = (_MatchingFileSpec.IndexOf('\\') == -1)
@@ -283,6 +292,46 @@ namespace Ionic
     }
 
 
+    internal partial class TypeCriterion : SelectionCriterion
+    {
+        private char ObjectType;  // 'D' = Directory, 'F' = File
+        internal ComparisonOperator Operator;
+        internal string AttributeString
+        {
+            get
+            {
+                return ObjectType.ToString();
+            }
+            set
+            {
+                if (value.Length != 1 ||
+                    (value[0]!='D' && value[0]!='F'))
+                    throw new ArgumentException("Specify a single character: either D or F");
+                ObjectType = value[0];
+            }
+        }
+
+        public override String ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("type ").Append(EnumUtil.GetDescription(Operator)).Append(" ").Append(AttributeString);
+            return sb.ToString();
+        }
+
+        internal override bool Evaluate(string filename)
+        {
+            CriterionTrace("TypeCriterion::Evaluate({0})", filename);
+
+            bool result = (ObjectType == 'D')
+                ? Directory.Exists(filename)
+                : File.Exists(filename);
+
+            if (Operator != ComparisonOperator.EqualTo)
+                result = !result;
+            return result;
+        }
+    }
+
 
     internal partial class AttributesCriterion : SelectionCriterion
     {
@@ -293,16 +342,18 @@ namespace Ionic
             get
             {
                 string result = "";
-                if ((_Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                if ((_Attributes & FileAttributes.Hidden) != 0)
                     result += "H";
-                if ((_Attributes & FileAttributes.System) == FileAttributes.System)
+                if ((_Attributes & FileAttributes.System) != 0)
                     result += "S";
-                if ((_Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                if ((_Attributes & FileAttributes.ReadOnly) != 0)
                     result += "R";
-                if ((_Attributes & FileAttributes.Archive) == FileAttributes.Archive)
+                if ((_Attributes & FileAttributes.Archive) != 0)
                     result += "A";
-                if ((_Attributes & FileAttributes.NotContentIndexed) == FileAttributes.NotContentIndexed)
+                if ((_Attributes & FileAttributes.NotContentIndexed) != 0)
                     result += "I";
+                if ((_Attributes & FileAttributes.ReparsePoint) != 0)
+                    result += "L";
                 return result;
             }
 
@@ -314,34 +365,41 @@ namespace Ionic
                     switch (c)
                     {
                         case 'H':
-                            if ((_Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                            if ((_Attributes & FileAttributes.Hidden) != 0)
                                 throw new ArgumentException(String.Format("Repeated flag. ({0})", c), "value");
                             _Attributes |= FileAttributes.Hidden;
                             break;
 
                         case 'R':
-                            if ((_Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                            if ((_Attributes & FileAttributes.ReadOnly) != 0)
                                 throw new ArgumentException(String.Format("Repeated flag. ({0})", c), "value");
                             _Attributes |= FileAttributes.ReadOnly;
                             break;
 
                         case 'S':
-                            if ((_Attributes & FileAttributes.System) == FileAttributes.System)
+                            if ((_Attributes & FileAttributes.System) != 0)
                                 throw new ArgumentException(String.Format("Repeated flag. ({0})", c), "value");
                             _Attributes |= FileAttributes.System;
                             break;
 
                         case 'A':
-                            if ((_Attributes & FileAttributes.Archive) == FileAttributes.Archive)
+                            if ((_Attributes & FileAttributes.Archive) != 0)
                                 throw new ArgumentException(String.Format("Repeated flag. ({0})", c), "value");
                             _Attributes |= FileAttributes.Archive;
                             break;
 
                         case 'I':
-                            if ((_Attributes & FileAttributes.NotContentIndexed) == FileAttributes.NotContentIndexed)
+                            if ((_Attributes & FileAttributes.NotContentIndexed) != 0)
                                 throw new ArgumentException(String.Format("Repeated flag. ({0})", c), "value");
                             _Attributes |= FileAttributes.NotContentIndexed;
                             break;
+
+                        case 'L':
+                            if ((_Attributes & FileAttributes.ReparsePoint) != 0)
+                                throw new ArgumentException(String.Format("Repeated flag. ({0})", c), "value");
+                            _Attributes |= FileAttributes.ReparsePoint;
+                            break;
+
                         default:
                             throw new ArgumentException(value);
                     }
@@ -371,8 +429,16 @@ namespace Ionic
 
         internal override bool Evaluate(string filename)
         {
+            // workitem 10191
+            if (Directory.Exists(filename))
+            {
+                // Directories don't have file attributes, so the result
+                // of an evaluation is always NO. This gets negated if
+                // the operator is NotEqualTo.
+                return (Operator != ComparisonOperator.EqualTo);
+            }
 #if NETCF
-                FileAttributes fileAttrs = NetCfFile.GetAttributes(filename);
+            FileAttributes fileAttrs = NetCfFile.GetAttributes(filename);
 #else
             FileAttributes fileAttrs = System.IO.File.GetAttributes(filename);
 #endif
@@ -391,6 +457,10 @@ namespace Ionic
                 result = _EvaluateOne(fileAttrs, FileAttributes.ReadOnly);
             if (result)
                 result = _EvaluateOne(fileAttrs, FileAttributes.Archive);
+            if (result)
+                result = _EvaluateOne(fileAttrs, FileAttributes.NotContentIndexed);
+            if (result)
+                result = _EvaluateOne(fileAttrs, FileAttributes.ReparsePoint);
 
             if (Operator != ComparisonOperator.EqualTo)
                 result = !result;
@@ -569,40 +639,64 @@ namespace Ionic
         /// <remarks>
         ///
         /// <para>
-        /// Specify the criteria in statements of 3 elements: a noun, an operator, and a value.
-        /// Consider the string "name != *.doc" .  The noun is "name".  The operator is "!=",
-        /// implying "Not Equal".  The value is "*.doc".  That criterion, in English, says "all
-        /// files with a name that does not end in the .doc extension."
+        /// Specify the criteria in statements of 3 elements: a noun, an operator, and a
+        /// value.  Consider the string "name != *.doc" .  The noun is "name".  The
+        /// operator is "!=", implying "Not Equal".  The value is "*.doc".  That
+        /// criterion, in English, says "all files with a name that does not end in the
+        /// .doc extension."
         /// </para>
         ///
         /// <para>
-        /// Supported nouns include "name" for the filename; "atime", "mtime", and "ctime" for
-        /// last access time, last modfied time, and created time of the file, respectively;
-        /// "attributes" for the file attributes; and "size" for the file length (uncompressed).
-        /// The "attributes" and "name" nouns both support = and != as operators.  The "size",
-        /// "atime", "mtime", and "ctime" nouns support = and !=, and &gt;, &gt;=, &lt;, &lt;=
-        /// as well.
+        /// Supported nouns include "name" (or "filename") for the filename; "atime",
+        /// "mtime", and "ctime" for last access time, last modfied time, and created
+        /// time of the file, respectively; "attributes" (or "attrs") for the file
+        /// attributes; "size" (or "length") for the file length (uncompressed); and
+        /// "type" for the type of object, either a file or a directory.  The
+        /// "attributes", "type", and "name" nouns all support = and != as operators.
+        /// The "size", "atime", "mtime", and "ctime" nouns support = and !=, and &gt;,
+        /// &gt;=, &lt;, &lt;= as well.  The times are taken to be expressed in local
+        /// time.
         /// </para>
         ///
         /// <para>
         /// Specify values for the file attributes as a string with one or more of the
-        /// characters H,R,S,A,I in any order, implying Hidden, ReadOnly, System, Archive, and
-        /// NotContextIndexed, respectively.  To specify a time, use YYYY-MM-DD-HH:mm:ss or
-        /// YYYY/MM/DD-HH:mm:ss as the format.  If you omit the HH:mm:ss portion, it is assumed
-        /// to be 00:00:00 (midnight). The value for a size criterion is expressed in integer
-        /// quantities of bytes, kilobytes (use k or kb after the number), megabytes (m or mb),
-        /// or gigabytes (g or gb).  The value for a name is a pattern to match against the
-        /// filename, potentially including wildcards.  The pattern follows CMD.exe glob rules:
-        /// * implies one or more of any character, while ?  implies one character.  If the name
-        /// pattern contains any slashes, it is matched to the entire filename, including the
-        /// path; otherwise, it is matched against only the filename without the path.  This
-        /// means a pattern of "*\*.*" matches all files one directory level deep, while a
-        /// pattern of "*.*" matches all files in all directories.  </para>
+        /// characters H,R,S,A,I,L in any order, implying file attributes of Hidden,
+        /// ReadOnly, System, Archive, NotContextIndexed, and ReparsePoint (symbolic
+        /// link) respectively.
+        /// </para>
         ///
         /// <para>
-        /// To specify a name pattern that includes spaces, use single quotes around the pattern.
-        /// A pattern of "'* *.*'" will match all files that have spaces in the filename.  The full
-        /// criteria string for that would be "name = '* *.*'" .
+        /// To specify a time, use YYYY-MM-DD-HH:mm:ss or YYYY/MM/DD-HH:mm:ss as the
+        /// format.  If you omit the HH:mm:ss portion, it is assumed to be 00:00:00
+        /// (midnight).
+        /// </para>
+        ///
+        /// <para>
+        /// The value for a size criterion is expressed in integer quantities of bytes,
+        /// kilobytes (use k or kb after the number), megabytes (m or mb), or gigabytes
+        /// (g or gb).
+        /// </para>
+        ///
+        /// <para>
+        /// The value for a name is a pattern to match against the filename, potentially
+        /// including wildcards.  The pattern follows CMD.exe glob rules: * implies one
+        /// or more of any character, while ?  implies one character.  If the name
+        /// pattern contains any slashes, it is matched to the entire filename,
+        /// including the path; otherwise, it is matched against only the filename
+        /// without the path.  This means a pattern of "*\*.*" matches all files one
+        /// directory level deep, while a pattern of "*.*" matches all files in all
+        /// directories.
+        /// </para>
+        ///
+        /// <para>
+        /// To specify a name pattern that includes spaces, use single quotes around the
+        /// pattern.  A pattern of "'* *.*'" will match all files that have spaces in
+        /// the filename.  The full criteria string for that would be "name = '* *.*'" .
+        /// </para>
+        ///
+        /// <para>
+        /// The value for a type criterion is either F (implying a file) or D (implying
+        /// a directory).
         /// </para>
         ///
         /// <para>
@@ -663,38 +757,46 @@ namespace Ionic
         ///     </description>
         ///   </item>
         ///
+        ///   <item>
+        ///     <term>type = D</term>
+        ///     <description>all directories in the filesystem. </description>
+        ///   </item>
+        ///
         /// </list>
         ///
         /// <para>
-        /// You can combine criteria with the conjunctions AND, OR, and XOR. Using a string like
-        /// "name = *.txt AND size &gt;= 100k" for the selectionCriteria retrieves entries whose
-        /// names end in .txt, and whose uncompressed size is greater than or equal to 100
-        /// kilobytes.
+        /// You can combine criteria with the conjunctions AND, OR, and XOR. Using a
+        /// string like "name = *.txt AND size &gt;= 100k" for the selectionCriteria
+        /// retrieves entries whose names end in .txt, and whose uncompressed size is
+        /// greater than or equal to 100 kilobytes.
         /// </para>
         ///
         /// <para>
-        /// For more complex combinations of criteria, you can use parenthesis to group clauses
-        /// in the boolean logic.  Absent parenthesis, the precedence of the criterion atoms is
-        /// determined by order of appearance.  Unlike the C# language, the AND conjunction does
-        /// not take precendence over the logical OR.  This is important only in strings that
-        /// contain 3 or more criterion atoms.  In other words, "name = *.txt and size &gt; 1000
-        /// or attributes = H" implies "((name = *.txt AND size &gt; 1000) OR attributes = H)"
-        /// while "attributes = H OR name = *.txt and size &gt; 1000" evaluates to "((attributes
-        /// = H OR name = *.txt) AND size &gt; 1000)".  When in doubt, use parenthesis.
+        /// For more complex combinations of criteria, you can use parenthesis to group
+        /// clauses in the boolean logic.  Absent parenthesis, the precedence of the
+        /// criterion atoms is determined by order of appearance.  Unlike the C#
+        /// language, the AND conjunction does not take precendence over the logical OR.
+        /// This is important only in strings that contain 3 or more criterion atoms.
+        /// In other words, "name = *.txt and size &gt; 1000 or attributes = H" implies
+        /// "((name = *.txt AND size &gt; 1000) OR attributes = H)" while "attributes =
+        /// H OR name = *.txt and size &gt; 1000" evaluates to "((attributes = H OR name
+        /// = *.txt) AND size &gt; 1000)".  When in doubt, use parenthesis.
         /// </para>
         ///
         /// <para>
-        /// Using time properties requires some extra care. If you want to retrieve all entries
-        /// that were last updated on 2009 February 14, specify "mtime &gt;= 2009-02-14 AND
-        /// mtime &lt; 2009-02-15".  Read this to say: all files updated after 12:00am on
-        /// February 14th, until 12:00am on February 15th.  You can use the same bracketing
-        /// approach to specify any time period - a year, a month, a week, and so on.
+        /// Using time properties requires some extra care. If you want to retrieve all
+        /// entries that were last updated on 2009 February 14, specify "mtime &gt;=
+        /// 2009-02-14 AND mtime &lt; 2009-02-15".  Read this to say: all files updated
+        /// after 12:00am on February 14th, until 12:00am on February 15th.  You can use
+        /// the same bracketing approach to specify any time period - a year, a month, a
+        /// week, and so on.
         /// </para>
         ///
         /// <para>
-        /// The syntax allows one special case: if you provide a string with no spaces, it is treated as
-        /// a pattern to match for the filename.  Therefore a string like "*.xls" will be equivalent to
-        /// specifying "name = *.xls".  This "shorthand" notation does not work with compound criteria.
+        /// The syntax allows one special case: if you provide a string with no spaces,
+        /// it is treated as a pattern to match for the filename.  Therefore a string
+        /// like "*.xls" will be equivalent to specifying "name = *.xls".  This
+        /// "shorthand" notation does not work with compound criteria.
         /// </para>
         ///
         /// <para>
@@ -790,7 +892,8 @@ namespace Ionic
 
             for (int i = 0; i < tokens.Length; i++)
             {
-                switch (tokens[i].ToLower())
+                string tok1 = tokens[i].ToLower();
+                switch (tok1)
                 {
                     case "and":
                     case "xor":
@@ -950,6 +1053,7 @@ namespace Ionic
 
                     case "attrs":
                     case "attributes":
+                    case "type":
                         {
                             if (tokens.Length <= i + 2)
                                 throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
@@ -960,11 +1064,18 @@ namespace Ionic
                             if (c != ComparisonOperator.NotEqualTo && c != ComparisonOperator.EqualTo)
                                 throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
 
-                            current = new AttributesCriterion
-                            {
-                                AttributeString = tokens[i + 2],
-                                Operator = c
-                            };
+                            current = (tok1 == "type")
+                                ? (SelectionCriterion) new TypeCriterion
+                                    {
+                                        AttributeString = tokens[i + 2],
+                                        Operator = c
+                                    }
+                                : (SelectionCriterion) new AttributesCriterion
+                                    {
+                                        AttributeString = tokens[i + 2],
+                                        Operator = c
+                                    };
+
                             i += 2;
                             stateStack.Push(ParseState.CriterionDone);
                         }
@@ -1100,8 +1211,11 @@ namespace Ionic
                         {
                             if (this.TraverseReparsePoints ||
                                 ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0))
-
+                            {
+                                // workitem 10191
+                                if (Evaluate(dir)) list.Add(dir);
                                 list.AddRange(this.SelectFiles(dir, recurseDirectories));
+                            }
                         }
                     }
                 }

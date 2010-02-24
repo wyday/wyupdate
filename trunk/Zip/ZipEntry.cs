@@ -1,7 +1,7 @@
 // ZipEntry.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.
+// Copyright (c) 2006-2010 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-21 02:53:43>
+// Time-stamp: <2010-February-14 18:41:00>
 //
 // ------------------------------------------------------------------
 //
@@ -2403,7 +2403,7 @@ namespace Ionic.Zip
         /// <returns>a string representation of the instance.</returns>
         public override String ToString()
         {
-            return String.Format("ZipEntry/{0}", FileName);
+            return String.Format("ZipEntry::{0}", FileName);
         }
 
 
@@ -2437,12 +2437,10 @@ namespace Ionic.Zip
             long origPosition = this.ArchiveStream.Position;
             try
             {
-                // Console.WriteLine("SetFdpLoh...\n  pos  0x{0:X8} ({0})", this.ArchiveStream.Position);
-                // Console.WriteLine("  seek 0x{0:X8} ({0})", this._RelativeOffsetOfLocalHeader);
-                // Console.WriteLine("  stream: {0}", this.ArchiveStream.ToString());
-                // change for workitem 8098
                 this.ArchiveStream.Seek(this._RelativeOffsetOfLocalHeader, SeekOrigin.Begin);
-                //this._zipfile.SeekFromOrigin(this._RelativeOffsetOfLocalHeader);
+
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
             }
             catch (System.IO.IOException exc1)
             {
@@ -2466,6 +2464,9 @@ namespace Ionic.Zip
             // Console.WriteLine("  seek 0x{0:X8} ({0})", filenameLength + extraFieldLength);
 
             this.ArchiveStream.Seek(filenameLength + extraFieldLength, SeekOrigin.Current);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
+
             this._LengthOfHeader = 30 + extraFieldLength + filenameLength +
                 GetLengthOfCryptoHeaderBytes(_Encryption_FromZipFile);
 
@@ -2478,6 +2479,8 @@ namespace Ionic.Zip
             // restore file position:
             // workitem 8098: ok (restore)
             this.ArchiveStream.Seek(origPosition, SeekOrigin.Begin);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
         }
 
 
@@ -2578,13 +2581,13 @@ namespace Ionic.Zip
 
         internal ZipContainer _container;
 
-        internal long __FileDataPosition = -1;
+        private long __FileDataPosition = -1;
         private byte[] _EntryHeader;
         internal Int64 _RelativeOffsetOfLocalHeader;
         private Int64 _future_ROLH;
         private Int64 _TotalEntrySize;
-        internal int _LengthOfHeader;
-        internal int _LengthOfTrailer;
+        private int _LengthOfHeader;
+        private int _LengthOfTrailer;
         internal bool _InputUsesZip64;
         private UInt32 _UnsupportedAlgorithmId;
 

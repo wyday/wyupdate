@@ -1,7 +1,7 @@
 // ZipSegmentedStream.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c)  2009 Dino Chiesa
+// Copyright (c) 2009-2010 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2009-December-27 02:05:02>
+// Time-stamp: <2010-February-14 18:44:15>
 //
 // ------------------------------------------------------------------
 //
@@ -326,7 +326,12 @@ namespace Ionic.Zip
 
             // Check if it is the same segment.  If it is, very simple.
             if (diskNumber == CurrentSegment)
-                return _innerStream.Seek(offset, SeekOrigin.Begin);
+            {
+                var x =_innerStream.Seek(offset, SeekOrigin.Begin);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_innerStream);
+                return x;
+            }
 
             // Seeking back to a prior segment.
             // The current segment and any intervening segments must be removed.
@@ -366,7 +371,12 @@ namespace Ionic.Zip
 
             _innerStream = new FileStream(_currentTempName, FileMode.Open);
 
-            return _innerStream.Seek(offset, SeekOrigin.Begin);
+            var r =  _innerStream.Seek(offset, SeekOrigin.Begin);
+
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_innerStream);
+
+            return r;
         }
 
 
@@ -409,7 +419,10 @@ namespace Ionic.Zip
 
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
-            return _innerStream.Seek(offset, origin);
+            var x = _innerStream.Seek(offset, origin);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_innerStream);
+            return x;
         }
 
         public override void SetLength(long value)

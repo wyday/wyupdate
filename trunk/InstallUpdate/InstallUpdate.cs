@@ -29,6 +29,8 @@ namespace wyUpdate
         public string TempDirectory;
         public string ProgramDirectory;
 
+        public bool JustUpdatingLocal;
+
         //Modify registry, executing/optimizing files
         public UpdateDetails UpdtDetails;
 
@@ -241,7 +243,9 @@ namespace wyUpdate
                         Directory.CreateDirectory(backupFolders[i]);
 
                         // set ACL on the folders so they'll have proper user access properties
-                        SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
+                        // there's no need to set ACL for local updates
+                        if (!JustUpdatingLocal)
+                            SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
 
                         //delete "newer" client, if it will overwrite this client
                         DeleteClientInPath(destFolders[i], origFolders[i]);

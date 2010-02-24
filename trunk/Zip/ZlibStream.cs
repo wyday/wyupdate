@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-09 12:03:25>
+// Time-stamp: <2010-January-29 16:35:23>
 //
 // ------------------------------------------------------------------
 //
@@ -581,6 +581,7 @@ namespace Ionic.Zlib
         ///
         /// <seealso cref="ZlibStream.UncompressString(byte[])"/>
         /// <seealso cref="ZlibStream.CompressBuffer(byte[])"/>
+        /// <seealso cref="GZipStream.CompressString(string)"/>
         ///
         /// <param name="s">
         ///   A string to compress.  The string will first be encoded
