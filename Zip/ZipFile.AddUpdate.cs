@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 16:51:18>
+// Time-stamp: <2010-February-15 12:50:43>
 //
 // ------------------------------------------------------------------
 //
@@ -1186,9 +1186,15 @@ namespace Ionic.Zip
         /// <remarks>
         ///
         /// <para>
-        ///   The application can provide an open, readable stream; in this case it will
-        ///   be read during the call to <see cref="ZipFile.Save()"/> or one of its
-        ///   overloads.
+        ///   The application should provide an open, readable stream; in this case it
+        ///   will be read during the call to <see cref="ZipFile.Save()"/> or one of
+        ///   its overloads.
+        /// </para>
+        ///
+        /// <para>
+        ///   The passed stream will be read from its current position.
+        ///   Callers should set the position in the stream before calling
+        ///   AddEntry().
         /// </para>
         ///
         /// <para>

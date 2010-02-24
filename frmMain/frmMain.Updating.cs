@@ -374,7 +374,8 @@ namespace wyUpdate
                                             UpdtDetails = updtDetails,
                                             RollbackDelegate = (ChangeRollbackDelegate) ChangeRollback,
                                             TempDirectory = tempDirectory,
-                                            ProgramDirectory = baseDirectory
+                                            ProgramDirectory = baseDirectory,
+                                            JustUpdatingLocal = onlyUpdatingLocalUser
                                         };
 
                     asyncThread = new Thread(installUpdate.RunUpdateFiles);

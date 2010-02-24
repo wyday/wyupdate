@@ -47,13 +47,80 @@ using Interop=System.Runtime.InteropServices;
 namespace Ionic.Zip
 {
     /// <summary>
-    ///   The ZipFile type represents a zip archive file.  This is the main type in the
-    ///   DotNetZip class library. This class reads and writes zip files, as defined in
-    ///   the format for zip described by PKWare.  The compression for this
-    ///   implementation is provided by a managed-code version of Zlib,
-    ///   included with DotNetZip in the classes in the Ionic.Zlib namespace.
+    ///   The ZipFile type represents a zip archive file.
     /// </summary>
-
+    ///
+    /// <remarks>
+    /// <para>
+    ///   This is the main type in the DotNetZip class library. This class reads and
+    ///   writes zip files, as defined in the <see
+    ///   href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">specification
+    ///   for zip files described by PKWare</see>.  The compression for this
+    ///   implementation is provided by a managed-code version of Zlib, included with
+    ///   DotNetZip in the classes in the Ionic.Zlib namespace.
+    /// </para>
+    ///
+    /// <para>
+    ///   This class provides a general purpose zip file capability.  Use it to read,
+    ///   create, or update zip files.  When you want to create zip files using a
+    ///   <c>Stream</c> type to write the zip file, you may want to consider the <see
+    ///   cref="ZipOutputStream"/> class.
+    /// </para>
+    ///
+    /// <para>
+    ///   Both the <c>ZipOutputStream</c> class and the <c>ZipFile</c> class can be used
+    ///   to create zip files. Both of them support many of the common zip features,
+    ///   including Unicode, different compression levels, and ZIP64. They provide
+    ///   very similar performance when creating zip files.
+    /// </para>
+    ///
+    /// <para>
+    ///   The <c>ZipFile</c> class is generally easier to use than
+    ///   <c>ZipOutputStream</c> and should be considered a higher-level interface.  For
+    ///   example, when creating a zip file via calls to the <c>PutNextEntry()</c> and
+    ///   <c>Write()</c> methods on the <c>ZipOutputStream</c> class, the caller is
+    ///   responsible for opening the file, reading the bytes from the file, writing
+    ///   those bytes into the <c>ZipOutputStream</c>, setting the attributes on the
+    ///   <c>ZipEntry</c>, and setting the created, last modified, and last accessed
+    ///   timestamps on the zip entry. All of these things are done automatically by a
+    ///   call to <see cref="ZipFile.AddFile(string,string)">ZipFile.AddFile()</see>.
+    ///   For this reason, the <c>ZipOutputStream</c> is generally recommended for use
+    ///   only when your application emits arbitrary data, not necessarily data from a
+    ///   filesystem file, directly into a zip file, and does so using a <c>Stream</c>
+    ///   metaphor.
+    /// </para>
+    ///
+    /// <para>
+    ///   Aside from the differences in programming model, there are other
+    ///   differences in capability between the two classes.
+    /// </para>
+    ///
+    /// <list type="bullet">
+    ///   <item>
+    ///     <c>ZipFile</c> can be used to read and extract zip files, in addition to
+    ///     creating zip files. <c>ZipOutputStream</c> cannot read zip files. If you want
+    ///     to use a stream to read zip files, check out the <see cref="ZipInputStream"/> class.
+    ///   </item>
+    ///
+    ///   <item>
+    ///     <c>ZipOutputStream</c> does not support the creation of segmented or spanned
+    ///     zip files.
+    ///   </item>
+    ///
+    ///   <item>
+    ///     <c>ZipOutputStream</c> cannot produce a self-extracting archive.
+    ///   </item>
+    /// </list>
+    ///
+    /// <para>
+    ///   Be aware that the <c>ZipFile</c> class implements the <see
+    ///   cref="System.IDisposable"/> interface.  In order for <c>ZipFile</c> to
+    ///   produce a valid zip file, you use use it within a using clause (<c>Using</c>
+    ///   in VB), or call the <c>Dispose()</c> method explicitly.  See the examples
+    ///   for how to employ a using clause.
+    /// </para>
+    ///
+    /// </remarks>
     [Interop.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00005")]
     [Interop.ComVisible(true)]
 #if !NETCF
@@ -676,7 +743,6 @@ namespace Ionic.Zip
         internal bool Verbose
         {
             get { return (_StatusMessageTextWriter != null); }
-            //set { _Verbose = value; }
         }
 
 
@@ -2019,9 +2085,8 @@ namespace Ionic.Zip
         /// <returns>a string representation of the instance.</returns>
         public override String ToString()
         {
-            return String.Format ("ZipFile/{0}", Name);
+            return String.Format ("ZipFile::{0}", Name);
         }
-
 
 
         /// <summary>
@@ -3255,7 +3320,9 @@ namespace Ionic.Zip
                 {
                     if (_name != null)
                     {
-                        _readstream = File.OpenRead(_name);
+                        _readstream = File.Open(_name, FileMode.Open, FileAccess.Read,
+                                                FileShare.Read | FileShare.Write );
+                        //_readstream = File.OpenRead(_name);
                         _ReadStreamIsOurs = true;
                     }
                 }

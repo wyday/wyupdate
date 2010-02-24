@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 14:14:40>
+// Time-stamp: <2010-February-10 09:50:43>
 //
 // ------------------------------------------------------------------
 //
@@ -55,31 +55,41 @@ namespace Ionic.Zip
     ///
     /// <remarks>
     /// <para>
-    ///   This class provides an alternative programming model to the one enabled by the
-    ///   <see cref="ZipFile"/> class. Use this when creating zip files, as an
-    ///   alternative to the <see cref="ZipFile"/> class, when you would like to use a
-    ///   Stream class to write the zip file.
+    ///   This class writes zip files, as defined in the <see
+    ///   href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">specification
+    ///   for zip files described by PKWare</see>.  The compression for this
+    ///   implementation is provided by a managed-code version of Zlib, included with
+    ///   DotNetZip in the classes in the Ionic.Zlib namespace.
     /// </para>
     ///
     /// <para>
-    ///   Some designs require a writable stream for output.  This stream can be used to
-    ///   produce a zip file, as it is written.
+    ///   This class provides an alternative programming model to the one enabled by the
+    ///   <see cref="ZipFile"/> class. Use this when creating zip files, as an
+    ///   alternative to the <see cref="ZipFile"/> class, when you would like to use a
+    ///   <c>Stream</c> type to write the zip file.
     /// </para>
     ///
     /// <para>
     ///   Both the <c>ZipOutputStream</c> class and the <c>ZipFile</c> class can be used
     ///   to create zip files. Both of them support many of the common zip features,
-    ///   including Unicode, different compression levels, and ZIP64.  For example, when
-    ///   creating a zip file via calls to the <c>PutNextEntry()</c> and <c>Write()</c>
-    ///   methods on the <c>ZipOutputStream</c> class, the caller is responsible for
-    ///   opening the file, reading the bytes from the file, writing those bytes into
-    ///   the <c>ZipOutputStream</c>, setting the attributes on the <c>ZipEntry</c>, and
-    ///   setting the created, last modified, and last accessed timestamps on the zip
-    ///   entry. All of these things are done automatically by a call to <see
-    ///   cref="ZipFile.AddFile(string,string)">ZipFile.AddFile()</see>.  For this
-    ///   reason, the <c>ZipOutputStream</c> is generally recommended for when your
-    ///   application wants to emit the arbitrary data, not necessarily data from a
-    ///   filesystem file, directly into a zip file.
+    ///   including Unicode, different compression levels, and ZIP64.   They provide
+    ///   very similar performance when creating zip files.
+    /// </para>
+    ///
+    /// <para>
+    ///   The <c>ZipFile</c> class is generally easier to use than
+    ///   <c>ZipOutputStream</c> and should be considered a higher-level interface.  For
+    ///   example, when creating a zip file via calls to the <c>PutNextEntry()</c> and
+    ///   <c>Write()</c> methods on the <c>ZipOutputStream</c> class, the caller is
+    ///   responsible for opening the file, reading the bytes from the file, writing
+    ///   those bytes into the <c>ZipOutputStream</c>, setting the attributes on the
+    ///   <c>ZipEntry</c>, and setting the created, last modified, and last accessed
+    ///   timestamps on the zip entry. All of these things are done automatically by a
+    ///   call to <see cref="ZipFile.AddFile(string,string)">ZipFile.AddFile()</see>.
+    ///   For this reason, the <c>ZipOutputStream</c> is generally recommended for use
+    ///   only when your application emits arbitrary data, not necessarily data from a
+    ///   filesystem file, directly into a zip file, and does so using a <c>Stream</c>
+    ///   metaphor.
     /// </para>
     ///
     /// <para>
@@ -104,6 +114,28 @@ namespace Ionic.Zip
     ///   </item>
     /// </list>
     ///
+    /// <para>
+    ///   Be aware that the <c>ZipOutputStream</c> class implements the <see
+    ///   cref="System.IDisposable"/> interface.  In order for
+    ///   <c>ZipOutputStream</c> to produce a valid zip file, you use use it within
+    ///   a using clause (<c>Using</c> in VB), or call the <c>Dispose()</c> method
+    ///   explicitly.  See the examples for how to employ a using clause.
+    /// </para>
+    ///
+    /// <para>
+    ///   Also, a note regarding compression performance: On the desktop .NET
+    ///   Framework, DotNetZip can use a multi-threaded compression implementation
+    ///   that provides significant speed increases on large files, over 300k or so,
+    ///   at the cost of increased memory use at runtime.  (The output of the
+    ///   compression is almost exactly the same size).  But, the multi-threaded
+    ///   approach incurs a performance hit on smaller files. There's no way for the
+    ///   ZipOutputStream to know whether parallel compression will be beneficial,
+    ///   because the ZipOutputStream does not know how much data you will write
+    ///   through the stream.  You may wish to set the <see
+    ///   cref="ParallelDeflateThreshold"/> property to zero, if you are compressing
+    ///   large files through <c>ZipOutputStream</c>.  This will cause parallel
+    ///   compression to be used, always.
+    /// </para>
     /// </remarks>
     public class ZipOutputStream : Stream
     {
@@ -118,19 +150,6 @@ namespace Ionic.Zip
         ///   zip file, based on the <see cref="System.IO.Stream"/> class.
         /// </para>
         ///
-        /// <para>
-        ///   On the desktop .NET Framework, DotNetZip can use a multi-threaded
-        ///   compression implementation that provides significant speed increases on
-        ///   large files, over 300k or so, at the cost of increased memory use at
-        ///   runtime.  (The output of the compression is almost exactly the same size).
-        ///   But, the multi-threaded approach incurs a performance hit on smaller
-        ///   files. There's no way for the ZipOutputStream to know whether parallel
-        ///   compression will be beneficial, because the ZipOutputStream does not know
-        ///   how much data you will write through the stream.  you may wish to set the
-        ///   <see cref="ParallelDeflateThreshold"/> property to zero, if you are
-        ///   compressing large files through <c>ZipOutputStream</c>.  This will cause
-        ///   parallel compression to be used, always.
-        /// </para>
         /// </remarks>
         ///
         /// <param name="stream">
@@ -294,8 +313,7 @@ namespace Ionic.Zip
         public ZipOutputStream(String fileName)
         {
             Stream stream = File.Open(fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
-            _Init(stream, false);
-            _name = fileName;
+            _Init(stream, false, fileName);
         }
 
 
@@ -319,10 +337,10 @@ namespace Ionic.Zip
         /// </param>
         public ZipOutputStream(Stream stream, bool leaveOpen)
         {
-            _Init(stream, leaveOpen);
+            _Init(stream, leaveOpen, null);
         }
 
-        private void _Init(Stream stream, bool leaveOpen)
+        private void _Init(Stream stream, bool leaveOpen, string name)
         {
             // workitem 9307
             _outputStream = stream.CanRead ? stream : new CountingStream(stream);
@@ -332,10 +350,23 @@ namespace Ionic.Zip
             _zip64 = Zip64Option.Never;
             _leaveUnderlyingStreamOpen = leaveOpen;
             Strategy = Ionic.Zlib.CompressionStrategy.Default;
-            _name = "unknown";
+            _name = name ?? "(stream)";
 #if !NETCF
             ParallelDeflateThreshold = -1L;
 #endif
+        }
+
+
+        /// <summary>Provides a string representation of the instance.</summary>
+        /// <remarks>
+        ///   <para>
+        ///     This can be useful for debugging purposes.
+        ///   </para>
+        /// </remarks>
+        /// <returns>a string representation of the instance.</returns>
+        public override String ToString()
+        {
+            return String.Format ("ZipOutputStream::{0}(leaveOpen({1})))", _name, _leaveUnderlyingStreamOpen);
         }
 
 

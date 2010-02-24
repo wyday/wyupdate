@@ -1,7 +1,7 @@
 // ZipEntry.Extract.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c)  2009 Dino Chiesa
+// Copyright (c) 2009-2010 Dino Chiesa
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 02:10:47>
+// Time-stamp: <2010-February-14 18:41:31>
 //
 // ------------------------------------------------------------------
 //
@@ -517,6 +517,8 @@ namespace Ionic.Zip
             Stream input = this.ArchiveStream;
 
             this.ArchiveStream.Seek(this.FileDataPosition, SeekOrigin.Begin);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
 
             _inputDecryptorStream = GetExtractDecryptor(input);
             Stream input3 = GetExtractDecompressor(_inputDecryptorStream);
@@ -876,6 +878,8 @@ namespace Ionic.Zip
 
             // change for workitem 8098
             input.Seek(this.FileDataPosition, SeekOrigin.Begin);
+            // workitem 10178
+            Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(input);
 
             // to validate the CRC.
             Int32 CrcResult = 0;
@@ -1171,6 +1175,8 @@ namespace Ionic.Zip
                     throw new ZipException("Missing password.");
 
                 this.ArchiveStream.Seek(this.FileDataPosition - 12, SeekOrigin.Begin);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
                 _zipCrypto_forExtract = ZipCrypto.ForRead(password, this);
             }
 
@@ -1191,6 +1197,8 @@ namespace Ionic.Zip
                 {
                     int sizeOfSaltAndPv = GetLengthOfCryptoHeaderBytes(_Encryption_FromZipFile);
                     this.ArchiveStream.Seek(this.FileDataPosition - sizeOfSaltAndPv, SeekOrigin.Begin);
+                    // workitem 10178
+                    Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(this.ArchiveStream);
                     int keystrength = GetKeyStrengthInBits(_Encryption_FromZipFile);
                     _aesCrypto_forExtract = WinZipAesCrypto.ReadFromStream(password, keystrength, this.ArchiveStream);
                 }

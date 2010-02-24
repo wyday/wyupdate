@@ -1,9 +1,7 @@
-#define OPTIMIZE_WI6612
-
 // ZipDirEntry.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006-2009 Dino Chiesa and Microsoft Corporation.
+// Copyright (c) 2006-2010 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -17,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 14:44:15>
+// Time-stamp: <2010-February-14 18:40:10>
 //
 // ------------------------------------------------------------------
 //
@@ -45,7 +43,6 @@ namespace Ionic.Zip
         }
 
 
-#if OPTIMIZE_WI6612
         internal void ResetDirEntry()
         {
             // __FileDataPosition is the position of the file data for an entry.
@@ -63,7 +60,6 @@ namespace Ionic.Zip
             // set _LengthOfHeader to 0, to indicate we need to read later.
             this._LengthOfHeader = 0;
         }
-#endif
 
         /// <summary>
         /// Provides a human-readable string with information about the ZipEntry.
@@ -120,6 +116,8 @@ namespace Ionic.Zip
             if (IsNotValidZipDirEntrySig(signature))
             {
                 s.Seek(-4, System.IO.SeekOrigin.Current);
+                // workitem 10178
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
 
                 // Getting "not a ZipDirEntry signature" here is not always wrong or an
                 // error.  This can happen when walking through a zipfile.  After the
@@ -143,6 +141,7 @@ namespace Ionic.Zip
 
             int i = 0;
             ZipEntry zde = new ZipEntry();
+            zde.ProvisionalAlternateEncoding = expectedEncoding;
             zde._Source = ZipEntrySource.ZipFile;
             zde._container = new ZipContainer(zf);
 

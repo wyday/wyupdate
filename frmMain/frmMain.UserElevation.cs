@@ -67,6 +67,8 @@ namespace wyUpdate
             }
         }
 
+        bool onlyUpdatingLocalUser = false;
+
         bool NeedElevationToUpdate()
         {
             bool willSelfUpdate = (SelfUpdateState == SelfUpdateState.WillUpdate ||
@@ -127,6 +129,7 @@ namespace wyUpdate
             }
 
             //it's not changing anything outside the user profile folder
+            onlyUpdatingLocalUser = true;
             return true;
         }
     }

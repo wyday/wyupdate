@@ -3,7 +3,7 @@
 // ZipEntry.Write.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c)  2009 Dino Chiesa
+// Copyright (c) 2009-2010 Dino Chiesa
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-07 01:34:03>
+// Time-stamp: <2010-February-14 18:42:20>
 //
 // ------------------------------------------------------------------
 //
@@ -1389,6 +1389,8 @@ namespace Ionic.Zip
                         // seek back in the stream to un-output the security metadata
                         s.Seek(-1 * headerBytesToRetract, SeekOrigin.Current);
                         s.SetLength(s.Position);
+                        // workitem 10178
+                        Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
 
                         // subtract the size of the security header from the _LengthOfHeader
                         _LengthOfHeader -= headerBytesToRetract;
