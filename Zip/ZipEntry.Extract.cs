@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-14 18:41:31>
+// Time-stamp: <2010-February-26 13:46:32>
 //
 // ------------------------------------------------------------------
 //
@@ -1222,7 +1222,7 @@ namespace Ionic.Zip
                 // Sometimes the name on the entry starts with a slash.
                 // Rather than unpack to the root of the volume, we're going to
                 // drop the slash and unpack to the specified base directory.
-                string f = this.FileName;
+                string f = this.FileName.Replace("\\","/");
                 if (f.StartsWith("/"))
                     f= this.FileName.Substring(1);
 

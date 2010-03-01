@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-12 18:03:50>
+// Time-stamp: <2010-February-24 23:30:54>
 //
 // ------------------------------------------------------------------
 //
@@ -623,9 +623,10 @@ namespace Ionic.Zip
                                       true);
         }
 
+
         private void _AddOrUpdateSelectedFiles(String selectionCriteria,
-                                     String directoryOnDisk,
-                                     String directoryPathInArchive,
+                                               String directoryOnDisk,
+                                               String directoryPathInArchive,
                                                bool recurseDirectories,
                                                bool wantUpdate)
         {
@@ -645,30 +646,32 @@ namespace Ionic.Zip
                                                                selectionCriteria, directoryOnDisk);
             Ionic.FileSelector ff = new Ionic.FileSelector(selectionCriteria,
                                                            AddDirectoryWillTraverseReparsePoints);
-            var filesToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
+            var itemsToAdd = ff.SelectFiles(directoryOnDisk, recurseDirectories);
 
-            if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", filesToAdd.Count);
+            if (Verbose) StatusMessageTextWriter.WriteLine("found {0} files...", itemsToAdd.Count);
 
             OnAddStarted();
 
+            AddOrUpdateAction action = (wantUpdate) ? AddOrUpdateAction.AddOrUpdate : AddOrUpdateAction.AddOnly;
             string d2 = directoryOnDisk.ToLower();
-            foreach (var f in filesToAdd)
+            foreach (var item in itemsToAdd)
             {
-                if (directoryPathInArchive != null)
+                // workitem 10153
+                string dirInArchive = (directoryPathInArchive == null)
+                    ? null
+                    : Path.GetDirectoryName(item).ToLower().Replace(d2, directoryPathInArchive);
+
+                if (File.Exists(item))
                 {
-                    // workitem 10153
-                    string dirInArchive = Path.GetDirectoryName(f).ToLower().Replace(d2, directoryPathInArchive);
                     if (wantUpdate)
-                        this.UpdateFile(f, dirInArchive);
+                        this.UpdateFile(item, dirInArchive);
                     else
-                        this.AddFile(f, dirInArchive);
+                        this.AddFile(item, dirInArchive);
                 }
                 else
                 {
-                    if (wantUpdate)
-                        this.UpdateFile(f, null);
-                    else
-                        this.AddFile(f, null);
+                    // this adds "just" the directory, without recursing to the contained files
+                    AddOrUpdateDirectoryImpl(item, dirInArchive, action, false, 0);
                 }
             }
 

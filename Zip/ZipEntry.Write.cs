@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-14 18:42:20>
+// Time-stamp: <2010-February-24 22:34:42>
 //
 // ------------------------------------------------------------------
 //
@@ -1978,6 +1978,7 @@ namespace Ionic.Zip
             _CompressionMethod_FromZipFile = _CompressionMethod;
             _restreamRequiredOnSave = false;
             _metadataChanged = false;
+            _Source = ZipEntrySource.None;
         }
 
         private void _EmitOne(Stream outstream)

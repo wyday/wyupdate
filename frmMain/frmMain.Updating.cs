@@ -239,16 +239,8 @@ namespace wyUpdate
 
                         auInfo.Save();
 
-                        // start the updated program
-                        Process start = new Process
-                                            {
-                                                StartInfo =
-                                                    {
-                                                        FileName = updateHelper.FileToExecuteAfterUpdate
-                                                    }
-                                            };
-
-                        start.Start();
+                        // start the updated program as a limited user
+                        LimitedProcess.Start(updateHelper.FileToExecuteAfterUpdate);
                     }
 
                     // we're no longer in autoupdate mode - cleanup temp files on close

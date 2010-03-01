@@ -2151,9 +2151,11 @@ namespace Ionic.Zip
                         if (e1.FileName == e2.FileName)
                         {
                             e2.CopyMetaData(e1);
+                            break;
                         }
                     }
                 }
+                x.Dispose(); // close the readstream 
                 _JustSaved = false;
             }
         }

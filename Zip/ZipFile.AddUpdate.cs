@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-15 12:50:43>
+// Time-stamp: <2010-February-24 23:33:00>
 //
 // ------------------------------------------------------------------
 //
@@ -1880,14 +1880,16 @@ namespace Ionic.Zip
 
 
 
-        private ZipEntry AddOrUpdateDirectoryImpl(string directoryName, string rootDirectoryPathInArchive, AddOrUpdateAction action)
+        private ZipEntry AddOrUpdateDirectoryImpl(string directoryName,
+                                                  string rootDirectoryPathInArchive,
+                                                  AddOrUpdateAction action)
         {
             if (rootDirectoryPathInArchive == null)
             {
                 rootDirectoryPathInArchive = "";
             }
 
-            return AddOrUpdateDirectoryImpl(directoryName, rootDirectoryPathInArchive, action, 0);
+            return AddOrUpdateDirectoryImpl(directoryName, rootDirectoryPathInArchive, action, true, 0);
         }
 
 
@@ -1900,10 +1902,16 @@ namespace Ionic.Zip
 
 
 
-        private ZipEntry AddOrUpdateDirectoryImpl(string directoryName, string rootDirectoryPathInArchive, AddOrUpdateAction action, int level)
+        private ZipEntry AddOrUpdateDirectoryImpl(string directoryName,
+                                                  string rootDirectoryPathInArchive,
+                                                  AddOrUpdateAction action,
+                                                  bool recurse,
+                                                  int level)
         {
-            if (Verbose) StatusMessageTextWriter.WriteLine("{0} {1}...",
-                                                           (action == AddOrUpdateAction.AddOnly) ? "adding" : "Adding or updating", directoryName);
+            if (Verbose)
+                StatusMessageTextWriter.WriteLine("{0} {1}...",
+                                                  (action == AddOrUpdateAction.AddOnly) ? "adding" : "Adding or updating",
+                                                  directoryName);
 
             if (level == 0)
                 OnAddStarted();
@@ -1943,28 +1951,31 @@ namespace Ionic.Zip
 
             String[] filenames = Directory.GetFiles(directoryName);
 
-            // add the files:
-            foreach (String filename in filenames)
+            if (recurse)
             {
-                if (action == AddOrUpdateAction.AddOnly)
-                    AddFile(filename, dirForEntries);
-                else
-                    UpdateFile(filename, dirForEntries);
-            }
+                // add the files:
+                foreach (String filename in filenames)
+                {
+                    if (action == AddOrUpdateAction.AddOnly)
+                        AddFile(filename, dirForEntries);
+                    else
+                        UpdateFile(filename, dirForEntries);
+                }
 
-            // add the subdirectories:
-            String[] dirnames = Directory.GetDirectories(directoryName);
-            foreach (String dir in dirnames)
-            {
-                // workitem 8617: Optionally traverse reparse points
+                // add the subdirectories:
+                String[] dirnames = Directory.GetDirectories(directoryName);
+                foreach (String dir in dirnames)
+                {
+                    // workitem 8617: Optionally traverse reparse points
 #if NETCF
-                FileAttributes fileAttrs = (FileAttributes) NetCfFile.GetAttributes(dir);
+                    FileAttributes fileAttrs = (FileAttributes) NetCfFile.GetAttributes(dir);
 #else
-                FileAttributes fileAttrs = System.IO.File.GetAttributes(dir);
+                    FileAttributes fileAttrs = System.IO.File.GetAttributes(dir);
 #endif
-                if (this.AddDirectoryWillTraverseReparsePoints ||
-                    ((fileAttrs & FileAttributes.ReparsePoint) == 0))
-                    AddOrUpdateDirectoryImpl(dir, rootDirectoryPathInArchive, action, level + 1);
+                    if (this.AddDirectoryWillTraverseReparsePoints ||
+                        ((fileAttrs & FileAttributes.ReparsePoint) == 0))
+                        AddOrUpdateDirectoryImpl(dir, rootDirectoryPathInArchive, action, recurse, level + 1);
+                }
             }
 
             if (level == 0)

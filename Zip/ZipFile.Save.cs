@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-06 15:24:43>
+// Time-stamp: <2010-February-26 14:00:30>
 //
 // ------------------------------------------------------------------
 //
@@ -105,6 +105,7 @@ namespace Ionic.Zip
                     return;
                 }
 
+                Reset();
 
                 if (Verbose) StatusMessageTextWriter.WriteLine("saving....");
 
@@ -181,9 +182,11 @@ namespace Ionic.Zip
                         // orig file, first.
                         this._readstream.Close();
                         this._readstream = null;
+                        // the archiveStream for each entry needs to be null
+                        foreach (var e in c) e._archiveStream = null;
                     }
 
-                    if (_fileAlreadyExists)
+                    if (File.Exists(_name))
                     {
                         // We do not just call File.Replace() here because
                         // there is a possibility that the TEMP volume is different
