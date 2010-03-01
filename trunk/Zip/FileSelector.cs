@@ -1,4 +1,4 @@
-//#define TRACE
+//#define SelectorTrace
 
 // FileSelector.cs
 // ------------------------------------------------------------------
@@ -17,7 +17,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-12 18:02:46>
+// Time-stamp: <2010-February-24 22:58:10>
 //
 // ------------------------------------------------------------------
 //
@@ -99,7 +99,7 @@ namespace Ionic
     {
         internal abstract bool Evaluate(string filename);
 
-        [System.Diagnostics.Conditional("TRACE")]
+        [System.Diagnostics.Conditional("SelectorTrace")]
         protected void CriterionTrace(string format, params object[] args)
         {
             System.Console.WriteLine("  " + format, args);

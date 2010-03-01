@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-14 18:41:00>
+// Time-stamp: <2010-February-26 14:45:25>
 //
 // ------------------------------------------------------------------
 //
@@ -833,6 +833,17 @@ namespace Ionic.Zip
         ///   If an application attempts to set the <c>FileName</c> to a value that
         ///   would result in a duplicate entry in the <c>ZipFile</c>, an exception is
         ///   thrown.
+        /// </para>
+        ///
+        /// <para>
+        ///   When a <c>ZipEntry</c> is contained within a <c>ZipFile</c>, applications
+        ///   cannot rename the entry within the context of a <c>foreach</c> (<c>For
+        ///   Each</c> in VB) loop, because of the way the <c>ZipFile</c> stores
+        ///   entries.  If you need to enumerate through all the entries and rename one
+        ///   or more of them, use <see
+        ///   cref="ZipFile.EntriesSorted">ZipFile.EntriesSorted</see> as the
+        ///   collection.  See also, <see
+        ///   cref="ZipFile.GetEnumerator()">ZipFile.GetEnumerator()</see>.
         /// </para>
         ///
         /// </remarks>
