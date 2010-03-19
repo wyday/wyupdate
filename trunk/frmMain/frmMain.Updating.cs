@@ -249,6 +249,12 @@ namespace wyUpdate
                     Close();
                     return;
                 }
+                else if (frameNum == Frame.UpdatedSuccessfully && update.CloseOnSuccess)
+                {
+                    // if close on finish - then close
+                    Close();
+                    return;
+                }
             }
 
             //if silent & if on one of the user interaction screens, then click next

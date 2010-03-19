@@ -50,6 +50,9 @@ namespace wyUpdate
                             FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
                     };
 
+                    //TODO: optionally show the window hidden
+                    //psi.WindowStyle = ProcessWindowStyle.Hidden;
+
                     if (!string.IsNullOrEmpty(psi.FileName))
                     {
                         //command line arguments
