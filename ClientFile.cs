@@ -112,6 +112,7 @@ namespace wyUpdate.Common
 
         public List<string> ClientServerSites { get; set; }
 
+        public bool CloseOnSuccess { get; set; }
 
         #endregion Properties
 
@@ -268,6 +269,9 @@ namespace wyUpdate.Common
                         break;
                     case 0x17: //hide the header divider
                         HideHeaderDivider = ReadFiles.ReadBool(ms);
+                        break;
+                    case 0x19:
+                        CloseOnSuccess = ReadFiles.ReadBool(ms);
                         break;
                     default:
                         ReadFiles.SkipField(ms, bType);
@@ -483,10 +487,12 @@ namespace wyUpdate.Common
             }
 
 
-
             //Hide the header divider
             if (HideHeaderDivider)
                 WriteFiles.WriteBool(ms, 0x17, true);
+
+            if (CloseOnSuccess)
+                WriteFiles.WriteBool(ms, 0x19, true);
 
             ms.WriteByte(0xFF);
 
