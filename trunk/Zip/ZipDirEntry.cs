@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-14 18:40:10>
+// Time-stamp: <2010-March-06 11:56:38>
 //
 // ------------------------------------------------------------------
 //
@@ -93,6 +93,59 @@ namespace Ionic.Zip
             }
         }
 
+
+        // workitem 10330
+        private class CopyHelper
+        {
+            private static System.Text.RegularExpressions.Regex re =
+                new System.Text.RegularExpressions.Regex(" \\(copy (\\d+)\\)$");
+
+            private static int callCount = 0;
+
+            internal static string AppendCopyToFileName(string f)
+            {
+                callCount++;
+                if (callCount > 25) throw new Exception("Runaway!!!");
+                int n = 1;
+                int r = f.LastIndexOf(".");
+
+                if (r == -1)
+                {
+                    // there is no extension
+                    System.Text.RegularExpressions.Match m = re.Match(f);
+                    if (m.Success)
+                    {
+                        n = Int32.Parse(m.Groups[1].Value) + 1;
+                        string copy = String.Format(" (copy {0})", n);
+                        f= f.Substring(0,m.Index) + copy;
+                    }
+                    else
+                    {
+                        string copy = String.Format(" (copy {0})", n);
+                        f= f + copy;
+                    }
+                }
+                else
+                {
+                    System.Console.WriteLine("HasExtension");
+                    System.Text.RegularExpressions.Match m = re.Match(f.Substring(0,r));
+                    if (m.Success)
+                    {
+                        n= Int32.Parse(m.Groups[1].Value) + 1;
+                        string copy = String.Format(" (copy {0})", n);
+                        f= f.Substring(0,m.Index) + copy  + f.Substring(r);
+                    }
+                    else
+                    {
+                        string copy = String.Format(" (copy {0})", n);
+                        f= f.Substring(0,r) + copy  + f.Substring(r);
+                    }
+
+                    System.Console.WriteLine("returning f({0})",f);
+                }
+                return f;
+            }
+        }
 
 
 
@@ -189,16 +242,16 @@ namespace Ionic.Zip
                 zde._FileNameInArchive = Ionic.Zip.SharedUtilities.StringFromBuffer(block, expectedEncoding);
             }
 
-            // Console.WriteLine("\nEntry : {0}", zde._LocalFileName);
-            // Console.WriteLine("  V Madeby/Needed:      0x{0:X4} / 0x{1:X4}", zde._VersionMadeBy, zde._VersionNeeded);
-            // Console.WriteLine("  BitField/Compression: 0x{0:X4} / 0x{1:X4}", zde._BitField, zde._CompressionMethod);
-            // Console.WriteLine("  Lastmod:              {0}", zde._LastModified.ToString("u"));
-            // Console.WriteLine("  CRC:                  0x{0:X8}", zde._Crc32);
-            // Console.WriteLine("  Comp / Uncomp:        0x{0:X8} ({0})   0x{1:X8} ({1})", zde._CompressedSize, zde._UncompressedSize);
+            // workitem 10330
+            // insure unique entry names
+            while (zf.ContainsEntry(zde._FileNameInArchive))
+            {
+                zde._FileNameInArchive = CopyHelper.AppendCopyToFileName(zde._FileNameInArchive);
+                zde._metadataChanged= true;
+            }
 
-            //zde._FileNameInArchive = zde._LocalFileName;
-
-            if (zde.AttributesIndicateDirectory) zde.MarkAsDirectory();  // may append a slash to filename if nec.
+            if (zde.AttributesIndicateDirectory)
+                zde.MarkAsDirectory();  // may append a slash to filename if nec.
             // workitem 6898
             else if (zde._FileNameInArchive.EndsWith("/")) zde.MarkAsDirectory();
 
