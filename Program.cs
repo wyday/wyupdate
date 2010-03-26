@@ -66,7 +66,7 @@ namespace wyUpdate
 
             // Using Process.ProcessName does not function properly when
             // the actual name exceeds 15 characters. Using the assembly 
-            // name takes care of this quirk and is more accruate than 
+            // name takes care of this quirk and is more accurate than 
             // other work arounds.
 
             string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;

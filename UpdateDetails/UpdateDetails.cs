@@ -130,6 +130,9 @@ namespace wyUpdate.Common
                     case 0x49:
                         tempUpdateFile.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
                         break;
+                    case 0x4A:
+                        tempUpdateFile.ProcessWindowStyle = (System.Diagnostics.ProcessWindowStyle)ReadFiles.ReadInt(fs);
+                        break;
                     case 0x9B://end of file
                         updtDetails.UpdateFiles.Add(tempUpdateFile);
                         tempUpdateFile = new UpdateFile();
@@ -211,6 +214,9 @@ namespace wyUpdate.Common
                         //commandline arguments
                         if (!string.IsNullOrEmpty(file.CommandLineArgs))
                             WriteFiles.WriteDeprecatedString(ms, 0x43, file.CommandLineArgs);
+
+                        if (file.ProcessWindowStyle != System.Diagnostics.ProcessWindowStyle.Normal)
+                            WriteFiles.WriteInt(ms, 0x4A, (int)file.ProcessWindowStyle);
                     }
 
                     //is it a .NET assembly?

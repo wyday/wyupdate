@@ -1,11 +1,10 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace wyUpdate.Common
 {
     public class UpdateFile
     {
-        #region Properties
-
         //full path of file for creating zip file
         public string Filename { get; set; }
 
@@ -34,7 +33,7 @@ namespace wyUpdate.Common
 
         public long NewFileAdler32 { get; set; }
 
-        #endregion Properties
+        public ProcessWindowStyle ProcessWindowStyle { get; set; }
 
 #if DESIGNER
         public UpdateFile() { }
