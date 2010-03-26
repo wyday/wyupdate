@@ -665,6 +665,8 @@ namespace wyUpdate
                         if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
                             psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
 
+                        psi.WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle;
+
                         //start the process
                         Process p = Process.Start(psi);
 

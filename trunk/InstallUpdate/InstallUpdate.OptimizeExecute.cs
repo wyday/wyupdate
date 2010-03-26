@@ -50,14 +50,13 @@ namespace wyUpdate
                             FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
                     };
 
-                    //TODO: optionally show the window hidden
-                    //psi.WindowStyle = ProcessWindowStyle.Hidden;
-
                     if (!string.IsNullOrEmpty(psi.FileName))
                     {
                         //command line arguments
                         if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
                             psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
+
+                        psi.WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle;
 
                         //start the process
                         Process p = Process.Start(psi);
@@ -220,16 +219,16 @@ namespace wyUpdate
             if (cpu != CPUVersion.x64)
             {
                 using (Process p = new Process
-                {
-                    StartInfo =
-                    {
-                        FileName = frameworkDirs[0] + "\\RegAsm.exe",
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        Arguments =
-                            "\"" + filename + "\" " +
-                            (Uninstall ? "/nologo /s /u" : "/nologo /s")
-                    }
-                })
+                                       {
+                                           StartInfo =
+                                               {
+                                                   FileName = frameworkDirs[0] + "\\RegAsm.exe",
+                                                   WindowStyle = ProcessWindowStyle.Hidden,
+                                                   Arguments =
+                                                       "\"" + filename + "\" " +
+                                                       (Uninstall ? "/nologo /s /u" : "/nologo /s")
+                                               }
+                                       })
                 {
                     p.Start();
 
@@ -245,16 +244,16 @@ namespace wyUpdate
             if (cpu == CPUVersion.x64 || cpu == CPUVersion.AnyCPU && frameworkDirs.Length == 2)
             {
                 using (Process p = new Process
-                {
-                    StartInfo =
-                    {
-                        FileName = frameworkDirs[1] + "\\RegAsm.exe",
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        Arguments =
-                            "\"" + filename + "\" " +
-                            (Uninstall ? "/nologo /s /u" : "/nologo /s")
-                    }
-                })
+                                       {
+                                           StartInfo =
+                                               {
+                                                   FileName = frameworkDirs[1] + "\\RegAsm.exe",
+                                                   WindowStyle = ProcessWindowStyle.Hidden,
+                                                   Arguments =
+                                                       "\"" + filename + "\" " +
+                                                       (Uninstall ? "/nologo /s /u" : "/nologo /s")
+                                               }
+                                       })
                 {
                     p.Start();
 
