@@ -114,6 +114,8 @@ namespace wyUpdate.Common
 
         public bool CloseOnSuccess { get; set; }
 
+        public string CustomWyUpdateTitle { get; set; }
+
         #endregion Properties
 
 #if CLIENT
@@ -272,6 +274,9 @@ namespace wyUpdate.Common
                         break;
                     case 0x19:
                         CloseOnSuccess = ReadFiles.ReadBool(ms);
+                        break;
+                    case 0x1A:
+                        CustomWyUpdateTitle = ReadFiles.ReadString(ms);
                         break;
                     default:
                         ReadFiles.SkipField(ms, bType);
@@ -493,6 +498,9 @@ namespace wyUpdate.Common
 
             if (CloseOnSuccess)
                 WriteFiles.WriteBool(ms, 0x19, true);
+
+            if (!string.IsNullOrEmpty(CustomWyUpdateTitle))
+                WriteFiles.WriteString(ms, 0x1A, CustomWyUpdateTitle);
 
             ms.WriteByte(0xFF);
 
