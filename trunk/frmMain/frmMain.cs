@@ -179,6 +179,10 @@ namespace wyUpdate
 
             panelDisplaying.HideHeaderDivider = update.HideHeaderDivider;
 
+            // set the 
+            if (update.CustomWyUpdateTitle != null)
+                Text = update.CustomWyUpdateTitle;
+
             try
             {
                 if (!string.IsNullOrEmpty(update.HeaderTextColorName))
