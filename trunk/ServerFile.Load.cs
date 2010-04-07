@@ -7,7 +7,7 @@ namespace wyUpdate.Common
 {
     public partial class ServerFile
     {
-        public static ServerFile Load(string fileName)
+        public static ServerFile Load(string fileName, string updatePathVar)
         {
             ServerFile serv = new ServerFile();
 
@@ -87,7 +87,14 @@ namespace wyUpdate.Common
                         serv.VersionChoices[serv.VersionChoices.Count - 1].Version = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x03://Add update file site
-                        ClientFile.AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serv.VersionChoices[serv.VersionChoices.Count - 1].FileSites);
+
+                        string updateSite = ReadFiles.ReadDeprecatedString(fs);
+
+                        if (updatePathVar != null)
+                            updateSite = updateSite.Replace("%updatepath%", updatePathVar);
+
+                        ClientFile.AddUniqueSite(updateSite, serv.VersionChoices[serv.VersionChoices.Count - 1].FileSites);
+                        
                         break;
                     case 0x80: //the changes text is in RTF format
                         serv.VersionChoices[serv.VersionChoices.Count - 1].RTFChanges = true;

@@ -43,6 +43,9 @@ namespace wyUpdate
         // are we using the -server commandline switch?
         string serverOverwrite;
 
+        // custom update path (-updatepath commandline switch)
+        string updatePathVar;
+
         // base directory: same path as the executable, unless specified
         string baseDirectory;
         //the extract directory
@@ -215,7 +218,7 @@ namespace wyUpdate
                 try
                 {
                     // load the server file for MinClient needed details (i.e. failure case)
-                    ServerFile = ServerFile.Load(serverFileLoc);
+                    ServerFile = ServerFile.Load(serverFileLoc, updatePathVar);
 
                     //load the self-update server file
                     LoadClientServerFile();
@@ -461,6 +464,10 @@ namespace wyUpdate
                 // load the passed server argument
                 if (commands["server"] != null)
                     serverOverwrite = commands["server"];
+
+                // load the custom updatepatch directory
+                if (commands["updatepath"] != null)
+                    updatePathVar = commands["updatepath"];
 
                 if (commands["proxy"] != null)
                 {
