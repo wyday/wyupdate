@@ -8,7 +8,7 @@ namespace wyUpdate
     {
         public static bool AtLeastVista()
         {
-            return (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version.Major >= 6);
+            return (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version.Major > 5);
         }
 
         // check if user is an admin for Windows 2000 and above

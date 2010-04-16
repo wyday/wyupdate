@@ -116,6 +116,8 @@ namespace wyUpdate.Common
 
         public string CustomWyUpdateTitle { get; set; }
 
+        public string PublicSignKey { get; set; }
+
         #endregion Properties
 
 #if CLIENT
@@ -277,6 +279,9 @@ namespace wyUpdate.Common
                         break;
                     case 0x1A:
                         CustomWyUpdateTitle = ReadFiles.ReadString(ms);
+                        break;
+                    case 0x1B:
+                        PublicSignKey = ReadFiles.ReadString(ms);
                         break;
                     default:
                         ReadFiles.SkipField(ms, bType);
@@ -501,6 +506,9 @@ namespace wyUpdate.Common
 
             if (!string.IsNullOrEmpty(CustomWyUpdateTitle))
                 WriteFiles.WriteString(ms, 0x1A, CustomWyUpdateTitle);
+
+            if (!string.IsNullOrEmpty(PublicSignKey))
+                WriteFiles.WriteString(ms, 0x1B, PublicSignKey);
 
             ms.WriteByte(0xFF);
 

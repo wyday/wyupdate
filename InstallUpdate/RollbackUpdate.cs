@@ -166,7 +166,7 @@ namespace wyUpdate
                     string origFile = Path.Combine(destDir, file.Name);
 
                     FileAttributes atr = file.Attributes;
-                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0;
+                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
 
                     // remove the ReadOnly & Hidden atributes temporarily
                     if (resetAttributes)

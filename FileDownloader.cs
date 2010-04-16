@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using wyUpdate.Common;
 
@@ -38,9 +39,13 @@ namespace wyUpdate.Downloader
 
         bool waitingForResponse;
 
+        // Adler verification
         public long Adler32;
+        readonly Adler32 downloadedAdler32 = new Adler32();
 
-        Adler32 downloadedAdler32 = new Adler32();
+        // Signed hash verification
+        public byte[] SignedSHA1Hash;
+        public string PublicSignKey;
 
         public bool UseRelativeProgress;
 
@@ -178,6 +183,9 @@ namespace wyUpdate.Downloader
             //allow all downloads regardless of SSL security errors
             /* This will 'fix' the self-signed SSL certificate problem
                that's typical on most corporate intranets */
+
+            // Updates are signed anyway - so it doesn't really matter if
+            // the SSL certs are invalid, broken, or self-signed
             return true;
         }
 
@@ -192,7 +200,17 @@ namespace wyUpdate.Downloader
         /// </summary>
         public void Download()
         {
-            bw.RunWorkerAsync();
+            // check if the PublicSignKey exists & the update isn't signed then just don't bother downloading
+            if(PublicSignKey != null && SignedSHA1Hash == null)
+            {
+                // unregister bw events
+                bw_RunWorkerCompleted(null, null);
+
+                // tell the user that all updates must be signed
+                ProgressChanged(-1, -1, true, string.Empty, new Exception("The update is not signed. All updates must be signed in order to be installed."));
+            }
+            else // start the download
+                bw.RunWorkerAsync();
         }
 
         // Begin downloading the file at the specified url, and save it to the given folder.
@@ -355,10 +373,47 @@ namespace wyUpdate.Downloader
         void ValidateDownload()
         {
             //if an Adler32 checksum is provided, check the file
-            if (!bw.CancellationPending && Adler32 != 0 && Adler32 != downloadedAdler32.Value)
+            if (!bw.CancellationPending)
             {
-                // file failed to vaildate, throw an error
-                throw new Exception("The downloaded file failed the Adler32 validation.");
+                if (Adler32 != 0 && Adler32 != downloadedAdler32.Value)
+                {
+                    // file failed to vaildate, throw an error
+                    throw new Exception("The downloaded file \"" + Path.GetFileName(DownloadingTo) + "\" failed the Adler32 validation.");
+                }
+
+                if (PublicSignKey != null)
+                {
+                    if (SignedSHA1Hash == null)
+                        throw new Exception("The downloaded file \"" + Path.GetFileName(DownloadingTo) + "\" is not signed.");
+                    
+                    try
+                    {
+                        byte[] hash;
+
+                        using (FileStream fs = new FileStream(DownloadingTo, FileMode.Open, FileAccess.Read))
+                        using (SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider())
+                        {
+                            hash = sha1.ComputeHash(fs);
+                        }
+
+                        RSACryptoServiceProvider RSA = new RSACryptoServiceProvider();
+                        RSA.FromXmlString(PublicSignKey);
+
+                        RSAPKCS1SignatureDeformatter RSADeformatter = new RSAPKCS1SignatureDeformatter(RSA);
+                        RSADeformatter.SetHashAlgorithm("SHA1");
+
+                        // verify signed hash
+                        if (!RSADeformatter.VerifySignature(hash, SignedSHA1Hash))
+                        {
+                            // The signature is not valid.
+                            throw new Exception("Verification failed.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception("The downloaded file \"" + Path.GetFileName(DownloadingTo) + "\" failed the signature validation: " + ex.Message);
+                    }
+                }
             }
         }
 

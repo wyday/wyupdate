@@ -13,12 +13,12 @@ namespace wyUpdate
             {
                 // overrite server file
                 List<string> overwriteServer = new List<string> { serverOverwrite };
-                BeginDownload(overwriteServer, 0, false);
+                BeginDownload(overwriteServer, 0, null, false, false);
             }
             else
             {
                 //download the server file
-                BeginDownload(update.ServerFileSites, 0, false);
+                BeginDownload(update.ServerFileSites, 0, null, false, false);
             }
         }
 
@@ -34,12 +34,12 @@ namespace wyUpdate
             {
                 //download the update file
                 update.CurrentlyUpdating = UpdateOn.DownloadingUpdate;
-                BeginDownload(updateFrom.FileSites, updateFrom.Adler32, true);
+                BeginDownload(updateFrom.FileSites, updateFrom.Adler32, updateFrom.SignedSHA1Hash, true, true);
             }
         }
 
         //download regular update files
-        void BeginDownload(List<string> sites, long adler32, bool relativeProgress)
+        void BeginDownload(List<string> sites, long adler32, byte[] signedSHA1Hash, bool relativeProgress, bool checkSigning)
         {
             if (downloader != null)
             {
@@ -50,7 +50,9 @@ namespace wyUpdate
             downloader = new FileDownloader(sites, tempDirectory)
                              {
                                  Adler32 = adler32,
-                                 UseRelativeProgress = relativeProgress
+                                 UseRelativeProgress = relativeProgress,
+                                 SignedSHA1Hash = signedSHA1Hash,
+                                 PublicSignKey = checkSigning ? update.PublicSignKey : null
                              };
 
             downloader.ProgressChanged += ShowProgress;

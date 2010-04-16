@@ -3,8 +3,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using wyUpdate.Common;
 using wyDay.Controls;
+using wyUpdate.Common;
 
 namespace wyUpdate
 {

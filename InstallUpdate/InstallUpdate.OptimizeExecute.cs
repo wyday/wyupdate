@@ -9,7 +9,8 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
-        static string[] frameworkDirs;
+        static string[] frameworkV2_0Dirs;
+        static string[] frameworkV4_0Dirs;
 
         public void RunOptimizeExecute()
         {
@@ -108,7 +109,7 @@ namespace wyUpdate
 
                         if (fDirs.Count != 0)
                         {
-                            frameworkDirs = fDirs.ToArray();
+                            frameworkV2_0Dirs = fDirs.ToArray();
                             return;
                         }
                     }
@@ -120,14 +121,14 @@ namespace wyUpdate
 
         static void NGenInstall(string filename, CPUVersion cpuVersion)
         {
-            if (frameworkDirs == null)
+            if (frameworkV2_0Dirs == null)
                 GetFrameworkDirectories();
 
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(frameworkDirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkDirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(frameworkV2_0Dirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " install \"" + filename + "\"" + " /nologo"
                 }
@@ -140,14 +141,14 @@ namespace wyUpdate
 
         static void NGenUninstall(string filename, CPUVersion cpuVersion)
         {
-            if (frameworkDirs == null)
+            if (frameworkV2_0Dirs == null)
                 GetFrameworkDirectories();
 
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(frameworkDirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkDirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(frameworkV2_0Dirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " uninstall \"" + filename + "\"" + " /nologo"
                 }
@@ -167,14 +168,14 @@ namespace wyUpdate
         static void RegisterDllServer(string DllPath, bool Uninstall)
         {
             using (Process p = new Process
-            {
-                StartInfo =
-                {
-                    FileName = "regsvr32.exe",
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    Arguments = (Uninstall ? "/s /u" : "/s") + " \"" + DllPath + "\""
-                }
-            })
+                                   {
+                                       StartInfo =
+                                           {
+                                               FileName = "regsvr32.exe",
+                                               WindowStyle = ProcessWindowStyle.Hidden,
+                                               Arguments = (Uninstall ? "/s /u" : "/s") + " \"" + DllPath + "\""
+                                           }
+                                   })
             {
                 p.Start();
 
@@ -190,7 +191,9 @@ namespace wyUpdate
                     case 2:
                         throw new Exception("RegSvr32 failed - OLE initilization failed for " + DllPath);
                     case 3:
-                        throw new Exception("RegSvr32 failed - Failed to load the module, you may need to check for problems with dependencies. File: " + DllPath);
+                        throw new Exception(
+                            "RegSvr32 failed - Failed to load the module, you may need to check for problems with dependencies. File: " +
+                            DllPath);
                     case 4:
                         throw new Exception("RegSvr32 failed - Can't find " +
                                             (Uninstall ? "DllUnregisterServer" : "DllRegisterServer") +
@@ -209,10 +212,10 @@ namespace wyUpdate
 
         static void RegAsm(string filename, bool Uninstall, CPUVersion cpu)
         {
-            if (frameworkDirs == null)
+            if (frameworkV2_0Dirs == null)
                 GetFrameworkDirectories();
 
-            if (cpu == CPUVersion.x64 && frameworkDirs.Length < 2)
+            if (cpu == CPUVersion.x64 && frameworkV2_0Dirs.Length < 2)
                 throw new Exception("Cannot register an x64 DLL on an x86 machine.");
 
             // call 32-bit regasm
@@ -222,7 +225,7 @@ namespace wyUpdate
                                        {
                                            StartInfo =
                                                {
-                                                   FileName = frameworkDirs[0] + "\\RegAsm.exe",
+                                                   FileName = frameworkV2_0Dirs[0] + "\\RegAsm.exe",
                                                    WindowStyle = ProcessWindowStyle.Hidden,
                                                    Arguments =
                                                        "\"" + filename + "\" " +
@@ -241,13 +244,13 @@ namespace wyUpdate
             }
 
             // call 64-bit regasm
-            if (cpu == CPUVersion.x64 || cpu == CPUVersion.AnyCPU && frameworkDirs.Length == 2)
+            if (cpu == CPUVersion.x64 || cpu == CPUVersion.AnyCPU && frameworkV2_0Dirs.Length == 2)
             {
                 using (Process p = new Process
                                        {
                                            StartInfo =
                                                {
-                                                   FileName = frameworkDirs[1] + "\\RegAsm.exe",
+                                                   FileName = frameworkV2_0Dirs[1] + "\\RegAsm.exe",
                                                    WindowStyle = ProcessWindowStyle.Hidden,
                                                    Arguments =
                                                        "\"" + filename + "\" " +

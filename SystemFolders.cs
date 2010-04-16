@@ -11,7 +11,10 @@ namespace wyUpdate.Common
         static string m_CommonAppData;
         static string m_CurrentAppData;
         static string m_CommonDesktop;
+        static string m_CurrentDesktop;
+        static string m_CommonDocuments;
         static string m_CommonProgramsStartMenu;
+        static string m_CurrentProgramsStartMenu;
         static string m_CommonStartup;
 
         static string m_System32x86;
@@ -33,12 +36,8 @@ namespace wyUpdate.Common
 
         public static string GetCurrentUserAppData()
         {
-            if(m_CurrentAppData == null)
-            {
-                m_CurrentAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            }
-
-            return m_CurrentAppData;
+            return m_CurrentAppData ??
+                   (m_CurrentAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
         }
 
         public static string GetCommonDesktop()
@@ -54,6 +53,27 @@ namespace wyUpdate.Common
             return m_CommonDesktop;
         }
 
+        public static string GetCurrentUserDesktop()
+        {
+            return m_CurrentDesktop ??
+                   (m_CurrentDesktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
+        }
+
+        public static string GetCommonDocuments()
+        {
+            if (m_CommonDocuments == null)
+            {
+                StringBuilder path = new StringBuilder(256);
+
+                //CSIDL_COMMON_DOCUMENTS = 0x002e
+                SHGetFolderPath(IntPtr.Zero, 0x2e, IntPtr.Zero, 0, path);
+
+                m_CommonDocuments = path.ToString();
+            }
+
+            return m_CommonDocuments;
+        }
+
         public static string GetCommonProgramsStartMenu()
         {
             if (m_CommonProgramsStartMenu == null)
@@ -65,6 +85,12 @@ namespace wyUpdate.Common
             }
 
             return m_CommonProgramsStartMenu;
+        }
+
+        public static string GetCurrentUserProgramsStartMenu()
+        {
+            return m_CurrentProgramsStartMenu ??
+                   (m_CurrentProgramsStartMenu = Environment.GetFolderPath(Environment.SpecialFolder.Programs));
         }
 
         public static string GetCommonStartup()
