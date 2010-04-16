@@ -108,6 +108,9 @@ namespace wyUpdate.Common
                     case 0x08://update's Adler32 checksum
                         serv.VersionChoices[serv.VersionChoices.Count - 1].Adler32 = ReadFiles.ReadLong(fs);
                         break;
+                    case 0x14: // signed SHA1 hash
+                        serv.VersionChoices[serv.VersionChoices.Count - 1].SignedSHA1Hash = ReadFiles.ReadByteArray(fs);
+                        break;
                     case 0x0A: //Installing to which directories?
                         serv.VersionChoices[serv.VersionChoices.Count - 1].InstallingTo = (InstallingTo)ReadFiles.ReadInt(fs);
                         break;

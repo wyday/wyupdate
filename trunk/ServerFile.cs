@@ -11,6 +11,7 @@ namespace wyUpdate.Common
         public List<string> FileSites = new List<string>();
         public long FileSize;
         public long Adler32;
+        public byte[] SignedSHA1Hash;
 
         //Determine if client elevation is needed (Vista & non-admin users)
         public InstallingTo InstallingTo = 0;

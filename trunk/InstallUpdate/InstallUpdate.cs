@@ -91,7 +91,7 @@ namespace wyUpdate
                     File.Copy(origFile, Path.Combine(backupFolder, tempFiles[i].Name), true);
 
                     FileAttributes atr = File.GetAttributes(origFile);
-                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0;
+                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
 
                     // remove the ReadOnly & Hidden atributes temporarily
                     if (resetAttributes)
@@ -534,7 +534,7 @@ namespace wyUpdate
                 if(File.Exists(Filename))
                     atr = File.GetAttributes(Filename);
 
-                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0;
+                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
 
                 // remove the ReadOnly & Hidden atributes temporarily
                 if (resetAttributes)

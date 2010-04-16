@@ -140,8 +140,18 @@ namespace wyUpdate
                         {
                             needElevation = false;
 
+                            FileAttributes atr = File.GetAttributes(oldSelfLocation);
+                            bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
+
+                            // remove the ReadOnly & Hidden atributes temporarily
+                            if (resetAttributes)
+                                File.SetAttributes(oldSelfLocation, FileAttributes.Normal);
+
                             //Install the new client
                             File.Copy(newSelfLocation, oldSelfLocation, true);
+
+                            if (resetAttributes)
+                                File.SetAttributes(oldSelfLocation, atr);
 
                             //Relaunch self in OnLoad()
                         }
@@ -382,7 +392,7 @@ namespace wyUpdate
             }
             else
             {
-                // wait mode - for automatic updates
+                // automatic update mode
                 if (commands["autoupdate"] != null)
                 {
                     // the actual pipe will be created when OnHandleCreated is called

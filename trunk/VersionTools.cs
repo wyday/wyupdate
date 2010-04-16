@@ -235,6 +235,8 @@ namespace wyUpdate.Common
             return string.Compare(a, b);
         }
 
+#if DESIGNER
+
         /// <summary>
         /// Increments the version number.
         /// </summary>
@@ -305,6 +307,7 @@ namespace wyUpdate.Common
             return sb.ToString();
         }
 
+#endif
 
         private static string thisVersion;
         /// <summary>
@@ -313,11 +316,9 @@ namespace wyUpdate.Common
         /// <returns>The version of the currently executing assembly.</returns>
         public static string FromExecutingAssembly()
         {
-            if (thisVersion == null)
-                thisVersion =
-                    FileVersionInfo.GetVersionInfo(System.Windows.Forms.Application.ExecutablePath).FileVersion;
-
-            return thisVersion;
+            return thisVersion ??
+                   (thisVersion =
+                    FileVersionInfo.GetVersionInfo(System.Windows.Forms.Application.ExecutablePath).FileVersion);
         }
     }
 }

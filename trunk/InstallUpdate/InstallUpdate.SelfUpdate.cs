@@ -50,9 +50,18 @@ namespace wyUpdate
                 //find self in Path.Combine(OutputDirectory, "base")
                 UpdateFile updateFile = FindNewClient();
 
+                FileAttributes atr = File.GetAttributes(OldSelfLoc);
+                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
+
+                // remove the ReadOnly & Hidden atributes temporarily
+                if (resetAttributes)
+                    File.SetAttributes(OldSelfLoc, FileAttributes.Normal);
 
                 //transfer new client to the directory (Note: this assumes a standalone wyUpdate - i.e. no dependencies)
                 File.Copy(NewSelfLoc, OldSelfLoc, true);
+
+                if (resetAttributes)
+                    File.SetAttributes(OldSelfLoc, atr);
 
                 //Optimize client if necessary
                 if (updateFile != null)
@@ -189,8 +198,20 @@ namespace wyUpdate
                 //find and forcibly close oldClientLocation
                 KillProcess(OldSelfLoc);
 
+                
+                FileAttributes atr = File.GetAttributes(OldSelfLoc);
+                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
+
+                // remove the ReadOnly & Hidden atributes temporarily
+                if (resetAttributes)
+                    File.SetAttributes(OldSelfLoc, FileAttributes.Normal);
+
                 //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
                 File.Copy(NewSelfLoc, OldSelfLoc, true);
+
+                if (resetAttributes)
+                    File.SetAttributes(OldSelfLoc, atr);
+
 
                 //Optimize client if necessary
                 if (updateFile != null)

@@ -262,7 +262,4 @@ namespace wyDay.Controls
             base.WndProc(ref m);
         }
     }
-
-
-
 }
