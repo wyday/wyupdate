@@ -78,7 +78,7 @@ namespace wyUpdate
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
 
-        static void GetFrameworkDirectories()
+        static void GetFrameworkV2_0Directories()
         {
             using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\.NETFramework"))
             {
@@ -115,14 +115,55 @@ namespace wyUpdate
                     }
                 }
 
-                throw new Exception("Failed to retrieve .NET Framework directories.");
+                throw new Exception("Failed to find .NET Framework 2.0 directories.");
+            }
+        }
+
+        static void GetFrameworkV4_0Directories()
+        {
+            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\.NETFramework"))
+            {
+                if (key == null)
+                    return;
+
+                string installRoot = (string)key.GetValue("InstallRoot", null);
+
+                if (installRoot != null)
+                {
+                    DirectoryInfo dir = new DirectoryInfo(installRoot);
+
+                    dir = dir.Parent;
+
+                    if (dir != null)
+                    {
+                        List<string> fDirs = new List<string>(2);
+
+                        string frameDir = Path.Combine(dir.FullName, "Framework\\v4.0.30319");
+
+                        if (Directory.Exists(frameDir))
+                            fDirs.Add(frameDir);
+
+                        frameDir = Path.Combine(dir.FullName, "Framework64\\v4.0.30319");
+
+                        if (Directory.Exists(frameDir))
+                            fDirs.Add(frameDir);
+
+                        if (fDirs.Count != 0)
+                        {
+                            frameworkV4_0Dirs = fDirs.ToArray();
+                            return;
+                        }
+                    }
+                }
+
+                throw new Exception("Failed to find .NET Framework 4.0 directories.");
             }
         }
 
         static void NGenInstall(string filename, CPUVersion cpuVersion)
         {
             if (frameworkV2_0Dirs == null)
-                GetFrameworkDirectories();
+                GetFrameworkV2_0Directories();
 
             Process proc = new Process
             {
@@ -142,7 +183,7 @@ namespace wyUpdate
         static void NGenUninstall(string filename, CPUVersion cpuVersion)
         {
             if (frameworkV2_0Dirs == null)
-                GetFrameworkDirectories();
+                GetFrameworkV2_0Directories();
 
             Process proc = new Process
             {
@@ -210,12 +251,21 @@ namespace wyUpdate
             }
         }
 
-        static void RegAsm(string filename, bool Uninstall, CPUVersion cpu)
+        static void RegAsm(string filename, bool Uninstall, CPUVersion cpu, FrameworkVersion frameworkVersion)
         {
-            if (frameworkV2_0Dirs == null)
-                GetFrameworkDirectories();
+            switch (frameworkVersion)
+            {
+                case FrameworkVersion.Net2_0:
+                    if (frameworkV2_0Dirs == null)
+                        GetFrameworkV2_0Directories();
+                    break;
+                case FrameworkVersion.Net4_0:
+                    if (frameworkV4_0Dirs == null)
+                        GetFrameworkV4_0Directories();
+                    break;
+            }
 
-            if (cpu == CPUVersion.x64 && frameworkV2_0Dirs.Length < 2)
+            if (cpu == CPUVersion.x64 && ((frameworkVersion == FrameworkVersion.Net2_0 && frameworkV2_0Dirs.Length < 2) || (frameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs.Length < 2)))
                 throw new Exception("Cannot register an x64 DLL on an x86 machine.");
 
             // call 32-bit regasm
