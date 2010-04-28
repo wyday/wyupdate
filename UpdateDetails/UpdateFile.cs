@@ -24,6 +24,8 @@ namespace wyUpdate.Common
 
         public CPUVersion CPUVersion { get; set; }
 
+        public FrameworkVersion FrameworkVersion { get; set; }
+
         public bool WaitForExecution { get; set; }
 
         //Delta Patching Particulars:
