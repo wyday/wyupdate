@@ -168,6 +168,7 @@ namespace wyUpdate
             if (frameworkV4_0Dirs == null)
                 GetFrameworkV4_0Directories();
 
+            //TODO: install .NET 4.0 preemptively if any .NET 4 assemblies are included
             if (frameworkV4_0Dirs == null)
                 return;
 
