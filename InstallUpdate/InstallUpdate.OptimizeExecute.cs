@@ -162,14 +162,14 @@ namespace wyUpdate
 
         static void NGenInstall(string filename, UpdateFile updateFile)
         {
-            if (frameworkV2_0Dirs == null)
+            if (updateFile.FrameworkVersion == FrameworkVersion.Net2_0 && frameworkV2_0Dirs == null)
                 GetFrameworkV2_0Directories();
 
-            if (frameworkV4_0Dirs == null)
+            if (updateFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
                 GetFrameworkV4_0Directories();
 
             //TODO: install .NET 4.0 preemptively if any .NET 4 assemblies are included
-            if (frameworkV4_0Dirs == null)
+            if (updateFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
                 return;
 
             Process proc = new Process
@@ -187,16 +187,22 @@ namespace wyUpdate
             proc.WaitForExit();
         }
 
-        static void NGenUninstall(string filename, CPUVersion cpuVersion)
+        static void NGenUninstall(string filename, UninstallFileInfo uninstallFile)
         {
-            if (frameworkV2_0Dirs == null)
+            if (uninstallFile.FrameworkVersion == FrameworkVersion.Net2_0 && frameworkV2_0Dirs == null)
                 GetFrameworkV2_0Directories();
+
+            if (uninstallFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
+                GetFrameworkV4_0Directories();
+
+            if (uninstallFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
+                return;
 
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(frameworkV2_0Dirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(uninstallFile.FrameworkVersion == FrameworkVersion.Net4_0 ? frameworkV4_0Dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1] : frameworkV2_0Dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " uninstall \"" + filename + "\"" + " /nologo"
                 }
