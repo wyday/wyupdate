@@ -65,7 +65,7 @@ namespace wyUpdate
 
                 //Optimize client if necessary
                 if (updateFile != null)
-                    NGenInstall(OldSelfLoc, updateFile.CPUVersion);
+                    NGenInstall(OldSelfLoc, updateFile);
 
                 //cleanup the client update files to prevent conflicts with the product update
                 File.Delete(NewSelfLoc);
@@ -215,7 +215,7 @@ namespace wyUpdate
 
                 //Optimize client if necessary
                 if (updateFile != null)
-                    NGenInstall(OldSelfLoc, updateFile.CPUVersion);
+                    NGenInstall(OldSelfLoc, updateFile);
             }
             catch (Exception ex)
             {

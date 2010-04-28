@@ -133,6 +133,9 @@ namespace wyUpdate.Common
                     case 0x4A:
                         tempUpdateFile.ProcessWindowStyle = (System.Diagnostics.ProcessWindowStyle)ReadFiles.ReadInt(fs);
                         break;
+                    case 0x4B:
+                        tempUpdateFile.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
+                        break;
                     case 0x9B://end of file
                         updtDetails.UpdateFiles.Add(tempUpdateFile);
                         tempUpdateFile = new UpdateFile();
@@ -226,6 +229,10 @@ namespace wyUpdate.Common
 
                         // save whether the files is AnyCPU, x86, or x64
                         WriteFiles.WriteInt(ms, 0x49, (int)file.CPUVersion);
+
+                        // .NET framework is by default 2.0 - only save the framework version if it's .NET 4.0 or unknown
+                        if (file.FrameworkVersion != FrameworkVersion.Net2_0)
+                            WriteFiles.WriteInt(ms, 0x4B, (int) file.FrameworkVersion);
                     }
 
 

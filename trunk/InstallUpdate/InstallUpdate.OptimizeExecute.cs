@@ -30,7 +30,7 @@ namespace wyUpdate
                         string filename = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
 
                         if (!string.IsNullOrEmpty(filename))
-                            NGenInstall(filename, UpdtDetails.UpdateFiles[i].CPUVersion); //optimize the file
+                            NGenInstall(filename, UpdtDetails.UpdateFiles[i]); //optimize the file
                     }
                 }
             }
@@ -160,16 +160,22 @@ namespace wyUpdate
             }
         }
 
-        static void NGenInstall(string filename, CPUVersion cpuVersion)
+        static void NGenInstall(string filename, UpdateFile updateFile)
         {
             if (frameworkV2_0Dirs == null)
                 GetFrameworkV2_0Directories();
+
+            if (frameworkV4_0Dirs == null)
+                GetFrameworkV4_0Directories();
+
+            if (frameworkV4_0Dirs == null)
+                return;
 
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(frameworkV2_0Dirs[cpuVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(updateFile.FrameworkVersion == FrameworkVersion.Net4_0 ? frameworkV4_0Dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1] : frameworkV2_0Dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " install \"" + filename + "\"" + " /nologo"
                 }
