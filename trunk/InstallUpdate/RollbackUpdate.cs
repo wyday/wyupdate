@@ -13,6 +13,7 @@ namespace wyUpdate
         public bool DeleteFile;
         public bool UnNGENFile;
         public CPUVersion CPUVersion;
+        public FrameworkVersion FrameworkVersion;
 
         public static UninstallFileInfo Read(Stream fs)
         {
@@ -36,6 +37,9 @@ namespace wyUpdate
                         break;
                     case 0x04:
                         tempUFI.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
+                        break;
+                    case 0x05:
+                        tempUFI.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -66,6 +70,8 @@ namespace wyUpdate
 
                 // the CPU version of the file to un-ngen
                 WriteFiles.WriteInt(fs, 0x04, (int) CPUVersion);
+
+                WriteFiles.WriteInt(fs, 0x05, (int)FrameworkVersion);
             }
 
             //end of uninstall file info

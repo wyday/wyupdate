@@ -604,7 +604,7 @@ namespace wyUpdate
                 try
                 {
                     if (file.UnNGENFile)
-                        NGenUninstall(file.Path, file.CPUVersion);
+                        NGenUninstall(file.Path, file);
 
                     if (file.DeleteFile)
                         File.Delete(file.Path);
