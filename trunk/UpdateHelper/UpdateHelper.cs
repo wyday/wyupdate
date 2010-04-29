@@ -88,10 +88,10 @@ namespace wyUpdate.Common
         {
             UpdateHelperData data = UpdateHelperData.FromByteArray(message);
 
-            if (data.Action == Action.GetwyUpdateProcessID)
+            if (data.Action == UpdateAction.GetwyUpdateProcessID)
             {
                 // send ProcessID
-                pipeServer.SendMessage(new UpdateHelperData(Action.GetwyUpdateProcessID) { ProcessID = Process.GetCurrentProcess().Id }.GetByteArray());
+                pipeServer.SendMessage(new UpdateHelperData(UpdateAction.GetwyUpdateProcessID) { ProcessID = Process.GetCurrentProcess().Id }.GetByteArray());
                 return;
             }
 
@@ -142,7 +142,7 @@ namespace wyUpdate.Common
 
         public void SendNewWyUpdate(string pipeName, int processID)
         {
-            UpdateHelperData uh = new UpdateHelperData(Action.NewWyUpdateProcess) {ProcessID = processID};
+            UpdateHelperData uh = new UpdateHelperData(UpdateAction.NewWyUpdateProcess) { ProcessID = processID };
 
             uh.ExtraData.Add(pipeName);
             uh.ExtraDataIsRTF.Add(false);
@@ -151,5 +151,5 @@ namespace wyUpdate.Common
         }
     }
 
-    internal delegate void RequestHandler(object sender, Action a, UpdateStep s);
+    internal delegate void RequestHandler(object sender, UpdateAction a, UpdateStep s);
 }

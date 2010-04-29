@@ -300,14 +300,14 @@ namespace wyUpdate
                             // update has already been downloaded & extracted
                             SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
 
-                            UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.Install);
+                            UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
                         }
                         else
                         {
                             // update hasn't been downloaded yet
                             SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateAvailable);
 
-                            UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.DownloadUpdate);
+                            UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.DownloadUpdate);
                         }
                     }
                     else
