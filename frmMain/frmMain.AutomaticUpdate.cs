@@ -95,9 +95,9 @@ namespace wyUpdate
             CancelUpdate(true);
         }
 
-        void UpdateHelper_RequestReceived(object sender, Action a, UpdateStep s)
+        void UpdateHelper_RequestReceived(object sender, UpdateAction a, UpdateStep s)
         {
-            if (a == Action.Cancel)
+            if (a == UpdateAction.Cancel)
             {
                 CancelUpdate(true);
                 return;

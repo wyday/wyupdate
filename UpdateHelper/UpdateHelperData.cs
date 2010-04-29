@@ -7,7 +7,7 @@ namespace wyUpdate.Common
 {
     internal class UpdateHelperData
     {
-        public Action Action;
+        public UpdateAction Action;
         public UpdateStep UpdateStep;
 
 
@@ -27,14 +27,14 @@ namespace wyUpdate.Common
         public UpdateHelperData() { }
 
 
-        public UpdateHelperData(Action action)
+        public UpdateHelperData(UpdateAction action)
         {
             Action = action;
         }
 
         public UpdateHelperData(UpdateStep step)
         {
-            Action = Action.UpdateStep;
+            Action = UpdateAction.UpdateStep;
             UpdateStep = step;
         }
 
@@ -132,7 +132,7 @@ namespace wyUpdate.Common
                 switch (bType)
                 {
                     case 0x01:
-                        uhData.Action = (Action)ReadFiles.ReadInt(ms);
+                        uhData.Action = (UpdateAction)ReadFiles.ReadInt(ms);
                         break;
                     case 0x02: // update step we're on
                         uhData.UpdateStep = (UpdateStep)ReadFiles.ReadInt(ms);
@@ -197,7 +197,7 @@ namespace wyUpdate.Common
         }
     }
 
-    internal enum Action { UpdateStep = 0, GetwyUpdateProcessID = 1, Cancel = 2, NewWyUpdateProcess = 3 }
+    internal enum UpdateAction { UpdateStep = 0, GetwyUpdateProcessID = 1, Cancel = 2, NewWyUpdateProcess = 3 }
     internal enum UpdateStep { CheckForUpdate = 0, DownloadUpdate = 1, BeginExtraction = 2, RestartInfo = 3, Install = 4 }
     internal enum Response { Failed = -1, Nothing = 0, Succeeded = 1, Progress = 2 }
 }

@@ -345,7 +345,7 @@ namespace wyUpdate
 
                         // selfupdate & post-selfupdate installation
                         if (beginAutoUpdateInstallation)
-                            UpdateHelper_RequestReceived(this, Action.UpdateStep, UpdateStep.Install);
+                            UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
                     }
                     catch (Exception ex)
                     {
