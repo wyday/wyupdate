@@ -277,9 +277,9 @@ namespace wyUpdate
                             VcdiffDecoder.Decode(original, patch, target, UpdtDetails.UpdateFiles[0].NewFileAdler32);
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[0].RelativePath));
+                        throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[0].RelativePath) + "\r\n\r\n" + ex.Message);
                     }
 
                     // the 'last write time' of the patch file is really the 'lwt' of the dest. file
