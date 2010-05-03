@@ -86,9 +86,9 @@ namespace wyUpdate
                                     VcdiffDecoder.Decode(original, patch, target, file.NewFileAdler32);
                                 }
                             }
-                            catch
+                            catch (Exception ex)
                             {
-                                throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath));
+                                throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\n" + ex.Message);
                             }
 
 
