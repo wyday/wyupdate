@@ -33,7 +33,7 @@ namespace wyUpdate
         string error;
         string errorDetails;
 
-        // full filename of the update & servers files 
+        // full filename of the update & servers files
         string updateFilename;
         string serverFileLoc;
 
@@ -74,7 +74,6 @@ namespace wyUpdate
 
         // handle hidden form
         bool _isApplicationRun = true;
-        bool StartFormHidden;
         
         // start hidden, close if no update, show if update
         bool QuickCheck;
@@ -302,7 +301,7 @@ namespace wyUpdate
             {
                 _isApplicationRun = false;
 
-                base.SetVisibleCore(StartFormHidden ? false : value);
+                base.SetVisibleCore(value);
 
 
                 if (isAutoUpdateMode)
@@ -405,7 +404,9 @@ namespace wyUpdate
 
                 if (commands["quickcheck"] != null)
                 {
-                    StartFormHidden = true;
+                    WindowState = FormWindowState.Minimized;
+                    ShowInTaskbar = false;
+
                     QuickCheck = true;
 
                     if (commands["noerr"] != null)
