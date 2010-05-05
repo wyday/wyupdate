@@ -53,7 +53,10 @@ namespace wyUpdate
                             Close();
                             return;
                         }
-                        
+
+                        ShowInTaskbar = true;
+                        WindowState = FormWindowState.Normal;
+
                         TopMost = true;
                         TopMost = false;
 
@@ -169,6 +172,18 @@ namespace wyUpdate
                     btnNext.Enabled = true;
                     btnCancel.Visible = false;
                     btnNext.Text = clientLang.FinishButton;
+
+                    // show wyUpdate if 
+                    if (QuickCheck && !QuickCheckNoErr)
+                    {
+                        ShowInTaskbar = true;
+                        WindowState = FormWindowState.Normal;
+
+                        TopMost = true;
+                        TopMost = false;
+
+                        QuickCheck = false;
+                    }
 
                     break;
             }
