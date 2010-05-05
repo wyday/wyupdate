@@ -50,16 +50,10 @@ namespace wyUpdate
                         if (QuickCheckJustCheck)
                         {
                             ReturnCode = 2;
-                            WindowState = FormWindowState.Minimized;
-                            ShowInTaskbar = false;
-                            Opacity = 0;
-                            Visible = true;
                             Close();
                             return;
                         }
-
-                        // show the update window
-                        Visible = true;
+                        
                         TopMost = true;
                         TopMost = false;
 
