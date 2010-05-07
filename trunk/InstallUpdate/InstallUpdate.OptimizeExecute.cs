@@ -162,15 +162,22 @@ namespace wyUpdate
 
         static void NGenInstall(string filename, UpdateFile updateFile)
         {
-            if (updateFile.FrameworkVersion == FrameworkVersion.Net2_0 && frameworkV2_0Dirs == null)
-                GetFrameworkV2_0Directories();
+            switch (updateFile.FrameworkVersion)
+            {
+                case FrameworkVersion.Net2_0:
+                    if (frameworkV2_0Dirs == null)
+                        GetFrameworkV2_0Directories();
+                    break;
+                case FrameworkVersion.Net4_0:
+                    if (frameworkV4_0Dirs == null)
+                        GetFrameworkV4_0Directories();
 
-            if (updateFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
-                GetFrameworkV4_0Directories();
+                    //TODO: install .NET 4.0 preemptively if any .NET 4 assemblies are included
+                    if (frameworkV4_0Dirs == null)
+                        return;
 
-            //TODO: install .NET 4.0 preemptively if any .NET 4 assemblies are included
-            if (updateFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
-                return;
+                    break;
+            }
 
             Process proc = new Process
             {
@@ -189,14 +196,21 @@ namespace wyUpdate
 
         static void NGenUninstall(string filename, UninstallFileInfo uninstallFile)
         {
-            if (uninstallFile.FrameworkVersion == FrameworkVersion.Net2_0 && frameworkV2_0Dirs == null)
-                GetFrameworkV2_0Directories();
+            switch (uninstallFile.FrameworkVersion)
+            {
+                case FrameworkVersion.Net2_0:
+                    if (frameworkV2_0Dirs == null)
+                        GetFrameworkV2_0Directories();
+                    break;
+                case FrameworkVersion.Net4_0:
+                    if (frameworkV4_0Dirs == null)
+                        GetFrameworkV4_0Directories();
 
-            if (uninstallFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
-                GetFrameworkV4_0Directories();
+                    if (frameworkV4_0Dirs == null)
+                        return;
 
-            if (uninstallFile.FrameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs == null)
-                return;
+                    break;
+            }
 
             Process proc = new Process
             {
