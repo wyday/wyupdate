@@ -15,7 +15,7 @@ namespace wyUpdate
 
             foreach (RegChange change in UpdtDetails.RegistryModifications)
             {
-                if (canceled)
+                if (IsCancelled())
                     break;
 
                 i++;

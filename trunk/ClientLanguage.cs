@@ -67,6 +67,9 @@ namespace wyUpdate
             m_ProcessDialog = new ScreenDialog("Close processes...",
                 null,
                 "The following processes need to be closed before updating can continue. Select a process and click Close Process."),
+            m_FileInUseDialog = new ScreenDialog("Files in use",
+                null,
+                "The following files are in use. These files must be closed before the update can continue."),
             m_CancelDialog = new ScreenDialog("Cancel update?",
                 null,
                 "Are you sure you want to exit before the update is complete?");

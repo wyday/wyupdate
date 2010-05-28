@@ -9,15 +9,16 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        delegate void ShowProgressDelegate(int weightedPercentDone, int percentDone, bool statusDone, string extraStatus, Exception ex);
+        delegate void ShowProgressDelegate(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
         delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
         delegate void CheckProcessesDel(List<FileInfo> files, List<Process> rProcesses, bool statusDone);
 
         delegate void ChangeRollbackDelegate(bool rbRegistry);
 
+        frmFilesInUse inUseForm = null;
 
         // update the label & progress bar when downloading/updating
-        void ShowProgress(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex)
+        void ShowProgress(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
         {
             //update progress bar when between 0 and 100
             if (percentDone > -1 && percentDone < 101)
@@ -33,7 +34,27 @@ namespace wyUpdate
             if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != "")
                 panelDisplaying.ProgressStatus = extraStatus;
 
-            if (done && ex == null)
+            if (status == ProgressStatus.SharingViolation)
+            {
+                if (inUseForm == null)
+                {
+                    inUseForm = new frmFilesInUse();
+                    inUseForm.ShowDialog(this);
+                    //TODO: show the dialog showing which file is in-use by another process
+                    //TODO: see if calling this thread while the dialog is visible actually works (to let the background thread periodically retry the file)
+                }
+
+                return;
+            }
+
+            if (inUseForm != null)
+            {
+                //TODO: close the form
+                inUseForm.Close();
+                inUseForm = null;
+            }
+
+            if (status == ProgressStatus.Success)
             {
                 if (isCancelled)
                     Close(); //close the form
@@ -53,7 +74,9 @@ namespace wyUpdate
                     }
                     catch (Exception e)
                     {
-                        ex = e; //error occured, show error screen
+                        //error occured, show error screen
+                        status = ProgressStatus.Failure;
+                        payload = e;
                     }
                 }
                 else
@@ -67,13 +90,13 @@ namespace wyUpdate
             }
 
 
-            if (ex != null)
+            if (status == ProgressStatus.Failure)
             {
                 //Show the error (rollback has already been done)
                 if (frameOn == Frame.Checking)
                 {
                     error = clientLang.ServerError;
-                    errorDetails = ex.Message;
+                    errorDetails = ((Exception)payload).Message;
                 }
                 else
                 {
@@ -81,13 +104,13 @@ namespace wyUpdate
                     {
                         //a download error occurred
                         error = clientLang.DownloadError;
-                        errorDetails = ex.Message;
+                        errorDetails = ((Exception)payload).Message;
                     }
                     else // an update error occurred
                     {
                         // if the exception was PatchApplicationException, then
                         //see if a catch-all update exists (and the catch-all update isn't the one that failed)
-                        if (ex.GetType() == typeof(PatchApplicationException) &&
+                        if (payload.GetType() == typeof(PatchApplicationException) &&
                             updateFrom != ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1] &&
                             ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion)
                         {
@@ -111,7 +134,7 @@ namespace wyUpdate
                         }
 
                         error = clientLang.GeneralUpdateError;
-                        errorDetails = ex.Message;
+                        errorDetails = ((Exception)payload).Message;
                     }
                 }
 
@@ -123,7 +146,7 @@ namespace wyUpdate
         }
 
 
-        void SelfUpdateProgress(int percentDone, int unweightedProgress, bool done, string extraStatus, Exception ex)
+        void SelfUpdateProgress(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
         {
             //update progress bar
             panelDisplaying.Progress = percentDone;
@@ -132,7 +155,7 @@ namespace wyUpdate
             if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != "")
                 panelDisplaying.ProgressStatus = extraStatus;
 
-            if (done && ex == null)
+            if (status == ProgressStatus.Success)
             {
                 if (isCancelled)
                     Close(); //close the form
@@ -147,7 +170,9 @@ namespace wyUpdate
                     }
                     catch (Exception e)
                     {
-                        ex = e;
+                        //error occured, show error screen
+                        status = ProgressStatus.Failure;
+                        payload = e;
                     }
                 }
                 else
@@ -224,7 +249,7 @@ namespace wyUpdate
             }
 
 
-            if (ex != null)
+            if (status == ProgressStatus.Failure)
             {
                 bool selfUpdateRequired =
                     VersionTools.Compare(VersionTools.FromExecutingAssembly(), ServerFile.MinClientVersion) == -1;
@@ -232,7 +257,7 @@ namespace wyUpdate
                 bool canTryCatchAllUpdate = frameOn != Frame.Checking
 
                                             // patch failed
-                                            && ex.GetType() == typeof (PatchApplicationException)
+                                            && payload.GetType() == typeof(PatchApplicationException)
 
                                             // if the catch-all update isn't the one that failed
                                             && updateFrom != SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1]
@@ -246,7 +271,7 @@ namespace wyUpdate
                 {
                     //show an error and bail out
                     error = clientLang.SelfUpdateInstallError;
-                    errorDetails = ex.Message;
+                    errorDetails = ((Exception)payload).Message;
 
                     // report error back to the app
                     if (isAutoUpdateMode)

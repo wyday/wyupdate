@@ -3,6 +3,8 @@ using System.Windows.Forms;
 
 namespace wyUpdate.Common
 {
+    public enum ProgressStatus { None, Success, Failure, SharingViolation }
+
     public static class ThreadHelper
     {
         public static void ReportError(ContainerControl sender, Delegate del, string errorText, Exception ex)
@@ -27,7 +29,7 @@ namespace wyUpdate.Common
                     if (sender.IsDisposed)
                         return;
 
-                    sender.BeginInvoke(del, new object[] { -1, -1, true, errorText, ex });
+                    sender.BeginInvoke(del, new object[] { -1, -1, errorText, ProgressStatus.Failure, ex });
                     break;
                 }
                 catch { }
@@ -43,7 +45,23 @@ namespace wyUpdate.Common
                 if (sender.IsDisposed)
                     return;
 
-                sender.BeginInvoke(del, new object[] { progress, unweightedProgress, false, text, null });
+                sender.BeginInvoke(del, new object[] { progress, unweightedProgress, text, ProgressStatus.None, null });
+            }
+            catch
+            {
+                // don't bother with the exception (it doesn't matter if the main window misses a progress report)
+            }
+        }
+
+        public static void ReportSharingViolation(ContainerControl sender, Delegate del, string filename)
+        {
+            try
+            {
+                // eat any messages after the sender closes (aka IsDisposed)
+                if (sender.IsDisposed)
+                    return;
+
+                sender.BeginInvoke(del, new object[] { -1, -1, string.Empty, ProgressStatus.SharingViolation, filename });
             }
             catch
             {
@@ -65,7 +83,7 @@ namespace wyUpdate.Common
 
                     // NOTE: a -1 for progress assures that the progress bar won't be reset
 
-                    sender.BeginInvoke(del, new object[] { -1, -1, true, text, null });
+                    sender.BeginInvoke(del, new object[] { -1, -1, text, ProgressStatus.Success, null });
                     break;
                 }
                 catch { }

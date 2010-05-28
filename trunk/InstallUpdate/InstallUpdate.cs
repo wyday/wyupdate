@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using wyUpdate.Common;
@@ -45,7 +46,7 @@ namespace wyUpdate
 
         //cancellation & pausing
         volatile bool canceled;
-        //volatile bool paused = false;
+        volatile bool paused;
         #endregion Private Variables
 
 
@@ -75,7 +76,7 @@ namespace wyUpdate
 
             for (int i = 0; i < tempFiles.Length; i++)
             {
-                if (canceled)
+                if (IsCancelled())
                     break;
 
                 int unweightedProgress = (totalDone * 100) / totalFiles;
@@ -85,26 +86,55 @@ namespace wyUpdate
 
                 if (File.Exists(Path.Combine(progDir, tempFiles[i].Name)))
                 {
-                    string origFile = Path.Combine(progDir, tempFiles[i].Name);
+                    while (true)
+                    {
+                        try
+                        {
+                            string origFile = Path.Combine(progDir, tempFiles[i].Name);
 
-                    //backup
-                    File.Copy(origFile, Path.Combine(backupFolder, tempFiles[i].Name), true);
+                            // backup
+                            File.Copy(origFile, Path.Combine(backupFolder, tempFiles[i].Name), true);
 
-                    FileAttributes atr = File.GetAttributes(origFile);
-                    bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
+                            FileAttributes atr = File.GetAttributes(origFile);
+                            bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 ||
+                                                   (atr & FileAttributes.System) != 0;
 
-                    // remove the ReadOnly & Hidden atributes temporarily
-                    if (resetAttributes)
-                        File.SetAttributes(origFile, FileAttributes.Normal);
+                            // remove the ReadOnly & Hidden atributes temporarily
+                            if (resetAttributes)
+                                File.SetAttributes(origFile, FileAttributes.Normal);
 
-                    //replace
-                    File.Copy(tempFiles[i].FullName, origFile, true);
+                            // replace
+                            File.Copy(tempFiles[i].FullName, origFile, true);
 
-                    if (resetAttributes)
-                        File.SetAttributes(origFile, atr);
+                            if (resetAttributes)
+                                File.SetAttributes(origFile, atr);
+                        }
+                        catch (IOException IOEx)
+                        {
+                            int HResult = Marshal.GetHRForException(IOEx);
 
-                    //Old method (didn't work on Win 98/ME):
-                    //File.Replace(tempFiles[i].FullName, Path.Combine(progDir, tempFiles[i].Name), Path.Combine(backupFolder, tempFiles[i].Name));
+                            // if sharing violation
+                            if ((HResult & 0xFFFF) == 32)
+                            {
+                                // notify main window of sharing violation
+                                ThreadHelper.ReportSharingViolation(Sender, SenderDelegate, Path.Combine(progDir, tempFiles[i].Name));
+
+                                // sleep for 1 second
+                                Thread.Sleep(1000);
+
+                                // stop waiting if cancelled
+                                if (IsCancelled())
+                                    break;
+
+                                // retry file copy
+                                continue;
+                            }
+
+                            throw;
+                        }
+
+                        break;
+                    }
                 }
                 else
                 {
@@ -119,14 +149,14 @@ namespace wyUpdate
                 totalDone++;
             }
 
-            if (canceled)
+            if (IsCancelled())
                 return;
 
             DirectoryInfo[] tempDirs = tempDirInf.GetDirectories("*");
 
             for (int i = 0; i < tempDirs.Length; i++)
             {
-                if (canceled)
+                if (IsCancelled())
                     break;
 
                 string newProgDir = Path.Combine(progDir, tempDirs[i].Name);
@@ -259,7 +289,7 @@ namespace wyUpdate
                 //run the backup & replace
                 for (int i = 0; i < origFolders.Length; i++)
                 {
-                    if (canceled)
+                    if (IsCancelled())
                         break;
 
                     if (backupFolders[i] != null) //if the backup folder exists
@@ -729,10 +759,38 @@ namespace wyUpdate
             return null;
         }
 
-        //handle thread cancelation
+        /// <summary>
+        /// Cancel the current update step.
+        /// </summary>
         public void Cancel()
         {
             canceled = true;
+        }
+
+        /// <summary>
+        /// Pause or Unpause the current update step.
+        /// </summary>
+        /// <param name="pause">Should we pause or unpause?</param>
+        public void Pause(bool pause)
+        {
+            paused = pause;
+        }
+
+        /// <summary>
+        /// Returns if the progress is cancelled. Waits if paused.
+        /// </summary>
+        /// <returns>True if cancelled.</returns>
+        bool IsCancelled()
+        {
+            while (paused)
+            {
+                if (canceled)
+                    return true;
+
+                Thread.Sleep(1000);
+            }
+
+            return canceled;
         }
 
         #region RelativePaths
