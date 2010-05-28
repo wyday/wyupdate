@@ -31,6 +31,10 @@ namespace wyUpdate
         {
             if ((frameOn == Frame.Checking || frameOn == Frame.InstallUpdates) && !ForceClose) //if downloading or updating
             {
+                // pause the updating
+                if (frameOn == Frame.InstallUpdates && !IsDownloading())
+                    installUpdate.Pause(true);
+
                 DialogResult dResult = MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
                     MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button2);
 
@@ -56,7 +60,13 @@ namespace wyUpdate
 
                     //disable the 'X' button & cancel button
                     DisableCancel();
-                } //otherwise, do nothing
+                }
+                else
+                {
+                    // unpause the updating
+                    if (frameOn == Frame.InstallUpdates && !IsDownloading())
+                        installUpdate.Pause(false);
+                }
             }
             else
             {

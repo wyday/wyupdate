@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
 using Ionic.Zip;
 using wyUpdate.Common;
 using wyUpdate.Compression.Vcdiff;
@@ -17,7 +19,7 @@ namespace wyUpdate
 
                 foreach (ZipEntry e in zip)
                 {
-                    if (canceled)
+                    if (IsCancelled())
                         break; //stop outputting new files
 
                     if (!SkipProgressReporting)
@@ -71,29 +73,59 @@ namespace wyUpdate
                     {
                         if (file.DeltaPatchRelativePath != null)
                         {
+                            if (IsCancelled())
+                                break;
+
                             string tempFilename = Path.Combine(TempDirectory, file.RelativePath);
 
                             // create the directory to store the patched file
                             if (!Directory.Exists(Path.GetDirectoryName(tempFilename)))
                                 Directory.CreateDirectory(Path.GetDirectoryName(tempFilename));
 
-                            try
+                            while (true)
                             {
-                                using (FileStream original = File.OpenRead(FixUpdateDetailsPaths(file.RelativePath)))
-                                using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)))
-                                using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                                try
                                 {
-                                    VcdiffDecoder.Decode(original, patch, target, file.NewFileAdler32);
+                                    using (FileStream original = File.OpenRead(FixUpdateDetailsPaths(file.RelativePath)))
+                                    using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)))
+                                    using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                                    {
+                                        VcdiffDecoder.Decode(original, patch, target, file.NewFileAdler32);
+                                    }
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\n" + ex.Message);
-                            }
+                                catch (IOException IOEx)
+                                {
+                                    int HResult = Marshal.GetHRForException(IOEx);
 
+                                    // if sharing violation
+                                    if ((HResult & 0xFFFF) == 32)
+                                    {
+                                        // notify main window of sharing violation
+                                        ThreadHelper.ReportSharingViolation(Sender, SenderDelegate, FixUpdateDetailsPaths(file.RelativePath));
 
-                            // the 'last write time' of the patch file is really the 'lwt' of the dest. file
-                            File.SetLastWriteTime(tempFilename, File.GetLastWriteTime(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)));
+                                        // sleep for 1 second
+                                        Thread.Sleep(1000);
+
+                                        // stop waiting if cancelled
+                                        if (IsCancelled())
+                                            break;
+
+                                        // retry file patch
+                                        continue;
+                                    }
+
+                                    throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\n" + IOEx.Message);
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\n" + ex.Message);
+                                }
+
+                                // the 'last write time' of the patch file is really the 'lwt' of the dest. file
+                                File.SetLastWriteTime(tempFilename, File.GetLastWriteTime(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)));
+
+                                break;
+                            }
                         }
                     }
 

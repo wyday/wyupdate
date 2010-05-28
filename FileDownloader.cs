@@ -51,7 +51,7 @@ namespace wyUpdate.Downloader
 
         readonly BackgroundWorker bw = new BackgroundWorker();
 
-        public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, bool done, string extraStatus, Exception ex);
+        public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
         public event ProgressChangedHandler ProgressChanged;
 
         public static WebProxy CustomProxy;
@@ -77,7 +77,7 @@ namespace wyUpdate.Downloader
                 {
                     //no sites specified, bail out
                     if (!bw.CancellationPending)
-                        bw.ReportProgress(0, new object[] { -1, -1, true, string.Empty, new Exception("No download urls are specified.") });
+                        bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, new Exception("No download urls are specified.") });
 
                     return;
                 }
@@ -150,10 +150,7 @@ namespace wyUpdate.Downloader
             //Process complete (either sucessfully or failed), report back
             if (!bw.CancellationPending)
             {
-                if (ex != null)
-                    bw.ReportProgress(0, new object[] {-1, -1, true, string.Empty, ex});
-                else
-                    bw.ReportProgress(0, new object[] { -1, -1, true, string.Empty, null });
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ex != null ? ProgressStatus.Failure : ProgressStatus.Success, ex });
             }
         }
 
@@ -162,7 +159,7 @@ namespace wyUpdate.Downloader
             object[] arr = (object[])e.UserState;
 
             if (ProgressChanged != null)
-                ProgressChanged((int)arr[0], (int)arr[1], (bool)arr[2], (string)arr[3], (Exception)arr[4]);
+                ProgressChanged((int)arr[0], (int)arr[1], (string)arr[2], (ProgressStatus)arr[3], arr[4]);
         }
 
         void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -207,7 +204,7 @@ namespace wyUpdate.Downloader
                 bw_RunWorkerCompleted(null, null);
 
                 // tell the user that all updates must be signed
-                ProgressChanged(-1, -1, true, string.Empty, new Exception("The update is not signed. All updates must be signed in order to be installed."));
+                ProgressChanged(-1, -1, string.Empty, ProgressStatus.Failure, new Exception("The update is not signed. All updates must be signed in order to be installed."));
             }
             else // start the download
                 bw.RunWorkerAsync();
@@ -298,7 +295,7 @@ namespace wyUpdate.Downloader
 
                             // unweighted percent
                             data.PercentDone,
-                            false, downloadSpeed, null });
+                            downloadSpeed, ProgressStatus.None, null });
                     }
 
                     // break on cancel
