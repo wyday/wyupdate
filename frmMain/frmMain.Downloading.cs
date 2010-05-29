@@ -81,7 +81,7 @@ namespace wyUpdate
         void DownloadClientSFSuccess()
         {
             //load the client server file, and see if a new version is availiable
-            ServerFile clientSF = ServerFile.Load(clientSFLoc, null);
+            ServerFile clientSF = ServerFile.Load(clientSFLoc, null, null);
 
             //check if the client is new enough.
             if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1)
@@ -104,7 +104,7 @@ namespace wyUpdate
         {
             // load the self server file if it doesn't already exist
             if (SelfServerFile == null)
-                SelfServerFile = ServerFile.Load(clientSFLoc, null);
+                SelfServerFile = ServerFile.Load(clientSFLoc, null, null);
 
             updateFrom = SelfServerFile.GetVersionChoice(VersionTools.FromExecutingAssembly());
         }
@@ -132,7 +132,7 @@ namespace wyUpdate
         void LoadServerFile(bool setChangesText)
         {
             //load the server file
-            ServerFile = ServerFile.Load(serverFileLoc, updatePathVar);
+            ServerFile = ServerFile.Load(serverFileLoc, updatePathVar, customUrlArgs);
 
             clientLang.NewVersion = ServerFile.NewVersion;
 

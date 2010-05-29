@@ -36,12 +36,18 @@ namespace wyUpdate
 
             if (status == ProgressStatus.SharingViolation)
             {
+                // show the dialog showing which file is in-use by another process
                 if (inUseForm == null)
                 {
-                    inUseForm = new frmFilesInUse();
-                    inUseForm.ShowDialog(this);
-                    //TODO: show the dialog showing which file is in-use by another process
-                    //TODO: see if calling this thread while the dialog is visible actually works (to let the background thread periodically retry the file)
+                    inUseForm = new frmFilesInUse(clientLang, (string)payload);
+
+                    frmFilesInUse inuf = inUseForm;
+
+                    inuf.ShowDialog(this);
+
+                    //cancel the update process
+                    if (inuf.CancelUpdate)
+                        CancelUpdate(true);
                 }
 
                 return;
@@ -49,8 +55,9 @@ namespace wyUpdate
 
             if (inUseForm != null)
             {
-                //TODO: close the form
+                // close the InUse form
                 inUseForm.Close();
+                inUseForm.Visible = false;
                 inUseForm = null;
             }
 
@@ -405,9 +412,8 @@ namespace wyUpdate
 
                         // start the close processes form
                         Form proc = new frmProcesses(files, rProcesses, clientLang);
-                        DialogResult result = proc.ShowDialog();
 
-                        if (result == DialogResult.Cancel)
+                        if (proc.ShowDialog() == DialogResult.Cancel)
                         {
                             //cancel the update process
                             CancelUpdate(true);

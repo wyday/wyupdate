@@ -54,6 +54,12 @@ namespace wyUpdate
             if (!string.IsNullOrEmpty(autoUpdateStateFile))
                 WriteFiles.WriteString(fs, 0x0A, autoUpdateStateFile);
 
+            if (!string.IsNullOrEmpty(updatePathVar))
+                WriteFiles.WriteString(fs, 0x0C, updatePathVar);
+
+            if (!string.IsNullOrEmpty(customUrlArgs))
+                WriteFiles.WriteString(fs, 0x0D, customUrlArgs);
+
             if(isAutoUpdateMode)
             {
                 // is in automatic update mode
@@ -138,6 +144,12 @@ namespace wyUpdate
                         break;
                     case 0x0A:
                         autoUpdateStateFile = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x0C:
+                        updatePathVar = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x0D:
+                        customUrlArgs = ReadFiles.ReadString(fs);
                         break;
                     case 0x80: // is autoupdate mode
                         beginAutoUpdateInstallation = true;
