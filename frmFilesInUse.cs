@@ -23,7 +23,7 @@ namespace wyUpdate
             clientLang = cLang;
 
             // translate the buttons & text
-            Text = clientLang.FileInUseDialog.Title;
+            Text = clientLang.FilesInUseDialog.Title;
             btnCancel.Text = clientLang.CancelUpdate;
 
             txtFile.Text = filename;
@@ -47,7 +47,7 @@ namespace wyUpdate
         void UpdateSizes()
         {
             m_DescripRect = new Rectangle(new Point(SidePadding, SidePadding),
-                TextRenderer.MeasureText(clientLang.FileInUseDialog.Content,
+                TextRenderer.MeasureText(clientLang.FilesInUseDialog.Content,
                     Font,
                     new Size(ClientRectangle.Width - SidePadding * 2, 1),
                     TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding));
@@ -59,7 +59,7 @@ namespace wyUpdate
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            TextRenderer.DrawText(e.Graphics, clientLang.FileInUseDialog.Content, Font, m_DescripRect, ForeColor,
+            TextRenderer.DrawText(e.Graphics, clientLang.FilesInUseDialog.Content, Font, m_DescripRect, ForeColor,
                 TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
 
             base.OnPaint(e);
