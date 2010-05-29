@@ -67,7 +67,7 @@ namespace wyUpdate
             m_ProcessDialog = new ScreenDialog("Close processes...",
                 null,
                 "The following processes need to be closed before updating can continue. Select a process and click Close Process."),
-            m_FileInUseDialog = new ScreenDialog("Files in use",
+            m_FileInUseDialog = new ScreenDialog("Files in use...",
                 null,
                 "The following files are in use. These files must be closed before the update can continue."),
             m_CancelDialog = new ScreenDialog("Cancel update?",
@@ -168,12 +168,9 @@ namespace wyUpdate
         //Buttons
         public string NextButton
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_NextButton);
-                
-                return m_NextButton;
+                return m_ReturnParsedStrings ? ParseText(m_NextButton) : m_NextButton;
             }
             set { m_NextButton = value; }
         }
@@ -182,10 +179,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_UpdateButton);
-                
-                return m_UpdateButton;
+                return m_ReturnParsedStrings ? ParseText(m_UpdateButton) : m_UpdateButton;
             }
             set { m_UpdateButton = value; }
         }
@@ -194,22 +188,16 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_FinishButton);
-                
-                return m_FinishButton;
+                return m_ReturnParsedStrings ? ParseText(m_FinishButton) : m_FinishButton;
             }
             set { m_FinishButton = value; }
         }
 
         public string CancelButton
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_CancelButton);
-                
-                return m_CancelButton;
+                return m_ReturnParsedStrings ? ParseText(m_CancelButton) : m_CancelButton;
             }
             set { m_CancelButton = value; }
         }
@@ -218,10 +206,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_ShowDetails);
-
-                return m_ShowDetails;
+                return m_ReturnParsedStrings ? ParseText(m_ShowDetails) : m_ShowDetails;
             }
             set { m_ShowDetails = value; }
         }
@@ -229,24 +214,27 @@ namespace wyUpdate
         //Dialogs
         public ScreenDialog ProcessDialog
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_ProcessDialog);
-                
-                return m_ProcessDialog;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_ProcessDialog) : m_ProcessDialog;
             }
             set { m_ProcessDialog = value; }
+        }
+
+        public ScreenDialog FileInUseDialog
+        {
+            get
+            {
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_FileInUseDialog) : m_FileInUseDialog;
+            }
+            set { m_FileInUseDialog = value; }
         }
 
         public ScreenDialog CancelDialog
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_CancelDialog);
-                
-                return m_CancelDialog;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_CancelDialog) : m_CancelDialog;
             }
             set { m_CancelDialog = value; }
         }
@@ -255,10 +243,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_ClosePrc);
-                
-                return m_ClosePrc;
+                return m_ReturnParsedStrings ? ParseText(m_ClosePrc) : m_ClosePrc;
             }
             set { m_ClosePrc = value; }
         }
@@ -267,10 +252,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_CloseAllPrc);
-                
-                return m_CloseAllPrc;
+                return m_ReturnParsedStrings ? ParseText(m_CloseAllPrc) : m_CloseAllPrc;
             }
             set { m_CloseAllPrc = value; }
         }
@@ -279,10 +261,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_CancelUpdate);
-                
-                return m_CancelUpdate;
+                return m_ReturnParsedStrings ? ParseText(m_CancelUpdate) : m_CancelUpdate;
             }
             set { m_CancelUpdate = value; }
         }
@@ -292,10 +271,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_ServerError);
-                
-                return m_ServerError;
+                return m_ReturnParsedStrings ? ParseText(m_ServerError) : m_ServerError;
             }
             set { m_ServerError = value; }
         }
@@ -304,46 +280,34 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_AdminError);
-                
-                return m_AdminError;
+                return m_ReturnParsedStrings ? ParseText(m_AdminError) : m_AdminError;
             }
             set { m_AdminError = value; }
         }
 
         public string DownloadError
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_DownloadError);
-                
-                return m_DownloadError;
+                return m_ReturnParsedStrings ? ParseText(m_DownloadError) : m_DownloadError;
             }
             set { m_DownloadError = value; }
         }
 
         public string GeneralUpdateError
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_GeneralUpdateError);
-                
-                return m_GeneralUpdateError;
+                return m_ReturnParsedStrings ? ParseText(m_GeneralUpdateError) : m_GeneralUpdateError;
             }
             set { m_GeneralUpdateError = value; }
         }
 
         public string SelfUpdateInstallError
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_SelfUpdateInstallError);
-                
-                return m_SelfUpdateInstallError; 
+                return m_ReturnParsedStrings ? ParseText(m_SelfUpdateInstallError) : m_SelfUpdateInstallError;
             }
             set { m_SelfUpdateInstallError = value; }
         }
@@ -352,10 +316,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_LogOffError);
-
-                return m_LogOffError;
+                return m_ReturnParsedStrings ? ParseText(m_LogOffError) : m_LogOffError;
             }
             set { m_LogOffError = value; }
         }
@@ -365,10 +326,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_Checking);
-                
-                return m_Checking;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_Checking) : m_Checking;
             }
             set { m_Checking = value; }
         }
@@ -377,10 +335,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_UpdateInfo);
-                
-                return m_UpdateInfo;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_UpdateInfo) : m_UpdateInfo;
             }
             set { m_UpdateInfo = value; }
         }
@@ -389,22 +344,16 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_DownInstall);
-                
-                return m_DownInstall;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_DownInstall) : m_DownInstall;
             }
             set { m_DownInstall = value; }
         }
 
         public ScreenDialog Uninstall
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_Uninstall);
-                
-                return m_Uninstall;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_Uninstall) : m_Uninstall;
             }
             set { m_Uninstall = value; }
         }
@@ -413,10 +362,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_SuccessUpdate);
-                
-                return m_SuccessUpdate;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_SuccessUpdate) : m_SuccessUpdate;
             }
             set { m_SuccessUpdate = value; }
         }
@@ -425,22 +371,16 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_AlreadyLatest);
-                
-                return m_AlreadyLatest;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_AlreadyLatest) : m_AlreadyLatest;
             }
             set { m_AlreadyLatest = value; }
         }
 
         public ScreenDialog NoUpdateToLatest
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_NoUpdateToLatest);
-                
-                return m_NoUpdateToLatest;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_NoUpdateToLatest) : m_NoUpdateToLatest;
             }
             set { m_NoUpdateToLatest = value; }
         }
@@ -449,10 +389,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseScreenDialog(m_UpdateError);
-                
-                return m_UpdateError;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_UpdateError) : m_UpdateError;
             }
             set { m_UpdateError = value; }
         }
@@ -460,24 +397,18 @@ namespace wyUpdate
         //Bottom instructions
         public string UpdateBottom
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_UpdateBottom);
-                
-                return m_UpdateBottom;
+                return m_ReturnParsedStrings ? ParseText(m_UpdateBottom) : m_UpdateBottom;
             }
             set { m_UpdateBottom = value; }
         }
 
         public string FinishBottom
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_FinishBottom);
-                
-                return m_FinishBottom;
+                return m_ReturnParsedStrings ? ParseText(m_FinishBottom) : m_FinishBottom;
             }
             set { m_FinishBottom = value; }
         }
@@ -487,34 +418,25 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_Download);
-                
-                return m_Download;
+                return m_ReturnParsedStrings ? ParseText(m_Download) : m_Download;
             }
             set { m_Download = value; }
         }
 
         public string DownloadingSelfUpdate
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_DownloadingSelfUpdate);
-                
-                return m_DownloadingSelfUpdate; 
+                return m_ReturnParsedStrings ? ParseText(m_DownloadingSelfUpdate) : m_DownloadingSelfUpdate;
             }
             set { m_DownloadingSelfUpdate = value; }
         }
 
         public string SelfUpdate
         {
-            get 
+            get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_SelfUpdate);
-                
-                return m_SelfUpdate;
+                return m_ReturnParsedStrings ? ParseText(m_SelfUpdate) : m_SelfUpdate;
             }
             set { m_SelfUpdate = value; }
         }
@@ -523,10 +445,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_Extract);
-                
-                return m_Extract;
+                return m_ReturnParsedStrings ? ParseText(m_Extract) : m_Extract;
             }
             set { m_Extract = value; }
         }
@@ -535,10 +454,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_Processes);
-                
-                return m_Processes;
+                return m_ReturnParsedStrings ? ParseText(m_Processes) : m_Processes;
             }
             set { m_Processes = value; }
         }
@@ -547,10 +463,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_PreExec);
-                
-                return m_PreExec;
+                return m_ReturnParsedStrings ? ParseText(m_PreExec) : m_PreExec;
             }
             set { m_PreExec = value; }
         }
@@ -559,10 +472,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_Files);
-                
-                return m_Files;
+                return m_ReturnParsedStrings ? ParseText(m_Files) : m_Files;
             }
             set { m_Files = value; }
         }
@@ -571,10 +481,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_Registry);
-                
-                return m_Registry;
+                return m_ReturnParsedStrings ? ParseText(m_Registry) : m_Registry;
             }
             set { m_Registry = value; }
         }
@@ -583,10 +490,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_Optimize);
-                
-                return m_Optimize;
+                return m_ReturnParsedStrings ? ParseText(m_Optimize) : m_Optimize;
             }
             set { m_Optimize = value; }
         }
@@ -595,10 +499,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_TempFiles);
-                
-                return m_TempFiles;
+                return m_ReturnParsedStrings ? ParseText(m_TempFiles) : m_TempFiles;
             }
             set { m_TempFiles = value; }
         }
@@ -607,10 +508,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_UninstallRegistry);
-                
-                return m_UninstallRegistry;
+                return m_ReturnParsedStrings ? ParseText(m_UninstallRegistry) : m_UninstallRegistry;
             }
             set { m_UninstallRegistry = value; }
         }
@@ -619,10 +517,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_UninstallFiles);
-                
-                return m_UninstallFiles;
+                return m_ReturnParsedStrings ? ParseText(m_UninstallFiles) : m_UninstallFiles;
             }
             set { m_UninstallFiles = value; }
         }
@@ -631,10 +526,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_RollingBackFiles);
-
-                return m_RollingBackFiles;
+                return m_ReturnParsedStrings ? ParseText(m_RollingBackFiles) : m_RollingBackFiles;
             }
             set { m_RollingBackFiles = value; }
         }
@@ -643,10 +535,7 @@ namespace wyUpdate
         {
             get
             {
-                if (m_ReturnParsedStrings)
-                    return ParseText(m_RollingBackRegistry);
-
-                return m_RollingBackRegistry;
+                return m_ReturnParsedStrings ? ParseText(m_RollingBackRegistry) : m_RollingBackRegistry;
             }
             set { m_RollingBackRegistry = value; }
         }
@@ -753,9 +642,6 @@ namespace wyUpdate
         {
             //parse a string, and return a pretty string (sans %%)
             StringBuilder returnString = new StringBuilder();
-            string tempString;
-
-            int currentIndex;
 
             int firstIndex = text.IndexOf('%', 0);
 
@@ -770,7 +656,7 @@ namespace wyUpdate
             while (firstIndex != -1)
             {
                 //find the next percent sign
-                currentIndex = text.IndexOf('%', firstIndex + 1);
+                int currentIndex = text.IndexOf('%', firstIndex + 1);
 
                 //if no closing percent sign...
                 if (currentIndex == -1)
@@ -782,7 +668,7 @@ namespace wyUpdate
 
 
                 //return the content of the variable
-                tempString = VariableToPretty(text.Substring(firstIndex + 1, currentIndex - firstIndex - 1), ref excludeVariables);
+                string tempString = VariableToPretty(text.Substring(firstIndex + 1, currentIndex - firstIndex - 1), ref excludeVariables);
 
                 //if the variable isn't defined
                 if (tempString == null)

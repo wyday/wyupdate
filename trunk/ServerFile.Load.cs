@@ -7,7 +7,7 @@ namespace wyUpdate.Common
 {
     public partial class ServerFile
     {
-        public static ServerFile Load(string fileName, string updatePathVar)
+        public static ServerFile Load(string fileName, string updatePathVar, string customUrlArgs)
         {
             ServerFile serv = new ServerFile();
 
@@ -92,6 +92,8 @@ namespace wyUpdate.Common
 
                         if (updatePathVar != null)
                             updateSite = updateSite.Replace("%updatepath%", updatePathVar);
+
+                        updateSite = updateSite.Replace("%urlargs%", customUrlArgs ?? string.Empty);
 
                         ClientFile.AddUniqueSite(updateSite, serv.VersionChoices[serv.VersionChoices.Count - 1].FileSites);
                         
