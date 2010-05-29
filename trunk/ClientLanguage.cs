@@ -67,7 +67,7 @@ namespace wyUpdate
             m_ProcessDialog = new ScreenDialog("Close processes...",
                 null,
                 "The following processes need to be closed before updating can continue. Select a process and click Close Process."),
-            m_FileInUseDialog = new ScreenDialog("Files in use...",
+            m_FilesInUseDialog = new ScreenDialog("Files in use...",
                 null,
                 "The following files are in use. These files must be closed before the update can continue."),
             m_CancelDialog = new ScreenDialog("Cancel update?",
@@ -221,13 +221,13 @@ namespace wyUpdate
             set { m_ProcessDialog = value; }
         }
 
-        public ScreenDialog FileInUseDialog
+        public ScreenDialog FilesInUseDialog
         {
             get
             {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_FileInUseDialog) : m_FileInUseDialog;
+                return m_ReturnParsedStrings ? ParseScreenDialog(m_FilesInUseDialog) : m_FilesInUseDialog;
             }
-            set { m_FileInUseDialog = value; }
+            set { m_FilesInUseDialog = value; }
         }
 
         public ScreenDialog CancelDialog
@@ -586,6 +586,7 @@ namespace wyUpdate
 
             m_ProcessDialog.Clear();
             m_CancelDialog.Clear();
+            m_FilesInUseDialog.Clear();
 
             //Errors
             m_ServerError = null;
@@ -879,6 +880,8 @@ namespace wyUpdate
                         ReadScreenDialog(reader, m_CancelDialog);
                     else if (reader.LocalName.Equals("Processes"))
                         ReadScreenDialog(reader, m_ProcessDialog);
+                    else if (reader.LocalName.Equals("FilesInUse"))
+                        ReadScreenDialog(reader, m_FilesInUseDialog);
                 }
             }
         }
@@ -1049,6 +1052,7 @@ namespace wyUpdate
                 {
                     WriteScreenDialog(writer, "Cancel", m_CancelDialog);
                     WriteScreenDialog(writer, "Processes", m_ProcessDialog);
+                    WriteScreenDialog(writer, "FilesInUse", m_FilesInUseDialog);
                 }
                 writer.WriteEndElement(); //</Dialogs>
 
