@@ -125,6 +125,7 @@ public static class LimitedProcess
                             si.cb = Marshal.SizeOf(si);
 
                             // build the arguments string
+                            // filenames must be quoted or else the commandline args get blown
                             if (string.IsNullOrEmpty(arguments))
                                 arguments = "\"" + filename + "\"";
                             else
