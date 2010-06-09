@@ -126,9 +126,9 @@ public static class LimitedProcess
 
                             // build the arguments string
                             if (string.IsNullOrEmpty(arguments))
-                                arguments = filename;
+                                arguments = "\"" + filename + "\"";
                             else
-                                arguments = filename + " " + arguments;
+                                arguments = "\"" + filename + "\" " + arguments;
 
                             processCreated = CreateProcessWithTokenW(hPrimaryToken, 0, filename, arguments, 0, IntPtr.Zero, null, ref si, out pi);
 
