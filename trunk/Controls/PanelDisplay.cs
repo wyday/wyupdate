@@ -280,6 +280,11 @@ namespace wyUpdate
             messageBox.SelectionFont = prevSelectionFont;
         }
 
+        public void ClearText()
+        {
+            messageBox.Clear();
+        }
+
         public string GetChangesRTF()
         {
             return messageBox.Rtf;
@@ -470,8 +475,8 @@ namespace wyUpdate
             {
                 UpdateItems[i] = new UpdateItem
                                      {
-                                         AnimationWidth = 16, 
-                                         Visible = false, 
+                                         AnimationWidth = 16,
+                                         Visible = false,
                                          Left = 45
                                      };
                 Controls.Add(UpdateItems[i].Animation);

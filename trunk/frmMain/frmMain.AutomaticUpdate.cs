@@ -107,10 +107,23 @@ namespace wyUpdate
             if (FilterBadRequest(s))
                 return;
 
-            autoUpdateStepProcessing = s;
+            // set the current update step (ForceCheck == Check)
+            autoUpdateStepProcessing = s == UpdateStep.ForceRecheckForUpdate ? UpdateStep.CheckForUpdate : s;
 
             switch (s)
             {
+                case UpdateStep.ForceRecheckForUpdate:
+
+                    //TODO: perhaps delete old crufty files
+
+                    // show the checking frame regardless of the current step
+                    panelDisplaying.ClearText();
+                    ShowFrame(Frame.Checking);
+                    
+                    CheckForUpdate();
+
+                    break;
+
                 case UpdateStep.CheckForUpdate:
 
                     CheckForUpdate();
@@ -199,6 +212,20 @@ namespace wyUpdate
 
             switch (s)
             {
+                case UpdateStep.ForceRecheckForUpdate:
+                    // if already checking ...
+                    if (frameOn == Frame.Checking && downloader != null)
+                    {
+                        // report progress of 0%
+                        updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
+                        return true;
+                    }
+
+                    // ignore request when a download / extraction is pending
+                    if (frameOn != Frame.Checking && frameOn != Frame.UpdateInfo)
+                        return true;
+                    
+                    break;
                 case UpdateStep.CheckForUpdate:
 
                     // if already checking ...
