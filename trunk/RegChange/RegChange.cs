@@ -66,15 +66,6 @@ namespace wyUpdate.Common
         }
 
 
-        static object StringToMultiString(object str)
-        {
-            if (typeof(string[]) == str.GetType())
-                return str;
-            
-            return ((string)str).Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-        }
-
-
         //return what the RegChange does
         public override string ToString()
         {
