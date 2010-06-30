@@ -13,6 +13,7 @@ namespace wyUpdate.Common
         public bool Installing;
 
         public string FileToExecuteAfterUpdate;
+        public string ExecutionArguments;
         public string AutoUpdateID;
 
         public event EventHandler SenderProcessClosed;
@@ -106,6 +107,9 @@ namespace wyUpdate.Common
                 // load the AutoUpdateID (for writing to file whether the update failed or Succeeded)
                 if (data.ExtraData.Count > 1)
                     AutoUpdateID = data.ExtraData[1];
+
+                if (data.ExtraData.Count > 2)
+                    ExecutionArguments = data.ExtraData[2];
             }
             else if (step == UpdateStep.Install)
                 Installing = true;
