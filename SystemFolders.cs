@@ -21,6 +21,10 @@ namespace wyUpdate.Common
         static string m_System32x64;
         static string m_RootDrive;
 
+        static string m_CommonProgramFilesx86;
+        static string m_CommonProgramFilesx64;
+
+
         public static string GetCommonAppData()
         {
             if (m_CommonAppData == null)
@@ -91,6 +95,45 @@ namespace wyUpdate.Common
         {
             return m_CurrentProgramsStartMenu ??
                    (m_CurrentProgramsStartMenu = Environment.GetFolderPath(Environment.SpecialFolder.Programs));
+        }
+
+        public static string GetCommonProgramFilesx86()
+        {
+            if (m_CommonProgramFilesx86 == null)
+            {
+                StringBuilder path = new StringBuilder(256);
+
+                // on x64: %ProgramFiles(x86)%\Common Files
+                // on x86: %ProgramFiles%\Common Files
+
+                //CSIDL_PROGRAM_FILES_COMMONX86  = 0x002c
+                SHGetFolderPath(IntPtr.Zero, 0x2c, IntPtr.Zero, 0, path);
+
+                m_CommonProgramFilesx86 = path.ToString();
+            }
+
+            return m_CommonProgramFilesx86;
+        }
+
+        public static string GetCommonProgramFilesx64()
+        {
+            if (m_CommonProgramFilesx64 == null)
+            {
+                if (Is64Bit())
+                {
+                    StringBuilder path = new StringBuilder(256);
+
+                    //CSIDL_PROGRAM_FILES_COMMON = 0x002b
+                    SHGetFolderPath(IntPtr.Zero, 0x2b, IntPtr.Zero, 0, path);
+
+                    m_CommonProgramFilesx64 = path.ToString();
+                }
+
+                else
+                    return null;
+            }
+
+            return m_CommonProgramFilesx64;
         }
 
         public static string GetCommonStartup()
@@ -172,9 +215,9 @@ namespace wyUpdate.Common
 
         static bool? is32on64;
 
-        private static bool Is32BitProcessOn64BitProcessor()
+        static bool Is32BitProcessOn64BitProcessor()
         {
-            if(is32on64 == null)
+            if (is32on64 == null)
             {
                 UIntPtr proc = GetProcAddress(GetModuleHandle("kernel32.dll"), "IsWow64Process");
 
