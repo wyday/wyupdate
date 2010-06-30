@@ -157,8 +157,6 @@ public static class LimitedProcess
         // the process failed to be created for any number of reasons
         // just create it using the regular method
         if (!processCreated)
-        {
             Process.Start(filename, arguments);
-        }
     }
 }
