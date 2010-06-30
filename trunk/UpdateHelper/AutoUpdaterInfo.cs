@@ -1,7 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Windows.Forms;
 using wyUpdate.Common;
+
+#if WPF
+using System.Reflection;
+#else
+using System.Windows.Forms;
+#endif
 
 namespace wyDay.Controls
 {
@@ -95,9 +100,16 @@ namespace wyDay.Controls
         {
             get
             {
-                return string.IsNullOrEmpty(autoUpdateID) 
-                    ? Path.GetFileName(Application.ExecutablePath) 
-                    : autoUpdateID;
+                if (string.IsNullOrEmpty(autoUpdateID))
+                {
+#if WPF
+                    return Path.GetFileName(Assembly.GetEntryAssembly().Location);
+#else
+                    return Path.GetFileName(Application.ExecutablePath);
+#endif
+                }
+
+                return autoUpdateID;
             }
         }
 
