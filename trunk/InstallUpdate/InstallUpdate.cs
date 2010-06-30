@@ -242,7 +242,7 @@ namespace wyUpdate
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
             string[] backupFolders = new string[8];
-            string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu" };
+            string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
             string[] destFolders = { ProgramDirectory, 
                 SystemFolders.GetSystem32x86(),
                 SystemFolders.GetSystem32x64(),
@@ -250,7 +250,10 @@ namespace wyUpdate
                 SystemFolders.GetCurrentUserAppData(),
                 SystemFolders.GetCommonAppData(), 
                 SystemFolders.GetCommonDesktop(), 
-                SystemFolders.GetCommonProgramsStartMenu() };
+                SystemFolders.GetCommonProgramsStartMenu(),
+                SystemFolders.GetCommonProgramFilesx86(),
+                SystemFolders.GetCommonProgramFilesx64()
+            };
 
 
             List<FileFolder> rollbackList = new List<FileFolder>();
@@ -754,6 +757,10 @@ namespace wyUpdate
                     return Path.Combine(SystemFolders.GetCommonProgramsStartMenu(), relPath.Substring(13));
                 case "root": //root windows (e.g. C:\)
                     return Path.Combine(SystemFolders.GetRootDrive(), relPath.Substring(5));
+                case "cp86": //cp86 == common program files (x86)
+                    return Path.Combine(SystemFolders.GetCommonProgramFilesx86(), relPath.Substring(5));
+                case "cp64": //cp64 == common program files (x64)
+                    return Path.Combine(SystemFolders.GetCommonProgramFilesx64(), relPath.Substring(5));
             }
 
             return null;
