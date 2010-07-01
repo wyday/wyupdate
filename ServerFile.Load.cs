@@ -174,7 +174,7 @@ namespace wyUpdate.Common
             return updateFrom;
         }
 
-        private bool? catchAllExists;
+        bool? catchAllExists;
 
         public bool CatchAllUpdateExists
         {

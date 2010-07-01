@@ -309,7 +309,7 @@ namespace wyUpdate.Common
 
 #endif
 
-        private static string thisVersion;
+        static string thisVersion;
         /// <summary>
         /// Gets the file version of the currently executing assembly.
         /// </summary>

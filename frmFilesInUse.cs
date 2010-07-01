@@ -34,7 +34,7 @@ namespace wyUpdate
             UpdateSizes();
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
+        void btnCancel_Click(object sender, EventArgs e)
         {
             CancelUpdate = DialogResult.Yes ==
                                MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
@@ -65,7 +65,7 @@ namespace wyUpdate
             base.OnPaint(e);
         }
 
-        private void frmFilesInUse_Resize(object sender, EventArgs e)
+        void frmFilesInUse_Resize(object sender, EventArgs e)
         {
             UpdateSizes();
         }

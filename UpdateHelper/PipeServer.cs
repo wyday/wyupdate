@@ -51,7 +51,7 @@ namespace wyUpdate
             public int bInheritHandle;
         }
 
-        private const uint SECURITY_DESCRIPTOR_REVISION = 1;
+        const uint SECURITY_DESCRIPTOR_REVISION = 1;
 
         [DllImport("advapi32.dll", SetLastError = true)]
         static extern bool InitializeSecurityDescriptor(ref SECURITY_DESCRIPTOR sd, uint dwRevision);

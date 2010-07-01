@@ -10,9 +10,7 @@ namespace wyUpdateTests
     [TestClass]
     public class VersionToolsTest
     {
-
-
-        private TestContext testContextInstance;
+        TestContext testContextInstance;
 
         /// <summary>
         ///Gets or sets the test context which provides
