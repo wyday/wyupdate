@@ -15,7 +15,7 @@ namespace wyUpdate
 
         delegate void ChangeRollbackDelegate(bool rbRegistry);
 
-        frmFilesInUse inUseForm = null;
+        frmFilesInUse inUseForm;
 
         // update the label & progress bar when downloading/updating
         void ShowProgress(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
