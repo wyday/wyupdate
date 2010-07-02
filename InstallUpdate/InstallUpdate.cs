@@ -241,7 +241,7 @@ namespace wyUpdate
         {
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
-            string[] backupFolders = new string[8];
+            string[] backupFolders = new string[10];
             string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
             string[] destFolders = { ProgramDirectory, 
                 SystemFolders.GetSystem32x86(),
