@@ -177,6 +177,9 @@ namespace wyUpdate
                         return;
 
                     break;
+                default:
+                    // skip unknown .NET framework versions
+                    return;
             }
 
             Process proc = new Process
@@ -210,6 +213,9 @@ namespace wyUpdate
                         return;
 
                     break;
+                default:
+                    // skip unknown .NET framework versions
+                    return;
             }
 
             Process proc = new Process
@@ -290,6 +296,7 @@ namespace wyUpdate
                     if (frameworkV4_0Dirs == null)
                         GetFrameworkV4_0Directories();
                     break;
+                    //TODO: throw an error on unknown framework types
             }
 
             if (cpu == CPUVersion.x64 && ((frameworkVersion == FrameworkVersion.Net2_0 && frameworkV2_0Dirs.Length < 2) || (frameworkVersion == FrameworkVersion.Net4_0 && frameworkV4_0Dirs.Length < 2)))
