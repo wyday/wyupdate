@@ -114,8 +114,6 @@ namespace wyUpdate
                         }
                     }
                 }
-
-                throw new Exception("Failed to find .NET Framework 2.0 directories.");
             }
         }
 
@@ -155,8 +153,6 @@ namespace wyUpdate
                         }
                     }
                 }
-
-                throw new Exception("Failed to find .NET Framework 4.0 directories.");
             }
         }
 
