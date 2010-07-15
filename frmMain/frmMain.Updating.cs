@@ -382,7 +382,7 @@ namespace wyUpdate
                                             RollbackDelegate = (ChangeRollbackDelegate) ChangeRollback,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory,
-                                            JustUpdatingLocal = onlyUpdatingLocalUser
+                                            IsAdmin = IsAdmin
                                         };
 
                     asyncThread = new Thread(installUpdate.RunUpdateFiles);

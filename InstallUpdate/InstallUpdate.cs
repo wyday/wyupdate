@@ -30,7 +30,8 @@ namespace wyUpdate
         public string TempDirectory;
         public string ProgramDirectory;
 
-        public bool JustUpdatingLocal;
+        // only used in UpdateFiles()
+        public bool IsAdmin;
 
         //Modify registry, executing/optimizing files
         public UpdateDetails UpdtDetails;
@@ -277,7 +278,7 @@ namespace wyUpdate
 
                         // set ACL on the folders so they'll have proper user access properties
                         // there's no need to set ACL for local updates
-                        if (!JustUpdatingLocal)
+                        if (IsAdmin)
                             SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
 
                         //delete "newer" client, if it will overwrite this client
