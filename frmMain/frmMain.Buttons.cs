@@ -42,6 +42,7 @@ namespace wyUpdate
                 {
                     //cancel the update
                     isCancelled = true;
+
                     if (IsDownloading())
                     {
                         if (downloader != null)
@@ -50,7 +51,6 @@ namespace wyUpdate
                         //TODO: We should give the 'downloader' a bit of time to clean up partial files
 
                         //Bail out quickly. Don't hang around for servers to lazily respond.
-                        isCancelled = true;
                         Close();
                         return;
                     }
