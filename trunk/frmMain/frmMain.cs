@@ -541,6 +541,9 @@ namespace wyUpdate
                 RemoveTempDirectory();
             }
 
+            if (isCancelled)
+                ReturnCode = 3;
+
             base.OnClosed(e);
         }
 
