@@ -122,9 +122,6 @@ namespace wyUpdate.Common
                     case 0x8E: //the RegChanges
                         serv.VersionChoices[serv.VersionChoices.Count - 1].RegChanges.Add(RegChange.ReadFromStream(fs));
                         break;
-                    case 0x13://add client server sites
-                        ClientFile.AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serv.ClientServerSites);
-                        break;
                     case 0x20:
                         serv.NoUpdateToLatestLinkText = ReadFiles.ReadDeprecatedString(fs);
                         break;

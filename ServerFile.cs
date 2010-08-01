@@ -33,7 +33,6 @@ namespace wyUpdate.Common
         public ServerFile()
         {
             ServerFileSites = new List<string>(1);
-            ClientServerSites = new List<string>(1);
         }
 
         public string NewVersion { get; set; }
@@ -47,8 +46,6 @@ namespace wyUpdate.Common
         public string NoUpdateToLatestLinkText { get; set; }
 
         public string NoUpdateToLatestLinkURL { get; set; }
-
-        public List<string> ClientServerSites { get; set; }
 
         public List<string> ServerFileSites { get; set; }
     }
