@@ -223,12 +223,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>IF NOT EXIST "$(SolutionDir)..\Signing\SignMe.exe" GOTO skipall
+    <PostBuildEvent>IF NOT EXIST "$(SolutionDir)..\Signing\SignMe.exe" GOTO done
 IF NOT $(ConfigurationName) == Release GOTO done
 	"$(SolutionDir)..\Signing\SignMe.exe" "$(TargetPath)"
-:done
-COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Debug\wyUpdate.net4.exe"
-COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Release\wyUpdate.net4.exe"
-:skipall</PostBuildEvent>
+	COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Debug\wyUpdate.net4"
+	COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Release\wyUpdate.net4"
+:done</PostBuildEvent>
   </PropertyGroup>
 </Project>
