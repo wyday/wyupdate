@@ -1,8 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace wyUpdate.Common
 {
+    [Flags]
+    public enum COMRegistration { None = 0, IsNETAssembly = 1, Register = 2, UnRegister = 4, PreviouslyRegistered = 8 }
+
     public class UpdateFile
     {
         //full path of file for creating zip file
@@ -36,6 +40,8 @@ namespace wyUpdate.Common
         public long NewFileAdler32 { get; set; }
 
         public ProcessWindowStyle ProcessWindowStyle { get; set; }
+
+        public COMRegistration RegisterCOMDll { get; set; }
 
 #if DESIGNER
         public UpdateFile() { }

@@ -708,6 +708,8 @@ namespace wyUpdate
                             p.WaitForExit();
                     }
                 }
+
+                //TODO: run unregistering COM DLLs
             }
 
             ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
