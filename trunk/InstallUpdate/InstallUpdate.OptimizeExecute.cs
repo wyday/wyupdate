@@ -22,6 +22,9 @@ namespace wyUpdate
             {
                 if (UpdtDetails.UpdateFiles[i].IsNETAssembly)
                 {
+                    if (IsCancelled())
+                        break;
+
                     //if not a temp file
                     if (UpdtDetails.UpdateFiles[i].RelativePath.Length >= 4 &&
                         UpdtDetails.UpdateFiles[i].RelativePath.Substring(0, 4) != "temp")
@@ -29,11 +32,11 @@ namespace wyUpdate
                         //optimize (ngen) the file
                         string filename = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
 
-                        if (!string.IsNullOrEmpty(filename))
-                            NGenInstall(filename, UpdtDetails.UpdateFiles[i]); //optimize the file
+                            if (!string.IsNullOrEmpty(filename))
+                                NGenInstall(filename, UpdtDetails.UpdateFiles[i]); //optimize the file
+                        }
                     }
                 }
-            }
 
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
 
@@ -158,31 +161,35 @@ namespace wyUpdate
 
         static void NGenInstall(string filename, UpdateFile updateFile)
         {
+            string[] dirs;
             switch (updateFile.FrameworkVersion)
             {
                 case FrameworkVersion.Net2_0:
                     if (frameworkV2_0Dirs == null)
                         GetFrameworkV2_0Directories();
+
+                    dirs = frameworkV2_0Dirs;
                     break;
                 case FrameworkVersion.Net4_0:
                     if (frameworkV4_0Dirs == null)
                         GetFrameworkV4_0Directories();
 
-                    //TODO: install .NET 4.0 preemptively if any .NET 4 assemblies are included
-                    if (frameworkV4_0Dirs == null)
-                        return;
-
+                    dirs = frameworkV4_0Dirs;
                     break;
                 default:
                     // skip unknown .NET framework versions
                     return;
             }
 
+            //TODO: install .NET 4.0 (or 2.0) preemptively if any assemblies are included
+            if (dirs == null)
+                return;
+
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(updateFile.FrameworkVersion == FrameworkVersion.Net4_0 ? frameworkV4_0Dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1] : frameworkV2_0Dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " install \"" + filename + "\"" + " /nologo"
                 }
@@ -195,30 +202,35 @@ namespace wyUpdate
 
         static void NGenUninstall(string filename, UninstallFileInfo uninstallFile)
         {
+            string[] dirs;
             switch (uninstallFile.FrameworkVersion)
             {
                 case FrameworkVersion.Net2_0:
                     if (frameworkV2_0Dirs == null)
                         GetFrameworkV2_0Directories();
+
+                    dirs = frameworkV2_0Dirs;
                     break;
                 case FrameworkVersion.Net4_0:
                     if (frameworkV4_0Dirs == null)
                         GetFrameworkV4_0Directories();
 
-                    if (frameworkV4_0Dirs == null)
-                        return;
-
+                    dirs = frameworkV4_0Dirs;
                     break;
                 default:
                     // skip unknown .NET framework versions
                     return;
             }
 
+            //TODO: install .NET 4.0 (or 2.0) preemptively if any assemblies are included
+            if (dirs == null)
+                return;
+
             Process proc = new Process
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(uninstallFile.FrameworkVersion == FrameworkVersion.Net4_0 ? frameworkV4_0Dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1] : frameworkV2_0Dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV2_0Dirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " uninstall \"" + filename + "\"" + " /nologo"
                 }

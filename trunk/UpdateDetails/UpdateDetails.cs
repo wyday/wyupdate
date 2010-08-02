@@ -35,19 +35,6 @@ namespace wyUpdate.Common
 
         #endregion Properties
 
-        // count # NGEN or execute files
-        int CountFileInfos()
-        {
-            int count = 0;
-            foreach (UpdateFile file in UpdateFiles)
-            {
-                if (file.Execute || file.IsNETAssembly)
-                    count++;
-            }
-
-            return count;
-        }
-
         public static UpdateDetails Load(string fileName)
         {
             UpdateDetails updtDetails = new UpdateDetails();
@@ -136,6 +123,9 @@ namespace wyUpdate.Common
                     case 0x4B:
                         tempUpdateFile.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
                         break;
+                    case 0x4C:
+                        tempUpdateFile.RegisterCOMDll = (COMRegistration)ReadFiles.ReadInt(fs);
+                        break;
                     case 0x9B://end of file
                         updtDetails.UpdateFiles.Add(tempUpdateFile);
                         tempUpdateFile = new UpdateFile();
@@ -157,6 +147,20 @@ namespace wyUpdate.Common
             fs.Close();
 
             return updtDetails;
+        }
+
+#if DESIGNER
+        // count # NGEN or execute files
+        int CountFileInfos()
+        {
+            int count = 0;
+            foreach (UpdateFile file in UpdateFiles)
+            {
+                if (file.Execute || file.IsNETAssembly)
+                    count++;
+            }
+
+            return count;
         }
 
         public Stream Save()
@@ -196,7 +200,7 @@ namespace wyUpdate.Common
             // write file info for ngening .NET, execution of files, etc.
             foreach (UpdateFile file in UpdateFiles)
             {
-                if (file.Execute || file.IsNETAssembly || file.DeleteFile || file.DeltaPatchRelativePath != null)
+                if (file.Execute || file.IsNETAssembly || file.DeleteFile || file.DeltaPatchRelativePath != null || file.RegisterCOMDll != COMRegistration.None)
                 {
                     ms.WriteByte(0x8B);//Beginning of the file information
 
@@ -235,6 +239,8 @@ namespace wyUpdate.Common
                             WriteFiles.WriteInt(ms, 0x4B, (int) file.FrameworkVersion);
                     }
 
+                    if (file.RegisterCOMDll != COMRegistration.None)
+                        WriteFiles.WriteInt(ms, 0x4C, (int) file.RegisterCOMDll);
 
                     //Delta update particulars:
 
@@ -261,5 +267,6 @@ namespace wyUpdate.Common
             ms.Position = 0;
             return ms;
         }
+#endif
     }
 }
