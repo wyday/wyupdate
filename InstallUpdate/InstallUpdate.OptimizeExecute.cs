@@ -189,7 +189,7 @@ namespace wyUpdate
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " install \"" + filename + "\"" + " /nologo"
                 }
@@ -230,7 +230,7 @@ namespace wyUpdate
             {
                 StartInfo =
                 {
-                    FileName = Path.Combine(dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : frameworkV4_0Dirs.Length - 1], "ngen.exe"),
+                    FileName = Path.Combine(dirs[uninstallFile.CPUVersion == CPUVersion.x86 ? 0 : dirs.Length - 1], "ngen.exe"),
                     WindowStyle = ProcessWindowStyle.Hidden,
                     Arguments = " uninstall \"" + filename + "\"" + " /nologo"
                 }
