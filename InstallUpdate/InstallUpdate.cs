@@ -696,6 +696,9 @@ namespace wyUpdate
             List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
             Exception except = null;
 
+            // create the backup folder
+            Directory.CreateDirectory(Path.Combine(TempDirectory, "backup"));
+
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
                 if (UpdtDetails.UpdateFiles[i].Execute && 

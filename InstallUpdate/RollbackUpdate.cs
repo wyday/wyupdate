@@ -163,13 +163,6 @@ namespace wyUpdate
                 if (Directory.Exists(backupFolders[i]) && destFolders[i] != null)
                     RestoreFiles(destFolders[i], backupFolders[i]);
             }
-
-            //Delete temporary files
-            try
-            {
-                Directory.Delete(m_TempDirectory, true);
-            }
-            catch { }
         }
 
         public static void RestoreFiles(string destDir, string backupDir)
@@ -250,6 +243,13 @@ namespace wyUpdate
                 }
                 catch { }
             }
+
+            // Delete temporary files
+            try
+            {
+                Directory.Delete(tempDir, true);
+            }
+            catch { }
         }
 
         public static void RollbackRegedCOM(string tempDir)
