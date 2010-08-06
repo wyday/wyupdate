@@ -14,6 +14,7 @@ namespace wyUpdate
         public bool UnNGENFile;
         public CPUVersion CPUVersion;
         public FrameworkVersion FrameworkVersion;
+        public COMRegistration RegisterCOMDll;
 
         public static UninstallFileInfo Read(Stream fs)
         {
@@ -36,10 +37,13 @@ namespace wyUpdate
                         tempUFI.UnNGENFile = ReadFiles.ReadBool(fs);
                         break;
                     case 0x04:
-                        tempUFI.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
+                        tempUFI.CPUVersion = (CPUVersion) ReadFiles.ReadInt(fs);
                         break;
                     case 0x05:
-                        tempUFI.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
+                        tempUFI.FrameworkVersion = (FrameworkVersion) ReadFiles.ReadInt(fs);
+                        break;
+                    case 0x06:
+                        tempUFI.RegisterCOMDll = (COMRegistration) ReadFiles.ReadInt(fs);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -52,10 +56,13 @@ namespace wyUpdate
             return tempUFI;
         }
 
-        public void Write(Stream fs)
+        public void Write(Stream fs, bool comFiles)
         {
             //beginning of the uninstall file info
-            fs.WriteByte(0x8A);
+            if (comFiles)
+                fs.WriteByte(0x8B);
+            else
+                fs.WriteByte(0x8A);
 
             //path to the file
             WriteFiles.WriteDeprecatedString(fs, 0x01, Path);
@@ -73,6 +80,9 @@ namespace wyUpdate
 
                 WriteFiles.WriteInt(fs, 0x05, (int)FrameworkVersion);
             }
+
+            if (RegisterCOMDll != COMRegistration.None)
+                WriteFiles.WriteInt(fs, 0x06, (int) RegisterCOMDll);
 
             //end of uninstall file info
             fs.WriteByte(0x9A);
@@ -200,14 +210,13 @@ namespace wyUpdate
             }
         }
 
-        public static void RollbackRegistry(string m_TempDirectory, string m_ProgramDirectory)
+        public static void RollbackRegistry(string m_TempDirectory)
         {
-            string backupFolder = Path.Combine(m_TempDirectory, "backup");
             List<RegChange> rollbackRegistry = new List<RegChange>();
 
             try
             {
-                ReadRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), rollbackRegistry);
+                ReadRollbackRegistry(Path.Combine(m_TempDirectory, "backup\\regList.bak"), rollbackRegistry);
             }
             catch { }
 
@@ -222,6 +231,48 @@ namespace wyUpdate
             }
         }
 
+        public static void RollbackUnregedCOM(string tempDir)
+        {
+            List<UninstallFileInfo> rollbackList = new List<UninstallFileInfo>();
+
+            try
+            {
+                ReadRollbackCOM(Path.Combine(tempDir, "backup\\unreggedComList.bak"), rollbackList);
+            }
+            catch { }
+
+            // re-reg COM dlls
+            foreach (UninstallFileInfo fileinfo in rollbackList)
+            {
+                try
+                {
+                    InstallUpdate.RegisterDllServer(fileinfo.Path, false);
+                }
+                catch { }
+            }
+        }
+
+        public static void RollbackRegedCOM(string tempDir)
+        {
+            List<UninstallFileInfo> rollbackList = new List<UninstallFileInfo>();
+
+            try
+            {
+                ReadRollbackCOM(Path.Combine(tempDir, "backup\\reggedComList.bak"), rollbackList);
+            }
+            catch { }
+
+            // re-reg COM dlls
+            foreach (UninstallFileInfo fileinfo in rollbackList)
+            {
+                try
+                {
+                    InstallUpdate.RegisterDllServer(fileinfo.Path, true);
+                }
+                catch { }
+            }
+        }
+
         #region Write/Read RollbackRegistry
 
         public static void WriteRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
@@ -230,20 +281,20 @@ namespace wyUpdate
             if (rollbackRegistry.Count == 0)
                 return;
 
-            FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
-
-            // file-identification data
-            WriteFiles.WriteHeader(fs, "IURURV1");
-
-            WriteFiles.WriteInt(fs, 0x01, rollbackRegistry.Count);
-
-            foreach (RegChange regCh in rollbackRegistry)
+            using(FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
-                regCh.WriteToStream(fs, true);
-            }
+                // file-identification data
+                WriteFiles.WriteHeader(fs, "IURURV1");
 
-            fs.WriteByte(0xFF);
-            fs.Close();
+                WriteFiles.WriteInt(fs, 0x01, rollbackRegistry.Count);
+
+                foreach (RegChange regCh in rollbackRegistry)
+                {
+                    regCh.WriteToStream(fs, true);
+                }
+
+                fs.WriteByte(0xFF);
+            }
         }
 
         public static void ReadRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
@@ -302,30 +353,30 @@ namespace wyUpdate
             if (rollbackList.Count == 0)
                 return;
 
-            FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write);
-
-            // file-identification data
-            fs.Write(Encoding.UTF8.GetBytes("IURUFV1"), 0, 7);
-
-
-            foreach (FileFolder fileFolder in rollbackList)
+            using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
-                if (fileFolder.isFolder)
-                {
-                    if (fileFolder.deleteFolder)
-                        WriteFiles.WriteDeprecatedString(fs, 0x04, fileFolder.Path);
-                    else
-                        //folder to create on rollback
-                        WriteFiles.WriteDeprecatedString(fs, 0x06, fileFolder.Path);
-                }
-                else
-                {
-                    WriteFiles.WriteDeprecatedString(fs, 0x02, fileFolder.Path);
-                }
-            }
+                // file-identification data
+                fs.Write(Encoding.UTF8.GetBytes("IURUFV1"), 0, 7);
 
-            fs.WriteByte(0xFF);
-            fs.Close();
+
+                foreach (FileFolder fileFolder in rollbackList)
+                {
+                    if (fileFolder.isFolder)
+                    {
+                        if (fileFolder.deleteFolder)
+                            WriteFiles.WriteString(fs, 0x04, fileFolder.Path);
+                        else
+                            //folder to create on rollback
+                            WriteFiles.WriteString(fs, 0x06, fileFolder.Path);
+                    }
+                    else
+                    {
+                        WriteFiles.WriteString(fs, 0x02, fileFolder.Path);
+                    }
+                }
+
+                fs.WriteByte(0xFF);
+            }
         }
 
         public static void ReadRollbackFiles(string fileName, List<string> rollbackFiles, List<string> rollbackFolders, List<string> createFolders)
@@ -358,14 +409,14 @@ namespace wyUpdate
                 switch (bType)
                 {
                     case 0x02: // file to delete
-                        rollbackFiles.Add(ReadFiles.ReadDeprecatedString(fs));
+                        rollbackFiles.Add(ReadFiles.ReadString(fs));
                         break;
                     case 0x04: // folder to delete
-                        rollbackFolders.Add(ReadFiles.ReadDeprecatedString(fs));
+                        rollbackFolders.Add(ReadFiles.ReadString(fs));
                         break;
                     case 0x06: //folder to create
                         if (createFolders != null)
-                            createFolders.Add(ReadFiles.ReadDeprecatedString(fs));
+                            createFolders.Add(ReadFiles.ReadString(fs));
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -380,23 +431,122 @@ namespace wyUpdate
 
         #endregion Write/Read RollbackFiles
 
+        #region Write/Read RollbackCOMRegistration
+
+        public static void WriteRollbackCOM(string fileName, List<UninstallFileInfo> rollbackList)
+        {
+            //if the list is empty, bail out
+            if (rollbackList.Count == 0)
+                return;
+
+            using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+            {
+                // file-identification data
+                fs.Write(Encoding.UTF8.GetBytes("IURUCV1"), 0, 7);
+
+
+                foreach (UninstallFileInfo file in rollbackList)
+                {
+                    fs.WriteByte(0x8B); //Beginning of the file information
+
+                    // write the filename (absolute)
+                    WriteFiles.WriteString(fs, 0x01, file.Path);
+
+                    WriteFiles.WriteInt(fs, 0x02, (int) file.RegisterCOMDll);
+
+                    fs.WriteByte(0x9B); //End of the file information
+                }
+
+                fs.WriteByte(0xFF);
+            }
+        }
+
+        public static void ReadRollbackCOM(string fileName, List<UninstallFileInfo> rollbackList)
+        {
+            FileStream fs = null;
+
+            try
+            {
+                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+            }
+            catch (Exception)
+            {
+                if (fs != null)
+                    fs.Close();
+
+                throw;
+            }
+
+            // Read back the file identification data, if any
+            if (!ReadFiles.IsHeaderValid(fs, "IURUCV1"))
+            {
+                //free up the file so it can be deleted
+                fs.Close();
+                throw new Exception("Identifier incorrect");
+            }
+
+            UninstallFileInfo tempUpdateFile = new UninstallFileInfo();
+
+            byte bType = (byte)fs.ReadByte();
+            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+            {
+                switch (bType)
+                {
+                    case 0x01:
+                        tempUpdateFile.Path = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x02:
+                        tempUpdateFile.RegisterCOMDll = (COMRegistration)ReadFiles.ReadInt(fs);
+                        break;
+                    case 0x9B://end of file
+                        rollbackList.Add(tempUpdateFile);
+                        tempUpdateFile = new UninstallFileInfo();
+                        break;
+                    default:
+                        ReadFiles.SkipField(fs, bType);
+                        break;
+                }
+
+                bType = (byte)fs.ReadByte();
+            }
+
+            fs.Close();
+        }
+
+
+        #endregion COM
+
         #region Write/Read Uninstall Files, Folders, Registry
 
-        public static void WriteUninstallFile(string uninstallDataFile, string registryRollbackFile, string filesRollbackFile, List<UpdateFile> updateDetailsFiles)
+        public static void WriteUninstallFile(string tempDir, string uninstallDataFile, List<UpdateFile> updateDetailsFiles)
         {
+            string registryRollbackFile = Path.Combine(tempDir, "backup\\regList.bak");
+            string filesRollbackFile = Path.Combine(tempDir, "backup\\fileList.bak");
+            string comRollbackFile = Path.Combine(tempDir, "backup\\reggedComList.bak");
+
             List<UninstallFileInfo> filesToUninstall = new List<UninstallFileInfo>();
             List<string> foldersToDelete = new List<string>();
-
             List<RegChange> registryToDelete = new List<RegChange>();
+            List<UninstallFileInfo> comDllsToUnreg = new List<UninstallFileInfo>();
 
             //add files/folders/Registry from uninstall file
             try
             {
                 if (File.Exists(uninstallDataFile))
-                    ReadUninstallFile(uninstallDataFile, filesToUninstall, foldersToDelete, registryToDelete);
+                    ReadUninstallFile(uninstallDataFile, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg);
             }
             catch { }
 
+
+            // load COM Dlls to rollback
+            if (File.Exists(comRollbackFile))
+            {
+                try
+                {
+                    ReadRollbackCOM(comRollbackFile, comDllsToUnreg);
+                }
+                catch { }
+            }
 
             //add files/folders from rollback file
             if (File.Exists(filesRollbackFile))
@@ -474,9 +624,13 @@ namespace wyUpdate
                 // Write any file-identification data you want to here
                 WriteFiles.WriteHeader(fs, "IUUFRV1");
 
+                //write COM files to uninstall
+                foreach (UninstallFileInfo file in comDllsToUnreg)
+                    file.Write(fs, true);
+
                 //write files to delete
                 foreach (UninstallFileInfo file in filesToUninstall)
-                    file.Write(fs);
+                    file.Write(fs, false);
 
                 //write folders to delete
                 foreach (string folder in foldersToDelete)
@@ -493,9 +647,7 @@ namespace wyUpdate
             }
         }
 
-
-
-        public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
         {
             try
             {
@@ -506,14 +658,14 @@ namespace wyUpdate
                         //read in the uninstall data
                         zip["uninstall.dat"].Extract(ms);
 
-                        LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry);
+                        LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg);
                     }
                 }
             }
             catch { }
         }
 
-        static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
         {
             FileStream fs = null;
 
@@ -529,41 +681,10 @@ namespace wyUpdate
                 throw;
             }
 
-            if (!ReadFiles.IsHeaderValid(fs, "IUUFRV1"))
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-
-                throw new Exception("The uninstall file does not have the correct identifier - this is usually caused by file corruption.");
-
-            }
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
-                {
-                    case 0x8A://file to delete
-                        uninstallFiles.Add(UninstallFileInfo.Read(fs));
-                        break;
-                    case 0x10://folder to delete
-                        uninstallFolders.Add(ReadFiles.ReadDeprecatedString(fs));
-                        break;
-                    case 0x8E://regChanges to execute
-                        uninstallRegistry.Add(RegChange.ReadFromStream(fs));
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
-                }
-
-                bType = (byte)fs.ReadByte();
-            }
-
-            fs.Close();
+            LoadUninstallData(fs, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg);
         }
 
-        static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry)
+        static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
         {
             ms.Position = 0;
 
@@ -575,7 +696,7 @@ namespace wyUpdate
 
                 throw new Exception("The uninstall file does not have the correct identifier - this is usually caused by file corruption.");
             }
-
+            
             byte bType = (byte)ms.ReadByte();
             while (!ReadFiles.ReachedEndByte(ms, bType, 0xFF))
             {
@@ -583,6 +704,9 @@ namespace wyUpdate
                 {
                     case 0x8A://file to delete
                         uninstallFiles.Add(UninstallFileInfo.Read(ms));
+                        break;
+                    case 0x8B: // files to unreg COM
+                        comDllsToUnreg.Add(UninstallFileInfo.Read(ms));
                         break;
                     case 0x10://folder to delete
                         uninstallFolders.Add(ReadFiles.ReadDeprecatedString(ms));

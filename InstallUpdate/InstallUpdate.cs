@@ -316,9 +316,12 @@ namespace wyUpdate
 
             if (canceled || except != null)
             {
-                //rollback files
+                // rollback files
                 ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
                 RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
+
+                // rollback unregged COM
+                RollbackUpdate.RollbackUnregedCOM(TempDirectory);
 
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
             }
@@ -545,10 +548,7 @@ namespace wyUpdate
 
 
                 //write the uninstall file
-                RollbackUpdate.WriteUninstallFile(Path.Combine(OutputDirectory, "uninstall.dat"), 
-                    Path.Combine(TempDirectory, "backup\\regList.bak"),
-                    Path.Combine(TempDirectory, "backup\\fileList.bak"), 
-                    updateDetailsFiles);
+                RollbackUpdate.WriteUninstallFile(TempDirectory, Path.Combine(OutputDirectory, "uninstall.dat"), updateDetailsFiles);
 
                 List<UpdateFile> files = new List<UpdateFile>();
                 
@@ -629,8 +629,20 @@ namespace wyUpdate
 
             List<RegChange> registryToDelete = new List<RegChange>();
 
+            List<UninstallFileInfo> comDllsToUnreg = new List<UninstallFileInfo>();
+
             //Load the list of files, folders etc. from the client file (Filename)
-            RollbackUpdate.ReadUninstallData(Filename, filesToUninstall, foldersToDelete, registryToDelete);
+            RollbackUpdate.ReadUninstallData(Filename, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg);
+
+            // unregister COM files
+            foreach (var uninstallFileInfo in comDllsToUnreg)
+            {
+                try
+                {
+                    RegisterDllServer(uninstallFileInfo.Path, true);
+                }
+                catch { }
+            }
 
             //uninstall files
             foreach (UninstallFileInfo file in filesToUninstall)
@@ -681,6 +693,9 @@ namespace wyUpdate
             // simply update the progress bar to show the 3rd step is entirely complete
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(3, 0), 0);
 
+            List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
+            Exception except = null;
+
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
                 if (UpdtDetails.UpdateFiles[i].Execute && 
@@ -708,11 +723,40 @@ namespace wyUpdate
                             p.WaitForExit();
                     }
                 }
+                else if ((UpdtDetails.UpdateFiles[i].RegisterCOMDll & (COMRegistration.UnRegister | COMRegistration.PreviouslyRegistered)) != 0 )
+                {
+                    try
+                    {
+                        string fullFile = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
+                        RegisterDllServer(fullFile, true);
 
-                //TODO: run unregistering COM DLLs
+                        // add to the rollback list
+                        rollbackCOM.Add(new UninstallFileInfo { Path = fullFile, RegisterCOMDll = COMRegistration.Register });
+                    }
+                    catch (Exception ex)
+                    {
+                        except = ex;
+                        break;
+                    }
+                }
             }
 
-            ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
+            // save rollback info
+            RollbackUpdate.WriteRollbackCOM(Path.Combine(TempDirectory, "backup\\unreggedComList.bak"), rollbackCOM);
+
+            if (canceled || except != null)
+            {
+                // rollback unregged COM
+                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
+                RollbackUpdate.RollbackUnregedCOM(TempDirectory);
+
+                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+            }
+            else
+            {
+                //registry modification completed sucessfully
+                ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
+            }
         }
 
 
