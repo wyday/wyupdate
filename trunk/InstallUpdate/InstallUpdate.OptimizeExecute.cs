@@ -17,10 +17,13 @@ namespace wyUpdate
             // simply update the progress bar to show the 6th step is entirely complete
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0), 0);
 
+            List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
+            Exception except = null;
+
             //optimize everything but "temp" files
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
-                if (UpdtDetails.UpdateFiles[i].IsNETAssembly)
+                if (UpdtDetails.UpdateFiles[i].IsNETAssembly || (UpdtDetails.UpdateFiles[i].RegisterCOMDll & COMRegistration.Register) == COMRegistration.Register)
                 {
                     if (IsCancelled())
                         break;
@@ -32,15 +35,59 @@ namespace wyUpdate
                         //optimize (ngen) the file
                         string filename = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
 
+                        if (UpdtDetails.UpdateFiles[i].IsNETAssembly)
+                        {
+                            //TODO: add proper rolling back of newly NGENed files
                             if (!string.IsNullOrEmpty(filename))
                                 NGenInstall(filename, UpdtDetails.UpdateFiles[i]); //optimize the file
                         }
+                        else
+                        {
+                            try
+                            {
+                                RegisterDllServer(filename, false);
+                                
+                                // add to the rollback list
+                                rollbackCOM.Add(new UninstallFileInfo {Path = filename, RegisterCOMDll = COMRegistration.UnRegister});
+                            }
+                            catch (Exception ex)
+                            {
+                                except = ex;
+                                break;
+                            }
+                        }
                     }
                 }
+            }
+
+            RollbackUpdate.WriteRollbackCOM(Path.Combine(TempDirectory, "backup\\reggedComList.bak"), rollbackCOM);
+
+            if (canceled || except != null)
+            {
+                // tell the main window we're rolling back registry
+                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, true);
+
+                // rollback newly regged COM dlls
+                RollbackUpdate.RollbackRegedCOM(TempDirectory);
+
+                // rollback the registry
+                RollbackUpdate.RollbackRegistry(TempDirectory);
+
+                //rollback files
+                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
+                RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
+
+                // rollback unregged COM
+                RollbackUpdate.RollbackUnregedCOM(TempDirectory);
+
+                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                return;
+            }
+
 
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
 
-            //execute files
+            // execute files
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
                 if (UpdtDetails.UpdateFiles[i].Execute &&
@@ -247,7 +294,7 @@ namespace wyUpdate
         /// </summary>
         /// <param name="DllPath">The path to the dll or ocx.</param>
         /// <param name="Uninstall">Are we uninstalling the dll/ocx?</param>
-        static void RegisterDllServer(string DllPath, bool Uninstall)
+        public static void RegisterDllServer(string DllPath, bool Uninstall)
         {
             using (Process p = new Process
                                    {

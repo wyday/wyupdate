@@ -32,7 +32,6 @@ namespace wyUpdate
 
         public void RunUpdateRegistry()
         {
-            string backupFolder = Path.Combine(TempDirectory, "backup");
             List<RegChange> rollbackRegistry = new List<RegChange>();
 
             //parse variables in the regChanges
@@ -49,18 +48,20 @@ namespace wyUpdate
                 except = ex;
             }
 
-            RollbackUpdate.WriteRollbackRegistry(Path.Combine(backupFolder, "regList.bak"), rollbackRegistry);
+            RollbackUpdate.WriteRollbackRegistry(Path.Combine(TempDirectory, "backup\\regList.bak"), rollbackRegistry);
 
             if (canceled || except != null)
             {
                 // rollback the registry
                 ThreadHelper.ChangeRollback(Sender, RollbackDelegate, true);
-                RollbackUpdate.RollbackRegistry(TempDirectory, ProgramDirectory);
+                RollbackUpdate.RollbackRegistry(TempDirectory);
 
-                //rollback files
+                // rollback files
                 ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
                 RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
 
+                // rollback unregged COM
+                RollbackUpdate.RollbackUnregedCOM(TempDirectory);
 
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
             }
