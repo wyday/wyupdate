@@ -36,7 +36,7 @@ namespace wyUpdate.Downloader
         //download site and destination
         string url;
         List<string> urlList = new List<string>();
-        string destFolder = "";
+        readonly string destFolder;
 
         bool waitingForResponse;
 
