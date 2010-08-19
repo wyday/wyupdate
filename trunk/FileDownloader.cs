@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using wyUpdate.Common;
 
 namespace wyUpdate.Downloader
@@ -228,15 +229,8 @@ namespace wyUpdate.Downloader
 
                 //reset the adler
                 downloadedAdler32.Reset();
-
-                // Find out the name of the file that the web server gave us.
-                string destFileName = Path.GetFileName(data.Response.ResponseUri.ToString());
-
-
-                // The place we're downloading to (not from) must not be a URI,
-                // because Path and File don't handle them...
-                destFolder = destFolder.Replace("file:///", "").Replace("file://", "");
-                DownloadingTo = Path.Combine(destFolder, destFileName);
+                
+                DownloadingTo = data.Filename;
 
                 if (!File.Exists(DownloadingTo))
                 {
@@ -309,15 +303,14 @@ namespace wyUpdate.Downloader
             }
             catch (UriFormatException e)
             {
-                throw new Exception(
-                    String.Format("Could not parse the URL \"{0}\" - it's either malformed or is an unknown protocol.", url), e);
+                throw new Exception(string.Format("Could not parse the URL \"{0}\" - it's either malformed or is an unknown protocol.", url), e);
             }
             catch (Exception e)
             {
-                if(string.IsNullOrEmpty(DownloadingTo))
-                    throw new Exception(String.Format("Error trying to save file: {0}", e.Message), e);
+                if (string.IsNullOrEmpty(DownloadingTo))
+                    throw new Exception(string.Format("Error trying to save file: {0}", e.Message), e);
                 else
-                    throw new Exception(String.Format("Error trying to save file \"{0}\": {1}", DownloadingTo, e.Message), e);
+                    throw new Exception(string.Format("Error trying to save file \"{0}\": {1}", DownloadingTo, e.Message), e);
             }
             finally
             {
@@ -349,6 +342,8 @@ namespace wyUpdate.Downloader
             }
         }
 
+        static readonly string[] units = new[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
+
         /// <summary>
         /// Constructs a download speed indicator string.
         /// </summary>
@@ -356,7 +351,6 @@ namespace wyUpdate.Downloader
         /// <returns>String represenation of the transfer rate in bytes/sec, KB/sec, MB/sec, etc.</returns>
         static string BpsToString(double bps)
         {
-            string[] m = new[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
             int i = 0;
             while (bps >= 0.9 * 1024)
             {
@@ -364,7 +358,7 @@ namespace wyUpdate.Downloader
                 i++;
             }
 
-            return String.Format("{0:0.00} {1}/sec", bps, m[i]);
+            return string.Format("{0:0.00} {1}/sec", bps, units[i]);
         }
 
         void ValidateDownload()
@@ -446,13 +440,60 @@ namespace wyUpdate.Downloader
         long size;
         long start;
 
+        public string Filename;
+
+        public WebResponse Response
+        {
+            get { return response; }
+            set { response = value; }
+        }
+
+        public Stream DownloadStream
+        {
+            get
+            {
+                if (start == size)
+                    return Stream.Null;
+
+                return stream ?? (stream = response.GetResponseStream());
+            }
+        }
+
+        public int PercentDone
+        {
+            get
+            {
+                if (size > 0)
+                    return (int)((start * 100) / size);
+
+                return 0;
+            }
+        }
+
+        public long StartPoint
+        {
+            get { return start; }
+            set { start = value; }
+        }
+
+        public bool IsProgressKnown
+        {
+            get
+            {
+                // If the size of the remote url is -1, that means we
+                // couldn't determine it, and so we don't know
+                // progress information.
+                return size > -1;
+            }
+        }
+
+        readonly static List<char> invalidFilenameChars = new List<char>(Path.GetInvalidFileNameChars());
+
         public static DownloadData Create(string url, string destFolder)
         {
-            // This is what we will return
             DownloadData downloadData = new DownloadData();
-
-            
             WebRequest req = GetRequest(url);
+
             try
             {
                 downloadData.response = req.GetResponse();
@@ -460,7 +501,7 @@ namespace wyUpdate.Downloader
             }
             catch (Exception e)
             {
-                throw new Exception(String.Format("Error downloading \"{0}\": {1}", url, e.Message), e);
+                throw new Exception(string.Format("Error downloading \"{0}\": {1}", url, e.Message), e);
             }
 
             // Check to make sure the response isn't an error. If it is this method
@@ -468,9 +509,65 @@ namespace wyUpdate.Downloader
             ValidateResponse(downloadData.response, url);
 
             // Take the name of the file given to use from the web server.
-            String fileName = Path.GetFileName(downloadData.response.ResponseUri.ToString());
+            string fileName = downloadData.response.Headers["Content-Disposition"];
 
-            String downloadTo = Path.Combine(destFolder, fileName);
+            if (fileName != null)
+            {
+                int fileLoc = fileName.IndexOf("filename=", StringComparison.InvariantCultureIgnoreCase);
+
+                if (fileLoc != -1)
+                {
+                    // go past "filename="
+                    fileLoc += 9;
+
+                    if (fileName.Length > fileLoc)
+                    {
+                        // trim off an ending semicolon if it exists
+                        int end = fileName.IndexOf(';', fileLoc);
+
+                        if (end == -1)
+                            end = fileName.Length - fileLoc;
+                        else
+                            end -= fileLoc;
+
+                        fileName = fileName.Substring(fileLoc, end).Trim();
+                    }
+                    else
+                        fileName = null;
+                }
+                else
+                    fileName = null;
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                // brute force the filename from the url
+                fileName = Path.GetFileName(downloadData.response.ResponseUri.LocalPath);
+            }
+
+            // trim out non-standard filename characters
+            if (!string.IsNullOrEmpty(fileName) && fileName.IndexOfAny(invalidFilenameChars.ToArray()) != -1)
+            {
+                //make a new string builder (with at least one bad character)
+                StringBuilder newText = new StringBuilder(fileName.Length - 1);
+
+                //remove the bad characters
+                for (int i = 0; i < fileName.Length; i++)
+                {
+                    if (invalidFilenameChars.IndexOf(fileName[i]) == -1)
+                        newText.Append(fileName[i]);
+                }
+
+                fileName = newText.ToString().Trim();
+            }
+
+            // if filename *still* is null or empty, then generate some random temp filename
+            if (string.IsNullOrEmpty(fileName))
+                fileName = Path.GetFileName(Path.GetTempFileName());
+
+            string downloadTo = Path.Combine(destFolder, fileName);
+
+            downloadData.Filename = downloadTo;
 
             // If we don't know how big the file is supposed to be,
             // we can't resume, so delete what we already have if something is on disk already.
@@ -510,6 +607,7 @@ namespace wyUpdate.Downloader
                     }
                 }
             }
+
             return downloadData;
         }
 
@@ -521,19 +619,16 @@ namespace wyUpdate.Downloader
                 HttpWebResponse httpResponse = (HttpWebResponse)response;
 
                 // If it's an HTML page, it's probably an error page.
-                if (httpResponse.ContentType.Contains("text/html") || httpResponse.StatusCode == HttpStatusCode.NotFound)
+                if (httpResponse.StatusCode == HttpStatusCode.NotFound || httpResponse.ContentType.Contains("text/html"))
                 {
                     throw new Exception(
-                        String.Format("Could not download \"{0}\" - a web page was returned from the web server.",
-                        url));
+                        string.Format("Could not download \"{0}\" - a web page was returned from the web server.", url));
                 }
             }
             else if (response is FtpWebResponse)
             {
-                FtpWebResponse ftpResponse = (FtpWebResponse)response;
-                if (ftpResponse.StatusCode == FtpStatusCode.ConnectionClosed)
-                    throw new Exception(
-                        String.Format("Could not download \"{0}\" - FTP server closed the connection.", url));
+                if (((FtpWebResponse)response).StatusCode == FtpStatusCode.ConnectionClosed)
+                    throw new Exception(string.Format("Could not download \"{0}\" - FTP server closed the connection.", url));
             }
             // FileWebResponse doesn't have a status code to check.
         }
@@ -573,56 +668,5 @@ namespace wyUpdate.Downloader
         {
             response.Close();
         }
-
-        #region Properties
-
-        public WebResponse Response
-        {
-            get { return response; }
-            set { response = value; }
-        }
-
-        public Stream DownloadStream
-        {
-            get
-            {
-                if (start == size)
-                    return Stream.Null;
-
-                if (stream == null)
-                    stream = response.GetResponseStream();
-
-                return stream;
-            }
-        }
-
-        public int PercentDone
-        {
-            get
-            {
-                if (size > 0)
-                    return (int) ((start*100)/size);
-
-                return 0;
-            }
-        }
-
-        public long StartPoint
-        {
-            get { return start; }
-            set { start = value; }
-        }
-
-        public bool IsProgressKnown
-        {
-            get
-            {
-                // If the size of the remote url is -1, that means we
-                // couldn't determine it, and so we don't know
-                // progress information.
-                return size > -1;
-            }
-        }
-        #endregion
     }
 }
