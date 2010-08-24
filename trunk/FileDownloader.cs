@@ -87,9 +87,11 @@ namespace wyUpdate.Downloader
                 urlList = new List<string> { url };
             }
 
-            // try each url in the list until one suceeds
-            WebRequest.DefaultWebProxy = CustomProxy;
+            // use the custom proxy if provided
+            if (CustomProxy != null)
+                WebRequest.DefaultWebProxy = CustomProxy;
 
+            // try each url in the list until one succeeds
             bool allFailedWaitingForResponse = true;
             Exception ex = null;
             foreach (string s in urlList)
