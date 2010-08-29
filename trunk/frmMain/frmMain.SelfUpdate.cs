@@ -60,6 +60,9 @@ namespace wyUpdate
             if (!string.IsNullOrEmpty(customUrlArgs))
                 WriteFiles.WriteString(fs, 0x0D, customUrlArgs);
 
+            if (!string.IsNullOrEmpty(forcedLanguageCulture))
+                WriteFiles.WriteString(fs, 0x0E, forcedLanguageCulture);
+
             if(isAutoUpdateMode)
             {
                 // is in automatic update mode
@@ -150,6 +153,9 @@ namespace wyUpdate
                         break;
                     case 0x0D:
                         customUrlArgs = ReadFiles.ReadString(fs);
+                        break;
+                    case 0x0E:
+                        forcedLanguageCulture = ReadFiles.ReadString(fs);
                         break;
                     case 0x80: // is autoupdate mode
                         beginAutoUpdateInstallation = true;

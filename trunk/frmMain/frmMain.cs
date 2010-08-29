@@ -83,6 +83,8 @@ namespace wyUpdate
         bool QuickCheckNoErr;
         bool QuickCheckJustCheck;
 
+        string forcedLanguageCulture;
+
         #endregion Private variables
 
         public frmMain(string[] args)
@@ -168,7 +170,7 @@ namespace wyUpdate
                     //TODO: wyUp 3.0: stop supporting old client files (barely anyone uses RC2).
                     update.OpenObsoleteClientFile(clientFileLoc);
                 else
-                    update.OpenClientFile(clientFileLoc, clientLang);
+                    update.OpenClientFile(clientFileLoc, clientLang, forcedLanguageCulture);
 
                 clientLang.SetVariables(update.ProductName, update.InstalledVersion);
             }
@@ -394,6 +396,8 @@ namespace wyUpdate
             }
             else
             {
+                forcedLanguageCulture = commands["forcelang"];
+
                 // automatic update mode
                 if (commands["autoupdate"] != null)
                 {
@@ -473,7 +477,6 @@ namespace wyUpdate
                 //uninstall any newly created folders, files, or registry
                 if (commands["uninstall"] != null)
                     uninstalling = true;
-
 
                 // load the passed server argument
                 serverOverwrite = commands["server"];
