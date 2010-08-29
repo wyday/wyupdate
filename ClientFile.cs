@@ -312,7 +312,7 @@ namespace wyUpdate.Common
         }
 
 
-        public void OpenClientFile(string m_Filename, ClientLanguage lang)
+        public void OpenClientFile(string m_Filename, ClientLanguage lang, string forcedCulture)
         {
             using (ZipFile zip = ZipFile.Read(m_Filename))
             {
@@ -362,21 +362,23 @@ namespace wyUpdate.Common
                 }
                 else if (Languages.Count > 0)
                 {
-                    // detect the current culture 
-                    string currentCultureName = CultureInfo.CurrentUICulture.Name;
+                    LanguageCulture useLang = null;
+
+                    // use a forced culture
+                    if (!string.IsNullOrEmpty(forcedCulture))
+                        useLang = (LanguageCulture) Languages[forcedCulture];
 
                     // try to find the current culture
-                    LanguageCulture useLang = (LanguageCulture)Languages[currentCultureName];
+                    if (useLang == null)
+                        useLang = (LanguageCulture)Languages[CultureInfo.CurrentUICulture.Name];
 
-                    if(useLang == null)
-                    {
-                        // if current culture isn't available, use the default culture (english)
+                    // if current culture isn't available, use the default culture (english)
+                    if (useLang == null)
                         useLang = (LanguageCulture) Languages["en-US"];
-                    }
 
 
                     // if the default culture isn't available, use the first available language
-                    if(useLang == null)
+                    if (useLang == null)
                     {
                         foreach (LanguageCulture l in Languages.Values)
                         {
