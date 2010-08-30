@@ -135,6 +135,12 @@ namespace wyUpdate
 
         void UpdateSizes()
         {
+            int newWidth = Width - ClientRectangle.Width + btnCloseAll.Right + 35 + btnCancel.Width;
+            MinimumSize = new Size(newWidth, 178);
+
+            if (Width < newWidth)
+                Width = newWidth;
+
             m_DescripRect = new Rectangle(new Point(SidePadding, SidePadding),
                 TextRenderer.MeasureText(clientLang.ProcessDialog.Content,
                     Font,
