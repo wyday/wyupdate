@@ -42,7 +42,7 @@ namespace wyUpdate
             this.btnCloseProc.AutoSize = true;
             this.btnCloseProc.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnCloseProc.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.btnCloseProc.Location = new System.Drawing.Point(12, 196);
+            this.btnCloseProc.Location = new System.Drawing.Point(12, 214);
             this.btnCloseProc.Name = "btnCloseProc";
             this.btnCloseProc.Size = new System.Drawing.Size(88, 22);
             this.btnCloseProc.TabIndex = 0;
@@ -55,7 +55,7 @@ namespace wyUpdate
             this.btnCloseAll.AutoSize = true;
             this.btnCloseAll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnCloseAll.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.btnCloseAll.Location = new System.Drawing.Point(106, 196);
+            this.btnCloseAll.Location = new System.Drawing.Point(106, 214);
             this.btnCloseAll.Name = "btnCloseAll";
             this.btnCloseAll.Size = new System.Drawing.Size(113, 22);
             this.btnCloseAll.TabIndex = 1;
@@ -78,7 +78,7 @@ namespace wyUpdate
             this.btnCancel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.btnCancel.Location = new System.Drawing.Point(272, 196);
+            this.btnCancel.Location = new System.Drawing.Point(279, 214);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(92, 22);
             this.btnCancel.TabIndex = 2;
@@ -94,7 +94,7 @@ namespace wyUpdate
             // frmProcesses
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(376, 230);
+            this.ClientSize = new System.Drawing.Size(383, 248);
             this.ControlBox = false;
             this.Controls.Add(this.btnCloseProc);
             this.Controls.Add(this.btnCloseAll);
