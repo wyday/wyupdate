@@ -254,6 +254,8 @@ namespace wyUpdate
 
         public void AppendText(string plaintext)
         {
+            // we can't set SelectedText with an empty string
+            // or it makes a beep noise (thanks Microsoft).
             if (string.IsNullOrEmpty(plaintext))
                 return;
 
