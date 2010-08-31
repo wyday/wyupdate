@@ -254,6 +254,9 @@ namespace wyUpdate
 
         public void AppendText(string plaintext)
         {
+            if (string.IsNullOrEmpty(plaintext))
+                return;
+
             messageBox.Select(messageBox.Text.Length, 0);
             messageBox.SelectedText = plaintext;
         }
