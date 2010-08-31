@@ -216,7 +216,7 @@ namespace wyUpdate
         FrameType m_TypeofFrame;
 
         //"working" animation
-        AnimationControl aniWorking;
+        readonly AnimationControl aniWorking;
 
         LinkLabel2 noUpdateAvailableLink;
         string noUpdateAvailableURL;
