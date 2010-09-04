@@ -421,7 +421,11 @@ namespace wyUpdate
             return Directory.Exists(oldAUTempFolder) ? oldAUTempFolder : GetCacheFolder(update.GUID);
         }
 
-        // gets / creates the cache folder for a GUID
+        /// <summary>
+        /// gets / creates the cache folder for a GUID
+        /// </summary>
+        /// <param name="guid">The GUID.</param>
+        /// <returns>The directory to the cache folder</returns>
         static string GetCacheFolder(string guid)
         {
             // C:\Users\USERNAME\wc
