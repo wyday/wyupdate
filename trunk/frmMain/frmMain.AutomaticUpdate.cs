@@ -249,10 +249,10 @@ namespace wyUpdate
 
                 case UpdateStep.DownloadUpdate:
 
-                    if(frameOn == Frame.Checking)
+                    if (frameOn == Frame.Checking)
                     {
                         // waiting to be told to check for updates...
-                        if(downloader == null)
+                        if (downloader == null)
                         {
                             // report 0% and begin checking
                             updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
@@ -267,10 +267,10 @@ namespace wyUpdate
                         return true;
                     }
                     
-                    if(frameOn == Frame.InstallUpdates)
+                    if (frameOn == Frame.InstallUpdates)
                     {
                         // if already downloading ...
-                        if(update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
+                        if (IsInDownloadState())
                         {
                             // report 0%
                             updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
@@ -319,7 +319,7 @@ namespace wyUpdate
                     if (frameOn == Frame.InstallUpdates)
                     {
                         // if already downloading ...
-                        if (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
+                        if (IsInDownloadState())
                         {
                             // report 0%
                             updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
@@ -327,7 +327,7 @@ namespace wyUpdate
                         }
 
                         // if done extracting...
-                        if(updtDetails != null)
+                        if (updtDetails != null)
                         {
                             // report extraction completed successfully
                             updateHelper.SendSuccess(UpdateStep.BeginExtraction);
@@ -379,7 +379,7 @@ namespace wyUpdate
                     if (frameOn == Frame.InstallUpdates)
                     {
                         // if already downloading ...
-                        if (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate)
+                        if (IsInDownloadState())
                         {
                             // report 0%
                             updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
@@ -400,7 +400,17 @@ namespace wyUpdate
             // no bad request found - continue processing as usual
             return false;
         }
-
+        
+        /// <summary>
+        /// For filtering bad requests. Self updating is still in the "download" state.
+        /// </summary>
+        /// <returns>True if downloading, or downloading/extracting self update</returns>
+        bool IsInDownloadState()
+        {
+            return update.CurrentlyUpdating == UpdateOn.DownloadingUpdate ||
+                   update.CurrentlyUpdating == UpdateOn.DownloadingSelfUpdate ||
+                   update.CurrentlyUpdating == UpdateOn.ExtractSelfUpdate;
+        }
 
         string CreateAutoUpdateTempFolder()
         {

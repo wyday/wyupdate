@@ -515,7 +515,7 @@ namespace wyUpdate.Downloader
 
             if (fileName != null)
             {
-                int fileLoc = fileName.IndexOf("filename=", StringComparison.InvariantCultureIgnoreCase);
+                int fileLoc = fileName.IndexOf("filename=", StringComparison.OrdinalIgnoreCase);
 
                 if (fileLoc != -1)
                 {

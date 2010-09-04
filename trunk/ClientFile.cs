@@ -522,7 +522,7 @@ namespace wyUpdate.Common
         {
             //if the site already exists, bail out
             foreach (string site in sites)
-                if (string.Equals(newSite, site, StringComparison.InvariantCultureIgnoreCase))
+                if (string.Equals(newSite, site, StringComparison.OrdinalIgnoreCase))
                     return;
 
             //add the site
