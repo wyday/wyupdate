@@ -266,15 +266,19 @@ namespace wyUpdate
                 }
             }
 
-            //if silent & if on one of the user interaction screens, then click next
+            try
+            {
+                // so the user doesn't accidentally cancel update.
+                btnNext.Focus();
+            }
+            catch { }
+
+            // if silent & if on one of the user interaction screens, then click next
             if (isSilent && (FrameIs.Interaction(frameOn)))
             {
                 btnNext_Click(null, EventArgs.Empty);
                 return;
             }
-
-            //so the user doesn't accidentally cancel update.
-            btnNext.Focus();
         }
 
         void InstallUpdates(UpdateOn CurrentlyUpdating)
@@ -351,6 +355,8 @@ namespace wyUpdate
 
                     installUpdate = new InstallUpdate(this, new CheckProcessesDel(CheckProcess))
                                         {
+                                            UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory
                                         };
@@ -367,6 +373,7 @@ namespace wyUpdate
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {
                                             UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory
                                         };
@@ -406,6 +413,7 @@ namespace wyUpdate
                     installUpdate = new InstallUpdate(this, showProgress)
                                         {
                                             UpdtDetails = updtDetails,
+                                            RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory
                                         };

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.ServiceProcess;
 using Microsoft.Win32;
 using wyUpdate.Common;
 
@@ -18,6 +19,7 @@ namespace wyUpdate
             ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0), 0);
 
             List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
+            List<string> startedServices = new List<string>();
             Exception except = null;
 
             //optimize everything but "temp" files
@@ -62,6 +64,72 @@ namespace wyUpdate
 
             RollbackUpdate.WriteRollbackCOM(Path.Combine(TempDirectory, "backup\\reggedComList.bak"), rollbackCOM);
 
+
+            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
+
+
+            if (!canceled && except == null)
+            {
+                // execute files
+                for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
+                {
+                    if (UpdtDetails.UpdateFiles[i].Execute && !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
+                    {
+                        ProcessStartInfo psi = new ProcessStartInfo
+                                                   {
+                                                       // use the absolute path
+                                                       FileName =
+                                                           FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
+                                                   };
+
+                        if (!string.IsNullOrEmpty(psi.FileName))
+                        {
+                            // command line arguments
+                            if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
+                                psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
+
+                            psi.WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle;
+
+                            // start the process
+                            Process p = Process.Start(psi);
+
+                            if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
+                                p.WaitForExit();
+                        }
+                    }
+                }
+
+                try
+                {
+                    // try to start services
+                    foreach (string service in UpdtDetails.ServicesToStart)
+                    {
+                        ServiceController srvc = new ServiceController(service);
+                        ServiceControllerStatus status = srvc.Status;
+
+                        if (status != ServiceControllerStatus.Running)
+                        {
+                            srvc.Stop();
+
+                            // report that we're waiting for the service to start so the user knows what's going on
+                            ReportProcProgress("Waiting for service to start: " + srvc.DisplayName);
+
+                            srvc.WaitForStatus(ServiceControllerStatus.Running);
+
+                            startedServices.Add(service);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    except = ex;
+                }
+
+
+                // save rollback info
+                RollbackUpdate.WriteRollbackServices(Path.Combine(TempDirectory, "backup\\startedServices.bak"), startedServices);
+            }
+
             if (canceled || except != null)
             {
                 // tell the main window we're rolling back registry
@@ -80,52 +148,15 @@ namespace wyUpdate
                 // rollback unregged COM
                 RollbackUpdate.RollbackUnregedCOM(TempDirectory);
 
+                // rollback stopped services
+                RollbackUpdate.RollbackStoppedServices(TempDirectory);
+
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
-                return;
             }
-
-
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
-
-            // execute files
-            for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
+            else
             {
-                if (UpdtDetails.UpdateFiles[i].Execute &&
-                !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
-                {
-                    ProcessStartInfo psi = new ProcessStartInfo
-                    {
-                        //use the absolute path
-
-                        FileName =
-                            FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                    };
-
-                    if (!string.IsNullOrEmpty(psi.FileName))
-                    {
-                        //command line arguments
-                        if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
-                            psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
-
-                        psi.WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle;
-
-                        //start the process
-                        Process p = Process.Start(psi);
-
-                        if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
-                            p.WaitForExit();
-                    }
-                }
+                ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
             }
-
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 100), 100);
-
-            //TODO: Make command processing more versatile
-            //Process text commands like $refreshicons()
-            if (!string.IsNullOrEmpty(UpdtDetails.PostUpdateCommands))
-                ParseCommandText(UpdtDetails.PostUpdateCommands);
-
-            ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
         }
 
         static void GetFrameworkV2_0Directories()

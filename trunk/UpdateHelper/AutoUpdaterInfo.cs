@@ -143,106 +143,105 @@ namespace wyDay.Controls
 
         void Save(string filename)
         {
-            FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
-
-            // Write any file-identification data you want to here
-            WriteFiles.WriteHeader(fs, "AUIF");
-
-#if CLIENT
-            UpdateStepOn = UpdateStepOn.Nothing;
-#endif
-
-            // Date last checked for update
-            WriteFiles.WriteDateTime(fs, 0x01, LastCheckedForUpdate);
-
-            // update step on
-            WriteFiles.WriteInt(fs, 0x02, (int)UpdateStepOn);
-
-#if CLIENT
-            // only save the AutoUpdaterStatus when wyUpdate writes the file
-            WriteFiles.WriteInt(fs, 0x03, (int)AutoUpdaterStatus);
-#endif
-
-            if (!string.IsNullOrEmpty(UpdateVersion))
-                WriteFiles.WriteString(fs, 0x04, UpdateVersion);
-
-            if (!string.IsNullOrEmpty(ChangesInLatestVersion))
+            using (FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write))
             {
-                WriteFiles.WriteString(fs, 0x05, ChangesInLatestVersion);
+                // Write any file-identification data you want to here
+                WriteFiles.WriteHeader(fs, "AUIF");
 
-                WriteFiles.WriteBool(fs, 0x06, ChangesIsRTF);
-            }
+#if CLIENT
+                UpdateStepOn = UpdateStepOn.Nothing;
+#endif
+
+                // Date last checked for update
+                WriteFiles.WriteDateTime(fs, 0x01, LastCheckedForUpdate);
+
+                // update step on
+                WriteFiles.WriteInt(fs, 0x02, (int)UpdateStepOn);
+
+#if CLIENT
+                // only save the AutoUpdaterStatus when wyUpdate writes the file
+                WriteFiles.WriteInt(fs, 0x03, (int)AutoUpdaterStatus);
+#endif
+
+                if (!string.IsNullOrEmpty(UpdateVersion))
+                    WriteFiles.WriteString(fs, 0x04, UpdateVersion);
+
+                if (!string.IsNullOrEmpty(ChangesInLatestVersion))
+                {
+                    WriteFiles.WriteString(fs, 0x05, ChangesInLatestVersion);
+
+                    WriteFiles.WriteBool(fs, 0x06, ChangesIsRTF);
+                }
 
 
 #if CLIENT
-            if (!string.IsNullOrEmpty(ErrorTitle))
-                WriteFiles.WriteString(fs, 0x07, ErrorTitle);
+                if (!string.IsNullOrEmpty(ErrorTitle))
+                    WriteFiles.WriteString(fs, 0x07, ErrorTitle);
 
-            if (!string.IsNullOrEmpty(ErrorMessage))
-                WriteFiles.WriteString(fs, 0x08, ErrorMessage);
+                if (!string.IsNullOrEmpty(ErrorMessage))
+                    WriteFiles.WriteString(fs, 0x08, ErrorMessage);
 #endif
 
-            fs.WriteByte(0xFF);
-            fs.Close();
+                fs.WriteByte(0xFF);
+            }
         }
 
         void Load(string filename)
         {
-            FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
-
-            if (!ReadFiles.IsHeaderValid(fs, "AUIF"))
+            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("Auto update state file ID is wrong.");
-            }
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
+                if (!ReadFiles.IsHeaderValid(fs, "AUIF"))
                 {
-                    case 0x01: // Date last checked for update
-                        LastCheckedForUpdate = ReadFiles.ReadDateTime(fs);
-                        break;
-
-                    case 0x02: // update step on
-                        UpdateStepOn = (UpdateStepOn) ReadFiles.ReadInt(fs);
-                        break;
-
-                    case 0x03:
-                        AutoUpdaterStatus = (AutoUpdaterStatus) ReadFiles.ReadInt(fs);
-                        break;
-
-                    case 0x04: // update succeeded
-                        UpdateVersion = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x05:
-                        ChangesInLatestVersion = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x06:
-                        ChangesIsRTF = ReadFiles.ReadBool(fs);
-                        break;
-
-                    case 0x07: // update failed
-                        ErrorTitle = ReadFiles.ReadString(fs);
-                        break;
-
-                    case 0x08:
-                        ErrorMessage = ReadFiles.ReadString(fs);
-                        break;
-
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
+                    //free up the file so it can be deleted
+                    fs.Close();
+                    throw new Exception("Auto update state file ID is wrong.");
                 }
 
-                bType = (byte)fs.ReadByte();
-            }
+                byte bType = (byte)fs.ReadByte();
+                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+                {
+                    switch (bType)
+                    {
+                        case 0x01: // Date last checked for update
+                            LastCheckedForUpdate = ReadFiles.ReadDateTime(fs);
+                            break;
 
-            fs.Close();
+                        case 0x02: // update step on
+                            UpdateStepOn = (UpdateStepOn) ReadFiles.ReadInt(fs);
+                            break;
+
+                        case 0x03:
+                            AutoUpdaterStatus = (AutoUpdaterStatus) ReadFiles.ReadInt(fs);
+                            break;
+
+                        case 0x04: // update succeeded
+                            UpdateVersion = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x05:
+                            ChangesInLatestVersion = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x06:
+                            ChangesIsRTF = ReadFiles.ReadBool(fs);
+                            break;
+
+                        case 0x07: // update failed
+                            ErrorTitle = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x08:
+                            ErrorMessage = ReadFiles.ReadString(fs);
+                            break;
+
+                        default:
+                            ReadFiles.SkipField(fs, bType);
+                            break;
+                    }
+
+                    bType = (byte)fs.ReadByte();
+                } 
+            }
         }
 
         public void ClearSuccessError()

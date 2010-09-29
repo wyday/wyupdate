@@ -323,6 +323,9 @@ namespace wyUpdate
                 // rollback unregged COM
                 RollbackUpdate.RollbackUnregedCOM(TempDirectory);
 
+                // rollback stopped services
+                RollbackUpdate.RollbackStoppedServices(TempDirectory);
+
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
             }
             else
@@ -696,9 +699,6 @@ namespace wyUpdate
             List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
             Exception except = null;
 
-            // create the backup folder
-            Directory.CreateDirectory(Path.Combine(TempDirectory, "backup"));
-
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
                 if (UpdtDetails.UpdateFiles[i].Execute && 
@@ -752,6 +752,9 @@ namespace wyUpdate
                 // rollback unregged COM
                 ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
                 RollbackUpdate.RollbackUnregedCOM(TempDirectory);
+
+                // rollback stopped services
+                RollbackUpdate.RollbackStoppedServices(TempDirectory);
 
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
             }
@@ -1005,106 +1008,5 @@ namespace wyUpdate
         }
 
         #endregion Parse variables
-
-        #region Execute Commands
-
-        static void ParseCommandText(string text)
-        {
-            int lastDollarIndex = text.LastIndexOf('$');
-
-            //if no $'s found
-            if (lastDollarIndex == -1)
-                return;
-
-            do
-            {
-                int beginParen = text.IndexOf('(', lastDollarIndex);
-
-                if (beginParen != -1)
-                {
-                    //get the text between the '$' and the '('
-                    CommandName currCommand = GetCommandName(text.Substring(lastDollarIndex + 1, beginParen - lastDollarIndex - 1));
-
-                    if (currCommand != CommandName.NULL)
-                    {
-                        int endParen = IndexOfNonEnclosed(')', text, beginParen);
-
-                        if (endParen != -1)
-                        {
-                            //replace the command, contents, and parenthesis
-                            //with the modified contents
-                            ExecuteTextCommand(currCommand);
-                            text = text.Remove(lastDollarIndex, endParen - lastDollarIndex + 1);
-                        }
-                    }
-                }
-
-                lastDollarIndex = LastIndexOfReal('$', text, 0, lastDollarIndex - 1);
-
-            } while (lastDollarIndex != -1);
-        }
-
-        static int IndexOfNonEnclosed(char ch, string str, int startIndex)
-        {
-            for (int i = startIndex; i < str.Length; i++)
-            {
-                if (str[i] == ch)
-                {
-                    //if not the first of last char
-                    if (i > 0 && i < str.Length - 2)
-                    {
-                        //if not enclosed in single quotes
-                        if (str[i - 1] != '\'' || str[i + 1] != '\'')
-                            return i;
-                    }
-                    else
-                        return i;
-                }
-            }
-
-            return -1;
-        }
-
-        static int LastIndexOfReal(char ch, string str, int startIndex, int endIndex)
-        {
-            for (int i = startIndex; i <= endIndex; i++)
-            {
-                if (str[i] == ch)
-                    return i;
-            }
-
-            return -1;
-        }
-
-        public enum CommandName { NULL = -1, refreshicons }
-
-        static CommandName GetCommandName(string command)
-        {
-            CommandName name = CommandName.NULL;
-
-            try
-            {
-                name = (CommandName)Enum.Parse(typeof(CommandName), command, true);
-            }
-            catch { }
-
-            return name;
-        }
-
-        static void ExecuteTextCommand(CommandName command)
-        {
-            switch (command)
-            {
-                case CommandName.refreshicons:
-                    //refresh shell icons
-                    SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
-                    break;
-            }
-        }
-
-        [DllImport("shell32.dll")]
-        static extern void SHChangeNotify(long wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
-
-        #endregion
     }
 }

@@ -539,56 +539,56 @@ namespace wyUpdate
 
         void SaveAutoUpdateData(UpdateStepOn updateStepOn)
         {
-            FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Create, FileAccess.Write);
-
-            // Write any file-identification data you want to here
-            WriteFiles.WriteHeader(fs, "IUAUFV1");
-
-            // Step on {Checked = 2, Downloaded = 4, Extracted = 6}
-            WriteFiles.WriteInt(fs, 0x01, (int)updateStepOn);
-
-            // file to execute
-            if (updateHelper.FileToExecuteAfterUpdate != null)
-                WriteFiles.WriteString(fs, 0x02, updateHelper.FileToExecuteAfterUpdate);
-
-            if (updateHelper.AutoUpdateID != null)
-                WriteFiles.WriteString(fs, 0x03, updateHelper.AutoUpdateID);
-
-            // Server data file location
-            if (!string.IsNullOrEmpty(serverFileLoc))
-                WriteFiles.WriteString(fs, 0x04, serverFileLoc);
-
-            // Client's server file location (self update server file)
-            if (!string.IsNullOrEmpty(clientSFLoc))
-                WriteFiles.WriteString(fs, 0x05, clientSFLoc);
-
-            // temp directory
-            if (!string.IsNullOrEmpty(oldAUTempFolder))
-                WriteFiles.WriteString(fs, 0x06, oldAUTempFolder);
-
-            if (!string.IsNullOrEmpty(tempDirectory))
-                WriteFiles.WriteString(fs, 0x0B, tempDirectory);
-
-            // the update filename
-            if (!string.IsNullOrEmpty(updateFilename))
-                WriteFiles.WriteString(fs, 0x07, updateFilename);
-
-            if(SelfUpdateState != SelfUpdateState.None)
+            using (FileStream fs = new FileStream(autoUpdateStateFile, FileMode.Create, FileAccess.Write))
             {
-                WriteFiles.WriteInt(fs, 0x08, (int) SelfUpdateState);
+                // Write any file-identification data you want to here
+                WriteFiles.WriteHeader(fs, "IUAUFV1");
 
-                if (SelfUpdateState == SelfUpdateState.Downloaded)
-                    WriteFiles.WriteString(fs, 0x09, updateFilename);
-                else if (SelfUpdateState == SelfUpdateState.Extracted)
+                // Step on {Checked = 2, Downloaded = 4, Extracted = 6}
+                WriteFiles.WriteInt(fs, 0x01, (int)updateStepOn);
+
+                // file to execute
+                if (updateHelper.FileToExecuteAfterUpdate != null)
+                    WriteFiles.WriteString(fs, 0x02, updateHelper.FileToExecuteAfterUpdate);
+
+                if (updateHelper.AutoUpdateID != null)
+                    WriteFiles.WriteString(fs, 0x03, updateHelper.AutoUpdateID);
+
+                // Server data file location
+                if (!string.IsNullOrEmpty(serverFileLoc))
+                    WriteFiles.WriteString(fs, 0x04, serverFileLoc);
+
+                // Client's server file location (self update server file)
+                if (!string.IsNullOrEmpty(clientSFLoc))
+                    WriteFiles.WriteString(fs, 0x05, clientSFLoc);
+
+                // temp directory
+                if (!string.IsNullOrEmpty(oldAUTempFolder))
+                    WriteFiles.WriteString(fs, 0x06, oldAUTempFolder);
+
+                if (!string.IsNullOrEmpty(tempDirectory))
+                    WriteFiles.WriteString(fs, 0x0B, tempDirectory);
+
+                // the update filename
+                if (!string.IsNullOrEmpty(updateFilename))
+                    WriteFiles.WriteString(fs, 0x07, updateFilename);
+
+                if(SelfUpdateState != SelfUpdateState.None)
                 {
-                    WriteFiles.WriteString(fs, 0x09, newSelfLocation);
+                    WriteFiles.WriteInt(fs, 0x08, (int) SelfUpdateState);
 
-                    WriteFiles.WriteString(fs, 0x0A, oldSelfLocation);
+                    if (SelfUpdateState == SelfUpdateState.Downloaded)
+                        WriteFiles.WriteString(fs, 0x09, updateFilename);
+                    else if (SelfUpdateState == SelfUpdateState.Extracted)
+                    {
+                        WriteFiles.WriteString(fs, 0x09, newSelfLocation);
+
+                        WriteFiles.WriteString(fs, 0x0A, oldSelfLocation);
+                    }
                 }
-            }
 
-            fs.WriteByte(0xFF);
-            fs.Close();
+                fs.WriteByte(0xFF);
+            }
         }
 
         void LoadAutoUpdateData()

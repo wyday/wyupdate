@@ -199,20 +199,18 @@ namespace wyUpdate.Common
 
             try
             {
-                binfs = new FileStream(filename, FileMode.Open, FileAccess.Read);
-
-                int sourceBytes;
-
-                do
+                using (binfs = new FileStream(filename, FileMode.Open, FileAccess.Read))
                 {
-                    sourceBytes = binfs.Read(buffer, 0, buffer.Length);
+                    int sourceBytes;
 
-                    fs.Write(buffer, 0, sourceBytes);
+                    do
+                    {
+                        sourceBytes = binfs.Read(buffer, 0, buffer.Length);
 
-                } while (sourceBytes > 0);
+                        fs.Write(buffer, 0, sourceBytes);
 
-
-                binfs.Close();
+                    } while (sourceBytes > 0);
+                }
             }
             catch (Exception ex)
             {

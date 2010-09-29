@@ -243,13 +243,6 @@ namespace wyUpdate
                 }
                 catch { }
             }
-
-            // Delete temporary files
-            try
-            {
-                Directory.Delete(tempDir, true);
-            }
-            catch { }
         }
 
         public static void RollbackRegedCOM(string tempDir)
@@ -273,6 +266,56 @@ namespace wyUpdate
             }
         }
 
+
+        public static void RollbackStoppedServices(string tempDir)
+        {
+            List<string> rollbackList = new List<string>();
+
+            try
+            {
+                ReadRollbackServices(Path.Combine(tempDir, "backup\\stoppedServices.bak"), rollbackList);
+            }
+            catch { }
+
+            // restart the services
+            foreach (string service in rollbackList)
+            {
+                try
+                {
+                    //TODO: start the service
+                }
+                catch { }
+            }
+
+            // Delete temporary files
+            try
+            {
+                Directory.Delete(tempDir, true);
+            }
+            catch { }
+        }
+
+        public static void RollbackStartedServices(string tempDir)
+        {
+            List<string> rollbackList = new List<string>();
+
+            try
+            {
+                ReadRollbackServices(Path.Combine(tempDir, "backup\\startedServices.bak"), rollbackList);
+            }
+            catch { }
+
+            // re-reg COM dlls
+            foreach (string service in rollbackList)
+            {
+                try
+                {
+                    //TODO: stop the service
+                }
+                catch { }
+            }
+        }
+
         #region Write/Read RollbackRegistry
 
         public static void WriteRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
@@ -281,7 +324,7 @@ namespace wyUpdate
             if (rollbackRegistry.Count == 0)
                 return;
 
-            using(FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+            using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
                 // file-identification data
                 WriteFiles.WriteHeader(fs, "IURURV1");
@@ -344,6 +387,67 @@ namespace wyUpdate
         }
 
         #endregion Write/Read RollbackRegistry
+
+        public static void WriteRollbackServices(string fileName, List<string> rollbackList)
+        {
+            //if the list is empty, bail out
+            if (rollbackList.Count == 0)
+                return;
+
+            using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+            {
+                // file-identification data
+                fs.Write(Encoding.UTF8.GetBytes("IURUSV1"), 0, 7);
+
+                foreach (string stoppedService in rollbackList)
+                    WriteFiles.WriteString(fs, 0x01, stoppedService);
+
+                fs.WriteByte(0xFF);
+            }
+        }
+
+        public static void ReadRollbackServices(string fileName, List<string> rollbackList)
+        {
+            FileStream fs = null;
+
+            try
+            {
+                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+            }
+            catch (Exception)
+            {
+                if (fs != null)
+                    fs.Close();
+
+                throw;
+            }
+
+            // Read back the file identification data, if any
+            if (!ReadFiles.IsHeaderValid(fs, "IURUSV1"))
+            {
+                //free up the file so it can be deleted
+                fs.Close();
+                throw new Exception("Identifier incorrect");
+            }
+
+            byte bType = (byte)fs.ReadByte();
+            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+            {
+                switch (bType)
+                {
+                    case 0x01: // service to start again
+                        rollbackList.Add(ReadFiles.ReadString(fs));
+                        break;
+                    default:
+                        ReadFiles.SkipField(fs, bType);
+                        break;
+                }
+
+                bType = (byte)fs.ReadByte();
+            }
+
+            fs.Close();
+        }
 
         #region Write/Read RollbackFiles
 
@@ -619,31 +723,30 @@ namespace wyUpdate
             //write out the new uninstall data file
             if (filesToUninstall.Count != 0 || foldersToDelete.Count != 0 || registryToDelete.Count != 0)
             {
-                FileStream fs = new FileStream(uninstallDataFile, FileMode.Create, FileAccess.Write);
+                using (FileStream fs = new FileStream(uninstallDataFile, FileMode.Create, FileAccess.Write))
+                {
+                    // Write any file-identification data you want to here
+                    WriteFiles.WriteHeader(fs, "IUUFRV1");
 
-                // Write any file-identification data you want to here
-                WriteFiles.WriteHeader(fs, "IUUFRV1");
+                    //write COM files to uninstall
+                    foreach (UninstallFileInfo file in comDllsToUnreg)
+                        file.Write(fs, true);
 
-                //write COM files to uninstall
-                foreach (UninstallFileInfo file in comDllsToUnreg)
-                    file.Write(fs, true);
+                    //write files to delete
+                    foreach (UninstallFileInfo file in filesToUninstall)
+                        file.Write(fs, false);
 
-                //write files to delete
-                foreach (UninstallFileInfo file in filesToUninstall)
-                    file.Write(fs, false);
+                    //write folders to delete
+                    foreach (string folder in foldersToDelete)
+                        WriteFiles.WriteDeprecatedString(fs, 0x10, folder);
 
-                //write folders to delete
-                foreach (string folder in foldersToDelete)
-                    WriteFiles.WriteDeprecatedString(fs, 0x10, folder);
+                    //write registry changes
+                    foreach (RegChange reg in registryToDelete)
+                        reg.WriteToStream(fs, true);
 
-                //write registry changes
-                foreach (RegChange reg in registryToDelete)
-                    reg.WriteToStream(fs, true);
-
-                //end of file
-                fs.WriteByte(0xFF);
-                
-                fs.Close();
+                    //end of file
+                    fs.WriteByte(0xFF);
+                }
             }
         }
 
@@ -667,21 +770,10 @@ namespace wyUpdate
 
         static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
         {
-            FileStream fs = null;
-
-            try
+            using (FileStream fs = new FileStream(uninstallFile, FileMode.Open, FileAccess.Read))
             {
-                fs = new FileStream(uninstallFile, FileMode.Open, FileAccess.Read);
+                LoadUninstallData(fs, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg);
             }
-            catch (Exception)
-            {
-                if (fs != null)
-                    fs.Close();
-
-                throw;
-            }
-
-            LoadUninstallData(fs, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg);
         }
 
         static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
@@ -721,8 +813,6 @@ namespace wyUpdate
 
                 bType = (byte)ms.ReadByte();
             }
-
-            ms.Close();
         }
 
         #endregion
