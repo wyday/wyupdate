@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.ServiceProcess;
 using System.Text;
 using Ionic.Zip;
 using wyUpdate.Common;
@@ -282,7 +283,8 @@ namespace wyUpdate
             {
                 try
                 {
-                    //TODO: start the service
+                    // start the service
+                    new ServiceController(service).Start();
                 }
                 catch { }
             }
@@ -310,7 +312,8 @@ namespace wyUpdate
             {
                 try
                 {
-                    //TODO: stop the service
+                    // stop the service
+                    new ServiceController(service).Stop();
                 }
                 catch { }
             }
