@@ -112,7 +112,7 @@ namespace wyUpdate
                             srvc.Start();
 
                             // report that we're waiting for the service to start so the user knows what's going on
-                            ReportProcProgress("Waiting for service to start: " + srvc.DisplayName);
+                            ThreadHelper.ReportProgress(Sender, SenderDelegate, "Waiting for service to start: " + srvc.DisplayName, GetRelativeProgess(6, 50), 50);
 
                             srvc.WaitForStatus(ServiceControllerStatus.Running);
 
