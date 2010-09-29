@@ -109,7 +109,7 @@ namespace wyUpdate
 
                         if (status != ServiceControllerStatus.Running)
                         {
-                            srvc.Stop();
+                            srvc.Start();
 
                             // report that we're waiting for the service to start so the user knows what's going on
                             ReportProcProgress("Waiting for service to start: " + srvc.DisplayName);
