@@ -148,7 +148,6 @@
     <Compile Include="InstallUpdate\InstallUpdate.Processes.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.Registry.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.SelfUpdate.cs" />
-    <Compile Include="InstallUpdate\InstallUpdate.Services.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="frmFilesInUse.resx">
