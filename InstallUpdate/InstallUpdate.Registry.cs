@@ -63,6 +63,9 @@ namespace wyUpdate
                 // rollback unregged COM
                 RollbackUpdate.RollbackUnregedCOM(TempDirectory);
 
+                // rollback stopped services
+                RollbackUpdate.RollbackStoppedServices(TempDirectory);
+
                 ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
             }
             else

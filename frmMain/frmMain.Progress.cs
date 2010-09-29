@@ -11,7 +11,7 @@ namespace wyUpdate
     {
         delegate void ShowProgressDelegate(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
         delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
-        delegate void CheckProcessesDel(List<FileInfo> files, List<Process> rProcesses, bool statusDone);
+        delegate void CheckProcessesDel(List<FileInfo> files, List<Process> rProcesses, bool statusDone, string extraStatus, Exception ex);
 
         delegate void ChangeRollbackDelegate(bool rbRegistry);
 
@@ -30,8 +30,8 @@ namespace wyUpdate
                     updateHelper.SendProgress(unweightedPercent, autoUpdateStepProcessing);
             }
 
-            //update bottom status
-            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != "")
+            // update bottom status
+            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != string.Empty)
                 panelDisplaying.ProgressStatus = extraStatus;
 
             if (status == ProgressStatus.SharingViolation)
@@ -385,9 +385,13 @@ namespace wyUpdate
             }
         }
 
-        void CheckProcess(List<FileInfo> files, List<Process> rProcesses, bool done)
+        void CheckProcess(List<FileInfo> files, List<Process> rProcesses, bool done, string extraStatus, Exception ex)
         {
-            if (done)
+            // update bottom status
+            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != string.Empty)
+                panelDisplaying.ProgressStatus = extraStatus;
+
+            if (done && ex == null)
             {
                 if (rProcesses != null) //if there are some processes need closing
                 {
@@ -425,6 +429,15 @@ namespace wyUpdate
                 // processes closed, continue on
                 update.CurrentlyUpdating += 1;
                 InstallUpdates(update.CurrentlyUpdating);
+            }
+
+            if (done && ex != null)
+            {
+                //TODO: use the stopping services error
+                error = clientLang.ServerError;
+                errorDetails = ex.Message;
+
+                ShowFrame(Frame.Error);
             }
         }
 

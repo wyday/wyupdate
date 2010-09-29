@@ -15,11 +15,11 @@ namespace wyUpdate.Common
             FoldersToDelete = new List<string>();
             PreviousSMenuShortcuts = new List<string>();
             PreviousDesktopShortcuts = new List<string>();
+            ServicesToStop = new List<string>();
+            ServicesToStart = new List<string>();
         }
 
         #region Properties
-
-        public string PostUpdateCommands { get; set; }
 
         public List<RegChange> RegistryModifications { get; set; }
 
@@ -33,8 +33,13 @@ namespace wyUpdate.Common
 
         public List<string> FoldersToDelete { get; set; }
 
+        public List<string> ServicesToStop { get; set; }
+
+        public List<string> ServicesToStart { get; set; }
+
         #endregion Properties
 
+#if CLIENT
         public static UpdateDetails Load(string fileName)
         {
             UpdateDetails updtDetails = new UpdateDetails();
@@ -69,9 +74,6 @@ namespace wyUpdate.Common
             {
                 switch (bType)
                 {
-                    case 0x01:
-                        updtDetails.PostUpdateCommands = ReadFiles.ReadDeprecatedString(fs);
-                        break;
                     case 0x20://num reg changes
                         updtDetails.RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
                         break;
@@ -86,6 +88,12 @@ namespace wyUpdate.Common
                         break;
                     case 0x31:
                         updtDetails.PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                        break;
+                    case 0x32: //service to stop
+                        updtDetails.ServicesToStop.Add(ReadFiles.ReadString(fs));
+                        break;
+                    case 0x33: //service to start
+                        updtDetails.ServicesToStart.Add(ReadFiles.ReadString(fs));
                         break;
                     case 0x40:
                         tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
@@ -148,6 +156,7 @@ namespace wyUpdate.Common
 
             return updtDetails;
         }
+#endif
 
 #if DESIGNER
         // count # NGEN or execute files
@@ -169,10 +178,6 @@ namespace wyUpdate.Common
 
             // Write any file-identification data you want to here
             WriteFiles.WriteHeader(ms, "IUUDFV2");
-
-            //Write post-update commands
-            if (!string.IsNullOrEmpty(PostUpdateCommands))
-                WriteFiles.WriteDeprecatedString(ms, 0x01, PostUpdateCommands);
 
             //number of registry changes
             WriteFiles.WriteInt(ms, 0x20, RegistryModifications.Count);
@@ -260,6 +265,12 @@ namespace wyUpdate.Common
 
             foreach (string folder in FoldersToDelete)
                 WriteFiles.WriteDeprecatedString(ms, 0x60, folder);
+
+            foreach (string service in ServicesToStop)
+                WriteFiles.WriteString(ms, 0x32, service);
+
+            foreach (string service in ServicesToStart)
+                WriteFiles.WriteString(ms, 0x33, service);
 
             //end of file
             ms.WriteByte(0xFF);

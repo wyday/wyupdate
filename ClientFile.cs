@@ -57,7 +57,7 @@ namespace wyUpdate.Common
         {
             get
             {
-                if(string.IsNullOrEmpty(m_GUID))
+                if (string.IsNullOrEmpty(m_GUID))
                 {
                     // generate a GUID from the product name
                     char[] invalidChars = Path.GetInvalidFileNameChars();
@@ -352,7 +352,7 @@ namespace wyUpdate.Common
                 
                 // Backwards compatability with pre-v1.3 of wyUpdate:
                 // if the languages has a culture with a null name, load that file
-                if(Languages.Count == 1 && Languages.Contains(string.Empty))
+                if (Languages.Count == 1 && Languages.Contains(string.Empty))
                 {
                     using (MemoryStream ms = new MemoryStream())
                     {

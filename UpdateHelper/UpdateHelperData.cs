@@ -67,123 +67,117 @@ namespace wyUpdate.Common
             ExtraDataIsRTF.Add(false);
         }
 
-
         public byte[] GetByteArray()
         {
-            MemoryStream ms = new MemoryStream();
-
-            WriteFiles.WriteInt(ms, 0x01, (int)Action);
-
-            // what update step are we on?
-            WriteFiles.WriteInt(ms, 0x02, (int)UpdateStep);
-
-            // write extra string data
-            for (int i = 0; i < ExtraData.Count; i++)
+            using (MemoryStream ms = new MemoryStream())
             {
-                if (!string.IsNullOrEmpty(ExtraData[i]))
+                WriteFiles.WriteInt(ms, 0x01, (int)Action);
+
+                // what update step are we on?
+                WriteFiles.WriteInt(ms, 0x02, (int)UpdateStep);
+
+                // write extra string data
+                for (int i = 0; i < ExtraData.Count; i++)
                 {
-                    if (ExtraDataIsRTF[i])
-                        ms.WriteByte(0x80);
+                    if (!string.IsNullOrEmpty(ExtraData[i]))
+                    {
+                        if (ExtraDataIsRTF[i])
+                            ms.WriteByte(0x80);
 
-                    WriteFiles.WriteString(ms, 0x03, ExtraData[i]);
+                        WriteFiles.WriteString(ms, 0x03, ExtraData[i]);
+                    }
                 }
-            }
 
 
-            if (LinksData != null)
-            {
-                foreach (RichTextBoxLink link in LinksData)
+                if (LinksData != null)
                 {
-                    WriteFiles.WriteInt(ms, 0x07, link.StartIndex);
-                    WriteFiles.WriteInt(ms, 0x08, link.Length);
-                    WriteFiles.WriteString(ms, 0x09, link.LinkTarget);
+                    foreach (RichTextBoxLink link in LinksData)
+                    {
+                        WriteFiles.WriteInt(ms, 0x07, link.StartIndex);
+                        WriteFiles.WriteInt(ms, 0x08, link.Length);
+                        WriteFiles.WriteString(ms, 0x09, link.LinkTarget);
+                    }
                 }
+
+                if (ProcessID != 0)
+                    WriteFiles.WriteInt(ms, 0x04, ProcessID);
+
+                if (Progress > -1 && Progress <= 100)
+                    WriteFiles.WriteInt(ms, 0x05, Progress);
+
+                if (ResponseType != Response.Nothing)
+                    WriteFiles.WriteInt(ms, 0x06, (int)ResponseType);
+
+                ms.WriteByte(0xFF);
+
+                return ms.ToArray();
             }
-
-            if (ProcessID != 0)
-                WriteFiles.WriteInt(ms, 0x04, ProcessID);
-
-            if (Progress > -1 && Progress <= 100)
-                WriteFiles.WriteInt(ms, 0x05, Progress);
-
-            if (ResponseType != Response.Nothing)
-                WriteFiles.WriteInt(ms, 0x06, (int)ResponseType);
-
-            ms.WriteByte(0xFF);
-
-            byte[] arr = ms.ToArray();
-
-            ms.Close();
-
-            return arr;
         }
 
         public static UpdateHelperData FromByteArray(byte[] data)
         {
             UpdateHelperData uhData = new UpdateHelperData();
 
-            MemoryStream ms = new MemoryStream(data);
-
-            byte bType = (byte)ms.ReadByte();
-
-            //read until the end byte is detected
-            while (!ReadFiles.ReachedEndByte(ms, bType, 0xFF))
+            using (MemoryStream ms = new MemoryStream(data))
             {
-                switch (bType)
+                byte bType = (byte)ms.ReadByte();
+
+                //read until the end byte is detected
+                while (!ReadFiles.ReachedEndByte(ms, bType, 0xFF))
                 {
-                    case 0x01:
-                        uhData.Action = (UpdateAction)ReadFiles.ReadInt(ms);
-                        break;
-                    case 0x02: // update step we're on
-                        uhData.UpdateStep = (UpdateStep)ReadFiles.ReadInt(ms);
-                        break;
-                    case 0x80:
-                        uhData.ExtraDataIsRTF.Add(true);
-                        break;
-                    case 0x03: // extra data
+                    switch (bType)
+                    {
+                        case 0x01:
+                            uhData.Action = (UpdateAction)ReadFiles.ReadInt(ms);
+                            break;
+                        case 0x02: // update step we're on
+                            uhData.UpdateStep = (UpdateStep)ReadFiles.ReadInt(ms);
+                            break;
+                        case 0x80:
+                            uhData.ExtraDataIsRTF.Add(true);
+                            break;
+                        case 0x03: // extra data
 
-                        uhData.ExtraData.Add(ReadFiles.ReadString(ms));
+                            uhData.ExtraData.Add(ReadFiles.ReadString(ms));
 
-                        // keep the 'ExtraDataIsRTF' same length as ExtraData
-                        if (uhData.ExtraDataIsRTF.Count != uhData.ExtraData.Count)
-                            uhData.ExtraDataIsRTF.Add(false);
+                            // keep the 'ExtraDataIsRTF' same length as ExtraData
+                            if (uhData.ExtraDataIsRTF.Count != uhData.ExtraData.Count)
+                                uhData.ExtraDataIsRTF.Add(false);
 
-                        break;
-                    case 0x04:
-                        uhData.ProcessID = ReadFiles.ReadInt(ms);
-                        break;
-                    case 0x05:
-                        uhData.Progress = ReadFiles.ReadInt(ms);
-                        break;
-                    case 0x06:
-                        uhData.ResponseType = (Response)ReadFiles.ReadInt(ms);
-                        break;
+                            break;
+                        case 0x04:
+                            uhData.ProcessID = ReadFiles.ReadInt(ms);
+                            break;
+                        case 0x05:
+                            uhData.Progress = ReadFiles.ReadInt(ms);
+                            break;
+                        case 0x06:
+                            uhData.ResponseType = (Response)ReadFiles.ReadInt(ms);
+                            break;
 
-                    case 0x07:
+                        case 0x07:
 
-                        if (uhData.LinksData == null)
-                            uhData.LinksData = new List<RichTextBoxLink>();
+                            if (uhData.LinksData == null)
+                                uhData.LinksData = new List<RichTextBoxLink>();
 
-                        uhData.LinksData.Add(new RichTextBoxLink(ReadFiles.ReadInt(ms)));
+                            uhData.LinksData.Add(new RichTextBoxLink(ReadFiles.ReadInt(ms)));
 
-                        break;
-                    case 0x08:
-                        uhData.LinksData[uhData.LinksData.Count - 1].Length = ReadFiles.ReadInt(ms);
-                        break;
-                    case 0x09:
-                        uhData.LinksData[uhData.LinksData.Count - 1].LinkTarget = ReadFiles.ReadString(ms);
-                        break;
+                            break;
+                        case 0x08:
+                            uhData.LinksData[uhData.LinksData.Count - 1].Length = ReadFiles.ReadInt(ms);
+                            break;
+                        case 0x09:
+                            uhData.LinksData[uhData.LinksData.Count - 1].LinkTarget = ReadFiles.ReadString(ms);
+                            break;
 
-                    default:
-                        ReadFiles.SkipField(ms, bType);
-                        break;
+                        default:
+                            ReadFiles.SkipField(ms, bType);
+                            break;
+                    }
+
+                    bType = (byte)ms.ReadByte();
                 }
-
-                bType = (byte)ms.ReadByte();
             }
-
-
-            ms.Close();
 
             return uhData;
         }
