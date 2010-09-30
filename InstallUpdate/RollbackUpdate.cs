@@ -284,7 +284,9 @@ namespace wyUpdate
                 try
                 {
                     // start the service
-                    new ServiceController(service).Start();
+                    ServiceController srvc = new ServiceController(service);
+                    srvc.Start();
+                    srvc.WaitForStatus(ServiceControllerStatus.Running);
                 }
                 catch { }
             }
@@ -313,7 +315,9 @@ namespace wyUpdate
                 try
                 {
                     // stop the service
-                    new ServiceController(service).Stop();
+                    ServiceController srvc = new ServiceController(service);
+                    srvc.Stop();
+                    srvc.WaitForStatus(ServiceControllerStatus.Stopped);
                 }
                 catch { }
             }
