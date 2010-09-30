@@ -135,6 +135,9 @@ namespace wyUpdate
                 // tell the main window we're rolling back registry
                 ThreadHelper.ChangeRollback(Sender, RollbackDelegate, true);
 
+                // rollback started services
+                RollbackUpdate.RollbackStartedServices(TempDirectory);
+
                 // rollback newly regged COM dlls
                 RollbackUpdate.RollbackRegedCOM(TempDirectory);
 
