@@ -1,0 +1,234 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{80D1D071-07F3-4968-A14D-1CA25059E4A6}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>wyUpdate</RootNamespace>
+    <AssemblyName>wyUpdate</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin4\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CLIENT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin4\Release\</OutputPath>
+    <DefineConstants>TRACE;CLIENT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>client.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>wyUpdate.Program</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Windows.Forms">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ClientLanguage.cs" />
+    <Compile Include="Controls\AnimationControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\COMTypes.cs" />
+    <Compile Include="Controls\LinkLabel2.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\RichTextBoxEx.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Windows7ProgressBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\Windows7Taskbar.cs" />
+    <Compile Include="FileDownloader.cs" />
+    <Compile Include="frmFilesInUse.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmFilesInUse.Designer.cs">
+      <DependentUpon>frmFilesInUse.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmMain\Frame.cs" />
+    <Compile Include="frmMain\frmMain.AutomaticUpdate.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Buttons.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Downloading.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.LogOffShutDown.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Progress.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.SelfUpdate.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Updating.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.UserElevation.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmProcesses.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmProcesses.Designer.cs">
+      <DependentUpon>frmProcesses.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmMain\frmMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain\frmMain.Designer.cs">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PanelDisplay.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="InstallUpdate\InstallUpdate.Extract.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.OptimizeExecute.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.Processes.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.Registry.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.SelfUpdate.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="frmFilesInUse.resx">
+      <DependentUpon>frmFilesInUse.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmMain\frmMain.resx">
+      <DependentUpon>frmMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmProcesses.resx">
+      <DependentUpon>frmProcesses.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="ReadWriteFiles.Client.cs" />
+    <Compile Include="ReadWriteFiles.cs" />
+    <Compile Include="RegChange\RegChange.32bit.cs" />
+    <Compile Include="RegChange\RegChange.cs" />
+    <Compile Include="InstallUpdate\RollbackUpdate.cs" />
+    <Compile Include="RegChange\RegChange.Execution.cs" />
+    <Compile Include="SelfUpdateState.cs" />
+    <Compile Include="ServerFile.cs" />
+    <Compile Include="ServerFile.Load.cs" />
+    <Compile Include="Shortcuts\ShellLinkNative.cs" />
+    <Compile Include="Shortcuts\ShellShortcut.cs" />
+    <Compile Include="Shortcuts\ShortcutInfo.cs" />
+    <Compile Include="SystemFolders.cs" />
+    <Compile Include="SystemMenu.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UpdateDetails\CPUVersion.cs" />
+    <Compile Include="UpdateDetails\FrameworkVersion.cs" />
+    <Compile Include="UpdateDetails\UpdateFile.cs" />
+    <Compile Include="UpdateHelper\AutoUpdaterInfo.cs" />
+    <Compile Include="UpdateHelper\PipeServer.cs" />
+    <Compile Include="UpdateHelper\UpdateHelper.cs" />
+    <Compile Include="UpdateHelper\UpdateHelperData.cs" />
+    <Compile Include="UpdateHelper\UpdateStepOn.cs" />
+    <Compile Include="Util\Adler32.cs" />
+    <Compile Include="Util\LimitedProcess.cs" />
+    <Compile Include="Util\ThreadHelper.cs" />
+    <Compile Include="UpdateDetails\UpdateDetails.cs" />
+    <Compile Include="ClientFile.cs" />
+    <Compile Include="InstallUpdate\InstallUpdate.cs" />
+    <Compile Include="Util\Arguments.cs" />
+    <Compile Include="VCDiff\AddressCache.cs" />
+    <Compile Include="VCDiff\CodeTable.cs" />
+    <Compile Include="VCDiff\Instruction.cs" />
+    <Compile Include="VCDiff\InstructionType.cs" />
+    <Compile Include="VCDiff\IOHelper.cs" />
+    <Compile Include="VCDiff\VcdiffDecoder.cs" />
+    <Compile Include="VCDiff\VcdiffFormatException.cs" />
+    <Compile Include="VersionTools.cs" />
+    <Compile Include="VistaTools.cs" />
+    <Compile Include="Zip\Crc32.cs" />
+    <Compile Include="Zip\Deflate.cs" />
+    <Compile Include="Zip\DeflateStream.cs" />
+    <Compile Include="Zip\EncryptionAlgorithm.cs" />
+    <Compile Include="Zip\Events.cs" />
+    <Compile Include="Zip\Exceptions.cs" />
+    <Compile Include="Zip\ExtractExistingFileAction.cs" />
+    <Compile Include="Zip\FileSelector.cs" />
+    <Compile Include="Zip\GZipStream.cs" />
+    <Compile Include="Zip\Inflate.cs" />
+    <Compile Include="Zip\InfTree.cs" />
+    <Compile Include="Zip\OffsetStream.cs" />
+    <Compile Include="Zip\ParallelDeflateOutputStream.cs" />
+    <Compile Include="Zip\Shared.cs" />
+    <Compile Include="Zip\Tree.cs" />
+    <Compile Include="Zip\WinZipAes.cs" />
+    <Compile Include="Zip\ZipConstants.cs" />
+    <Compile Include="Zip\ZipCrypto.cs" />
+    <Compile Include="Zip\ZipDirEntry.cs" />
+    <Compile Include="Zip\ZipEntry.cs" />
+    <Compile Include="Zip\ZipEntry.Extract.cs" />
+    <Compile Include="Zip\ZipEntry.Read.cs" />
+    <Compile Include="Zip\ZipEntry.Write.cs" />
+    <Compile Include="Zip\ZipEntrySource.cs" />
+    <Compile Include="Zip\ZipErrorAction.cs" />
+    <Compile Include="Zip\ZipFile.AddUpdate.cs" />
+    <Compile Include="Zip\ZipFile.cs" />
+    <Compile Include="Zip\ZipFile.Events.cs" />
+    <Compile Include="Zip\ZipFile.Extract.cs" />
+    <Compile Include="Zip\ZipFile.Read.cs" />
+    <Compile Include="Zip\ZipFile.Save.cs" />
+    <Compile Include="Zip\ZipFile.Selector.cs" />
+    <Compile Include="Zip\ZipFile.x-IEnumerable.cs" />
+    <Compile Include="Zip\ZipInputStream.cs" />
+    <Compile Include="Zip\ZipOutputStream.cs" />
+    <Compile Include="Zip\ZipSegmentedStream.cs" />
+    <Compile Include="Zip\Zlib.cs" />
+    <Compile Include="Zip\ZlibBaseStream.cs" />
+    <Compile Include="Zip\ZlibCodec.cs" />
+    <Compile Include="Zip\ZlibConstants.cs" />
+    <Compile Include="Zip\ZlibStream.cs" />
+    <EmbeddedResource Include="cross.png" />
+    <EmbeddedResource Include="tick.png" />
+    <EmbeddedResource Include="process-working.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="client.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>IF NOT EXIST "$(SolutionDir)..\Signing\SignMe.exe" GOTO done
+IF NOT $(ConfigurationName) == Release GOTO done
+	"$(SolutionDir)..\Signing\SignMe.exe" "$(TargetPath)"
+	COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Debug\wyUpdate.net4"
+	COPY "$(TargetPath)" "$(SolutionDir)..\Designer\bin\Release\wyUpdate.net4"
+:done</PostBuildEvent>
+  </PropertyGroup>
+</Project>
