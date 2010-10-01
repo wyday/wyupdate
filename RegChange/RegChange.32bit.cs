@@ -30,8 +30,6 @@ namespace wyUpdate.Common
         [DllImport("advapi32.dll", SetLastError = true)]
         static extern int RegCloseKey(IntPtr hKey);
 
-
-
         static RegistryKey CreateSubKey32(RegistryKey pParentKey, string pSubKeyName)
         {
             IntPtr parentKeyHandle;
@@ -48,14 +46,19 @@ namespace wyUpdate.Common
             {
                 if ((Result == 5) || (Result == 0x542))
                 {
-                    throw new SecurityException("Security_RegistryPermission - you don't have permission to create the subkey.");
+                    throw new SecurityException("Security_RegistryPermission - you don't have permission to create the subkey \"" + pSubKeyName + "\"");
                 }
 
                 // key doesn't exist or another error
-                return null;
+                throw new Exception("Creating WOW64 registry subkey \"" + pSubKeyName + "\" failed. Return code: " + Result);
             }
 
-            return PointerToRegistryKey(SubKeyHandle, true);
+            RegistryKey key = PointerToRegistryKey(SubKeyHandle, true);
+
+            if (key == null)
+                throw new Exception("Creating WOW64 registry subkey \"" + pSubKeyName + "\" failed. PointerToRegistryKey return null.");
+
+            return key;
         }
 
         static void DeleteSubKeyTree32(RegistryKey pParentKey, string pSubKeyName)
@@ -90,9 +93,7 @@ namespace wyUpdate.Common
                 int errorCode = RegDeleteKeyEx(parentKeyHandle, pSubKeyName, 0x200, 0);
 
                 if (errorCode != 0)
-                {
                     Win32Error(errorCode, null);
-                }
             }
             else
             {
@@ -100,23 +101,22 @@ namespace wyUpdate.Common
             }
         }
 
-
-
         static int InternalSubKeyCount(IntPtr hkey)
         {
             int lpcSubKeys = 0;
             int lpcValues = 0;
             int errorCode = RegQueryInfoKey(hkey, null, null, IntPtr.Zero, ref lpcSubKeys, null, null, ref lpcValues, null, null, null, null);
+
             if (errorCode != 0)
-            {
                 Win32Error(errorCode, null);
-            }
+
             return lpcSubKeys;
         }
 
         static string[] InternalGetSubKeyNames(int numSubKeys, IntPtr hkey)
         {
             string[] strArray = new string[numSubKeys];
+
             if (numSubKeys > 0)
             {
                 StringBuilder lpName = new StringBuilder(0x100);
@@ -124,13 +124,14 @@ namespace wyUpdate.Common
                 {
                     int capacity = lpName.Capacity;
                     int errorCode = RegEnumKeyEx(hkey, i, lpName, out capacity, null, null, null, null);
+
                     if (errorCode != 0)
-                    {
                         Win32Error(errorCode, null);
-                    }
+
                     strArray[i] = lpName.ToString();
                 }
             }
+
             return strArray;
         }
 
