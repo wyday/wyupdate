@@ -34,7 +34,7 @@ namespace wyUpdate.Common
         {
             IntPtr parentKeyHandle;
             if (pParentKey == null || (parentKeyHandle = GetRegistryKeyHandle(pParentKey)).Equals(IntPtr.Zero))
-                throw new Exception("OpenSubKey: Parent key is not open");
+                throw new Exception("CreateSubKey32: Parent key is not open");
 
             IntPtr SubKeyHandle;
             int lpdwDisposition;
@@ -46,7 +46,7 @@ namespace wyUpdate.Common
             {
                 if ((Result == 5) || (Result == 0x542))
                 {
-                    throw new SecurityException("Security_RegistryPermission - you don't have permission to create the subkey \"" + pSubKeyName + "\"");
+                    throw new SecurityException("WOW64 registry subkey creation failed. Security_RegistryPermission - you don't have permission to create the subkey \"" + pSubKeyName + "\"");
                 }
 
                 // key doesn't exist or another error
@@ -65,7 +65,7 @@ namespace wyUpdate.Common
         {
             IntPtr parentKeyHandle;
             if (pParentKey == null || (parentKeyHandle = GetRegistryKeyHandle(pParentKey)).Equals(IntPtr.Zero))
-                throw new Exception("OpenSubKey: Parent key is not open");
+                throw new Exception("DeleteSubKeyTree32: Parent key is not open");
 
             // enumerate keys, delete each subkey
 
