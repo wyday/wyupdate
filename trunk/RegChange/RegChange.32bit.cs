@@ -253,6 +253,9 @@ namespace wyUpdate.Common
                 RegistryKeyConstructor = typeof(RegistryKey).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, registryKeyConstructorTypes, null);
             }
 
+            if (SafeRegistryHandleConstructor == null)
+                throw new Exception("Failed to get the 'SafeHandle' contructor. Make sure wyUpdate.exe has full trust Code Access Security (CAS).");
+
             Object safeHandle = SafeRegistryHandleConstructor.Invoke(new Object[] { hKey, false /*pOwnsHandle*/ });
 
             // Create a new Registry key using the private constructor using the safeHandle
