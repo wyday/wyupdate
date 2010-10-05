@@ -325,23 +325,23 @@ namespace wyUpdate.Downloader
 
         void calculateBps(long BytesReceived)
         {
-            if (sw.Elapsed >= TimeSpan.FromSeconds(2))
-            {
-                sw.Stop();
+            if (sw.Elapsed < TimeSpan.FromSeconds(2))
+                return;
 
-                // Calculcate transfer speed.
-                long bytes = BytesReceived - sentSinceLastCalc;
-                double bps = bytes * 1000.0 / sw.Elapsed.TotalMilliseconds;
-                downloadSpeed = BpsToString(bps);
+            sw.Stop();
 
-                // Estimated seconds remaining based on the current transfer speed.
-                //secondsRemaining = (int)((e.TotalBytesToReceive - e.BytesReceived) / bps);
+            // Calculcate transfer speed.
+            long bytes = BytesReceived - sentSinceLastCalc;
+            double bps = bytes * 1000.0 / sw.Elapsed.TotalMilliseconds;
+            downloadSpeed = BpsToString(bps);
 
-                // Restart stopwatch for next second.
-                sentSinceLastCalc = BytesReceived;
-                sw.Reset();
-                sw.Start();
-            }
+            // Estimated seconds remaining based on the current transfer speed.
+            //secondsRemaining = (int)((e.TotalBytesToReceive - e.BytesReceived) / bps);
+
+            // Restart stopwatch for next second.
+            sentSinceLastCalc = BytesReceived;
+            sw.Reset();
+            sw.Start();
         }
 
         static readonly string[] units = new[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
@@ -498,8 +498,22 @@ namespace wyUpdate.Downloader
 
             try
             {
-                downloadData.response = req.GetResponse();
-                downloadData.GetFileSize();
+                if (req is FtpWebRequest)
+                {
+                    // get the filesize for FTP files
+                    req.Method = WebRequestMethods.Ftp.GetFileSize;
+                    downloadData.response = req.GetResponse();
+                    downloadData.GetFileSize();
+
+                    // new request for downloading the FTP file
+                    req = GetRequest(url);
+                    downloadData.response = req.GetResponse();
+                }
+                else
+                {
+                    downloadData.response = req.GetResponse();
+                    downloadData.GetFileSize();
+                }
             }
             catch (Exception e)
             {
