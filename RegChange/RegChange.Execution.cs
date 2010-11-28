@@ -118,15 +118,69 @@ namespace wyUpdate.Common
             switch (RegBasekey)
             {
                 case RegBasekeys.HKEY_CLASSES_ROOT:
-                    return use32bit ? CreateSubKey32(Registry.ClassesRoot, SubKey) : Registry.ClassesRoot.CreateSubKey(SubKey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry32).CreateSubKey(SubKey);
+#else
+                        return CreateSubKey32(Registry.ClassesRoot, SubKey);
+#endif
+                    }
+
+                    return Registry.ClassesRoot.CreateSubKey(SubKey);
+
                 case RegBasekeys.HKEY_CURRENT_CONFIG:
-                    return use32bit ? CreateSubKey32(Registry.CurrentConfig, SubKey) : Registry.CurrentConfig.CreateSubKey(SubKey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, RegistryView.Registry32).CreateSubKey(SubKey);
+#else
+                        return CreateSubKey32(Registry.CurrentConfig, SubKey);
+#endif
+                    }
+
+                    return Registry.CurrentConfig.CreateSubKey(SubKey);
+
                 case RegBasekeys.HKEY_LOCAL_MACHINE:
-                    return use32bit ? CreateSubKey32(Registry.LocalMachine, SubKey) : Registry.LocalMachine.CreateSubKey(SubKey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).CreateSubKey(SubKey);
+#else
+                        return CreateSubKey32(Registry.LocalMachine, SubKey);
+#endif
+                    }
+
+                    return Registry.LocalMachine.CreateSubKey(SubKey);
+
                 case RegBasekeys.HKEY_USERS:
-                    return use32bit ? CreateSubKey32(Registry.Users, SubKey) : Registry.Users.CreateSubKey(SubKey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32).CreateSubKey(SubKey);
+#else
+                        return CreateSubKey32(Registry.Users, SubKey);
+#endif
+                    }
+
+                    return Registry.Users.CreateSubKey(SubKey);
+
                 default: // HKEY_CURRENT_USER
-                    return use32bit ? CreateSubKey32(Registry.CurrentUser, SubKey) : Registry.CurrentUser.CreateSubKey(SubKey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32).CreateSubKey(SubKey);
+#else
+                        return CreateSubKey32(Registry.CurrentUser, SubKey);
+#endif
+                    }
+
+                    return Registry.CurrentUser.CreateSubKey(SubKey);
             }
         }
 
@@ -139,15 +193,69 @@ namespace wyUpdate.Common
             switch (RegBasekey)
             {
                 case RegBasekeys.HKEY_CLASSES_ROOT:
-                    return use32bit ? OpenSubKey32(Registry.ClassesRoot, subkey) : Registry.ClassesRoot.OpenSubKey(subkey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry32).OpenSubKey(SubKey);
+#else
+                        return OpenSubKey32(Registry.ClassesRoot, SubKey);
+#endif
+                    }
+
+                    return Registry.ClassesRoot.OpenSubKey(SubKey);
+
                 case RegBasekeys.HKEY_CURRENT_CONFIG:
-                    return use32bit ? OpenSubKey32(Registry.CurrentConfig, subkey) : Registry.CurrentConfig.OpenSubKey(subkey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, RegistryView.Registry32).OpenSubKey(SubKey);
+#else
+                        return OpenSubKey32(Registry.CurrentConfig, SubKey);
+#endif
+                    }
+
+                    return Registry.CurrentConfig.OpenSubKey(SubKey);
+
                 case RegBasekeys.HKEY_LOCAL_MACHINE:
-                    return use32bit ? OpenSubKey32(Registry.LocalMachine, subkey) : Registry.LocalMachine.OpenSubKey(subkey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).OpenSubKey(SubKey);
+#else
+                        return OpenSubKey32(Registry.LocalMachine, SubKey);
+#endif
+                    }
+
+                    return Registry.LocalMachine.OpenSubKey(SubKey);
+
                 case RegBasekeys.HKEY_USERS:
-                    return use32bit ? OpenSubKey32(Registry.Users, subkey) : Registry.Users.OpenSubKey(subkey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32).OpenSubKey(SubKey);
+#else
+                        return OpenSubKey32(Registry.Users, SubKey);
+#endif
+                    }
+
+                    return Registry.Users.OpenSubKey(SubKey);
+
                 default: //HKEY_CURRENT_USER
-                    return use32bit ? OpenSubKey32(Registry.CurrentUser, subkey) : Registry.CurrentUser.OpenSubKey(subkey);
+
+                    if (use32bit)
+                    {
+#if NET4
+                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32).OpenSubKey(SubKey);
+#else
+                        return OpenSubKey32(Registry.CurrentUser, SubKey);
+#endif
+                    }
+
+                    return Registry.CurrentUser.OpenSubKey(SubKey);
             }
         }
 
@@ -172,9 +280,9 @@ namespace wyUpdate.Common
 
             string tempKey = "";
 
-            for (int i = 0; i < subKeys.Length; i++)
+            foreach (string t in subKeys)
             {
-                tempKey += subKeys[i] + "\\";
+                tempKey += t + "\\";
 
                 if (!SubkeyExists(tempKey))
                 {
@@ -215,31 +323,61 @@ namespace wyUpdate.Common
                     {
                         case RegBasekeys.HKEY_CLASSES_ROOT:
                             if (use32bit)
+                            {
+#if NET4
+                                RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry32).DeleteSubKeyTree(SubKey);
+#else
                                 DeleteSubKeyTree32(Registry.ClassesRoot, SubKey);
+#endif
+                            }
                             else
                                 Registry.ClassesRoot.DeleteSubKeyTree(SubKey);
                             break;
                         case RegBasekeys.HKEY_CURRENT_CONFIG:
                             if (use32bit)
+                            {
+#if NET4
+                                RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, RegistryView.Registry32).DeleteSubKeyTree(SubKey);
+#else
                                 DeleteSubKeyTree32(Registry.CurrentConfig, SubKey);
+#endif
+                            }
                             else
                                 Registry.CurrentConfig.DeleteSubKeyTree(SubKey);
                             break;
                         case RegBasekeys.HKEY_CURRENT_USER:
                             if (use32bit)
+                            {
+#if NET4
+                                RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32).DeleteSubKeyTree(SubKey);
+#else
                                 DeleteSubKeyTree32(Registry.CurrentUser, SubKey);
+#endif
+                            }
                             else
                                 Registry.CurrentUser.DeleteSubKeyTree(SubKey);
                             break;
                         case RegBasekeys.HKEY_LOCAL_MACHINE:
                             if (use32bit)
+                            {
+#if NET4
+                                RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).DeleteSubKeyTree(SubKey);
+#else
                                 DeleteSubKeyTree32(Registry.LocalMachine, SubKey);
+#endif
+                            }
                             else
                                 Registry.LocalMachine.DeleteSubKeyTree(SubKey);
                             break;
                         case RegBasekeys.HKEY_USERS:
                             if (use32bit)
+                            {
+#if NET4
+                                RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32).DeleteSubKeyTree(SubKey);
+#else
                                 DeleteSubKeyTree32(Registry.Users, SubKey);
+#endif
+                            }
                             else
                                 Registry.Users.DeleteSubKeyTree(SubKey);
                             break;
