@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if !NET4
+
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -264,3 +266,5 @@ namespace wyUpdate.Common
         }
     }
 }
+
+#endif
