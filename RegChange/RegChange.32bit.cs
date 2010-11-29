@@ -242,14 +242,14 @@ namespace wyUpdate.Common
 
         static RegistryKey PointerToRegistryKey(IntPtr hKey, bool pWritable)
         {
-            // Use reflection to get some MS only constructors they don't want us to touch
+            // Use reflection to get some MS-only constructors they don't want us to touch
             if (SafeRegistryHandleConstructor == null)
             {
                 // Create a SafeHandles.SafeRegistryHandle from this pointer - this is a private class
                 Type safeRegistryHandleType = typeof(SafeHandleZeroOrMinusOneIsInvalid).Assembly.GetType("Microsoft.Win32.SafeHandles.SafeRegistryHandle");
 
                 Type[] safeRegistryHandleConstructorTypes = new[] { typeof(IntPtr), typeof(Boolean) };
-                SafeRegistryHandleConstructor = safeRegistryHandleType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, safeRegistryHandleConstructorTypes, null);
+                SafeRegistryHandleConstructor = safeRegistryHandleType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, safeRegistryHandleConstructorTypes, null);
 
                 Type[] registryKeyConstructorTypes = new[] { safeRegistryHandleType, typeof(Boolean) };
                 RegistryKeyConstructor = typeof(RegistryKey).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, registryKeyConstructorTypes, null);
