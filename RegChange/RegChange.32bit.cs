@@ -249,14 +249,14 @@ namespace wyUpdate.Common
                 Type safeRegistryHandleType = typeof(SafeHandleZeroOrMinusOneIsInvalid).Assembly.GetType("Microsoft.Win32.SafeHandles.SafeRegistryHandle");
 
                 Type[] safeRegistryHandleConstructorTypes = new[] { typeof(IntPtr), typeof(Boolean) };
-                SafeRegistryHandleConstructor = safeRegistryHandleType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, safeRegistryHandleConstructorTypes, null);
+                SafeRegistryHandleConstructor = safeRegistryHandleType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, safeRegistryHandleConstructorTypes, null);
 
                 Type[] registryKeyConstructorTypes = new[] { safeRegistryHandleType, typeof(Boolean) };
                 RegistryKeyConstructor = typeof(RegistryKey).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, registryKeyConstructorTypes, null);
             }
 
-            if (SafeRegistryHandleConstructor == null)
-                throw new Exception("Failed to get the 'SafeHandle' contructor. Make sure wyUpdate.exe has full trust Code Access Security (CAS).");
+            if (SafeRegistryHandleConstructor == null || RegistryKeyConstructor == null)
+                throw new Exception("Failed to get the 'SafeHandle' or 'RegistryKey' constructor. Make sure wyUpdate.exe has full trust Code Access Security (CAS) and make sure you're not using wyUpdate with the \"supportedRuntime\" configuration.");
 
             Object safeHandle = SafeRegistryHandleConstructor.Invoke(new Object[] { hKey, false /*pOwnsHandle*/ });
 
