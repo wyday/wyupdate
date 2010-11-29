@@ -136,7 +136,6 @@
     </EmbeddedResource>
     <Compile Include="ReadWriteFiles.Client.cs" />
     <Compile Include="ReadWriteFiles.cs" />
-    <Compile Include="RegChange\RegChange.32bit.cs" />
     <Compile Include="RegChange\RegChange.cs" />
     <Compile Include="InstallUpdate\RollbackUpdate.cs" />
     <Compile Include="RegChange\RegChange.Execution.cs" />
