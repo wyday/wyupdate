@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin4\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;CLIENT</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;CLIENT NET4</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -29,7 +29,7 @@
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin4\Release\</OutputPath>
-    <DefineConstants>TRACE;CLIENT</DefineConstants>
+    <DefineConstants>TRACE;CLIENT NET4</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
