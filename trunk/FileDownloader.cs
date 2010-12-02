@@ -278,7 +278,7 @@ namespace wyUpdate.Downloader
                     fs.Write(buffer, 0, readCount);
 
                     //calculate download speed
-                    calculateBps(data.StartPoint);
+                    calculateBps(data.StartPoint, data.TotalDownloadSize);
 
                     // send progress info
                     if (!bw.CancellationPending)
@@ -323,7 +323,7 @@ namespace wyUpdate.Downloader
             }
         }
 
-        void calculateBps(long BytesReceived)
+        void calculateBps(long BytesReceived, long TotalBytes)
         {
             if (sw.Elapsed < TimeSpan.FromSeconds(2))
                 return;
@@ -333,7 +333,7 @@ namespace wyUpdate.Downloader
             // Calculcate transfer speed.
             long bytes = BytesReceived - sentSinceLastCalc;
             double bps = bytes * 1000.0 / sw.Elapsed.TotalMilliseconds;
-            downloadSpeed = BpsToString(bps);
+            downloadSpeed = BytesToString(BytesReceived, false) + " / " + (TotalBytes == 0 ? "unknown" : BytesToString(TotalBytes, false)) + "   (" + BytesToString(bps, true) + "/sec)";
 
             // Estimated seconds remaining based on the current transfer speed.
             //secondsRemaining = (int)((e.TotalBytesToReceive - e.BytesReceived) / bps);
@@ -349,18 +349,20 @@ namespace wyUpdate.Downloader
         /// <summary>
         /// Constructs a download speed indicator string.
         /// </summary>
-        /// <param name="bps">Bytes per second transfer rate.</param>
+        /// <param name="bytes">Bytes per second transfer rate.</param>
+        /// <param name="time">Is a time value (e.g. bytes/second)</param>
         /// <returns>String represenation of the transfer rate in bytes/sec, KB/sec, MB/sec, etc.</returns>
-        static string BpsToString(double bps)
+        static string BytesToString(double bytes, bool time)
         {
             int i = 0;
-            while (bps >= 0.9 * 1024)
+            while (bytes >= 0.9 * 1024)
             {
-                bps /= 1024;
+                bytes /= 1024;
                 i++;
             }
 
-            return string.Format("{0:0.00} {1}/sec", bps, units[i]);
+            // don't show N.NN bytes when *not* dealing with time values (e.g. 8.88 bytes/sec).
+            return (time || i > 0) ? string.Format("{0:0.00} {1}", bytes, units[i]) : string.Format("{0} {1}", bytes, units[i]);
         }
 
         void ValidateDownload()
@@ -470,6 +472,11 @@ namespace wyUpdate.Downloader
 
                 return 0;
             }
+        }
+
+        public long TotalDownloadSize
+        {
+            get { return size; }
         }
 
         public long StartPoint
