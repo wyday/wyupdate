@@ -38,11 +38,9 @@ namespace wyUpdate.Common
             //compare indices
             int iVerA = 0, iVerB = 0;
 
-            int strComp;
-
             bool lastAWasLetter = true, lastBWasLetter = true;
 
-            do
+            for (;;)
             {
                 //store index before GetNextObject just in case we need to rollback
                 int greekIndA = iVerA;
@@ -95,6 +93,7 @@ namespace wyUpdate.Common
 
                 if (char.IsDigit(objA[0]) == char.IsDigit(objB[0]))
                 {
+                    int strComp;
                     if (char.IsDigit(objA[0]))
                     {
                         //compare integers
@@ -132,10 +131,8 @@ namespace wyUpdate.Common
                     return 1; //versionA is newer than versionB
                 else
                     return -1; //verisonB is newer than versionA
-
-            } while (true);
+            }
         }
-
 
         static string GetNextObject(string version, ref int index, ref bool lastWasLetter)
         {
