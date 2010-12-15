@@ -112,6 +112,23 @@ namespace wyUpdate
                         //a download error occurred
                         error = clientLang.DownloadError;
                         errorDetails = ((Exception)payload).Message;
+
+                        //TODO: retry downloads in AutoUpdateMode
+                        /*
+                        if (isAutoUpdateMode)
+                        {
+                            TimeSpan span = DateTime.Now - File.GetCreationTime(serverFileLoc);
+
+                            if (span.Days > 0 || span.Hours > 2)
+                            {
+                                
+                            }
+                            //TODO: if we're in AutoUpdate mode, and the
+                            //download failure was an update file, and the
+                            //server file is older than 1 hour, redownload the server and see if there's a new download site
+
+                            //TODO: ditto for self-update failures (clientSFLoc)
+                        }*/
                     }
                     else // an update error occurred
                     {
