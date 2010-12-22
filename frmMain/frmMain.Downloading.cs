@@ -142,7 +142,7 @@ namespace wyUpdate
                 if (isAutoUpdateMode)
                 {
                     // send reponse that there's no update available
-                    updateHelper.SendSuccess(null, null, true, null);
+                    updateHelper.SendSuccess(null, null, true);
 
                     // close this client
                     isCancelled = true;

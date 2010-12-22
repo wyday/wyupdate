@@ -240,7 +240,7 @@ namespace wyUpdate
                     if (frameOn != Frame.Checking)
                     {
                         // report UpdateAvailable, with changes
-                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
+                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true);
 
                         return true;
                     }
