@@ -66,7 +66,7 @@ namespace wyUpdate
                         // save the automatic updater file
                         SaveAutoUpdateData(UpdateStepOn.UpdateAvailable);
 
-                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true, null);
+                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true);
                     }
 
                     break;

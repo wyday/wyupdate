@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using wyDay.Controls;
 
 namespace wyUpdate.Common
 {
@@ -13,9 +12,6 @@ namespace wyUpdate.Common
 
         public List<string> ExtraData = new List<string>();
         public List<bool> ExtraDataIsRTF = new List<bool>();
-
-        public List<RichTextBoxLink> LinksData;
-
 
         public Response ResponseType = Response.Nothing;
         public int Progress = -1;
@@ -88,16 +84,7 @@ namespace wyUpdate.Common
                     }
                 }
 
-
-                if (LinksData != null)
-                {
-                    foreach (RichTextBoxLink link in LinksData)
-                    {
-                        WriteFiles.WriteInt(ms, 0x07, link.StartIndex);
-                        WriteFiles.WriteInt(ms, 0x08, link.Length);
-                        WriteFiles.WriteString(ms, 0x09, link.LinkTarget);
-                    }
-                }
+                // 0x07, 0x08, and 0x09 used to be links data - obsolete
 
                 if (ProcessID != 0)
                     WriteFiles.WriteInt(ms, 0x04, ProcessID);
@@ -155,20 +142,7 @@ namespace wyUpdate.Common
                             uhData.ResponseType = (Response)ReadFiles.ReadInt(ms);
                             break;
 
-                        case 0x07:
-
-                            if (uhData.LinksData == null)
-                                uhData.LinksData = new List<RichTextBoxLink>();
-
-                            uhData.LinksData.Add(new RichTextBoxLink(ReadFiles.ReadInt(ms)));
-
-                            break;
-                        case 0x08:
-                            uhData.LinksData[uhData.LinksData.Count - 1].Length = ReadFiles.ReadInt(ms);
-                            break;
-                        case 0x09:
-                            uhData.LinksData[uhData.LinksData.Count - 1].LinkTarget = ReadFiles.ReadString(ms);
-                            break;
+                        // 0x07, 0x08, and 0x09 used to be links data - obsolete
 
                         default:
                             ReadFiles.SkipField(ms, bType);

@@ -472,7 +472,6 @@ namespace wyUpdate
             messageBox.ScrollBars = RichTextBoxScrollBars.Vertical;
             messageBox.BackColor = SystemColors.Window; //white
             messageBox.Visible = false;
-            messageBox.LinkClicked += messageBox_LinkClicked;
             Controls.Add(messageBox);
 
             //setup the animation list
@@ -621,11 +620,6 @@ namespace wyUpdate
         {
             errorDetailsButton.Visible = false;
             messageBox.Show();
-        }
-
-        static void messageBox_LinkClicked(object sender, string link)
-        {
-            System.Diagnostics.Process.Start(link);
         }
 
         void UpdateTextRectangles()

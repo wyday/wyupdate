@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -7,23 +6,6 @@ using System.Windows.Forms;
 
 namespace wyDay.Controls
 {
-    internal class RichTextBoxLink
-    {
-        public int StartIndex;
-        public int Length;
-        public string LinkTarget;
-
-        public RichTextBoxLink(string linktarget)
-        {
-            LinkTarget = linktarget;
-        }
-
-        public RichTextBoxLink(int startIndex)
-        {
-            StartIndex = startIndex;
-        }
-    }
-
     internal delegate void LinkHandler(object sender, string linkTarget);
 
 	internal class RichTextBoxEx : RichTextBox
@@ -72,9 +54,6 @@ namespace wyDay.Controls
 		#endregion
 
 		#endregion
-
-
-        List<RichTextBoxLink> linkCollection = new List<RichTextBoxLink>();
 
 		public RichTextBoxEx()
 		{
@@ -250,63 +229,6 @@ namespace wyDay.Controls
             return sb.ToString();
         }
 
-
-		/// <summary>
-		/// Insert a given text at a given position as a link. The link text is followed by
-		/// a hash (#) and the given hyperlink text, both of them invisible.
-		/// When clicked on, the whole link text and hyperlink string are given in the
-		/// LinkClickedEventArgs.
-		/// </summary>
-		/// <param name="text">Text to be inserted</param>
-        /// <param name="linkText">Invisible hyperlink string to be inserted</param>
-		public void InsertLink(string text, string linkText)
-		{
-            RichTextBoxLink link = new RichTextBoxLink(linkText);
-
-            linkCollection.Add(link);
-
-            link.StartIndex = SelectionStart;
-            link.Length = text.Length;
-
-
-            CreateLink(link, text, linkCollection.Count - 1);
-		}
-
-        void CreateLink(RichTextBoxLink link, string text, int linkOn)
-        {
-            string hyperlink = linkOn.ToString();
-            SelectedRtf = @"{\rtf1\ansi " + FormatStringForRTF(text) + @"\v #" + hyperlink + @"\v0}";
-            Select(link.StartIndex, link.Length + hyperlink.Length + 1);
-			SetSelectionLink(true);
-            Select(link.StartIndex + link.Length + hyperlink.Length + 1, 0);
-        }
-
-        public void CreateExistingLinks(List<RichTextBoxLink> links)
-        {
-            if (links == null)
-                return;
-
-            linkCollection = links;
-
-            for (int i = 0; i < links.Count; i++)
-            {
-                Select(links[i].StartIndex, links[i].Length);
-
-                //TODO: don't overwrite the style (bold, italics, and underline)
-                CreateLink(links[i], Text.Substring(links[i].StartIndex, links[i].Length), i);  
-            }
-        }
-
-        static string FormatStringForRTF(string inString)
-        {
-            string tmpStr = inString.Replace("\n", "$n$");
-            tmpStr = tmpStr.Replace(@"\", @"\\");
-            tmpStr = tmpStr.Replace("{", @"\{");
-            tmpStr = tmpStr.Replace("}", @"\}");
-            tmpStr = tmpStr.Replace("$n$", @"\par ");
-            return tmpStr;
-        }
-
 		/// <summary>
 		/// Set the current selection's link style
 		/// </summary>
@@ -369,22 +291,5 @@ namespace wyDay.Controls
 			Marshal.FreeCoTaskMem(lpar);
 			return state;
 		}
-
-
-        public new event LinkHandler LinkClicked;
-
-
-        protected override void OnLinkClicked(LinkClickedEventArgs e)
-        {
-            int linkIndex = int.Parse(e.LinkText.Substring(linkIndex = e.LinkText.LastIndexOf('#') + 1, e.LinkText.Length - linkIndex));
-
-
-            if (LinkClicked != null)
-                LinkClicked(this, linkCollection[linkIndex].LinkTarget);
-
-
-            base.OnLinkClicked(e);
-        }
-
 	}
 }

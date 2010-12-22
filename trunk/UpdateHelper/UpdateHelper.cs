@@ -123,13 +123,11 @@ namespace wyUpdate.Common
             pipeServer.SendMessage(new UpdateHelperData(Response.Progress, step, progress).GetByteArray());
         }
 
-        public void SendSuccess(string extraData1, string extraData2, bool ed2IsRtf, List<RichTextBoxLink> links)
+        public void SendSuccess(string extraData1, string extraData2, bool ed2IsRtf)
         {
             UpdateHelperData uh = new UpdateHelperData(Response.Succeeded, UpdateStep.CheckForUpdate, extraData1, extraData2);
 
             uh.ExtraDataIsRTF[1] = ed2IsRtf;
-            
-            uh.LinksData = links;
 
             pipeServer.SendMessage(uh.GetByteArray());
         }
