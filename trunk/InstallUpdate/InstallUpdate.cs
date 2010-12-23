@@ -568,7 +568,7 @@ namespace wyUpdate
 
                 FileAttributes atr = FileAttributes.Normal;
 
-                if(File.Exists(Filename))
+                if (File.Exists(Filename))
                     atr = File.GetAttributes(Filename);
 
                 bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;

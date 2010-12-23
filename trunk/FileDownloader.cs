@@ -201,7 +201,7 @@ namespace wyUpdate.Downloader
         public void Download()
         {
             // check if the PublicSignKey exists & the update isn't signed then just don't bother downloading
-            if(PublicSignKey != null && SignedSHA1Hash == null)
+            if (PublicSignKey != null && SignedSHA1Hash == null)
             {
                 // unregister bw events
                 bw_RunWorkerCompleted(null, null);

@@ -98,7 +98,7 @@ namespace wyUpdate
 
         void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            if(e.Result == null)
+            if (e.Result == null)
             {
                 // we're done, close the form
                 DialogResult = DialogResult.OK;

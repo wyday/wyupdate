@@ -151,7 +151,7 @@ namespace wyUpdate.Common
 
         public static string GetRootDrive()
         {
-            if(m_RootDrive == null)
+            if (m_RootDrive == null)
             {
                 m_RootDrive = Environment.GetFolderPath(Environment.SpecialFolder.System).Substring(0, 3);
             }
@@ -164,7 +164,7 @@ namespace wyUpdate.Common
 
         public static string GetSystem32x86()
         {
-            if(m_System32x86 == null)
+            if (m_System32x86 == null)
             {
                 if (Is64Bit())
                 {
