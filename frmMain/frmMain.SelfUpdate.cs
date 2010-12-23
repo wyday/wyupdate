@@ -63,7 +63,7 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(forcedLanguageCulture))
                     WriteFiles.WriteString(fs, 0x0E, forcedLanguageCulture);
 
-                if(isAutoUpdateMode)
+                if (isAutoUpdateMode)
                 {
                     // is in automatic update mode
                     fs.WriteByte(0x80);

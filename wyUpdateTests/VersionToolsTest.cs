@@ -69,7 +69,7 @@ namespace wyUpdateTests
             string[] versionB = { "1.0.0.0", "1.0.0.0 beta 1", "1.0 beta", "1.0 Beta 4",  "1.0", "2.1.0", "1.0rc3", "1.0rc2",   "1 2 3",  "1.2 release candidate" };
             int[] expected = { 0, 0, 1, -1, -1, -1, -1, -1, 0, 0 };
 
-            for(int i=0; i<versionA.Length; i++)
+            for (int i=0; i<versionA.Length; i++)
             {
                 int actual = VersionTools.Compare(versionA[i], versionB[i]);
 

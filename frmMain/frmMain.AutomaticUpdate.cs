@@ -40,7 +40,7 @@ namespace wyUpdate
             // when this function is called in the constructor
             // (i.e. before the handle for the form is created)
             // then the pipeserver will not have yet been created
-            if(!updateHelper.RunningServer)
+            if (!updateHelper.RunningServer)
             {
                 checkForClients = true;
                 updateHelper.StartPipeServer(this);
@@ -70,7 +70,7 @@ namespace wyUpdate
 
             clientProcess.Start();
 
-            if(checkForClients)
+            if (checkForClients)
             {
                 // there must be at least one client running to receive this message
                 int timeSpent = 0;
@@ -196,7 +196,7 @@ namespace wyUpdate
         {
             // if the selfupdate has been downloaded but not extracted
             // it means wyUpdate was closed before extraction could take place
-            if(SelfUpdateState == SelfUpdateState.Downloaded
+            if (SelfUpdateState == SelfUpdateState.Downloaded
                 && update.CurrentlyUpdating != UpdateOn.ExtractSelfUpdate
                 && s != UpdateStep.CheckForUpdate)
             {
@@ -573,7 +573,7 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(updateFilename))
                     WriteFiles.WriteString(fs, 0x07, updateFilename);
 
-                if(SelfUpdateState != SelfUpdateState.None)
+                if (SelfUpdateState != SelfUpdateState.None)
                 {
                     WriteFiles.WriteInt(fs, 0x08, (int) SelfUpdateState);
 
@@ -663,8 +663,6 @@ namespace wyUpdate
                             oldSelfLocation = ReadFiles.ReadString(fs);
                             break;
 
-
-
                         default:
                             ReadFiles.SkipField(fs, bType);
                             break;
@@ -694,7 +692,7 @@ namespace wyUpdate
                     return;
                 }
 
-                if(SelfUpdateState == SelfUpdateState.Extracted && !IsNewSelf)
+                if (SelfUpdateState == SelfUpdateState.Extracted && !IsNewSelf)
                 {
                     // launch new wyUpdate
                     StartNewSelfAndClose();

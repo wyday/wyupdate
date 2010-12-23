@@ -31,7 +31,7 @@ namespace wyDay.Controls
             {
                 ownerForm = value;
 
-                if(!ownerForm.Visible)
+                if (!ownerForm.Visible)
                     ((Form)ownerForm).Shown += Windows7ProgressBar_Shown;
             }
         }
@@ -149,7 +149,7 @@ namespace wyDay.Controls
 
                 bool wasMarquee = Style == ProgressBarStyle.Marquee;
 
-                if(wasMarquee)
+                if (wasMarquee)
                     // sets the state to normal (and implicity calls SetStateInTB() )
                     Style = ProgressBarStyle.Blocks;
 

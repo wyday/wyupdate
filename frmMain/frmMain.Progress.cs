@@ -340,11 +340,11 @@ namespace wyUpdate
                     }
 
 
-                    if(isAutoUpdateMode)
+                    if (isAutoUpdateMode)
                     {
                         SelfUpdateState = SelfUpdateState.None;
 
-                        if(update.CurrentlyUpdating == UpdateOn.InstallSelfUpdate)
+                        if (update.CurrentlyUpdating == UpdateOn.InstallSelfUpdate)
                         {
                             // update has already been downloaded & extracted
                             SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
