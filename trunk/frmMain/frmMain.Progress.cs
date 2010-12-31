@@ -305,11 +305,11 @@ namespace wyUpdate
                 }
                 else if (frameOn == Frame.Checking)
                 {
-                    //client server file failed to download, continue as usual:
+                    // client server file failed to download, continue as usual:
                     SelfUpdateState = SelfUpdateState.None;
 
-                    //Show update info page
-                    ShowFrame(Frame.UpdateInfo);
+                    // Show update info page (or just start downloading & installing)
+                    ShowFrame(SkipUpdateInfo ? Frame.InstallUpdates : Frame.UpdateInfo);
                 }
                 else
                 {

@@ -33,10 +33,16 @@ namespace wyUpdate
             {
                 // pause the updating
                 if (frameOn == Frame.InstallUpdates && !IsDownloading())
+                {
                     installUpdate.Pause(true);
+                    panelDisplaying.PauseProgressBar();
+                }
 
                 DialogResult dResult = MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
                     MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button2);
+
+                // unpause the progress bar whether we're cancelling or resuming
+                panelDisplaying.UnPauseProgressBar();
 
                 if (dResult == DialogResult.Yes)
                 {

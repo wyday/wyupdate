@@ -82,6 +82,7 @@ namespace wyUpdate
         bool QuickCheck;
         bool QuickCheckNoErr;
         bool QuickCheckJustCheck;
+        bool SkipUpdateInfo;
 
         string forcedLanguageCulture;
 
@@ -422,6 +423,9 @@ namespace wyUpdate
                     if (commands["justcheck"] != null)
                         QuickCheckJustCheck = true;
                 }
+
+                if (commands["skipinfo"] != null)
+                    SkipUpdateInfo = true;
 
                 //client data file
                 if (commands["cdata"] != null)

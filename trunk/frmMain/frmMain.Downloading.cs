@@ -96,8 +96,8 @@ namespace wyUpdate
                 }
             }
 
-            //Show update info page
-            ShowFrame(Frame.UpdateInfo);
+            // Show update info page (or just start downloading & installing)
+            ShowFrame(SkipUpdateInfo ? Frame.InstallUpdates : Frame.UpdateInfo);
         }
 
         void LoadClientServerFile()

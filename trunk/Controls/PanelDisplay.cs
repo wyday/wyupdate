@@ -252,6 +252,16 @@ namespace wyUpdate
             }
         }
 
+        public void PauseProgressBar()
+        {
+            progressBar.State = ProgressBarState.Pause;
+        }
+
+        public void UnPauseProgressBar()
+        {
+            progressBar.State = ProgressBarState.Normal;
+        }
+
         public void AppendText(string plaintext)
         {
             // we can't set SelectedText with an empty string
@@ -547,11 +557,13 @@ namespace wyUpdate
                 //TODO: add an event handler for checked state
                 //fall through to add the messageBox
                 case FrameType.TextInfo:
+
                     messageBox.Show();
                     progressBar.Hide();
                     HideAnimations();
                     break;
                 case FrameType.Update:
+
                     messageBox.Hide();
                     progressBar.Show();
 
@@ -560,6 +572,13 @@ namespace wyUpdate
 
                     if (m_ShowChecklist)
                     {
+                        // hide center animation
+                        if (aniWorking.Visible)
+                        {
+                            aniWorking.Hide();
+                            aniWorking.StopAnimation();
+                        }
+
                         //set the defaults for the UpdateItems
                         for (int i = 0; i < UpdateItems.Length; i++)
                         {
@@ -577,7 +596,7 @@ namespace wyUpdate
                     break;
             }
 
-            //re-enable drawing and Refresh
+            // re-enable drawing and Refresh
             SendMessage(Handle, 0xB, 1, 0);
             Refresh();
         }
