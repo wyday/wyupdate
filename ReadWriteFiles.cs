@@ -35,6 +35,18 @@ namespace wyUpdate.Common
             fs.Write(BitConverter.GetBytes(val), 0, 8);
         }
 
+        public static void WriteShort(Stream fs, byte flag, short val)
+        {
+            //write the flag (e.g. 0x01, 0xFF, etc.)
+            fs.WriteByte(flag);
+
+            //write the size of the data (Long = 2bytes)
+            fs.Write(BitConverter.GetBytes(2), 0, 4);
+
+            // write the integer data
+            fs.Write(BitConverter.GetBytes(val), 0, 2);
+        }
+
         public static void WriteDateTime(Stream fs, byte flag, DateTime dt)
         {
             //write the flag (e.g. 0x01, 0xFF, etc.)
@@ -215,6 +227,17 @@ namespace wyUpdate.Common
 
             ReadWholeArray(fs, tempBytes);
             return BitConverter.ToInt64(tempBytes, 0);
+        }
+
+        public static short ReadShort(Stream fs)
+        {
+            byte[] tempBytes = new byte[2];
+
+            //skip the "length of data" int value
+            fs.Position += 4;
+
+            ReadWholeArray(fs, tempBytes);
+            return BitConverter.ToInt16(tempBytes, 0);
         }
 
         public static bool IsHeaderValid(Stream fs, string HeaderShouldBe)
