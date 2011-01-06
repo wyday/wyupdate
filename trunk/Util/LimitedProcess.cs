@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using wyUpdate;
 
 public static class LimitedProcess
@@ -82,10 +81,7 @@ public static class LimitedProcess
             //using a custom shell.  Also note that we're assuming that the shell is not running elevated.
             IntPtr hShellWnd = GetShellWindow();
             if (hShellWnd == IntPtr.Zero)
-            {
-                MessageBox.Show("Unable to locate shell window; you might be using a custom shell");
-                return;
-            }
+                throw new Exception("Unable to locate shell window; you might be using a custom shell");
 
             //Get the ID of the desktop shell process.
             int dwShellPID;
