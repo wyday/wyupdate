@@ -158,6 +158,7 @@
     <Compile Include="UpdateHelper\UpdateHelperData.cs" />
     <Compile Include="UpdateHelper\UpdateStepOn.cs" />
     <Compile Include="Util\Adler32.cs" />
+    <Compile Include="Util\CmdLineToArgvW.cs" />
     <Compile Include="Util\LimitedProcess.cs" />
     <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails\UpdateDetails.cs" />
