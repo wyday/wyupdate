@@ -554,6 +554,13 @@ namespace wyUpdate
                 if (updateHelper.AutoUpdateID != null)
                     WriteFiles.WriteString(fs, 0x03, updateHelper.AutoUpdateID);
 
+                if (updateHelper.ExecutionArguments != null)
+                    WriteFiles.WriteString(fs, 0x0C, updateHelper.ExecutionArguments);
+
+                // is the file a service?
+                if (updateHelper.IsAService)
+                    fs.WriteByte(0x80);
+
                 // Server data file location
                 if (!string.IsNullOrEmpty(serverFileLoc))
                     WriteFiles.WriteString(fs, 0x04, serverFileLoc);
@@ -618,6 +625,14 @@ namespace wyUpdate
 
                         case 0x03: // autoupdate ID
                             updateHelper.AutoUpdateID = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x0C:
+                            updateHelper.ExecutionArguments = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x80:
+                            updateHelper.IsAService = true;
                             break;
 
                         case 0x04: // Server data file location
