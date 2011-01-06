@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.ServiceProcess;
 using System.Threading;
 using System.Windows.Forms;
 using wyDay.Controls;
@@ -221,7 +222,7 @@ namespace wyUpdate
                 else if (isAutoUpdateMode)
                 {
                     if ((frameNum == Frame.UpdatedSuccessfully || frameNum == Frame.Error) &&
-                        updateHelper.FileToExecuteAfterUpdate != null && File.Exists(updateHelper.FileToExecuteAfterUpdate))
+                        updateHelper.FileOrServiceToExecuteAfterUpdate != null && File.Exists(updateHelper.FileOrServiceToExecuteAfterUpdate))
                     {
                         // save whether an update succeeded or failed
                         AutoUpdaterInfo auInfo;
@@ -248,8 +249,28 @@ namespace wyUpdate
 
                         auInfo.Save();
 
-                        // start the updated program as a limited user
-                        LimitedProcess.Start(updateHelper.FileToExecuteAfterUpdate, updateHelper.ExecutionArguments);
+                        try
+                        {
+                            if (updateHelper.IsAService)
+                            {
+                                if (updateHelper.ExecutionArguments != null)
+                                {
+                                    string[] args = CmdLineToArgvW.SplitArgs(updateHelper.ExecutionArguments);
+
+                                    // start the windows service
+                                    new ServiceController(updateHelper.FileOrServiceToExecuteAfterUpdate).Start(args);
+                                }
+                                else // start the windows service (without args)
+                                    new ServiceController(updateHelper.FileOrServiceToExecuteAfterUpdate).Start();
+                            }
+                            else
+                            {
+                                // start the updated program as a limited user
+                                LimitedProcess.Start(updateHelper.FileOrServiceToExecuteAfterUpdate,
+                                                     updateHelper.ExecutionArguments);
+                            }
+                        }
+                        catch { }
                     }
 
                     // we're no longer in autoupdate mode - cleanup temp files on close

@@ -548,8 +548,8 @@ namespace wyUpdate
                 WriteFiles.WriteInt(fs, 0x01, (int)updateStepOn);
 
                 // file to execute
-                if (updateHelper.FileToExecuteAfterUpdate != null)
-                    WriteFiles.WriteString(fs, 0x02, updateHelper.FileToExecuteAfterUpdate);
+                if (updateHelper.FileOrServiceToExecuteAfterUpdate != null)
+                    WriteFiles.WriteString(fs, 0x02, updateHelper.FileOrServiceToExecuteAfterUpdate);
 
                 if (updateHelper.AutoUpdateID != null)
                     WriteFiles.WriteString(fs, 0x03, updateHelper.AutoUpdateID);
@@ -613,7 +613,7 @@ namespace wyUpdate
 
                             break;
                         case 0x02: // file to execute
-                            updateHelper.FileToExecuteAfterUpdate = ReadFiles.ReadString(fs);
+                            updateHelper.FileOrServiceToExecuteAfterUpdate = ReadFiles.ReadString(fs);
                             break;
 
                         case 0x03: // autoupdate ID

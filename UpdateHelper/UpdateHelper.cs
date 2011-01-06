@@ -12,7 +12,8 @@ namespace wyUpdate.Common
 
         public bool Installing;
 
-        public string FileToExecuteAfterUpdate;
+        public string FileOrServiceToExecuteAfterUpdate;
+        public bool IsAService;
         public string ExecutionArguments;
         public string AutoUpdateID;
 
@@ -102,7 +103,10 @@ namespace wyUpdate.Common
             {
                 // load the pre-install info
                 if (data.ExtraData.Count > 0)
-                    FileToExecuteAfterUpdate = data.ExtraData[0];
+                {
+                    FileOrServiceToExecuteAfterUpdate = data.ExtraData[0];
+                    IsAService = data.ExtraDataIsRTF[0];
+                }
 
                 // load the AutoUpdateID (for writing to file whether the update failed or Succeeded)
                 if (data.ExtraData.Count > 1)
