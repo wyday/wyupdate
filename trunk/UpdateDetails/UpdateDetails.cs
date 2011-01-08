@@ -16,10 +16,8 @@ namespace wyUpdate.Common
             PreviousSMenuShortcuts = new List<string>();
             PreviousDesktopShortcuts = new List<string>();
             ServicesToStop = new List<string>();
-            ServicesToStart = new List<string>();
+            ServicesToStart = new List<StartService>();
         }
-
-        #region Properties
 
         public List<RegChange> RegistryModifications { get; set; }
 
@@ -35,9 +33,7 @@ namespace wyUpdate.Common
 
         public List<string> ServicesToStop { get; set; }
 
-        public List<string> ServicesToStart { get; set; }
-
-        #endregion Properties
+        public List<StartService> ServicesToStart { get; set; }
 
 #if CLIENT
         public static UpdateDetails Load(string fileName)
@@ -68,6 +64,7 @@ namespace wyUpdate.Common
             }
 
             UpdateFile tempUpdateFile = new UpdateFile();
+            int lastStartServiceArgOn = 0;
 
             byte bType = (byte)fs.ReadByte();
             while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
@@ -93,7 +90,17 @@ namespace wyUpdate.Common
                         updtDetails.ServicesToStop.Add(ReadFiles.ReadString(fs));
                         break;
                     case 0x33: //service to start
-                        updtDetails.ServicesToStart.Add(ReadFiles.ReadString(fs));
+                        updtDetails.ServicesToStart.Add(new StartService(ReadFiles.ReadString(fs)));
+                        break;
+                    case 0x34: // number of start arguments for the last service
+                        updtDetails.ServicesToStart[updtDetails.ServicesToStart.Count - 1].Arguments =
+                            new string[ReadFiles.ReadInt(fs)];
+                        lastStartServiceArgOn = 0;
+                        break;
+                    case 0x35:
+                        updtDetails.ServicesToStart[updtDetails.ServicesToStart.Count - 1].Arguments[
+                            lastStartServiceArgOn] = ReadFiles.ReadString(fs);
+                        lastStartServiceArgOn++;
                         break;
                     case 0x40:
                         tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
@@ -269,8 +276,18 @@ namespace wyUpdate.Common
             foreach (string service in ServicesToStop)
                 WriteFiles.WriteString(ms, 0x32, service);
 
-            foreach (string service in ServicesToStart)
-                WriteFiles.WriteString(ms, 0x33, service);
+            foreach (StartService service in ServicesToStart)
+            {
+                WriteFiles.WriteString(ms, 0x33, service.Name);
+
+                if (service.Arguments != null)
+                {
+                    WriteFiles.WriteInt(ms, 0x34, service.Arguments.Length);
+
+                    foreach (string arg in service.Arguments)
+                        WriteFiles.WriteString(ms, 0x35, arg);
+                }
+            }
 
             //end of file
             ms.WriteByte(0xFF);
@@ -279,5 +296,16 @@ namespace wyUpdate.Common
             return ms;
         }
 #endif
+    }
+
+    public class StartService
+    {
+        public string Name;
+        public string[] Arguments;
+
+        public StartService(string name)
+        {
+            Name = name;
+        }
     }
 }
