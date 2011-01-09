@@ -24,34 +24,18 @@ namespace wyUpdate.Common
 
     public class ClientFile
     {
-        #region Private Variables
-        
-        //Client Side Information
-
         public Hashtable Languages = new Hashtable();
         string m_GUID;
 
-        public ClientFile()
-        {
-            CurrentlyUpdating = UpdateOn.DownloadingUpdate;
-            ServerFileSites = new List<string>(1);
-            ClientServerSites = new List<string>(1);
-            HeaderTextIndent = -1;
-            HeaderTextColorName = "";
-            HeaderImageAlign = ImageAlign.Left;
-        }
-
-        #endregion Private Variables
-
         #region Properties
 
-        public UpdateOn CurrentlyUpdating { get; set; }
+        public UpdateOn CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
-        public List<string> ServerFileSites { get; set; }
+        public List<string> ServerFileSites = new List<string>(1);
 
-        public string CompanyName { get; set; }
+        public string CompanyName;
 
-        public string ProductName { get; set; }
+        public string ProductName;
 
         public string GUID
         {
@@ -91,32 +75,32 @@ namespace wyUpdate.Common
             }
         }
 
-        public string InstalledVersion { get; set; }
+        public string InstalledVersion;
 
-        public ImageAlign HeaderImageAlign { get; set; }
+        public ImageAlign HeaderImageAlign = ImageAlign.Left;
 
-        public string HeaderTextColorName { get; set; }
+        public string HeaderTextColorName = "";
 
-        public int HeaderTextIndent { get; set; }
+        public int HeaderTextIndent = -1;
 
-        public bool HideHeaderDivider { get; set; }
+        public bool HideHeaderDivider;
 
-        public Image TopImage { get; set; }
+        public Image TopImage;
 
-        public Image SideImage { get; set; }
+        public Image SideImage;
 
 
-        public string TopImageFilename { get; set; }
+        public string TopImageFilename;
 
-        public string SideImageFilename { get; set; }
+        public string SideImageFilename;
 
-        public List<string> ClientServerSites { get; set; }
+        public List<string> ClientServerSites = new List<string>(1);
 
-        public bool CloseOnSuccess { get; set; }
+        public bool CloseOnSuccess;
 
-        public string CustomWyUpdateTitle { get; set; }
+        public string CustomWyUpdateTitle;
 
-        public string PublicSignKey { get; set; }
+        public string PublicSignKey;
 
         #endregion Properties
 

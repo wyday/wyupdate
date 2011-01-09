@@ -33,7 +33,7 @@ namespace wyUpdate.Common
 
         static object StringToMultiString(object str)
         {
-            if (typeof(string[]) == str.GetType())
+            if (str is string[])
                 return str;
 
             return ((string)str).Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);

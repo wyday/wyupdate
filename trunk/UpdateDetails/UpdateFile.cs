@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -10,38 +11,42 @@ namespace wyUpdate.Common
     public class UpdateFile
     {
         //full path of file for creating zip file
-        public string Filename { get; set; }
+        public string Filename;
 
-        public string RelativePath { get; set; }
+        public string RelativePath;
 
         //execute the file?
-        public bool Execute { get; set; }
+        public bool Execute;
 
         //if so, before or after update?
-        public bool ExBeforeUpdate { get; set; }
+        public bool ExBeforeUpdate;
 
         //command line arguents
-        public string CommandLineArgs { get; set; }
+        public string CommandLineArgs;
+
+        public bool WaitForExecution;
+
+        public bool RollBackOnFailure;
+
+        public List<int> RetExceptions;
 
         //is it a .NET assembly?
-        public bool IsNETAssembly { get; set; }
+        public bool IsNETAssembly;
 
-        public CPUVersion CPUVersion { get; set; }
+        public CPUVersion CPUVersion;
 
-        public FrameworkVersion FrameworkVersion { get; set; }
-
-        public bool WaitForExecution { get; set; }
+        public FrameworkVersion FrameworkVersion;
 
         //Delta Patching Particulars:
-        public string DeltaPatchRelativePath { get; set; }
+        public string DeltaPatchRelativePath;
 
-        public bool DeleteFile { get; set; }
+        public bool DeleteFile;
 
-        public long NewFileAdler32 { get; set; }
+        public long NewFileAdler32;
 
-        public ProcessWindowStyle ProcessWindowStyle { get; set; }
+        public ProcessWindowStyle ProcessWindowStyle;
 
-        public COMRegistration RegisterCOMDll { get; set; }
+        public COMRegistration RegisterCOMDll;
 
 #if DESIGNER
         public UpdateFile() { }

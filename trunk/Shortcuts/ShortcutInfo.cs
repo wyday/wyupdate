@@ -12,30 +12,22 @@ namespace wyUpdate.Common
 
     public class ShortcutInfo : ICloneable
     {
-        public ShortcutInfo()
-        {
-            WindowStyle = WindowStyle.ShowNormal;
-        }
+        public string Path;
 
-        #region Properties
+        public string WorkingDirectory;
 
-        public string Path { get; set; }
+        public string Arguments;
 
-        public string WorkingDirectory { get; set; }
+        public string Description;
 
-        public string Arguments { get; set; }
+        public string IconPath;
 
-        public string Description { get; set; }
+        public int IconIndex;
 
-        public string IconPath { get; set; }
+        public WindowStyle WindowStyle = WindowStyle.ShowNormal;
 
-        public int IconIndex { get; set; }
+        public string RelativeOuputPath;
 
-        public WindowStyle WindowStyle { get; set; }
-
-        public string RelativeOuputPath { get; set; }
-
-        #endregion Properties
 
         public void SaveToStream(Stream fs, bool saveRelativePath)
         {
@@ -114,16 +106,16 @@ namespace wyUpdate.Common
         public object Clone()
         {
             return new ShortcutInfo
-                                  {
-                                      Path = Path,
-                                      WorkingDirectory = WorkingDirectory,
-                                      Arguments = Arguments,
-                                      Description = Description,
-                                      IconPath = IconPath,
-                                      IconIndex = IconIndex,
-                                      WindowStyle = WindowStyle,
-                                      RelativeOuputPath = RelativeOuputPath
-                                  };
+                       {
+                           Path = Path,
+                           WorkingDirectory = WorkingDirectory,
+                           Arguments = Arguments,
+                           Description = Description,
+                           IconPath = IconPath,
+                           IconIndex = IconIndex,
+                           WindowStyle = WindowStyle,
+                           RelativeOuputPath = RelativeOuputPath
+                       };
         }
 
         #endregion

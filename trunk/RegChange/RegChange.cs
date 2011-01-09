@@ -12,15 +12,15 @@ namespace wyUpdate.Common
 
     public partial class RegChange : ICloneable
     {
-        public RegistryValueKind RegValueKind { get; set; }
-        public string ValueName { get; set; }
-        public object ValueData { get; set; }
-        public string SubKey { get; set; }
+        public RegistryValueKind RegValueKind;
+        public string ValueName;
+        public object ValueData;
+        public string SubKey;
 
-        internal RegBasekeys RegBasekey { get; set; }
-        public RegOperations RegOperation { get; set; }
+        internal RegBasekeys RegBasekey;
+        public RegOperations RegOperation;
 
-        public bool Is32BitKey { get; set; }
+        public bool Is32BitKey;
 
         public RegChange() { }
 
@@ -108,66 +108,68 @@ namespace wyUpdate.Common
 
         public void WriteToStream(Stream fs, bool embedBinaryData)
         {
-            //beginning of RegChange
+            // beginning of RegChange
             fs.WriteByte(0x8E);
 
-            //save the operation
+            // save the operation
             WriteFiles.WriteInt(fs, 0x01, (int)RegOperation);
 
-            //save BaseKey
+            // save BaseKey
             WriteFiles.WriteInt(fs, 0x02, (int)RegBasekey);
 
-            //Save the valueKind
+            // Save the valueKind
             WriteFiles.WriteInt(fs, 0x03, (int)RegValueKind);
 
-            //Save SubKey
+            // Save SubKey
             WriteFiles.WriteDeprecatedString(fs, 0x04, SubKey);
 
-            //Value Name
-            WriteFiles.WriteDeprecatedString(fs, 0x05, ValueName);
-
+            // Value Name
+            if (!string.IsNullOrEmpty(ValueName))
+                WriteFiles.WriteDeprecatedString(fs, 0x05, ValueName);
 
             bool isBinaryString = !embedBinaryData
                 && RegValueKind == RegistryValueKind.Binary
-                && ValueData.GetType() == typeof(string);
+                && ValueData is string;
 
             if (isBinaryString)
                 fs.WriteByte(0x80);
 
-
-            //Value Data
-            switch (RegValueKind)
+            if (RegOperation == RegOperations.CreateValue)
             {
-                case RegistryValueKind.Binary:
+                // Value Data
+                switch (RegValueKind)
+                {
+                    case RegistryValueKind.Binary:
 
-                    if (isBinaryString)
-                        //just saving the string pointing to a file on the disk
+                        if (isBinaryString)
+                            //just saving the string pointing to a file on the disk
+                            WriteFiles.WriteDeprecatedString(fs, 0x07, (string)ValueData);
+                        else if (embedBinaryData
+                                && RegValueKind == RegistryValueKind.Binary
+                                && ValueData is string)
+                        {
+                            //load the file and immediately write it out to fs
+                            WriteOutFile(fs, 0x07, (string)ValueData);
+                        }
+                        else
+                            //the byte array is already in memory, just write it out
+                            WriteFiles.WriteByteArray(fs, 0x07, (byte[])ValueData);
+
+                        break;
+                    case RegistryValueKind.DWord:
+                        WriteFiles.WriteInt(fs, 0x07, (int)ValueData);
+                        break;
+                    case RegistryValueKind.QWord:
+                        WriteFiles.WriteLong(fs, 0x07, (long)ValueData);
+                        break;
+                    case RegistryValueKind.MultiString:
+                        WriteFiles.WriteDeprecatedString(fs, 0x07, MultiStringToString(ValueData));
+                        break;
+                    case RegistryValueKind.ExpandString:
+                    case RegistryValueKind.String:
                         WriteFiles.WriteDeprecatedString(fs, 0x07, (string)ValueData);
-                    else if (embedBinaryData
-                            && RegValueKind == RegistryValueKind.Binary
-                            && ValueData.GetType() == typeof(string))
-                    {
-                        //load the file and immediately write it out to fs
-                        WriteOutFile(fs, 0x07, (string)ValueData);
-                    }
-                    else
-                        //the byte array is already in memory, just write it out
-                        WriteFiles.WriteByteArray(fs, 0x07, (byte[])ValueData);
-
-                    break;
-                case RegistryValueKind.DWord:
-                    WriteFiles.WriteInt(fs, 0x07, (int)ValueData);
-                    break;
-                case RegistryValueKind.QWord:
-                    WriteFiles.WriteLong(fs, 0x07, (long)ValueData);
-                    break;
-                case RegistryValueKind.MultiString:
-                    WriteFiles.WriteDeprecatedString(fs, 0x07, MultiStringToString(ValueData));
-                    break;
-                case RegistryValueKind.ExpandString:
-                case RegistryValueKind.String:
-                    WriteFiles.WriteDeprecatedString(fs, 0x07, (string)ValueData);
-                    break;
+                        break;
+                }
             }
 
             // should treat as x86 under x64 systems
@@ -223,7 +225,7 @@ namespace wyUpdate.Common
 
         static string MultiStringToString(object strs)
         {
-            if (strs.GetType() == typeof(string))
+            if (strs is string)
                 return (string)strs;
 
             StringBuilder stb = new StringBuilder();

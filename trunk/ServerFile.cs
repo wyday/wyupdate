@@ -30,23 +30,17 @@ namespace wyUpdate.Common
 
     public partial class ServerFile
     {
-        public ServerFile()
-        {
-            ServerFileSites = new List<string>(1);
-        }
-
-        public string NewVersion { get; set; }
+        public string NewVersion;
 
         //Server Side Information
         public List<VersionChoice> VersionChoices = new List<VersionChoice>();
 
-        public string MinClientVersion { get; set; }
+        public string MinClientVersion;
 
+        public string NoUpdateToLatestLinkText;
 
-        public string NoUpdateToLatestLinkText { get; set; }
+        public string NoUpdateToLatestLinkURL;
 
-        public string NoUpdateToLatestLinkURL { get; set; }
-
-        public List<string> ServerFileSites { get; set; }
+        public List<string> ServerFileSites = new List<string>(1);
     }
 }
