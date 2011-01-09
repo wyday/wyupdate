@@ -19,18 +19,18 @@ namespace wyDay.Controls
 
     internal class AutoUpdaterInfo
     {
-        public DateTime LastCheckedForUpdate { get; set; }
-        public UpdateStepOn UpdateStepOn { get; set; }
+        public DateTime LastCheckedForUpdate;
+        public UpdateStepOn UpdateStepOn;
 
-        public AutoUpdaterStatus AutoUpdaterStatus { get; set; }
+        public AutoUpdaterStatus AutoUpdaterStatus = AutoUpdaterStatus.Nothing;
 
-        public string UpdateVersion { get; set; }
-        public string ChangesInLatestVersion { get; set; }
-        public bool ChangesIsRTF { get; set; }
+        public string UpdateVersion;
+        public string ChangesInLatestVersion;
+        public bool ChangesIsRTF;
 
 
-        public string ErrorTitle { get; set; }
-        public string ErrorMessage { get; set; }
+        public string ErrorTitle;
+        public string ErrorMessage;
 
 
         readonly string autoUpdateID;
@@ -40,7 +40,6 @@ namespace wyDay.Controls
         public AutoUpdaterInfo(string auID, string oldAUTempFolder)
         {
             autoUpdateID = auID;
-            AutoUpdaterStatus = AutoUpdaterStatus.Nothing;
 
             // get the admin filename
             filenames[0] = GetFilename();

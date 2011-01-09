@@ -70,7 +70,7 @@ namespace wyUpdate
 
         //--Silent updating/uninstalling
         bool isSilent;
-        public int ReturnCode { get; set; }
+        public int ReturnCode;
 
         //Pre-RC2 compatability:
         ClientFileType clientFileType;

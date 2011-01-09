@@ -7,33 +7,21 @@ namespace wyUpdate.Common
     // File information and instuctions for updates
     public class UpdateDetails
     {
-        public UpdateDetails()
-        {
-            RegistryModifications = new List<RegChange>();
-            UpdateFiles = new List<UpdateFile>();
-            ShortcutInfos = new List<ShortcutInfo>();
-            FoldersToDelete = new List<string>();
-            PreviousSMenuShortcuts = new List<string>();
-            PreviousDesktopShortcuts = new List<string>();
-            ServicesToStop = new List<string>();
-            ServicesToStart = new List<StartService>();
-        }
+        public List<RegChange> RegistryModifications = new List<RegChange>();
 
-        public List<RegChange> RegistryModifications { get; set; }
+        public List<UpdateFile> UpdateFiles = new List<UpdateFile>();
 
-        public List<UpdateFile> UpdateFiles { get; set; }
+        public List<ShortcutInfo> ShortcutInfos = new List<ShortcutInfo>();
 
-        public List<ShortcutInfo> ShortcutInfos { get; set; }
+        public List<string> PreviousDesktopShortcuts = new List<string>();
 
-        public List<string> PreviousDesktopShortcuts { get; set; }
+        public List<string> PreviousSMenuShortcuts = new List<string>();
 
-        public List<string> PreviousSMenuShortcuts { get; set; }
+        public List<string> FoldersToDelete = new List<string>();
 
-        public List<string> FoldersToDelete { get; set; }
+        public List<string> ServicesToStop = new List<string>();
 
-        public List<string> ServicesToStop { get; set; }
-
-        public List<StartService> ServicesToStart { get; set; }
+        public List<StartService> ServicesToStart = new List<StartService>();
 
 #if CLIENT
         public static UpdateDetails Load(string fileName)
@@ -119,6 +107,15 @@ namespace wyUpdate.Common
                         break;
                     case 0x45:
                         tempUpdateFile.WaitForExecution = ReadFiles.ReadBool(fs);
+                        break;
+                    case 0x8F:
+                        tempUpdateFile.RollBackOnFailure = true;
+                        break;
+                    case 0x4D:
+                        if (tempUpdateFile.RetExceptions == null)
+                            tempUpdateFile.RetExceptions = new List<int>();
+
+                        tempUpdateFile.RetExceptions.Add(ReadFiles.ReadInt(fs));
                         break;
                     case 0x46:
                         tempUpdateFile.DeleteFile = ReadFiles.ReadBool(fs);
@@ -222,13 +219,29 @@ namespace wyUpdate.Common
                     //execution of files
                     if (file.Execute)
                     {
-                        //execute?
-                        WriteFiles.WriteBool(ms, 0x41, file.Execute);
+                        // execute?
+                        WriteFiles.WriteBool(ms, 0x41, true);
 
-                        //execute before update?
+                        // execute before update?
                         WriteFiles.WriteBool(ms, 0x42, file.ExBeforeUpdate);
 
-                        WriteFiles.WriteBool(ms, 0x45, file.WaitForExecution);
+                        if (file.WaitForExecution)
+                        {
+                            WriteFiles.WriteBool(ms, 0x45, file.WaitForExecution);
+
+                            if (file.RollBackOnFailure)
+                            {
+                                // we are rolling back on non-zero return code
+                                ms.WriteByte(0x8F);
+
+                                // write all the exceptions we're making for rollback codes
+                                if (file.RetExceptions != null)
+                                {
+                                    foreach (int except in file.RetExceptions)
+                                        WriteFiles.WriteInt(ms, 0x4D, except);
+                                }
+                            }
+                        }
 
                         //commandline arguments
                         if (!string.IsNullOrEmpty(file.CommandLineArgs))
