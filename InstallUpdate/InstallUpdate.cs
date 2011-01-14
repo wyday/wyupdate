@@ -723,7 +723,17 @@ namespace wyUpdate
                         Process p = Process.Start(psi);
 
                         if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
+                        {
                             p.WaitForExit();
+
+                            // if we're rolling back on non-zero return codes, the return code is non-zero, and it's not in the exception list
+                            if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
+                                || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
+                            {
+                                except = new Exception("\"" + Path.GetFileName(psi.FileName) + "\" returned " + p.ExitCode);
+                                break;
+                            }
+                        }
                     }
                 }
                 else if ((UpdtDetails.UpdateFiles[i].RegisterCOMDll & (COMRegistration.UnRegister | COMRegistration.PreviouslyRegistered)) != 0 )

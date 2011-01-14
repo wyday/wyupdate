@@ -109,7 +109,7 @@ namespace wyUpdate.Common
                         tempUpdateFile.WaitForExecution = ReadFiles.ReadBool(fs);
                         break;
                     case 0x8F:
-                        tempUpdateFile.RollBackOnFailure = true;
+                        tempUpdateFile.RollbackOnNonZeroRet = true;
                         break;
                     case 0x4D:
                         if (tempUpdateFile.RetExceptions == null)
@@ -229,7 +229,7 @@ namespace wyUpdate.Common
                         {
                             WriteFiles.WriteBool(ms, 0x45, file.WaitForExecution);
 
-                            if (file.RollBackOnFailure)
+                            if (file.RollbackOnNonZeroRet)
                             {
                                 // we are rolling back on non-zero return code
                                 ms.WriteByte(0x8F);

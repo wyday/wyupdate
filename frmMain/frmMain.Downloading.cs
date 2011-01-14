@@ -12,12 +12,11 @@ namespace wyUpdate
             if (!string.IsNullOrEmpty(serverOverwrite))
             {
                 // overrite server file
-                List<string> overwriteServer = new List<string> { serverOverwrite };
-                BeginDownload(overwriteServer, 0, null, false, false);
+                BeginDownload(new List<string> { serverOverwrite }, 0, null, false, false);
             }
             else
             {
-                //download the server file
+                // download the server file
                 BeginDownload(update.ServerFileSites, 0, null, false, false);
             }
         }
