@@ -26,7 +26,7 @@ namespace wyUpdate.Common
 
         public bool WaitForExecution;
 
-        public bool RollBackOnFailure;
+        public bool RollbackOnNonZeroRet;
 
         public List<int> RetExceptions;
 
@@ -57,6 +57,18 @@ namespace wyUpdate.Common
 
             if (!string.IsNullOrEmpty(filename))
                 RelativePath = prefix + Path.GetExtension(filename);
+        }
+
+        public static List<int> StringToIntList(string retCodes)
+        {
+            string[] retSplit = retCodes.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            List<int> retList = new List<int>(retSplit.Length);
+
+            foreach (string code in retSplit)
+                retList.Add(Convert.ToInt32(code));
+
+            return retList;
         }
 #endif
     }
