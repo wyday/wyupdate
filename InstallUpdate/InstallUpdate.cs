@@ -701,8 +701,7 @@ namespace wyUpdate
 
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
-                if (UpdtDetails.UpdateFiles[i].Execute && 
-                    UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
+                if (UpdtDetails.UpdateFiles[i].Execute && UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
                     ProcessStartInfo psi = new ProcessStartInfo
                                                {
@@ -730,7 +729,7 @@ namespace wyUpdate
                             if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
                                 || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
                             {
-                                except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode);
+                                except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode + ".");
                                 break;
                             }
                         }
