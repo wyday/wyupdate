@@ -730,7 +730,7 @@ namespace wyUpdate
                             if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
                                 || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
                             {
-                                except = new Exception("\"" + Path.GetFileName(psi.FileName) + "\" returned " + p.ExitCode);
+                                except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode);
                                 break;
                             }
                         }
