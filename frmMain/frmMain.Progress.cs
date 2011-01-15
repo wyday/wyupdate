@@ -450,8 +450,7 @@ namespace wyUpdate
 
             if (done && ex != null)
             {
-                //TODO: use the stopping services error
-                error = clientLang.ServerError;
+                error = clientLang.GeneralUpdateError;
                 errorDetails = ex.Message;
 
                 ShowFrame(Frame.Error);

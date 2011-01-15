@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.ServiceProcess;
+using System.Text;
+using System.Threading;
 using wyUpdate.Common;
 
 namespace wyUpdate
@@ -65,6 +67,35 @@ namespace wyUpdate
                     // no processes need closing, all done
                     files = null;
                     rProcesses = null;
+                }
+                else if (SkipUIReporting) // and rProcesses.Count > 0
+                {
+                    // check every second for 20 seconds.
+                    for (int i = 0; i < 20; ++i)
+                    {
+                        // sleep for 1 second
+                        Thread.Sleep(1000);
+
+                        rProcesses = ProcessesNeedClosing(files);
+
+                        if (rProcesses.Count == 0)
+                            break;
+                    }
+
+                    if (rProcesses.Count != 0)
+                    {
+                        StringBuilder sb = new StringBuilder();
+
+                        sb.AppendLine(rProcesses.Count + " processes are running:\r\n");
+
+                        foreach (Process proc in rProcesses)
+                        {
+                            sb.AppendLine(proc.MainWindowTitle + " (" + proc.ProcessName + ".exe)");
+                        }
+
+                        // tell the user about the open processes
+                        throw new Exception(sb.ToString());
+                    }
                 }
             }
             catch (Exception ex)

@@ -378,7 +378,10 @@ namespace wyUpdate
                                             UpdtDetails = updtDetails,
                                             RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback,
                                             TempDirectory = tempDirectory,
-                                            ProgramDirectory = baseDirectory
+                                            ProgramDirectory = baseDirectory,
+
+                                            // skip ui reporting when updating from a service
+                                            SkipUIReporting = UpdatingFromService || updateHelper.IsAService
                                         };
 
                     asyncThread = new Thread(installUpdate.RunProcessesCheck);
@@ -409,7 +412,10 @@ namespace wyUpdate
                                             RollbackDelegate = (ChangeRollbackDelegate) ChangeRollback,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory,
-                                            IsAdmin = IsAdmin
+                                            IsAdmin = IsAdmin,
+
+                                            // skip ui reporting when updating from a service
+                                            SkipUIReporting = UpdatingFromService || updateHelper.IsAService
                                         };
 
                     asyncThread = new Thread(installUpdate.RunUpdateFiles);

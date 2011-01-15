@@ -9,15 +9,9 @@ using wyUpdate.Common;
 namespace wyUpdate
 {
     // The frame type to draw in the paint events.
-    public enum FrameType
-    {
-        WelcomeFinish = 0, License = 1, TextInfo = 2, Update = 3
-    }
+    public enum FrameType { WelcomeFinish, TextInfo, Update }
 
-    public enum UpdateItemStatus
-    {
-        Error = -1, Nothing = 0, Working = 1, Success = 2
-    }
+    public enum UpdateItemStatus { Error = -1, Nothing = 0, Working = 1, Success = 2 }
 
     internal class UpdateItem
     {
@@ -552,10 +546,6 @@ namespace wyUpdate
             //handle specifics
             switch (panType)
             {
-                case FrameType.License:
-                //TODO: show checkbox (I agree) box
-                //TODO: add an event handler for checked state
-                //fall through to add the messageBox
                 case FrameType.TextInfo:
 
                     messageBox.Show();

@@ -42,6 +42,7 @@ namespace wyUpdate
 
         public bool SkipProgressReporting;
 
+        public bool SkipUIReporting;
 
         //cancellation & pausing
         volatile bool canceled;
@@ -84,6 +85,8 @@ namespace wyUpdate
 
                 if (File.Exists(Path.Combine(progDir, tempFiles[i].Name)))
                 {
+                    int retriedTimes = 0;
+
                     while (true)
                     {
                         try
@@ -114,8 +117,11 @@ namespace wyUpdate
                             // if sharing violation
                             if ((HResult & 0xFFFF) == 32)
                             {
-                                // notify main window of sharing violation
-                                ThreadHelper.ReportSharingViolation(Sender, SenderDelegate, Path.Combine(progDir, tempFiles[i].Name));
+                                if (!SkipUIReporting)
+                                {
+                                    // notify main window of sharing violation
+                                    ThreadHelper.ReportSharingViolation(Sender, SenderDelegate, Path.Combine(progDir, tempFiles[i].Name));
+                                }
 
                                 // sleep for 1 second
                                 Thread.Sleep(1000);
@@ -124,7 +130,13 @@ namespace wyUpdate
                                 if (IsCancelled())
                                     break;
 
-                                // retry file copy
+                                // if we're skipping UI and we've already waited 20 seconds for a file to be released
+                                // then throw the exception, rollback updates, etc
+                                if (SkipUIReporting && retriedTimes == 20)
+                                    throw;
+
+                                // otherwise, retry file copy
+                                ++retriedTimes;
                                 continue;
                             }
 
