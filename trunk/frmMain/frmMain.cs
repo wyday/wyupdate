@@ -84,6 +84,9 @@ namespace wyUpdate
         bool QuickCheckJustCheck;
         bool SkipUpdateInfo;
 
+        // this is only set for standalone service updating (not updating a service via the AutomaticUpdater)
+        bool UpdatingFromService;
+
         string forcedLanguageCulture;
 
         #endregion Private variables
@@ -426,6 +429,12 @@ namespace wyUpdate
 
                 if (commands["skipinfo"] != null)
                     SkipUpdateInfo = true;
+
+                if (commands["fromservice"] != null)
+                {
+                    SkipUpdateInfo = true;
+                    UpdatingFromService = true;
+                }
 
                 //client data file
                 if (commands["cdata"] != null)
