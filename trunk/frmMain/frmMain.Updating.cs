@@ -221,8 +221,7 @@ namespace wyUpdate
                 }
                 else if (isAutoUpdateMode)
                 {
-                    if ((frameNum == Frame.UpdatedSuccessfully || frameNum == Frame.Error) &&
-                        updateHelper.FileOrServiceToExecuteAfterUpdate != null && File.Exists(updateHelper.FileOrServiceToExecuteAfterUpdate))
+                    if (frameNum == Frame.UpdatedSuccessfully || frameNum == Frame.Error)
                     {
                         // save whether an update succeeded or failed
                         AutoUpdaterInfo auInfo;
