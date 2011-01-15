@@ -435,7 +435,8 @@ namespace wyUpdate
                                             UpdtDetails = updtDetails,
                                             RollbackDelegate = (ChangeRollbackDelegate)ChangeRollback,
                                             TempDirectory = tempDirectory,
-                                            ProgramDirectory = baseDirectory
+                                            ProgramDirectory = baseDirectory,
+                                            SkipStartService = updateHelper.IsAService ? updateHelper.FileOrServiceToExecuteAfterUpdate : null
                                         };
 
                     asyncThread = new Thread(installUpdate.RunOptimizeExecute);

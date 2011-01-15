@@ -15,8 +15,6 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
-        #region Private Variable
-
         public ContainerControl Sender;
 
         public Delegate SenderDelegate;
@@ -48,7 +46,6 @@ namespace wyUpdate
         //cancellation & pausing
         volatile bool canceled;
         volatile bool paused;
-        #endregion Private Variables
 
 
         public InstallUpdate(ContainerControl sender, Delegate senderDelegate)

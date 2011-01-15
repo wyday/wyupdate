@@ -13,6 +13,8 @@ namespace wyUpdate
         static string[] frameworkV2_0Dirs;
         static string[] frameworkV4_0Dirs;
 
+        public string SkipStartService;
+
         public void RunOptimizeExecute()
         {
             // simply update the progress bar to show the 6th step is entirely complete
@@ -117,6 +119,10 @@ namespace wyUpdate
                     // try to start services
                     foreach (StartService service in UpdtDetails.ServicesToStart)
                     {
+                        // skip the start service if it will be started as part of the auto-update process
+                        if (SkipStartService != null && string.CompareOrdinal(SkipStartService, service.Name) == 0)
+                            continue;
+
                         ServiceController srvc = new ServiceController(service.Name);
                         ServiceControllerStatus status = srvc.Status;
 
