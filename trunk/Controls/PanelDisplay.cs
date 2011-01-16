@@ -19,15 +19,9 @@ namespace wyUpdate
         static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
         static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "process-working.png");
 
-        Label m_Label = new Label { AutoSize = true };
+        public Label Label = new Label { AutoSize = true };
 
-        public Label Label
-        {
-            get { return m_Label; }
-            set { m_Label = value; }
-        }
         UpdateItemStatus m_Status;
-        AnimationControl m_Animation = new AnimationControl(null, 1);
 
         //Position
         int m_Left, m_Top;
@@ -36,11 +30,8 @@ namespace wyUpdate
 
         public int AnimationWidth { get; set; }
 
-        public AnimationControl Animation
-        {
-            get { return m_Animation; }
-            set { m_Animation = value; }
-        }
+        public AnimationControl Animation = new AnimationControl(null, 1);
+
 
         public int Left
         {
@@ -66,26 +57,20 @@ namespace wyUpdate
 
         public string Text
         {
-            get
-            {
-                return m_Label.Text;
-            }
-            set
-            {
-                m_Label.Text = value;
-            }
+            get { return Label.Text; }
+            set { Label.Text = value; }
         }
 
         public bool Visible
         {
             get
             {
-                return m_Animation.Visible;
+                return Animation.Visible;
             }
             set
             {
-                m_Animation.Visible = value;
-                m_Label.Visible = value;
+                Animation.Visible = value;
+                Label.Visible = value;
             }
         }
 
@@ -102,7 +87,7 @@ namespace wyUpdate
         public void Clear()
         {
             m_Status = UpdateItemStatus.Nothing;
-            m_Label.Text = "";
+            Label.Text = String.Empty;
         }
 
         public UpdateItemStatus Status
@@ -117,38 +102,38 @@ namespace wyUpdate
                     switch (m_Status)
                     {
                         case UpdateItemStatus.Error:
-                            m_Animation.StopAnimation();
-                            m_Animation.StaticImage = true;
-                            m_Animation.Rows = 4;
-                            m_Animation.Columns = 8;
-                            m_Animation.AnimationInterval = 25;
-                            m_Animation.BaseImage = ErrorImage;
-                            m_Animation.StartAnimation();
-                            m_Label.Font = new Font(Label.Font, FontStyle.Regular);
+                            Animation.StopAnimation();
+                            Animation.StaticImage = true;
+                            Animation.Rows = 4;
+                            Animation.Columns = 8;
+                            Animation.AnimationInterval = 25;
+                            Animation.BaseImage = ErrorImage;
+                            Animation.StartAnimation();
+                            Label.Font = new Font(Label.Font, FontStyle.Regular);
                             break;
                         case UpdateItemStatus.Nothing:
-                            m_Animation.BaseImage = null;
-                            m_Animation.StartAnimation();
+                            Animation.BaseImage = null;
+                            Animation.StartAnimation();
                             break;
                         case UpdateItemStatus.Working:
-                            m_Animation.StopAnimation();
-                            m_Animation.StaticImage = false;
-                            m_Animation.Rows = 5;
-                            m_Animation.Columns = 10;
-                            m_Animation.AnimationInterval = 25;
-                            m_Animation.BaseImage = ProgressImage;
+                            Animation.StopAnimation();
+                            Animation.StaticImage = false;
+                            Animation.Rows = 5;
+                            Animation.Columns = 10;
+                            Animation.AnimationInterval = 25;
+                            Animation.BaseImage = ProgressImage;
                             Animation.StartAnimation();
-                            m_Label.Font = new Font(Label.Font, FontStyle.Bold);
+                            Label.Font = new Font(Label.Font, FontStyle.Bold);
                             break;
                         case UpdateItemStatus.Success:
-                            m_Animation.StopAnimation();
-                            m_Animation.StaticImage = true;
-                            m_Animation.Rows = 4;
-                            m_Animation.Columns = 8;
-                            m_Animation.AnimationInterval = 25;
-                            m_Animation.BaseImage = SuccessImage;
-                            m_Animation.StartAnimation();
-                            m_Label.Font = new Font(Label.Font, FontStyle.Regular);
+                            Animation.StopAnimation();
+                            Animation.StaticImage = true;
+                            Animation.Rows = 4;
+                            Animation.Columns = 8;
+                            Animation.AnimationInterval = 25;
+                            Animation.BaseImage = SuccessImage;
+                            Animation.StartAnimation();
+                            Label.Font = new Font(Label.Font, FontStyle.Regular);
                             break;
                         default:
                             break;
@@ -163,14 +148,14 @@ namespace wyUpdate
         #region Private Variables
 
         //Images
-        Image m_SideImage;
-        Image m_TopImage;
+        public Image SideImage;
+        public Image TopImage;
 
-        ImageAlign m_HeaderImageAlign = ImageAlign.Left;
-        int m_HeaderIndent = 14;
-        Color m_HeaderTextColor = Color.Black;
+        public ImageAlign HeaderImageAlign = ImageAlign.Left;
+        public int HeaderIndent = 14;
+        public Color HeaderTextColor = Color.Black;
 
-        bool m_HideHeaderDivider;
+        public bool HideHeaderDivider;
 
         //Text
         string m_Title;
@@ -186,6 +171,8 @@ namespace wyUpdate
         string m_BottomText;
         Rectangle m_BottomRect;
 
+        public string ErrorDetails;
+
         //message (and/or license)
         readonly RichTextBoxEx messageBox = new RichTextBoxEx();
 
@@ -197,17 +184,17 @@ namespace wyUpdate
         Rectangle m_ProgressStatusRect;
 
         //padding for the text
-        int m_LeftPad = 14;
-        int m_RightPad = 14;
-        int m_TopPad = 14;
+        const int m_LeftPad = 14;
+        const int m_RightPad = 14;
+        const int m_TopPad = 14;
 
         //offset for the Top description
-        int m_DescriptionOffset = 10;
+        const int m_DescriptionOffset = 10;
 
         //the total HeaderHeight (including 3d line)
         const int m_HeaderHeight = 59;
 
-        FrameType m_TypeofFrame;
+        public FrameType TypeofFrame;
 
         //"working" animation
         readonly AnimationControl aniWorking;
@@ -220,7 +207,7 @@ namespace wyUpdate
         #endregion Private Variables
 
         //Update Items
-        bool m_ShowChecklist;
+        public bool ShowChecklist;
         public UpdateItem[] UpdateItems = new UpdateItem[4];
 
         #region Properties
@@ -320,51 +307,6 @@ namespace wyUpdate
             }
         }
 
-        /// <summary>
-        /// The number of pixels the description is offset from the title in the 'x' direction.
-        /// </summary>
-        public int DescriptionOffset
-        {
-            get { return m_DescriptionOffset; }
-            set { m_DescriptionOffset = value; }
-        }
-
-        /// <summary>
-        /// The type of frame.
-        /// </summary>
-        public FrameType TypeofFrame
-        {
-            get { return m_TypeofFrame; }
-            set { m_TypeofFrame = value; }
-        }
-
-        /// <summary>
-        /// The space between the left side of the panel and the text.
-        /// </summary>
-        public int LeftPad
-        {
-            get { return m_LeftPad; }
-            set { m_LeftPad = value; }
-        }
-
-        /// <summary>
-        /// The space between the right side of the panel and the text.
-        /// </summary>
-        public int RightPad
-        {
-            get { return m_RightPad; }
-            set { m_RightPad = value; }
-        }
-
-        /// <summary>
-        /// The space between the top of the panel and the text.
-        /// </summary>
-        public int TopPad
-        {
-            get { return m_TopPad; }
-            set { m_TopPad = value; }
-        }
-
         public string Title
         {
             get { return m_Title; }
@@ -404,50 +346,6 @@ namespace wyUpdate
                 Invalidate();
             }
         }
-
-        public Image SideImage
-        {
-            get { return m_SideImage; }
-            set { m_SideImage = value; }
-        }
-
-        public Image TopImage
-        {
-            get { return m_TopImage; }
-            set { m_TopImage = value; }
-        }
-
-        public ImageAlign HeaderImageAlign
-        {
-            get { return m_HeaderImageAlign; }
-            set { m_HeaderImageAlign = value; }
-        }
-
-        public int HeaderIndent
-        {
-            get { return m_HeaderIndent; }
-            set { m_HeaderIndent = value; }
-        }
-
-        public Color HeaderTextColor
-        {
-            get { return m_HeaderTextColor; }
-            set { m_HeaderTextColor = value; }
-        }
-
-        public bool HideHeaderDivider
-        {
-            get { return m_HideHeaderDivider; }
-            set { m_HideHeaderDivider = value; }
-        }
-
-        public bool ShowChecklist
-        {
-            get { return m_ShowChecklist; }
-            set { m_ShowChecklist = value; }
-        }
-
-        public string ErrorDetails { get; set; }
 
         #endregion
 
@@ -511,7 +409,7 @@ namespace wyUpdate
             //WM_SETREDRAW = 0xB;
             SendMessage(Handle, 0xB, 0, 0); //disable drawing
 
-            m_TypeofFrame = panType;
+            TypeofFrame = panType;
 
             m_Title = title;
             m_Description = description;
@@ -558,9 +456,9 @@ namespace wyUpdate
                     progressBar.Show();
 
                     progressBar.ContainerControl = (Form)TopLevelControl;
-                    progressBar.ShowInTaskbar = m_ShowChecklist;
+                    progressBar.ShowInTaskbar = ShowChecklist;
 
-                    if (m_ShowChecklist)
+                    if (ShowChecklist)
                     {
                         // hide center animation
                         if (aniWorking.Visible)
@@ -634,23 +532,23 @@ namespace wyUpdate
         void UpdateTextRectangles()
         {
             int lPad = m_LeftPad;
-            int lHeaderPad = m_HeaderIndent, rHeaderPad = m_RightPad;
+            int lHeaderPad = HeaderIndent, rHeaderPad = m_RightPad;
 
             //calculate left and right padding
-            if (m_TypeofFrame == FrameType.WelcomeFinish && m_SideImage != null)
-                lPad += m_SideImage.Width;
-            else if (m_TypeofFrame != FrameType.WelcomeFinish)
+            if (TypeofFrame == FrameType.WelcomeFinish && SideImage != null)
+                lPad += SideImage.Width;
+            else if (TypeofFrame != FrameType.WelcomeFinish)
             {
                 //calculate header padding
-                if (m_TopImage != null)
+                if (TopImage != null)
                 {
-                    switch (m_HeaderImageAlign)
+                    switch (HeaderImageAlign)
                     {
                         case ImageAlign.Left:
-                            lHeaderPad += m_TopImage.Width;
+                            lHeaderPad += TopImage.Width;
                             break;
                         case ImageAlign.Right:
-                            rHeaderPad += m_TopImage.Width;
+                            rHeaderPad += TopImage.Width;
                             break;
                         case ImageAlign.Fill:
                             break;
@@ -658,7 +556,7 @@ namespace wyUpdate
                 }
             }
 
-            if (m_TypeofFrame == FrameType.WelcomeFinish)
+            if (TypeofFrame == FrameType.WelcomeFinish)
             {
                 //calculate title rectangle
                 m_TitleRect = UpdateTextSize(m_Title,
@@ -693,22 +591,22 @@ namespace wyUpdate
                 new Padding(lPad, 0, m_RightPad, 9),
                 TextFormatFlags.WordBreak, Font, ContentAlignment.BottomRight);
             
-            if (m_TypeofFrame != FrameType.WelcomeFinish)
+            if (TypeofFrame != FrameType.WelcomeFinish)
             {
                 //calculate body rectangle
                 m_BodyRect = UpdateTextSize(m_Body,
-                    new Padding(lPad, m_HeaderHeight + TopPad, m_RightPad, 0), 
+                    new Padding(lPad, m_HeaderHeight + m_TopPad, m_RightPad, 0), 
                     TextFormatFlags.WordBreak, Font);
 
                 //Resize the messageBox
-                if (m_TypeofFrame == FrameType.TextInfo)
+                if (TypeofFrame == FrameType.TextInfo)
                 {
                     messageBox.Top = m_BodyRect.Bottom + 5;
                     messageBox.Height = Height - messageBox.Top - 5 - (Bottom - m_BottomRect.Top);
                 }
 
                 //Reposition the m_UpdateItems
-                if (m_ShowChecklist)
+                if (ShowChecklist)
                 {
                     for (int i = 0; i < UpdateItems.Length; i++)
                     {
@@ -770,7 +668,7 @@ namespace wyUpdate
             e.Graphics.CompositingQuality = CompositingQuality.HighSpeed;
             e.Graphics.InterpolationMode = InterpolationMode.Low;
 
-            if (m_TypeofFrame == FrameType.WelcomeFinish)
+            if (TypeofFrame == FrameType.WelcomeFinish)
             {
                 //background 
                 e.Graphics.FillRectangle(SystemBrushes.Control, 0, 316, Width, Height - 316);
@@ -780,7 +678,7 @@ namespace wyUpdate
             else
             {
                 //background 
-                e.Graphics.FillRectangle(SystemBrushes.Control, 0, m_HideHeaderDivider ? 57 : 59, Width, Height - (m_HideHeaderDivider ? 57 : 59));
+                e.Graphics.FillRectangle(SystemBrushes.Control, 0, HideHeaderDivider ? 57 : 59, Width, Height - (HideHeaderDivider ? 57 : 59));
                 //Top image, and white background
                 DrawTop(e.Graphics);
             }
@@ -792,8 +690,8 @@ namespace wyUpdate
         {
             try
             {
-                Rectangle imageLocation = new Rectangle(0, 0, m_SideImage.Width, m_SideImage.Height);
-                gr.DrawImage(m_SideImage, imageLocation);
+                Rectangle imageLocation = new Rectangle(0, 0, SideImage.Width, SideImage.Height);
+                gr.DrawImage(SideImage, imageLocation);
                 gr.ExcludeClip(imageLocation);
             }
             catch { }
@@ -807,11 +705,11 @@ namespace wyUpdate
             //draw the topImage
             try
             {
-                Rectangle imageLocation = m_HeaderImageAlign == ImageAlign.Right 
-                            ? new Rectangle(Width - m_TopImage.Width, 0, m_TopImage.Width, m_TopImage.Height) 
-                            : new Rectangle(0, 0, m_TopImage.Width, m_TopImage.Height);
+                Rectangle imageLocation = HeaderImageAlign == ImageAlign.Right 
+                            ? new Rectangle(Width - TopImage.Width, 0, TopImage.Width, TopImage.Height) 
+                            : new Rectangle(0, 0, TopImage.Width, TopImage.Height);
 
-                gr.DrawImage(m_TopImage, imageLocation);
+                gr.DrawImage(TopImage, imageLocation);
                 gr.ExcludeClip(imageLocation);
             }
             catch { }
@@ -822,19 +720,19 @@ namespace wyUpdate
             gr.ResetClip();
 
             //draw m_Title 
-            TextRenderer.DrawText(gr, m_Title, m_TitleFont, m_TitleRect, m_HeaderTextColor, TextFormatFlags.WordEllipsis | TextFormatFlags.NoPrefix);
+            TextRenderer.DrawText(gr, m_Title, m_TitleFont, m_TitleRect, HeaderTextColor, TextFormatFlags.WordEllipsis | TextFormatFlags.NoPrefix);
 
             //draw m_Description
-            TextRenderer.DrawText(gr, m_Description, Font, m_DescriptionRect, m_HeaderTextColor, TextFormatFlags.WordEllipsis | TextFormatFlags.NoPrefix);
+            TextRenderer.DrawText(gr, m_Description, Font, m_DescriptionRect, HeaderTextColor, TextFormatFlags.WordEllipsis | TextFormatFlags.NoPrefix);
 
             //draw divider line
-            if (!m_HideHeaderDivider)
+            if (!HideHeaderDivider)
                 Draw3DLine(gr, 0, Width, m_HeaderHeight - 2);
         }
 
         void DrawMain(Graphics gr)
         {
-            if (m_TypeofFrame == FrameType.WelcomeFinish)
+            if (TypeofFrame == FrameType.WelcomeFinish)
             {
                 //Draw m_Title and m_Description
                 TextRenderer.DrawText(gr, m_Title, m_TitleFont, m_TitleRect, ForeColor, TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
@@ -862,7 +760,7 @@ namespace wyUpdate
 
             // draw bottom divider & branding
             int brandingWidth = 0;
-            if (m_TypeofFrame != FrameType.WelcomeFinish)
+            if (TypeofFrame != FrameType.WelcomeFinish)
                 brandingWidth = DrawBranding(gr, 3, 314);
 
             Draw3DLine(gr, brandingWidth, Width, 314);

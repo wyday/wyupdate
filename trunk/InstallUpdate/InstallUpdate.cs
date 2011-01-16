@@ -684,7 +684,7 @@ namespace wyUpdate
 
 
             //tell the sender that we're uninstalling reg now:
-            Sender.BeginInvoke(SenderDelegate, new object[] { 0, 1, "", null });
+            Sender.BeginInvoke(SenderDelegate, new object[] { 0, 1, String.Empty, null });
 
             //uninstall registry
             foreach (RegChange reg in registryToDelete)
@@ -697,7 +697,7 @@ namespace wyUpdate
             }
 
             //All done
-            Sender.BeginInvoke(SenderDelegate, new object[] { 0, 2, "", null });
+            Sender.BeginInvoke(SenderDelegate, new object[] { 0, 2, String.Empty, null });
         }
 
         public void RunPreExecute()

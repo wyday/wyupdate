@@ -31,7 +31,7 @@ namespace wyUpdate.Downloader
         //used to measure download speed
         readonly Stopwatch sw = new Stopwatch();
         long sentSinceLastCalc;
-        string downloadSpeed = "";
+        string downloadSpeed;
 
         //download site and destination
         string url;
