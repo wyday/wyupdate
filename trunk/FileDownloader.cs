@@ -411,7 +411,7 @@ namespace wyUpdate.Downloader
 
                         long sizeInBytes = new FileInfo(DownloadingTo).Length;
 
-                        msg += "\r\n\r\nThis error is likely caused by a download that ended prematurely. Total size of the downloaded data: " + BytesToString(sizeInBytes, false);
+                        msg += "\r\n\r\nThis error is likely caused by a download that ended prematurely. Total size of the downloaded file: " + BytesToString(sizeInBytes, false);
 
                         // show the size in bytes only if the size displayed isn't already in bytes
                         if (sizeInBytes >= 0.9 * 1024)
