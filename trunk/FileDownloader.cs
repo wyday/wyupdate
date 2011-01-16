@@ -418,7 +418,7 @@ namespace wyUpdate.Downloader
                             msg += " (" + sizeInBytes + " bytes).";
 
                         if (hash != null)
-                            msg += "\r\n\r\nComputed SHA1 hash of downloaded file: " + BitConverter.ToString(hash);
+                            msg += "\r\n\r\nComputed SHA1 hash of the downloaded file: " + BitConverter.ToString(hash);
 
                         throw new Exception(msg);
                     }
