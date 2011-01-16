@@ -73,6 +73,12 @@ namespace wyUpdate
                         fs.WriteByte(0x81);
                 }
 
+                if (UpdatingFromService)
+                {
+                    // we're updating from a service (i.e. skip ui mode)
+                    fs.WriteByte(0x82);
+                }
+
                 fs.WriteByte(0xFF);
             }
         }
@@ -165,6 +171,9 @@ namespace wyUpdate
                             break;
                         case 0x81:
                             IsNewSelf = true;
+                            break;
+                        case 0x82:
+                            UpdatingFromService = true;
                             break;
                         default:
                             ReadFiles.SkipField(fs, bType);

@@ -188,7 +188,7 @@ namespace wyUpdate
                     break;
             }
 
-            //enable the close button on the Finish/Error screens
+            // handle all success / error cases
             if (FrameIs.ErrorFinish(frameNum))
             {
                 // allow the user to forcefuly exit
@@ -196,10 +196,10 @@ namespace wyUpdate
 
                 EnableCancel();
 
-                //allow the user to exit by pressing ESC
+                // allow the user to exit by pressing ESC
                 CancelButton = btnNext;
 
-                //set the error return code (1) or success (0)
+                // set the error return code (1) or success (0)
                 ReturnCode = frameNum == Frame.Error ? 1 : 0;
 
                 if (QuickCheck)
@@ -278,9 +278,11 @@ namespace wyUpdate
                     Close();
                     return;
                 }
-                else if (frameNum == Frame.UpdatedSuccessfully && update.CloseOnSuccess)
+                else if (UpdatingFromService || update.CloseOnSuccess && frameNum == Frame.UpdatedSuccessfully)
                 {
-                    // if close on finish - then close
+                    // If we're updating from a service (i.e. no-ui), then close on *either* success or failure.
+                    // If we're in normal mode but the user has specified they want "CloseOnSuccess", then do it.
+
                     Close();
                     return;
                 }
