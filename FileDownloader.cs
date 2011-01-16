@@ -380,11 +380,11 @@ namespace wyUpdate.Downloader
                 {
                     if (SignedSHA1Hash == null)
                         throw new Exception("The downloaded file \"" + Path.GetFileName(DownloadingTo) + "\" is not signed.");
-                    
+
+                    byte[] hash = null;
+
                     try
                     {
-                        byte[] hash;
-
                         using (FileStream fs = new FileStream(DownloadingTo, FileMode.Open, FileAccess.Read))
                         using (SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider())
                         {
@@ -416,6 +416,9 @@ namespace wyUpdate.Downloader
                         // show the size in bytes only if the size displayed isn't already in bytes
                         if (sizeInBytes >= 0.9 * 1024)
                             msg += " (" + sizeInBytes + " bytes).";
+
+                        if (hash != null)
+                            msg += "\r\n\r\nComputed SHA1 hash of downloaded file: " + BitConverter.ToString(hash);
 
                         throw new Exception(msg);
                     }
