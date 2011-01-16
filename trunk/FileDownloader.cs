@@ -406,7 +406,18 @@ namespace wyUpdate.Downloader
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception("The downloaded file \"" + Path.GetFileName(DownloadingTo) + "\" failed the signature validation: " + ex.Message);
+                        string msg = "The downloaded file \"" + Path.GetFileName(DownloadingTo) +
+                                           "\" failed the signature validation: " + ex.Message;
+
+                        long sizeInBytes = new FileInfo(DownloadingTo).Length;
+
+                        msg += "\r\n\r\nThis error is likely caused by a download that ended prematurely. Total size of the downloaded data: " + BytesToString(sizeInBytes, false);
+
+                        // show the size in bytes only if the size displayed isn't already in bytes
+                        if (sizeInBytes >= 0.9 * 1024)
+                            msg += " (" + sizeInBytes + " bytes).";
+
+                        throw new Exception(msg);
                     }
                 }
             }
