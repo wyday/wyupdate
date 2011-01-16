@@ -79,7 +79,7 @@ namespace wyUpdate.Common
 
         public ImageAlign HeaderImageAlign = ImageAlign.Left;
 
-        public string HeaderTextColorName = "";
+        public string HeaderTextColorName;
 
         public int HeaderTextIndent = -1;
 

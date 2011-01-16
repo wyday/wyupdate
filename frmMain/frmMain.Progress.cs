@@ -31,7 +31,7 @@ namespace wyUpdate
             }
 
             // update bottom status
-            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != string.Empty)
+            if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
             if (status == ProgressStatus.SharingViolation)
@@ -176,7 +176,7 @@ namespace wyUpdate
             panelDisplaying.Progress = percentDone;
 
             //update bottom status
-            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != "")
+            if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
             if (status == ProgressStatus.Success)
@@ -375,7 +375,7 @@ namespace wyUpdate
             panelDisplaying.Progress = percentDone;
 
             //update bottom status
-            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != "")
+            if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
             //step: 0=working, 1=uninstalling registry, 2=done
@@ -405,7 +405,7 @@ namespace wyUpdate
         void CheckProcess(List<FileInfo> files, List<Process> rProcesses, bool done, string extraStatus, Exception ex)
         {
             // update bottom status
-            if (extraStatus != panelDisplaying.ProgressStatus && extraStatus != string.Empty)
+            if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
             if (done && ex == null)

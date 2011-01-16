@@ -21,7 +21,7 @@ namespace wyUpdate
                         clientLang.Checking.Title,
                         clientLang.Checking.SubTitle,
                         clientLang.Checking.Content,
-                        "");
+                        String.Empty);
 
                     btnNext.Enabled = false;
 
@@ -78,7 +78,7 @@ namespace wyUpdate
                         clientLang.DownInstall.Title,
                         clientLang.DownInstall.SubTitle,
                         clientLang.DownInstall.Content,
-                        "");
+                        String.Empty);
 
                     if (SelfUpdateState == SelfUpdateState.FullUpdate)
                     {
@@ -101,7 +101,7 @@ namespace wyUpdate
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.SuccessUpdate.Title,
                         clientLang.SuccessUpdate.Content,
-                        "",
+                        String.Empty,
                         clientLang.FinishBottom);
 
                     btnNext.Enabled = true;
@@ -113,7 +113,7 @@ namespace wyUpdate
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.AlreadyLatest.Title,
                         clientLang.AlreadyLatest.Content,
-                        "",
+                        String.Empty,
                         clientLang.FinishBottom);
 
                     btnNext.Enabled = true;
@@ -128,7 +128,7 @@ namespace wyUpdate
                     panelDisplaying.ChangePanel(FrameType.WelcomeFinish,
                         clientLang.NoUpdateToLatest.Title,
                         clientLang.NoUpdateToLatest.Content,
-                        "",
+                        String.Empty,
                         clientLang.FinishBottom);
 
                     btnNext.Enabled = true;
@@ -143,7 +143,7 @@ namespace wyUpdate
                         clientLang.Uninstall.Title,
                         clientLang.Uninstall.SubTitle,
                         clientLang.Uninstall.Content,
-                        "");
+                        String.Empty);
 
 
                     //Show uninstalling status
@@ -499,7 +499,7 @@ namespace wyUpdate
 
         void SetStepStatus(int stepNum, string stepText)
         {
-            panelDisplaying.ProgressStatus = "";
+            panelDisplaying.ProgressStatus = String.Empty;
             panelDisplaying.UpdateItems[stepNum].Status = UpdateItemStatus.Working;
             panelDisplaying.UpdateItems[stepNum].Text = stepText;
         }
