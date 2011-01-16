@@ -149,15 +149,18 @@ namespace wyUpdate
                     break;
                 case UpdateStep.Install:
 
-                    // show self & make topmost
-                    Visible = true;
-                    TopMost = true;
-                    TopMost = false;
+                    if (!updateHelper.IsAService)
+                    {
+                        // show self & make topmost
+                        Visible = true;
+                        TopMost = true;
+                        TopMost = false;
+                    }
 
                     if (needElevation)
                     {
                         // save the RestartInfo details (file to launch, where to save the update success details)
-                        SaveAutoUpdateData(wyDay.Controls.UpdateStepOn.UpdateReadyToInstall);
+                        SaveAutoUpdateData(UpdateStepOn.UpdateReadyToInstall);
 
                         StartSelfElevated();
                         return;
