@@ -120,7 +120,7 @@ namespace wyUpdate
                     foreach (StartService service in UpdtDetails.ServicesToStart)
                     {
                         // skip the start service if it will be started as part of the auto-update process
-                        if (SkipStartService != null && string.CompareOrdinal(SkipStartService, service.Name) == 0)
+                        if (SkipStartService != null && string.Compare(SkipStartService, service.Name, StringComparison.OrdinalIgnoreCase) == 0)
                             continue;
 
                         ServiceController srvc = new ServiceController(service.Name);

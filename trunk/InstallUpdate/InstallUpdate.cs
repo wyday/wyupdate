@@ -265,16 +265,16 @@ namespace wyUpdate
                 SystemFolders.GetCommonProgramFilesx64()
             };
 
-
             List<FileFolder> rollbackList = new List<FileFolder>();
             int totalDone = 0;
 
-            Exception except = null; // store any errors
+            Exception except = null;
 
             try
             {
                 int totalFiles = 0;
-                //count the files and create backup folders
+
+                // count the files and create backup folders
                 for (int i = 0; i < origFolders.Length; i++)
                 {
                     //does orig folder exist?
@@ -290,7 +290,7 @@ namespace wyUpdate
                         if (IsAdmin)
                             SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
 
-                        //delete "newer" client, if it will overwrite this client
+                        // delete "newer" client, if it will overwrite this client
                         DeleteClientInPath(destFolders[i], origFolders[i]);
 
                         //count the total files
@@ -348,6 +348,8 @@ namespace wyUpdate
         {
             string tempPath;
 
+            string wyUpdateLoc = Assembly.GetExecutingAssembly().Location;
+
             // delete the marked files
             foreach (UpdateFile file in UpdtDetails.UpdateFiles)
             {
@@ -360,6 +362,10 @@ namespace wyUpdate
                         Directory.CreateDirectory(tempPath);
 
                     string tempFile = FixUpdateDetailsPaths(file.RelativePath);
+
+                    // if the user is trying to delete this file, then skip it
+                    if (string.Compare(wyUpdateLoc, tempFile, StringComparison.OrdinalIgnoreCase) == 0)
+                        continue;
 
                     if (File.Exists(tempFile))
                     {
