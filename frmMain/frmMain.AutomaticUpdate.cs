@@ -143,8 +143,8 @@ namespace wyUpdate
                     break;
                 case UpdateStep.RestartInfo:
 
-                    // send a success signal.
-                    updateHelper.SendSuccess(autoUpdateStepProcessing);
+                    // send a success signal (with the Window Handle)
+                    updateHelper.SendSuccess(autoUpdateStepProcessing, (int)Handle);
 
                     break;
                 case UpdateStep.Install:

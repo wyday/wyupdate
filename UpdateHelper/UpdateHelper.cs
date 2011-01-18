@@ -141,6 +141,11 @@ namespace wyUpdate.Common
             pipeServer.SendMessage(new UpdateHelperData(Response.Succeeded, step).GetByteArray());
         }
 
+        public void SendSuccess(UpdateStep step, int windowHandle)
+        {
+            pipeServer.SendMessage(new UpdateHelperData(Response.Succeeded, step) { ProcessID = windowHandle }.GetByteArray());
+        }
+
         public void SendFailed(string messageTitle, string messageBody, UpdateStep step)
         {
             pipeServer.SendMessage(new UpdateHelperData(Response.Failed, step, messageTitle, messageBody).GetByteArray());
