@@ -27,29 +27,52 @@ namespace wyUpdate
 
             try
             {
+                // if we're AutoUpdating the service has been shutdown by the AutomaticUpdaterBackend
+                // and we should wait for the service to complete shutting down
+                if (SkipStartService != null)
+                {
+                    using (ServiceController srvc = new ServiceController(SkipStartService))
+                    {
+                        if (srvc.Status != ServiceControllerStatus.Stopped)
+                            srvc.WaitForStatus(ServiceControllerStatus.Stopped); 
+                    }
+                }
+
                 // first try to stop services
                 foreach (string service in UpdtDetails.ServicesToStop)
                 {
-                    ServiceController srvc = new ServiceController(service);
-                    ServiceControllerStatus status = ServiceControllerStatus.Stopped;
-
-                    try
+                    using (ServiceController srvc = new ServiceController(service))
                     {
-                        // non-existent services throw an exception on queries
-                        status = srvc.Status;
-                    }
-                    catch { }
+                        ServiceControllerStatus status = ServiceControllerStatus.Stopped;
 
-                    if (status == ServiceControllerStatus.Running)
-                    {
-                        srvc.Stop();
+                        try
+                        {
+                            // non-existent services throw an exception on queries
+                            status = srvc.Status;
+                        }
+                        catch { }
 
-                        // report that we're waiting for the service to stop so the user knows what's going on
-                        ReportProcProgress("Waiting for service to stop: " + srvc.DisplayName);
+                        if (status == ServiceControllerStatus.Running)
+                        {
+                            try
+                            {
+                                srvc.Stop();
+                            }
+                            catch (Exception)
+                            {
+                                // get the latest status of the service -- it might have crashed close
+                                srvc.Refresh();
+                                if (srvc.Status != ServiceControllerStatus.Stopped)
+                                    throw;
+                            }
 
-                        srvc.WaitForStatus(ServiceControllerStatus.Stopped);
+                            // report that we're waiting for the service to stop so the user knows what's going on
+                            ReportProcProgress("Waiting for service to stop: " + srvc.DisplayName);
 
-                        stoppedServices.Add(service);
+                            srvc.WaitForStatus(ServiceControllerStatus.Stopped);
+
+                            stoppedServices.Add(service);
+                        }
                     }
                 }
 

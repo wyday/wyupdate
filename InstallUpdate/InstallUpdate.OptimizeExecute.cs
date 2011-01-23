@@ -123,29 +123,31 @@ namespace wyUpdate
                         if (SkipStartService != null && string.Compare(SkipStartService, service.Name, StringComparison.OrdinalIgnoreCase) == 0)
                             continue;
 
-                        ServiceController srvc = new ServiceController(service.Name);
-                        ServiceControllerStatus status = srvc.Status;
-
-                        if (status != ServiceControllerStatus.Running)
+                        using (ServiceController srvc = new ServiceController(service.Name))
                         {
-                            if (service.Arguments != null)
+                            ServiceControllerStatus status = srvc.Status;
+
+                            if (status != ServiceControllerStatus.Running)
                             {
-                                // parse the arguments for variables
-                                for (int i = 0; i < service.Arguments.Length; i++)
-                                    service.Arguments[i] = ParseText(service.Arguments[i]);
+                                if (service.Arguments != null)
+                                {
+                                    // parse the arguments for variables
+                                    for (int i = 0; i < service.Arguments.Length; i++)
+                                        service.Arguments[i] = ParseText(service.Arguments[i]);
 
-                                // start the service with the arguments
-                                srvc.Start(service.Arguments);
+                                    // start the service with the arguments
+                                    srvc.Start(service.Arguments);
+                                }
+                                else // no arguments
+                                    srvc.Start();
+
+                                // report that we're waiting for the service to start so the user knows what's going on
+                                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Waiting for service to start: " + srvc.DisplayName, GetRelativeProgess(6, 50), 50);
+
+                                srvc.WaitForStatus(ServiceControllerStatus.Running);
+
+                                startedServices.Add(service.Name);
                             }
-                            else // no arguments
-                                srvc.Start();
-
-                            // report that we're waiting for the service to start so the user knows what's going on
-                            ThreadHelper.ReportProgress(Sender, SenderDelegate, "Waiting for service to start: " + srvc.DisplayName, GetRelativeProgess(6, 50), 50);
-
-                            srvc.WaitForStatus(ServiceControllerStatus.Running);
-
-                            startedServices.Add(service.Name);
                         }
                     }
                 }
