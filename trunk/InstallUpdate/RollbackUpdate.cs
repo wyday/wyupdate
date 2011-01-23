@@ -284,9 +284,11 @@ namespace wyUpdate
                 try
                 {
                     // start the service
-                    ServiceController srvc = new ServiceController(service);
-                    srvc.Start();
-                    srvc.WaitForStatus(ServiceControllerStatus.Running);
+                    using (ServiceController srvc = new ServiceController(service))
+                    {
+                        srvc.Start();
+                        srvc.WaitForStatus(ServiceControllerStatus.Running);
+                    }
                 }
                 catch { }
             }
@@ -315,9 +317,11 @@ namespace wyUpdate
                 try
                 {
                     // stop the service
-                    ServiceController srvc = new ServiceController(service);
-                    srvc.Stop();
-                    srvc.WaitForStatus(ServiceControllerStatus.Stopped);
+                    using (ServiceController srvc = new ServiceController(service))
+                    {
+                        srvc.Stop();
+                        srvc.WaitForStatus(ServiceControllerStatus.Stopped);
+                    }
                 }
                 catch { }
             }

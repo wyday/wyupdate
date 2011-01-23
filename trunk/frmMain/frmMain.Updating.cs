@@ -252,15 +252,18 @@ namespace wyUpdate
                         {
                             if (updateHelper.IsAService)
                             {
-                                if (updateHelper.ExecutionArguments != null)
+                                using (ServiceController srvc = new ServiceController(updateHelper.FileOrServiceToExecuteAfterUpdate))
                                 {
-                                    string[] args = CmdLineToArgvW.SplitArgs(updateHelper.ExecutionArguments);
+                                    if (updateHelper.ExecutionArguments != null)
+                                    {
+                                        string[] args = CmdLineToArgvW.SplitArgs(updateHelper.ExecutionArguments);
 
-                                    // start the windows service
-                                    new ServiceController(updateHelper.FileOrServiceToExecuteAfterUpdate).Start(args);
+                                        // start the windows service
+                                        srvc.Start(args);
+                                    }
+                                    else // start the windows service (without args)
+                                        srvc.Start();
                                 }
-                                else // start the windows service (without args)
-                                    new ServiceController(updateHelper.FileOrServiceToExecuteAfterUpdate).Start();
                             }
                             else
                             {
@@ -383,7 +386,8 @@ namespace wyUpdate
                                             ProgramDirectory = baseDirectory,
 
                                             // skip ui reporting when updating from a service
-                                            SkipUIReporting = UpdatingFromService || updateHelper.IsAService
+                                            SkipUIReporting = UpdatingFromService || updateHelper.IsAService,
+                                            SkipStartService = updateHelper.IsAService ? updateHelper.FileOrServiceToExecuteAfterUpdate : null
                                         };
 
                     asyncThread = new Thread(installUpdate.RunProcessesCheck);
