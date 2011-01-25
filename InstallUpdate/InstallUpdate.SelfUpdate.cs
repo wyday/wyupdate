@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using wyUpdate.Common;
@@ -14,6 +15,15 @@ namespace wyUpdate
 
         public void RunSelfUpdate()
         {
+            bw.DoWork += bw_DoWorkSelfUpdate;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedSelfUpdate;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkSelfUpdate(object sender, DoWorkEventArgs e)
+        {
             Exception except = null;
 
             try
@@ -27,7 +37,6 @@ namespace wyUpdate
                     File.Delete(Filename);
                 }
                 catch { }
-
 
                 //find and forcibly close oldClientLocation
                 KillProcess(OldSelfLoc);
@@ -76,12 +85,12 @@ namespace wyUpdate
                 except = ex;
             }
 
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
-                //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
+                // report cancellation
+                bw.ReportProgress(0, new object[] { -1, -1, "Cancelling update...", ProgressStatus.None, null });
 
-                //Delete temporary files
+                // Delete temporary files
                 if (except != null && except.GetType() != typeof(PatchApplicationException))
                 {
                     // remove the entire temp directory
@@ -107,15 +116,31 @@ namespace wyUpdate
                     }
                 }
 
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else
             {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, "Self update complete");
+                bw.ReportProgress(0, new object[] { -1, -1, "Self update complete", ProgressStatus.Success, null });
             }
         }
 
+        void bw_RunWorkerCompletedSelfUpdate(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkSelfUpdate;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedSelfUpdate;
+        }
+
         public void JustExtractSelfUpdate()
+        {
+            bw.DoWork += bw_DoWorkExtractSelfUpdate;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedExtractSelfUpdate;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkExtractSelfUpdate(object sender, DoWorkEventArgs e)
         {
             Exception except = null;
 
@@ -155,12 +180,12 @@ namespace wyUpdate
                 except = ex;
             }
 
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
-                //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
+                // report cancellation
+                bw.ReportProgress(0, new object[] { -1, -1, "Cancelling update...", ProgressStatus.None, null });
 
-                //Delete temporary files
+                // Delete temporary files
                 if (except != null)
                 {
                     // remove the entire temp directory
@@ -171,15 +196,31 @@ namespace wyUpdate
                     catch { }
                 }
 
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else
             {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, "Self update extraction complete");
+                bw.ReportProgress(0, new object[] { -1, -1, "Self update extraction complete", ProgressStatus.Success, null });
             }
         }
 
+        void bw_RunWorkerCompletedExtractSelfUpdate(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkExtractSelfUpdate;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedExtractSelfUpdate;
+        }
+
         public void JustInstallSelfUpdate()
+        {
+            bw.DoWork += bw_DoWorkInstallSelfUpdate;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedInstallSelfUpdate;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkInstallSelfUpdate(object sender, DoWorkEventArgs e)
         {
             Exception except = null;
 
@@ -198,7 +239,7 @@ namespace wyUpdate
                 //find and forcibly close oldClientLocation
                 KillProcess(OldSelfLoc);
 
-                
+
                 FileAttributes atr = File.GetAttributes(OldSelfLoc);
                 bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
 
@@ -223,12 +264,12 @@ namespace wyUpdate
             }
 
 
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
-                //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
+                // report cancellation
+                bw.ReportProgress(0, new object[] { -1, -1, "Cancelling update...", ProgressStatus.None, null });
 
-                //Delete temporary files
+                // Delete temporary files
                 if (except != null)
                 {
                     // remove the entire temp directory
@@ -239,14 +280,20 @@ namespace wyUpdate
                     catch { }
                 }
 
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else
             {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, "Self update complete");
+                bw.ReportProgress(0, new object[] { -1, -1, "Self update complete", ProgressStatus.Success, null });
             }
         }
 
+        void bw_RunWorkerCompletedInstallSelfUpdate(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkInstallSelfUpdate;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedInstallSelfUpdate;
+        }
 
         void CreatewyUpdateFromPatch()
         {

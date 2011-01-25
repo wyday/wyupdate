@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.ServiceProcess;
@@ -17,8 +18,17 @@ namespace wyUpdate
 
         public void RunOptimizeExecute()
         {
+            bw.DoWork += bw_DoWorkOptimizeExecute;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedOptimizeExecute;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkOptimizeExecute(object sender, DoWorkEventArgs e)
+        {
             // simply update the progress bar to show the 6th step is entirely complete
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 0), 0);
+            bw.ReportProgress(0, new object[] { GetRelativeProgess(6, 0), 0, string.Empty, ProgressStatus.None, null });
 
             List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
             List<string> startedServices = new List<string>();
@@ -50,9 +60,9 @@ namespace wyUpdate
                             try
                             {
                                 RegisterDllServer(filename, false);
-                                
+
                                 // add to the rollback list
-                                rollbackCOM.Add(new UninstallFileInfo {Path = filename, RegisterCOMDll = COMRegistration.UnRegister});
+                                rollbackCOM.Add(new UninstallFileInfo { Path = filename, RegisterCOMDll = COMRegistration.UnRegister });
                             }
                             catch (Exception ex)
                             {
@@ -66,11 +76,9 @@ namespace wyUpdate
 
             RollbackUpdate.WriteRollbackCOM(Path.Combine(TempDirectory, "backup\\reggedComList.bak"), rollbackCOM);
 
+            bw.ReportProgress(0, new object[] { GetRelativeProgess(6, 50), 50, string.Empty, ProgressStatus.None, null });
 
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(6, 50), 50);
-
-
-            if (!canceled && except == null)
+            if (!IsCancelled() && except == null)
             {
                 // execute files
                 for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
@@ -78,11 +86,11 @@ namespace wyUpdate
                     if (UpdtDetails.UpdateFiles[i].Execute && !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                     {
                         ProcessStartInfo psi = new ProcessStartInfo
-                                                   {
-                                                       // use the absolute path
-                                                       FileName =
-                                                           FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                                                   };
+                        {
+                            // use the absolute path
+                            FileName =
+                                FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
+                        };
 
                         if (!string.IsNullOrEmpty(psi.FileName))
                         {
@@ -112,7 +120,7 @@ namespace wyUpdate
                 }
             }
 
-            if (!canceled && except == null)
+            if (!IsCancelled() && except == null)
             {
                 try
                 {
@@ -142,7 +150,7 @@ namespace wyUpdate
                                     srvc.Start();
 
                                 // report that we're waiting for the service to start so the user knows what's going on
-                                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Waiting for service to start: " + srvc.DisplayName, GetRelativeProgess(6, 50), 50);
+                                bw.ReportProgress(0, new object[] { GetRelativeProgess(6, 50), 50, "Waiting for service to start: " + srvc.DisplayName, ProgressStatus.None, null });
 
                                 srvc.WaitForStatus(ServiceControllerStatus.Running);
 
@@ -160,11 +168,10 @@ namespace wyUpdate
                 RollbackUpdate.WriteRollbackServices(Path.Combine(TempDirectory, "backup\\startedServices.bak"), startedServices);
             }
 
-
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
                 // tell the main window we're rolling back registry
-                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, true);
+                bw.ReportProgress(1, true);
 
                 // rollback started services
                 RollbackUpdate.RollbackStartedServices(TempDirectory);
@@ -176,7 +183,7 @@ namespace wyUpdate
                 RollbackUpdate.RollbackRegistry(TempDirectory);
 
                 //rollback files
-                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
+                bw.ReportProgress(1, false);
                 RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
 
                 // rollback unregged COM
@@ -185,12 +192,19 @@ namespace wyUpdate
                 // rollback stopped services
                 RollbackUpdate.RollbackStoppedServices(TempDirectory);
 
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else
             {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
             }
+        }
+
+        void bw_RunWorkerCompletedOptimizeExecute(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkOptimizeExecute;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedOptimizeExecute;
         }
 
         static void GetFrameworkV2_0Directories()

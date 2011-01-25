@@ -9,17 +9,14 @@ namespace wyUpdate
 {
     public partial class frmMain
     {
-        delegate void ShowProgressDelegate(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
-        delegate void UninstallProgressDel(int percentDone, int stepOn, string extraStatus, Exception ex);
-        delegate void CheckProcessesDel(List<FileInfo> files, List<Process> rProcesses, bool statusDone, string extraStatus, Exception ex);
-
-        delegate void ChangeRollbackDelegate(bool rbRegistry);
-
         frmFilesInUse inUseForm;
 
         // update the label & progress bar when downloading/updating
         void ShowProgress(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
         {
+            if (IsDisposed)
+                return;
+
             //update progress bar when between 0 and 100
             if (percentDone > -1 && percentDone < 101)
             {
@@ -61,11 +58,15 @@ namespace wyUpdate
                 inUseForm = null;
             }
 
+            if (installUpdate != null && (status == ProgressStatus.Success || status == ProgressStatus.Failure))
+            {
+                installUpdate.Rollback -= ChangeRollback;
+                installUpdate.ProgressChanged -= ShowProgress;
+            }
+
             if (status == ProgressStatus.Success)
             {
-                if (isCancelled)
-                    Close(); //close the form
-                else if (frameOn == Frame.Checking)
+                if (frameOn == Frame.Checking)
                 {
                     //set the serverfile location
                     serverFileLoc = downloader.DownloadingTo;
@@ -99,7 +100,12 @@ namespace wyUpdate
 
             if (status == ProgressStatus.Failure)
             {
-                //Show the error (rollback has already been done)
+                // Show the error (rollback has already been done)
+                if (isCancelled)
+                {
+                    Close();
+                    return;
+                }
                 if (frameOn == Frame.Checking)
                 {
                     error = clientLang.ServerError;
@@ -134,7 +140,7 @@ namespace wyUpdate
                     {
                         // if the exception was PatchApplicationException, then
                         //see if a catch-all update exists (and the catch-all update isn't the one that failed)
-                        if (payload.GetType() == typeof(PatchApplicationException) &&
+                        if (payload is PatchApplicationException &&
                             updateFrom != ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1] &&
                             ServerFile.VersionChoices[ServerFile.VersionChoices.Count - 1].Version == ServerFile.NewVersion)
                         {
@@ -169,21 +175,25 @@ namespace wyUpdate
             }
         }
 
-
         void SelfUpdateProgress(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
         {
+            if (IsDisposed)
+                return;
+
             //update progress bar
-            panelDisplaying.Progress = percentDone;
+            if (percentDone > -1 && percentDone < 101)
+                panelDisplaying.Progress = percentDone;
 
             //update bottom status
             if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
+            if (installUpdate != null && (status == ProgressStatus.Success || status == ProgressStatus.Failure))
+                installUpdate.ProgressChanged -= SelfUpdateProgress;
+
             if (status == ProgressStatus.Success)
             {
-                if (isCancelled)
-                    Close(); //close the form
-                else if (frameOn == Frame.Checking)
+                if (frameOn == Frame.Checking)
                 {
                     clientSFLoc = downloader.DownloadingTo;
 
@@ -288,7 +298,7 @@ namespace wyUpdate
 
                                             // and there is a catch-all update
                                             && SelfServerFile.VersionChoices[SelfServerFile.VersionChoices.Count - 1].Version == SelfServerFile.NewVersion;
-                
+
 
                 // if a new client is *required* to install the update...
                 if (selfUpdateRequired && !canTryCatchAllUpdate)
@@ -369,47 +379,72 @@ namespace wyUpdate
             }
         }
 
-        void UninstallProgress(int percentDone, int step, string extraStatus, Exception ex)
+        void UninstallProgress(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
         {
-            //update progress bar
-            panelDisplaying.Progress = percentDone;
+            if (IsDisposed)
+                return;
+
+            // update progress bar
+            if (percentDone > -1 && percentDone < 101)
+                panelDisplaying.Progress = percentDone;
 
             //update bottom status
             if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
-            //step: 0=working, 1=uninstalling registry, 2=done
-            if (step == 1)
+            if (status == ProgressStatus.Success || status == ProgressStatus.Failure)
+                installUpdate.ProgressChanged -= UninstallProgress;
+
+            switch (status)
             {
-                panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
-                SetStepStatus(1, clientLang.UninstallRegistry);
-            }
-            else if (step == 2 && ex == null)
-            {
-                //just bail out.
-                Close();
-            }
-            else if (ex != null)
-            {
-                if (isSilent)
+                case ProgressStatus.None:
+                    panelDisplaying.UpdateItems[0].Status = UpdateItemStatus.Success;
+                    SetStepStatus(1, clientLang.UninstallRegistry);
+                    break;
+                case ProgressStatus.Success:
+                    //just bail out.
                     Close();
-                else
-                {
-                    //Show the error (rollback has ocurred)
-                    error = ex.Message;
-                    ShowFrame(Frame.Error);
-                }
+                    break;
+                case ProgressStatus.Failure:
+                    if (isSilent)
+                        Close();
+                    else
+                    {
+                        // Show the error (rollback has ocurred)
+                        error = clientLang.GeneralUpdateError;
+                        errorDetails = ((Exception)payload).Message;
+                        ShowFrame(Frame.Error);
+                    }
+                    break;
             }
         }
 
-        void CheckProcess(List<FileInfo> files, List<Process> rProcesses, bool done, string extraStatus, Exception ex)
+        void CheckProcess(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload)
         {
+            if (IsDisposed)
+                return;
+
             // update bottom status
             if (!string.IsNullOrEmpty(extraStatus) && extraStatus != panelDisplaying.ProgressStatus)
                 panelDisplaying.ProgressStatus = extraStatus;
 
-            if (done && ex == null)
+            if (status == ProgressStatus.Success || status == ProgressStatus.Failure)
             {
+                installUpdate.Rollback -= ChangeRollback;
+                installUpdate.ProgressChanged -= CheckProcess;
+            }
+
+            if (status == ProgressStatus.Success)
+            {
+                List<FileInfo> files = null;
+                List<Process> rProcesses = null;
+
+                if (payload is object[])
+                {
+                    files = (List<FileInfo>)((object[])payload)[0];
+                    rProcesses = (List<Process>)((object[])payload)[1];
+                }
+
                 if (rProcesses != null) //if there are some processes need closing
                 {
                     // remove processes that have exited since last checked
@@ -448,10 +483,16 @@ namespace wyUpdate
                 InstallUpdates(update.CurrentlyUpdating);
             }
 
-            if (done && ex != null)
+            if (status == ProgressStatus.Failure)
             {
+                if (isCancelled)
+                {
+                    Close();
+                    return;
+                }
+
                 error = clientLang.GeneralUpdateError;
-                errorDetails = ex.Message;
+                errorDetails = ((Exception)payload).Message;
 
                 ShowFrame(Frame.Error);
             }
@@ -459,6 +500,9 @@ namespace wyUpdate
 
         void ChangeRollback(bool rbRegistry)
         {
+            if (IsDisposed)
+                return;
+
             DisableCancel();
 
             // set the error icon to current progress item

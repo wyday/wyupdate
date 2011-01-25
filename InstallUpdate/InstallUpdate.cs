@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -7,18 +8,19 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 using Microsoft.Win32;
 using wyUpdate.Common;
 
 namespace wyUpdate
 {
+    public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
+    public delegate void ChangeRollbackDelegate(bool rbRegistry);
+
     partial class InstallUpdate
     {
-        public ContainerControl Sender;
-
-        public Delegate SenderDelegate;
-        public Delegate RollbackDelegate;
+        readonly BackgroundWorker bw = new BackgroundWorker();
+        public event ProgressChangedHandler ProgressChanged;
+        public event ChangeRollbackDelegate Rollback;
 
         //Used for unzipping
         public string Filename;
@@ -45,16 +47,134 @@ namespace wyUpdate
         public bool SkipUIReporting;
 
         //cancellation & pausing
-        volatile bool canceled;
         volatile bool paused;
 
 
-        public InstallUpdate(ContainerControl sender, Delegate senderDelegate)
+        public InstallUpdate()
         {
-            Sender = sender;
-            SenderDelegate = senderDelegate;
+            bw.WorkerReportsProgress = true;
+            bw.WorkerSupportsCancellation = true;
         }
 
+        void bw_DoWorkUpdateFiles(object sender, DoWorkEventArgs e)
+        {
+            //check if folders exist, and count files to be moved
+            string backupFolder = Path.Combine(TempDirectory, "backup");
+            string[] backupFolders = new string[10];
+            string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
+            string[] destFolders = { ProgramDirectory, 
+                SystemFolders.GetSystem32x86(),
+                SystemFolders.GetSystem32x64(),
+                SystemFolders.GetRootDrive(),
+                SystemFolders.GetCurrentUserAppData(),
+                SystemFolders.GetCommonAppData(), 
+                SystemFolders.GetCommonDesktop(), 
+                SystemFolders.GetCommonProgramsStartMenu(),
+                SystemFolders.GetCommonProgramFilesx86(),
+                SystemFolders.GetCommonProgramFilesx64()
+            };
+
+            List<FileFolder> rollbackList = new List<FileFolder>();
+            int totalDone = 0;
+
+            Exception except = null;
+
+            try
+            {
+                int totalFiles = 0;
+
+                // count the files and create backup folders
+                for (int i = 0; i < origFolders.Length; i++)
+                {
+                    //does orig folder exist?
+                    if (Directory.Exists(Path.Combine(TempDirectory, origFolders[i])))
+                    {
+                        //orig folder exists, set backup & orig folder locations
+                        backupFolders[i] = Path.Combine(backupFolder, origFolders[i]);
+                        origFolders[i] = Path.Combine(TempDirectory, origFolders[i]);
+                        Directory.CreateDirectory(backupFolders[i]);
+
+                        // set ACL on the folders so they'll have proper user access properties
+                        // there's no need to set ACL for local updates
+                        if (IsAdmin)
+                            SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
+
+                        // delete "newer" client, if it will overwrite this client
+                        DeleteClientInPath(destFolders[i], origFolders[i]);
+
+                        //count the total files
+                        totalFiles += CountFiles(origFolders[i]);
+                    }
+                }
+
+
+                //run the backup & replace
+                for (int i = 0; i < origFolders.Length; i++)
+                {
+                    if (IsCancelled())
+                        break;
+
+                    if (backupFolders[i] != null) //if the backup folder exists
+                    {
+                        UpdateFiles(origFolders[i], destFolders[i], backupFolders[i], rollbackList, ref totalDone, ref totalFiles);
+                    }
+                }
+
+                DeleteFiles(backupFolder, rollbackList);
+
+                InstallShortcuts(destFolders, backupFolder, rollbackList);
+            }
+            catch (Exception ex)
+            {
+                except = ex;
+            }
+
+            //write the list of newly created files and folders
+            RollbackUpdate.WriteRollbackFiles(Path.Combine(backupFolder, "fileList.bak"), rollbackList);
+
+            if (IsCancelled() || except != null)
+            {
+                // rollback files
+                bw.ReportProgress(1, false);
+                RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
+
+                // rollback unregged COM
+                RollbackUpdate.RollbackUnregedCOM(TempDirectory);
+
+                // rollback stopped services
+                RollbackUpdate.RollbackStoppedServices(TempDirectory);
+
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
+            }
+            else
+            {
+                // backup & replace was successful
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
+            }
+        }
+
+        void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            if (e.ProgressPercentage == 0)
+            {
+                object[] arr = (object[])e.UserState;
+
+                if (ProgressChanged != null)
+                    ProgressChanged((int)arr[0], (int)arr[1], (string)arr[2], (ProgressStatus)arr[3], arr[4]);
+            }
+            else if (e.ProgressPercentage == 1)
+            {
+                if (Rollback != null)
+                    Rollback((bool)e.UserState);
+            }
+        }
+
+        void bw_RunWorkerCompletedUpdateFiles(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkUpdateFiles;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedUpdateFiles;
+        }
         
         public const int TotalUpdateSteps = 7;
 
@@ -79,9 +199,7 @@ namespace wyUpdate
                     break;
 
                 int unweightedProgress = (totalDone * 100) / totalFiles;
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, 
-                    "Updating " + tempFiles[i].Name,
-                    GetRelativeProgess(4, unweightedProgress), unweightedProgress);
+                bw.ReportProgress(0, new object[] { GetRelativeProgess(4, unweightedProgress), unweightedProgress, "Updating " + tempFiles[i].Name, ProgressStatus.None, null });
 
                 if (File.Exists(Path.Combine(progDir, tempFiles[i].Name)))
                 {
@@ -120,7 +238,7 @@ namespace wyUpdate
                                 if (!SkipUIReporting)
                                 {
                                     // notify main window of sharing violation
-                                    ThreadHelper.ReportSharingViolation(Sender, SenderDelegate, Path.Combine(progDir, tempFiles[i].Name));
+                                    bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.SharingViolation, Path.Combine(progDir, tempFiles[i].Name) });
                                 }
 
                                 // sleep for 1 second
@@ -249,99 +367,11 @@ namespace wyUpdate
 
         public void RunUpdateFiles()
         {
-            //check if folders exist, and count files to be moved
-            string backupFolder = Path.Combine(TempDirectory, "backup");
-            string[] backupFolders = new string[10];
-            string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
-            string[] destFolders = { ProgramDirectory, 
-                SystemFolders.GetSystem32x86(),
-                SystemFolders.GetSystem32x64(),
-                SystemFolders.GetRootDrive(),
-                SystemFolders.GetCurrentUserAppData(),
-                SystemFolders.GetCommonAppData(), 
-                SystemFolders.GetCommonDesktop(), 
-                SystemFolders.GetCommonProgramsStartMenu(),
-                SystemFolders.GetCommonProgramFilesx86(),
-                SystemFolders.GetCommonProgramFilesx64()
-            };
+            bw.DoWork += bw_DoWorkUpdateFiles;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedUpdateFiles;
 
-            List<FileFolder> rollbackList = new List<FileFolder>();
-            int totalDone = 0;
-
-            Exception except = null;
-
-            try
-            {
-                int totalFiles = 0;
-
-                // count the files and create backup folders
-                for (int i = 0; i < origFolders.Length; i++)
-                {
-                    //does orig folder exist?
-                    if (Directory.Exists(Path.Combine(TempDirectory, origFolders[i])))
-                    {
-                        //orig folder exists, set backup & orig folder locations
-                        backupFolders[i] = Path.Combine(backupFolder, origFolders[i]);
-                        origFolders[i] = Path.Combine(TempDirectory, origFolders[i]);
-                        Directory.CreateDirectory(backupFolders[i]);
-
-                        // set ACL on the folders so they'll have proper user access properties
-                        // there's no need to set ACL for local updates
-                        if (IsAdmin)
-                            SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
-
-                        // delete "newer" client, if it will overwrite this client
-                        DeleteClientInPath(destFolders[i], origFolders[i]);
-
-                        //count the total files
-                        totalFiles += CountFiles(origFolders[i]);
-                    }
-                }
-
-
-                //run the backup & replace
-                for (int i = 0; i < origFolders.Length; i++)
-                {
-                    if (IsCancelled())
-                        break;
-
-                    if (backupFolders[i] != null) //if the backup folder exists
-                    {
-                        UpdateFiles(origFolders[i], destFolders[i], backupFolders[i], rollbackList, ref totalDone, ref totalFiles);
-                    }
-                }
-
-                DeleteFiles(backupFolder, rollbackList);
-
-                InstallShortcuts(destFolders, backupFolder, rollbackList);
-            }
-            catch (Exception ex)
-            {
-                except = ex;
-            }
-
-            //write the list of newly created files and folders
-            RollbackUpdate.WriteRollbackFiles(Path.Combine(backupFolder, "fileList.bak"), rollbackList);
-
-            if (canceled || except != null)
-            {
-                // rollback files
-                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
-                RollbackUpdate.RollbackFiles(TempDirectory, ProgramDirectory);
-
-                // rollback unregged COM
-                RollbackUpdate.RollbackUnregedCOM(TempDirectory);
-
-                // rollback stopped services
-                RollbackUpdate.RollbackStoppedServices(TempDirectory);
-
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
-            }
-            else
-            {
-                //backup & replace was successful
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
-            }
+            bw.RunWorkerAsync();
         }
 
         void DeleteFiles(string backupFolder, List<FileFolder> rollbackList)
@@ -499,136 +529,19 @@ namespace wyUpdate
         }
 
 
-        public void RunUpdateClientDataFile()
-        {
-            try
-            {
-                OutputDirectory = Path.Combine(TempDirectory, "ClientData");
-                Directory.CreateDirectory(OutputDirectory);
 
-                string oldClientFile = null;
-
-                // see if a 1.1+ client file exists (client.wyc)
-                if (ClientFileType != ClientFileType.Final
-                    && File.Exists(Path.Combine(Path.GetDirectoryName(Filename), "client.wyc")))
-                {
-                    oldClientFile = Filename;
-                    Filename = Path.Combine(Path.GetDirectoryName(Filename), "client.wyc");
-                    ClientFileType = ClientFileType.Final;
-                }
-
-
-                if (ClientFileType == ClientFileType.PreRC2)
-                {
-                    //convert pre-RC2 client file by saving images to disk
-                    string tempImageFilename;
-
-                    //create the top image
-                    if (ClientFile.TopImage != null)
-                    {
-                        ClientFile.TopImageFilename = "t.png";
-
-                        tempImageFilename = Path.Combine(OutputDirectory, "t.png");
-                        ClientFile.TopImage.Save(tempImageFilename, System.Drawing.Imaging.ImageFormat.Png);
-                    }
-
-                    //create the side image
-                    if (ClientFile.SideImage != null)
-                    {
-                        ClientFile.SideImageFilename = "s.png";
-
-                        tempImageFilename = Path.Combine(OutputDirectory, "s.png");
-                        ClientFile.SideImage.Save(tempImageFilename, System.Drawing.Imaging.ImageFormat.Png);
-                    }
-                }
-                else
-                {
-                    //Extract the contents of the client data file
-                    ExtractUpdateFile();
-
-                    if (File.Exists(Path.Combine(OutputDirectory, "iuclient.iuc")))
-                    {
-                        // load and merge the existing file
-
-                        ClientFile tempClientFile = new ClientFile();
-                        tempClientFile.LoadClientData(Path.Combine(OutputDirectory, "iuclient.iuc"));
-                        tempClientFile.InstalledVersion = ClientFile.InstalledVersion;
-                        ClientFile = tempClientFile;
-                    
-
-                        File.Delete(Path.Combine(OutputDirectory, "iuclient.iuc"));
-                    }
-                }
-
-                List<UpdateFile> updateDetailsFiles = UpdtDetails.UpdateFiles;
-
-                FixUpdateFilesPaths(updateDetailsFiles);
-
-
-                //write the uninstall file
-                RollbackUpdate.WriteUninstallFile(TempDirectory, Path.Combine(OutputDirectory, "uninstall.dat"), updateDetailsFiles);
-
-                List<UpdateFile> files = new List<UpdateFile>();
-                
-                //add all the files in the outputDirectory
-                AddFiles(OutputDirectory.Length + 1, OutputDirectory, files);
-
-                //recompress all the client data files
-                string tempClient = Path.Combine(OutputDirectory, "client.file");
-                ClientFile.SaveClientFile(files, tempClient);
-
-                
-
-                // overrite existing client.wyc, while keeping the file attributes
-
-                FileAttributes atr = FileAttributes.Normal;
-
-                if (File.Exists(Filename))
-                    atr = File.GetAttributes(Filename);
-
-                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
-
-                // remove the ReadOnly & Hidden atributes temporarily
-                if (resetAttributes)
-                    File.SetAttributes(Filename, FileAttributes.Normal);
-
-                //replace the original
-                File.Copy(tempClient, Filename, true);
-
-                if (resetAttributes)
-                    File.SetAttributes(Filename, atr);
-
-
-                if (oldClientFile != null)
-                {
-                    // delete the old client file
-                    File.Delete(oldClientFile);
-                }
-            }
-            catch { }
-
-            ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
-        }
-
-        //creates list of files to add to client data file
-        static void AddFiles(int charsToTrim, string dir, List<UpdateFile> files)
-        {
-            string[] filenames = Directory.GetFiles(dir);
-            string[] dirs = Directory.GetDirectories(dir);
-
-            foreach (string file in filenames)
-            {
-                files.Add(new UpdateFile { Filename = file, RelativePath = file.Substring(charsToTrim) });
-            }
-
-            foreach (string directory in dirs)
-            {
-                AddFiles(charsToTrim, directory, files);
-            }
-        }
 
 
         public void RunDeleteTemporary()
+        {
+            bw.DoWork += bw_DoWorkDeleteTemporary;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedDeleteTemporary;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkDeleteTemporary(object sender, DoWorkEventArgs e)
         {
             try
             {
@@ -637,10 +550,26 @@ namespace wyUpdate
             }
             catch { }
 
-            ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
+            bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
+        }
+
+        void bw_RunWorkerCompletedDeleteTemporary(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkDeleteTemporary;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedDeleteTemporary;
         }
 
         public void RunUninstall()
+        {
+            bw.DoWork += bw_DoWorkUninstall;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedUninstall;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkUninstall(object sender, DoWorkEventArgs e)
         {
             List<UninstallFileInfo> filesToUninstall = new List<UninstallFileInfo>();
             List<string> foldersToDelete = new List<string>();
@@ -649,8 +578,10 @@ namespace wyUpdate
 
             List<UninstallFileInfo> comDllsToUnreg = new List<UninstallFileInfo>();
 
-            //Load the list of files, folders etc. from the client file (Filename)
+            // Load the list of files, folders etc. from the client file (Filename)
             RollbackUpdate.ReadUninstallData(Filename, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg);
+
+            //TODO: stop services
 
             // unregister COM files
             foreach (var uninstallFileInfo in comDllsToUnreg)
@@ -662,7 +593,7 @@ namespace wyUpdate
                 catch { }
             }
 
-            //uninstall files
+            // uninstall files
             foreach (UninstallFileInfo file in filesToUninstall)
             {
                 try
@@ -677,7 +608,7 @@ namespace wyUpdate
             }
 
             //uninstall folders
-            for (int i = foldersToDelete.Count-1; i >= 0; i--)
+            for (int i = foldersToDelete.Count - 1; i >= 0; i--)
             {
                 //delete the last folder first (this fixes the problem of nested folders)
                 try
@@ -689,8 +620,8 @@ namespace wyUpdate
             }
 
 
-            //tell the sender that we're uninstalling reg now:
-            Sender.BeginInvoke(SenderDelegate, new object[] { 0, 1, String.Empty, null });
+            // tell the sender that we're uninstalling reg now:
+            bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.None, null });
 
             //uninstall registry
             foreach (RegChange reg in registryToDelete)
@@ -702,14 +633,30 @@ namespace wyUpdate
                 catch { }
             }
 
-            //All done
-            Sender.BeginInvoke(SenderDelegate, new object[] { 0, 2, String.Empty, null });
+            // All done
+            bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
+        }
+
+        void bw_RunWorkerCompletedUninstall(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkUninstall;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedUninstall;
         }
 
         public void RunPreExecute()
         {
+            bw.DoWork += bw_DoWorkPreExecute;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedPreExecute;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkPreExecute(object sender, DoWorkEventArgs e)
+        {
             // simply update the progress bar to show the 3rd step is entirely complete
-            ThreadHelper.ReportProgress(Sender, SenderDelegate, string.Empty, GetRelativeProgess(3, 0), 0);
+            bw.ReportProgress(0, new object[] { GetRelativeProgess(3, 0), 0, string.Empty, ProgressStatus.None, null });
 
             List<UninstallFileInfo> rollbackCOM = new List<UninstallFileInfo>();
             Exception except = null;
@@ -719,11 +666,11 @@ namespace wyUpdate
                 if (UpdtDetails.UpdateFiles[i].Execute && UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
                     ProcessStartInfo psi = new ProcessStartInfo
-                                               {
-                                                   // use the absolute path
-                                                   FileName =
-                                                       FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                                               };
+                    {
+                        // use the absolute path
+                        FileName =
+                            FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
+                    };
 
                     if (!string.IsNullOrEmpty(psi.FileName))
                     {
@@ -750,7 +697,7 @@ namespace wyUpdate
                         }
                     }
                 }
-                else if ((UpdtDetails.UpdateFiles[i].RegisterCOMDll & (COMRegistration.UnRegister | COMRegistration.PreviouslyRegistered)) != 0 )
+                else if ((UpdtDetails.UpdateFiles[i].RegisterCOMDll & (COMRegistration.UnRegister | COMRegistration.PreviouslyRegistered)) != 0)
                 {
                     try
                     {
@@ -771,22 +718,29 @@ namespace wyUpdate
             // save rollback info
             RollbackUpdate.WriteRollbackCOM(Path.Combine(TempDirectory, "backup\\unreggedComList.bak"), rollbackCOM);
 
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
                 // rollback unregged COM
-                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
+                bw.ReportProgress(1, false);
                 RollbackUpdate.RollbackUnregedCOM(TempDirectory);
 
                 // rollback stopped services
                 RollbackUpdate.RollbackStoppedServices(TempDirectory);
 
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else
             {
-                //registry modification completed sucessfully
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, string.Empty);
+                // registry modification completed sucessfully
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
             }
+        }
+
+        void bw_RunWorkerCompletedPreExecute(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkPreExecute;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedPreExecute;
         }
 
 
@@ -848,7 +802,7 @@ namespace wyUpdate
         /// </summary>
         public void Cancel()
         {
-            canceled = true;
+            bw.CancelAsync();
         }
 
         /// <summary>
@@ -868,13 +822,13 @@ namespace wyUpdate
         {
             while (paused)
             {
-                if (canceled)
+                if (bw.CancellationPending)
                     return true;
 
                 Thread.Sleep(1000);
             }
 
-            return canceled;
+            return bw.CancellationPending;
         }
 
         #region RelativePaths
