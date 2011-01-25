@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -13,6 +14,15 @@ namespace wyUpdate
     partial class InstallUpdate
     {
         public void RunProcessesCheck()
+        {
+            bw.DoWork += bw_DoWorkProcessesCheck;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedProcessesCheck;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkProcessesCheck(object sender, DoWorkEventArgs e)
         {
             // processes
             List<FileInfo> files = null;
@@ -34,7 +44,7 @@ namespace wyUpdate
                     using (ServiceController srvc = new ServiceController(SkipStartService))
                     {
                         if (srvc.Status != ServiceControllerStatus.Stopped)
-                            srvc.WaitForStatus(ServiceControllerStatus.Stopped); 
+                            srvc.WaitForStatus(ServiceControllerStatus.Stopped);
                     }
                 }
 
@@ -67,7 +77,7 @@ namespace wyUpdate
                             }
 
                             // report that we're waiting for the service to stop so the user knows what's going on
-                            ReportProcProgress("Waiting for service to stop: " + srvc.DisplayName);
+                            bw.ReportProgress(0, new object[] { -1, -1, "Waiting for service to stop: " + srvc.DisplayName, ProgressStatus.None, null });
 
                             srvc.WaitForStatus(ServiceControllerStatus.Stopped);
 
@@ -129,65 +139,26 @@ namespace wyUpdate
             // save rollback info
             RollbackUpdate.WriteRollbackServices(Path.Combine(TempDirectory, "backup\\stoppedServices.bak"), stoppedServices);
 
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
-                ThreadHelper.ChangeRollback(Sender, RollbackDelegate, false);
+                bw.ReportProgress(1, false);
 
                 // rollback stopped services
                 RollbackUpdate.RollbackStoppedServices(TempDirectory);
 
-                ReportProcErrorOrSuccess(null, null, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else // completed successfully
             {
-                ReportProcErrorOrSuccess(files, rProcesses, null);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, new object[] { files, rProcesses } });
             }
         }
 
-        void ReportProcErrorOrSuccess(List<FileInfo> files, List<Process> rProcesses, Exception ex)
+        void bw_RunWorkerCompletedProcessesCheck(object sender, RunWorkerCompletedEventArgs e)
         {
-            /*
-             *
-             * The reason for the do...while and the try...catch is that when an error
-             * occurrs very quickly, and the windows is locked (say for repainting efficiency)
-             * the .BeginInvoke will fail. Thus, I should keep retrying until it eventually succeeds.
-             * 
-            */
-
-            do
-            {
-                try
-                {
-                    //Try to send our error to the frmMain thread - wait until it succeeds
-
-                    // NOTE: a -1 for progress assures that the progress bar won't be reset
-
-                    // eat any messages after the sender closes (aka IsDisposed)
-                    if (Sender.IsDisposed)
-                        return;
-
-                    Sender.BeginInvoke(SenderDelegate, new object[] { files, rProcesses, true, string.Empty, ex });
-                    break;
-                }
-                catch { }
-
-            } while (true);
-        }
-
-        void ReportProcProgress(string text)
-        {
-            try
-            {
-                // eat any messages after the sender closes (aka IsDisposed)
-                if (Sender.IsDisposed)
-                    return;
-
-                Sender.BeginInvoke(SenderDelegate, new object[] { null, null, false, text, null });
-            }
-            catch
-            {
-                // don't bother with the exception (it doesn't matter if the main window misses a progress report)
-            }
+            bw.DoWork -= bw_DoWorkProcessesCheck;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedProcessesCheck;
         }
 
         static void RemoveSelfFromProcesses(List<FileInfo> files)

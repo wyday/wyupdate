@@ -52,7 +52,6 @@ namespace wyUpdate.Downloader
 
         readonly BackgroundWorker bw = new BackgroundWorker();
 
-        public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
         public event ProgressChangedHandler ProgressChanged;
 
         public static WebProxy CustomProxy;
@@ -150,11 +149,11 @@ namespace wyUpdate.Downloader
                 }
             }
 
-            //Process complete (either sucessfully or failed), report back
-            if (!bw.CancellationPending)
-            {
-                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ex != null ? ProgressStatus.Failure : ProgressStatus.Success, ex });
-            }
+            // Process complete (either sucessfully or failed), report back
+            if (bw.CancellationPending || ex != null)
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, ex });
+            else
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
         }
 
         void bw_ProgressChanged(object sender, ProgressChangedEventArgs e)

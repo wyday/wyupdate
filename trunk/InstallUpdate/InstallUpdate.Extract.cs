@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -10,36 +11,17 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
-        void ExtractUpdateFile()
-        {
-            using (ZipFile zip = ZipFile.Read(Filename))
-            {
-                int totalFiles = zip.Entries.Count;
-                int filesDone = 0;
-
-                foreach (ZipEntry e in zip)
-                {
-                    if (IsCancelled())
-                        break; //stop outputting new files
-
-                    if (!SkipProgressReporting)
-                    {
-                        int unweightedPercent = totalFiles > 0 ? (filesDone*100)/totalFiles : 0;
-
-                        ThreadHelper.ReportProgress(Sender, SenderDelegate,
-                            "Extracting " + Path.GetFileName(e.FileName),
-                            GetRelativeProgess(1, unweightedPercent), unweightedPercent);
-
-                        filesDone++;
-                    }
-
-                    e.Extract(OutputDirectory, ExtractExistingFileAction.OverwriteSilently);  // overwrite == true
-                }
-            }
-        }
-
         // unzip the update to the temp folder
         public void RunUnzipProcess()
+        {
+            bw.DoWork += bw_DoWorkUnzip;
+            bw.ProgressChanged += bw_ProgressChanged;
+            bw.RunWorkerCompleted += bw_RunWorkerCompletedUnzip;
+
+            bw.RunWorkerAsync();
+        }
+
+        void bw_DoWorkUnzip(object sender, DoWorkEventArgs e)
         {
             Exception except = null;
 
@@ -101,7 +83,7 @@ namespace wyUpdate
                                     if ((HResult & 0xFFFF) == 32)
                                     {
                                         // notify main window of sharing violation
-                                        ThreadHelper.ReportSharingViolation(Sender, SenderDelegate, FixUpdateDetailsPaths(file.RelativePath));
+                                        bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.SharingViolation, FixUpdateDetailsPaths(file.RelativePath) });
 
                                         // sleep for 1 second
                                         Thread.Sleep(1000);
@@ -143,13 +125,12 @@ namespace wyUpdate
                 except = ex;
             }
 
-
-            if (canceled || except != null)
+            if (IsCancelled() || except != null)
             {
-                //report cancellation
-                ThreadHelper.ReportProgress(Sender, SenderDelegate, "Cancelling update...", -1, -1);
+                // report cancellation
+                bw.ReportProgress(0, new object[] { -1, -1, "Cancelling update...", ProgressStatus.None, null });
 
-                //Delete temporary files
+                // Delete temporary files
 
                 if (except != null && except.GetType() != typeof(PatchApplicationException))
                 {
@@ -186,11 +167,44 @@ namespace wyUpdate
                     }
                 }
 
-                ThreadHelper.ReportError(Sender, SenderDelegate, string.Empty, except);
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, except });
             }
             else
             {
-                ThreadHelper.ReportSuccess(Sender, SenderDelegate, "Extraction complete");
+                bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Success, null });
+            }
+        }
+
+        void bw_RunWorkerCompletedUnzip(object sender, RunWorkerCompletedEventArgs e)
+        {
+            bw.DoWork -= bw_DoWorkUnzip;
+            bw.ProgressChanged -= bw_ProgressChanged;
+            bw.RunWorkerCompleted -= bw_RunWorkerCompletedUnzip;
+        }
+
+        void ExtractUpdateFile()
+        {
+            using (ZipFile zip = ZipFile.Read(Filename))
+            {
+                int totalFiles = zip.Entries.Count;
+                int filesDone = 0;
+
+                foreach (ZipEntry e in zip)
+                {
+                    if (IsCancelled())
+                        break; //stop outputting new files
+
+                    if (!SkipProgressReporting)
+                    {
+                        int unweightedPercent = totalFiles > 0 ? (filesDone*100)/totalFiles : 0;
+
+                        bw.ReportProgress(0, new object[] { GetRelativeProgess(1, unweightedPercent), unweightedPercent, "Extracting " + Path.GetFileName(e.FileName), ProgressStatus.None, null });
+
+                        filesDone++;
+                    }
+
+                    e.Extract(OutputDirectory, ExtractExistingFileAction.OverwriteSilently);  // overwrite == true
+                }
             }
         }
     }
