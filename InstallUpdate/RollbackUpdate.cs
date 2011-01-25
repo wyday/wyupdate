@@ -532,6 +532,8 @@ namespace wyUpdate
                     case 0x06: //folder to create
                         if (createFolders != null)
                             createFolders.Add(ReadFiles.ReadString(fs));
+                        else
+                            ReadFiles.SkipField(fs, bType);
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -677,7 +679,6 @@ namespace wyUpdate
                 //add files to the uninstall list
                 foreach (string filename in rollbackFiles)
                 {
-
                     filesToUninstall.Add(new UninstallFileInfo { Path = filename, DeleteFile = true });
                 }
             }
