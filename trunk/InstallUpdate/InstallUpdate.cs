@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
+using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using Microsoft.Win32;
@@ -573,15 +574,27 @@ namespace wyUpdate
         {
             List<UninstallFileInfo> filesToUninstall = new List<UninstallFileInfo>();
             List<string> foldersToDelete = new List<string>();
-
             List<RegChange> registryToDelete = new List<RegChange>();
-
             List<UninstallFileInfo> comDllsToUnreg = new List<UninstallFileInfo>();
+            List<string> servicesToStop = new List<string>();
 
             // Load the list of files, folders etc. from the client file (Filename)
-            RollbackUpdate.ReadUninstallData(Filename, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg);
+            RollbackUpdate.ReadUninstallData(Filename, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg, servicesToStop);
 
-            //TODO: stop services
+            // stop the services
+            foreach (string service in servicesToStop)
+            {
+                try
+                {
+                    // stop the service
+                    using (ServiceController srvc = new ServiceController(service))
+                    {
+                        srvc.Stop();
+                        srvc.WaitForStatus(ServiceControllerStatus.Stopped);
+                    }
+                }
+                catch { }
+            }
 
             // unregister COM files
             foreach (var uninstallFileInfo in comDllsToUnreg)

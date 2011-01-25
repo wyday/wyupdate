@@ -640,17 +640,19 @@ namespace wyUpdate
             string registryRollbackFile = Path.Combine(tempDir, "backup\\regList.bak");
             string filesRollbackFile = Path.Combine(tempDir, "backup\\fileList.bak");
             string comRollbackFile = Path.Combine(tempDir, "backup\\reggedComList.bak");
+            string startedServicesFile = Path.Combine(tempDir, "backup\\startedServices.bak");
 
             List<UninstallFileInfo> filesToUninstall = new List<UninstallFileInfo>();
             List<string> foldersToDelete = new List<string>();
             List<RegChange> registryToDelete = new List<RegChange>();
             List<UninstallFileInfo> comDllsToUnreg = new List<UninstallFileInfo>();
+            List<string> servicesToStop = new List<string>();
 
             //add files/folders/Registry from uninstall file
             try
             {
                 if (File.Exists(uninstallDataFile))
-                    ReadUninstallFile(uninstallDataFile, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg);
+                    ReadUninstallFile(uninstallDataFile, filesToUninstall, foldersToDelete, registryToDelete, comDllsToUnreg, servicesToStop);
             }
             catch { }
 
@@ -732,6 +734,16 @@ namespace wyUpdate
                 catch { }
             }
 
+            // add services to stop
+            if (File.Exists(startedServicesFile))
+            {
+                try
+                {
+                    ReadRollbackServices(startedServicesFile, servicesToStop);
+                }
+                catch { }
+            }
+
             //write out the new uninstall data file
             if (filesToUninstall.Count != 0 || foldersToDelete.Count != 0 || registryToDelete.Count != 0)
             {
@@ -752,6 +764,9 @@ namespace wyUpdate
                     foreach (string folder in foldersToDelete)
                         WriteFiles.WriteDeprecatedString(fs, 0x10, folder);
 
+                    foreach (string service in servicesToStop)
+                        WriteFiles.WriteString(fs, 0x11, service);
+
                     //write registry changes
                     foreach (RegChange reg in registryToDelete)
                         reg.WriteToStream(fs, true);
@@ -762,7 +777,7 @@ namespace wyUpdate
             }
         }
 
-        public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
+        public static void ReadUninstallData(string clientFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg, List<string> servicesToStop)
         {
             try
             {
@@ -773,22 +788,22 @@ namespace wyUpdate
                         //read in the uninstall data
                         zip["uninstall.dat"].Extract(ms);
 
-                        LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg);
+                        LoadUninstallData(ms, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg, servicesToStop);
                     }
                 }
             }
             catch { }
         }
 
-        static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
+        static void ReadUninstallFile(string uninstallFile, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg, List<string> servicesToStop)
         {
             using (FileStream fs = new FileStream(uninstallFile, FileMode.Open, FileAccess.Read))
             {
-                LoadUninstallData(fs, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg);
+                LoadUninstallData(fs, uninstallFiles, uninstallFolders, uninstallRegistry, comDllsToUnreg, servicesToStop);
             }
         }
 
-        static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg)
+        static void LoadUninstallData(Stream ms, List<UninstallFileInfo> uninstallFiles, List<string> uninstallFolders, List<RegChange> uninstallRegistry, List<UninstallFileInfo> comDllsToUnreg, List<string> servicesToStop)
         {
             ms.Position = 0;
 
@@ -814,6 +829,9 @@ namespace wyUpdate
                         break;
                     case 0x10://folder to delete
                         uninstallFolders.Add(ReadFiles.ReadDeprecatedString(ms));
+                        break;
+                    case 0x11: //service to stop
+                        servicesToStop.Add(ReadFiles.ReadString(ms));
                         break;
                     case 0x8E://regChanges to execute
                         uninstallRegistry.Add(RegChange.ReadFromStream(ms));
