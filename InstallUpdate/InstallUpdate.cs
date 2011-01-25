@@ -14,6 +14,8 @@ using wyUpdate.Common;
 
 namespace wyUpdate
 {
+    public enum ProgressStatus { None, Success, Failure, SharingViolation }
+
     public delegate void ProgressChangedHandler(int percentDone, int unweightedPercent, string extraStatus, ProgressStatus status, Object payload);
     public delegate void ChangeRollbackDelegate(bool rbRegistry);
 
