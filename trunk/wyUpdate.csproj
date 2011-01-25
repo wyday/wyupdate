@@ -189,7 +189,6 @@
     <Compile Include="Util\Adler32.cs" />
     <Compile Include="Util\CmdLineToArgvW.cs" />
     <Compile Include="Util\LimitedProcess.cs" />
-    <Compile Include="Util\ThreadHelper.cs" />
     <Compile Include="UpdateDetails\UpdateDetails.cs" />
     <Compile Include="ClientFile.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.cs" />
