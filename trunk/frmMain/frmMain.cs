@@ -412,31 +412,38 @@ namespace wyUpdate
                     if (commands["ns"] != null)
                         IsNewSelf = true;
                 }
-
-                if (commands["quickcheck"] != null)
+                else if (commands["uninstall"] != null)
                 {
-                    WindowState = FormWindowState.Minimized;
-                    ShowInTaskbar = false;
+                    // uninstall any newly created folders, files, or registry
+                    uninstalling = true;
+                }
+                else // standalone updater mode
+                {
+                    if (commands["quickcheck"] != null)
+                    {
+                        WindowState = FormWindowState.Minimized;
+                        ShowInTaskbar = false;
 
-                    QuickCheck = true;
+                        QuickCheck = true;
 
-                    if (commands["noerr"] != null)
-                        QuickCheckNoErr = true;
+                        if (commands["noerr"] != null)
+                            QuickCheckNoErr = true;
 
-                    if (commands["justcheck"] != null)
-                        QuickCheckJustCheck = true;
+                        if (commands["justcheck"] != null)
+                            QuickCheckJustCheck = true;
+                    }
+
+                    if (commands["skipinfo"] != null)
+                        SkipUpdateInfo = true;
+
+                    if (commands["fromservice"] != null)
+                    {
+                        SkipUpdateInfo = true;
+                        UpdatingFromService = true;
+                    }
                 }
 
-                if (commands["skipinfo"] != null)
-                    SkipUpdateInfo = true;
-
-                if (commands["fromservice"] != null)
-                {
-                    SkipUpdateInfo = true;
-                    UpdatingFromService = true;
-                }
-
-                //client data file
+                // client data file
                 if (commands["cdata"] != null)
                 {
                     clientFileLoc = commands["cdata"];
@@ -486,10 +493,6 @@ namespace wyUpdate
                     tempDirectory = Path.Combine(Path.GetTempPath(), @"w" + DateTime.Now.ToString("sff"));
                     Directory.CreateDirectory(tempDirectory);
                 }
-
-                //uninstall any newly created folders, files, or registry
-                if (commands["uninstall"] != null)
-                    uninstalling = true;
 
                 // load the passed server argument
                 serverOverwrite = commands["server"];
