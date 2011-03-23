@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using wyUpdate;
 
@@ -127,7 +128,7 @@ public static class LimitedProcess
                             else
                                 arguments = "\"" + filename + "\" " + arguments;
 
-                            processCreated = CreateProcessWithTokenW(hPrimaryToken, 0, filename, arguments, 0, IntPtr.Zero, null, ref si, out pi);
+                            processCreated = CreateProcessWithTokenW(hPrimaryToken, 0, filename, arguments, 0, IntPtr.Zero, Path.GetDirectoryName(filename), ref si, out pi);
 
                             if (processCreated)
                             {
