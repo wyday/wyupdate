@@ -7,7 +7,6 @@ using System.Reflection;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
-using wyUpdate.Common;
 
 namespace wyUpdate
 {
@@ -193,18 +192,18 @@ namespace wyUpdate
 
         static List<Process> ProcessesNeedClosing(List<FileInfo> baseFiles)
         {
-            Process[] aProcess = Process.GetProcesses();
-
             List<Process> rProcesses = new List<Process>();
 
-            foreach (Process proc in aProcess)
+            foreach (FileInfo filename in baseFiles)
             {
-                foreach (FileInfo filename in baseFiles)
+                Process[] aProcess = Process.GetProcessesByName(filename.Name.Replace(filename.Extension, ""));
+
+                foreach (Process proc in aProcess)
                 {
                     try
                     {
                         //are one of the exe's in baseDir running?
-                        if (proc.MainModule != null && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower())
+                        if (proc.MainModule != null && string.Equals(proc.MainModule.FileName, filename.FullName, StringComparison.OrdinalIgnoreCase))
                         {
                             rProcesses.Add(proc);
                         }
