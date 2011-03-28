@@ -58,24 +58,23 @@ namespace wyUpdate
 
         void bw_DoWork(object sender, DoWorkEventArgs e)
         {
-            Process[] aProcess = Process.GetProcesses();
-
             // temp storing the running processes
             List<Process> rProcs = new List<Process>();
 
-            foreach (Process proc in aProcess)
+            foreach (FileInfo filename in filenames)
             {
-                foreach (FileInfo filename in filenames)
+                Process[] aProcess = Process.GetProcessesByName(filename.Name.Replace(filename.Extension, ""));
+
+                foreach (Process proc in aProcess)
                 {
                     try
                     {
-                        if (proc.MainModule != null
-                            && proc.MainModule.FileName.ToLower() == filename.FullName.ToLower()
+                        //are one of the exe's in baseDir running?
+                        if (proc.MainModule != null && string.Equals(proc.MainModule.FileName, filename.FullName, StringComparison.OrdinalIgnoreCase)
 
                             //if the running process is not this wyUpdate instance
                             && !InstallUpdate.ProcessIsSelf(proc.MainModule.FileName))
                         {
-                            //add the running process to the list
                             rProcs.Add(proc);
                         }
                     }
@@ -83,7 +82,7 @@ namespace wyUpdate
                 }
             }
 
-            // remove any closed proccesses
+            // remove any closed processes
             for (int i = 0; i < rProcs.Count; i++)
             {
                 if (rProcs[i].HasExited)
