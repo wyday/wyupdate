@@ -148,10 +148,10 @@ namespace wyUpdate.Common
                         InstalledVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ServerFileSites);
+                        AddUniqueString(ReadFiles.ReadDeprecatedString(fs), ServerFileSites);
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), ClientServerSites);
+                        AddUniqueString(ReadFiles.ReadDeprecatedString(fs), ClientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
@@ -217,10 +217,10 @@ namespace wyUpdate.Common
                         InstalledVersion = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), ServerFileSites);
+                        AddUniqueString(ReadFiles.ReadDeprecatedString(ms), ServerFileSites);
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueSite(ReadFiles.ReadDeprecatedString(ms), ClientServerSites);
+                        AddUniqueString(ReadFiles.ReadDeprecatedString(ms), ClientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
@@ -502,15 +502,15 @@ namespace wyUpdate.Common
             return ms;
         }
 
-        public static void AddUniqueSite(string newSite, List<string> sites)
+        public static void AddUniqueString(string newString, List<string> list)
         {
-            //if the site already exists, bail out
-            foreach (string site in sites)
-                if (string.Equals(newSite, site, StringComparison.OrdinalIgnoreCase))
+            // if the string already exists, bail out
+            foreach (string site in list)
+                if (string.Equals(newString, site, StringComparison.OrdinalIgnoreCase))
                     return;
 
-            //add the site
-            sites.Add(newSite);
+            // add the string
+            list.Add(newString);
         }
     }
 }

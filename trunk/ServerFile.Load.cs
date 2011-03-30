@@ -75,7 +75,7 @@ namespace wyUpdate.Common
                         serv.NewVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
                     case 0x02://Add server file site
-                        ClientFile.AddUniqueSite(ReadFiles.ReadDeprecatedString(fs), serv.ServerFileSites);
+                        ClientFile.AddUniqueString(ReadFiles.ReadDeprecatedString(fs), serv.ServerFileSites);
                         break;
                     case 0x07: //Min Client version
                         serv.MinClientVersion = ReadFiles.ReadDeprecatedString(fs);
@@ -95,7 +95,7 @@ namespace wyUpdate.Common
 
                         updateSite = updateSite.Replace("%urlargs%", customUrlArgs ?? string.Empty);
 
-                        ClientFile.AddUniqueSite(updateSite, serv.VersionChoices[serv.VersionChoices.Count - 1].FileSites);
+                        ClientFile.AddUniqueString(updateSite, serv.VersionChoices[serv.VersionChoices.Count - 1].FileSites);
                         
                         break;
                     case 0x80: //the changes text is in RTF format
@@ -116,11 +116,9 @@ namespace wyUpdate.Common
                     case 0x0A: //Installing to which directories?
                         serv.VersionChoices[serv.VersionChoices.Count - 1].InstallingTo = (InstallingTo)ReadFiles.ReadInt(fs);
                         break;
-                    case 0x12: //how many regchanges to test
-                        serv.VersionChoices[serv.VersionChoices.Count - 1].RegChanges.Capacity = ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x8E: //the RegChanges
-                        serv.VersionChoices[serv.VersionChoices.Count - 1].RegChanges.Add(RegChange.ReadFromStream(fs));
+                    case 0x8E: //the RegChanges (built with wyBuid 2.6.11.4 and below)
+                        if (RegChange.ReadFromStream(fs).RegBasekey != RegBasekeys.HKEY_CURRENT_USER)
+                            serv.VersionChoices[serv.VersionChoices.Count - 1].InstallingTo |= InstallingTo.NonCurrentUserReg;
                         break;
                     case 0x20:
                         serv.NoUpdateToLatestLinkText = ReadFiles.ReadDeprecatedString(fs);

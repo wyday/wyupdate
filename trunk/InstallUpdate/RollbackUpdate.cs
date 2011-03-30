@@ -274,7 +274,7 @@ namespace wyUpdate
 
             try
             {
-                ReadRollbackServices(Path.Combine(tempDir, "backup\\stoppedServices.bak"), rollbackList);
+                ReadRollbackServices(Path.Combine(tempDir, "backup\\stoppedServices.bak"), rollbackList, false);
             }
             catch { }
 
@@ -307,7 +307,7 @@ namespace wyUpdate
 
             try
             {
-                ReadRollbackServices(Path.Combine(tempDir, "backup\\startedServices.bak"), rollbackList);
+                ReadRollbackServices(Path.Combine(tempDir, "backup\\startedServices.bak"), rollbackList, false);
             }
             catch { }
 
@@ -417,7 +417,7 @@ namespace wyUpdate
             }
         }
 
-        public static void ReadRollbackServices(string fileName, List<string> rollbackList)
+        public static void ReadRollbackServices(string fileName, List<string> rollbackList, bool addUnique)
         {
             FileStream fs = null;
 
@@ -447,7 +447,10 @@ namespace wyUpdate
                 switch (bType)
                 {
                     case 0x01: // service to start again
-                        rollbackList.Add(ReadFiles.ReadString(fs));
+                        if (addUnique)
+                            ClientFile.AddUniqueString(ReadFiles.ReadString(fs), rollbackList);
+                        else
+                            rollbackList.Add(ReadFiles.ReadString(fs));
                         break;
                     default:
                         ReadFiles.SkipField(fs, bType);
@@ -739,7 +742,7 @@ namespace wyUpdate
             {
                 try
                 {
-                    ReadRollbackServices(startedServicesFile, servicesToStop);
+                    ReadRollbackServices(startedServicesFile, servicesToStop, true);
                 }
                 catch { }
             }
