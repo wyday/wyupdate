@@ -69,42 +69,30 @@ namespace wyUpdate
 
         bool NeedElevationToUpdate()
         {
-            bool willSelfUpdate = (SelfUpdateState == SelfUpdateState.WillUpdate ||
-                                   SelfUpdateState == SelfUpdateState.FullUpdate ||
-                                   SelfUpdateState == SelfUpdateState.Extracted);
-
-            // no elevation necessary if it's not overwriting important files
-            if (IsAdmin || (updateFrom.InstallingTo == 0 && updateFrom.RegChanges.Count == 0 && !willSelfUpdate))
+            // if only updating local user files, no elevation is needed
+            if (IsAdmin || OnlyUpdatingLocalUser())
                 return false;
 
-            try
-            {
-                // if only updating local user files, no elevation is needed
-                if (OnlyUpdatingLocalUser())
-                    return false;
-
-                // UAC Shield on next button for Windows Vista+
-                if (VistaTools.AtLeastVista())
-                    VistaTools.SetButtonShield(btnNext, true);
-            }
-            catch { }
+            // UAC Shield on next button for Windows Vista+
+            if (VistaTools.AtLeastVista())
+                VistaTools.SetButtonShield(btnNext, true);
 
             return true;
         }
 
         bool OnlyUpdatingLocalUser()
         {
-            //Vista only check when the client isn't already 
-            // running with Admin (and elevated) priviledges
-
-            //Elevation is needed...
-
-            //if updating any registry other than HKEY_CURRENT_USER
-            foreach (RegChange reg in updateFrom.RegChanges)
-                if (reg.RegBasekey != RegBasekeys.HKEY_CURRENT_USER) return false;
-
-            //if installing to the system folder or one of the common folders
-            if (updateFrom.InstallingTo != 0 && (updateFrom.InstallingTo & InstallingTo.BaseDir) == 0)
+            // if installing to 
+            //         - system folders
+            //         - common folders
+            //         - non-user registry
+            //         - services
+            //         - COM installation
+            // then return false
+            // Also note how we're excluding the "BaseDir".
+            // This is because the base directory may or may not be in the userprofile
+            // directory, thus it needs a separate check.
+            if (((updateFrom.InstallingTo | InstallingTo.BaseDir) ^ InstallingTo.BaseDir) != 0)
                 return false;
 
             string userProfileFolder = Environment.GetEnvironmentVariable("userprofile");
