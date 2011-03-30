@@ -10,6 +10,7 @@ namespace wyUpdate.Common
     {
         PipeServer pipeServer;
 
+        public bool RestartInfoSent;
         public bool Installing;
 
         public string FileOrServiceToExecuteAfterUpdate;
@@ -101,6 +102,8 @@ namespace wyUpdate.Common
 
             if (step == UpdateStep.RestartInfo)
             {
+                RestartInfoSent = true;
+
                 // load the pre-install info
                 if (data.ExtraData.Count > 0)
                 {
@@ -116,7 +119,13 @@ namespace wyUpdate.Common
                     ExecutionArguments = data.ExtraData[2];
             }
             else if (step == UpdateStep.Install)
+            {
+                // if we're already installing, don't bother to process the message again
+                if (Installing)
+                    return;
+
                 Installing = true;
+            }
 
             if (RequestReceived != null)
                 RequestReceived(this, data.Action, step);

@@ -187,7 +187,17 @@ namespace wyUpdate
         {
             // close wyUpdate if we're not installing an update
             if (isAutoUpdateMode && !updateHelper.Installing)
-                CancelUpdate(true);
+            {
+                // if the restart info was already sent, then start installing
+                // otherwise, cancel the update
+                if (updateHelper.RestartInfoSent)
+                {
+                    updateHelper.Installing = true;
+                    UpdateHelper_RequestReceived(null, UpdateAction.UpdateStep, UpdateStep.Install);
+                }
+                else
+                    CancelUpdate(true);
+            }
         }
 
         /// <summary>
