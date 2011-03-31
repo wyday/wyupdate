@@ -103,7 +103,7 @@ namespace wyUpdate
                 return;
             }
 
-            // filter out out-of-order requests (never assume the step 's' is coming in the correct order)
+            // filter out-of-order requests (never assume the step 's' is coming in the correct order)
             if (FilterBadRequest(s))
                 return;
 
