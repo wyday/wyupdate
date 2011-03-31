@@ -82,12 +82,11 @@ namespace wyUpdate
 
         bool OnlyUpdatingLocalUser()
         {
-            // if installing to 
+            // if installing
             //         - system folders
-            //         - common folders
             //         - non-user registry
-            //         - services
-            //         - COM installation
+            //         - Windows Services
+            //         - COM files
             // then return false
             // Also note how we're excluding the "BaseDir".
             // This is because the base directory may or may not be in the userprofile
@@ -97,11 +96,11 @@ namespace wyUpdate
 
             string userProfileFolder = Environment.GetEnvironmentVariable("userprofile");
 
-            //if the basedirectory isn't in the userprofile folder (C:\Users\UserName)
+            // if the basedir isn't in the userprofile folder (C:\Users\UserName)
             if ((updateFrom.InstallingTo & InstallingTo.BaseDir) != 0 && !SystemFolders.IsDirInDir(userProfileFolder, baseDirectory))
                 return false;
 
-            //if the client data file isn't in the userprofile folder
+            // if the client data file isn't in the userprofile folder
             if (!SystemFolders.IsFileInDirectory(userProfileFolder, clientFileLoc))
                 return false;
 
