@@ -120,7 +120,7 @@ namespace wyUpdate.Common
                 if (fs != null)
                     fs.Close();
 
-                throw new ArgumentException("The client data file failed to open.\n\nFull details:\n\n" + ex.Message);
+                throw new ArgumentException("The client data file (client.wyc) failed to open.\n\nFull details:\n\n" + ex.Message);
             }
             
 

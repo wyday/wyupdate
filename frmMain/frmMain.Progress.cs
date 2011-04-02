@@ -168,9 +168,6 @@ namespace wyUpdate
                     }
                 }
 
-                if (isAutoUpdateMode)
-                    updateHelper.SendFailed(error, errorDetails, autoUpdateStepProcessing);
-
                 ShowFrame(Frame.Error);
             }
         }
@@ -307,10 +304,6 @@ namespace wyUpdate
                     error = clientLang.SelfUpdateInstallError;
                     errorDetails = ((Exception)payload).Message;
 
-                    // report error back to the app
-                    if (isAutoUpdateMode)
-                        updateHelper.SendFailed(error, errorDetails, autoUpdateStepProcessing);
-
                     ShowFrame(Frame.Error);
                 }
                 else if (frameOn == Frame.Checking)
@@ -319,7 +312,18 @@ namespace wyUpdate
                     SelfUpdateState = SelfUpdateState.None;
 
                     // Show update info page (or just start downloading & installing)
-                    ShowFrame(SkipUpdateInfo ? Frame.InstallUpdates : Frame.UpdateInfo);
+                    if (SkipUpdateInfo)
+                    {
+                        // check if elevation is needed
+                        needElevation = NeedElevationToUpdate();
+
+                        if (needElevation)
+                            StartSelfElevated();
+                        else
+                            ShowFrame(Frame.InstallUpdates);
+                    }
+                    else
+                        ShowFrame(Frame.UpdateInfo);
                 }
                 else
                 {

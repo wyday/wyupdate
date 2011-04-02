@@ -33,6 +33,31 @@ namespace wyUpdate
             updateHelper.StartPipeServer(this);
         }
 
+        /// <summary>
+        /// This starts the PipeServer and waits for at least one "client"
+        /// before delivering the error. If no client connects, 
+        /// </summary>
+        void StartQuickAndDirtyAutoUpdateMode()
+        {
+            updateHelper.StartPipeServer(this);
+
+            // there must be at least one client running to receive this message
+            int timeSpent = 0;
+
+            while (updateHelper.TotalConnectedClients == 0)
+            {
+                // if we've already waited 30 seconds, we've wait long enough
+                // something has gone wrong with the AutomaticUpdater control
+                // no point in waiting around any longer.
+                if (timeSpent == 30000)
+                    break;
+
+                // wait 1/3 of a second
+                timeSpent += 300;
+                Thread.Sleep(300);
+            }
+        }
+
         void StartNewSelfAndClose()
         {
             bool checkForClients = false;
@@ -58,6 +83,12 @@ namespace wyUpdate
                                                     // of a Unicorn and an Angel. Everyone knows that Angels don't
                                                     // respect backslash-quote combos.
                                                     // And Unicorns are racists.
+
+                                                    // The non-absurd reason is that if you have a baseDirectory variable with
+                                                    // a trailing slash then a quote character adjacent to this slash (i.e.
+                                                    // with no space between the slash and quote) the commandline args
+                                                    // get fubar-ed. A base directory with a trailing slash is valid
+                                                    // input, thus the slash-space-quote combo must remain.
 
                                                     // start the client in automatic update mode (a.k.a. wait mode)
                                                     Arguments =
