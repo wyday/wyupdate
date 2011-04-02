@@ -76,13 +76,15 @@ namespace wyUpdate
             downloader.Download();
         }
 
-        //client server file downloaded
+        /// <summary>
+        /// Called when the self-update server files has downloaded successfully.
+        /// </summary>
         void DownloadClientSFSuccess()
         {
-            //load the client server file, and see if a new version is availiable
+            // load the wyUpdate server file, and see if a new version is availiable
             ServerFile clientSF = ServerFile.Load(clientSFLoc, null, null);
 
-            //check if the client is new enough.
+            // check if the wyUpdate is new enough.
             if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1)
             {
                 SelfUpdateState = SelfUpdateState.WillUpdate;
@@ -96,7 +98,18 @@ namespace wyUpdate
             }
 
             // Show update info page (or just start downloading & installing)
-            ShowFrame(SkipUpdateInfo ? Frame.InstallUpdates : Frame.UpdateInfo);
+            if (SkipUpdateInfo)
+            {
+                // check if elevation is needed
+                needElevation = NeedElevationToUpdate();
+
+                if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate)
+                    StartSelfElevated();
+                else
+                    ShowFrame(Frame.InstallUpdates);
+            }
+            else
+                ShowFrame(Frame.UpdateInfo);
         }
 
         void LoadClientServerFile()

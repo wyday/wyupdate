@@ -37,7 +37,7 @@ namespace wyUpdate
                         clientLang.UpdateInfo.Content,
                         clientLang.UpdateBottom);
 
-                    //check if elevation is needed
+                    // check if elevation is needed
                     needElevation = NeedElevationToUpdate();
 
                     btnNext.Enabled = true;
@@ -220,6 +220,19 @@ namespace wyUpdate
                 }
                 else if (isAutoUpdateMode)
                 {
+                    // if it's reasonable to expect a client to be waiting for an error
+                    // that is, if we haven't already started the update process
+                    // then send all waiting processes the error message
+                    if (update.CurrentlyUpdating < UpdateOn.ClosingProcesses)
+                    {
+                        // wait for any clients to connect
+                        if (!updateHelper.RunningServer)
+                            StartQuickAndDirtyAutoUpdateMode();
+
+                        // send the error to any running "client" processes
+                        updateHelper.SendFailed(error, errorDetails, autoUpdateStepProcessing);
+                    }
+
                     if (frameNum == Frame.UpdatedSuccessfully || frameNum == Frame.Error)
                     {
                         // save whether an update succeeded or failed
