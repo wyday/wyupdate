@@ -152,6 +152,8 @@ namespace wyUpdate
                                 // report that we're waiting for the service to start so the user knows what's going on
                                 bw.ReportProgress(0, new object[] { GetRelativeProgess(6, 50), 50, "Waiting for service to start: " + srvc.DisplayName, ProgressStatus.None, null });
 
+                                //TODO: periodically check if the user has cancelled -- for services that fail to start
+                                //srvc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(5));
                                 srvc.WaitForStatus(ServiceControllerStatus.Running);
 
                                 startedServices.Add(service.Name);
