@@ -35,7 +35,7 @@ namespace wyUpdate
 
         /// <summary>
         /// This starts the PipeServer and waits for at least one "client"
-        /// before delivering the error. If no client connects, 
+        /// before delivering the error.
         /// </summary>
         void StartQuickAndDirtyAutoUpdateMode()
         {
