@@ -89,6 +89,15 @@ namespace wyUpdate.Downloader
             // use the custom proxy if provided
             if (CustomProxy != null)
                 WebRequest.DefaultWebProxy = CustomProxy;
+            else
+            {
+                IWebProxy proxy = WebRequest.GetSystemWebProxy();
+
+                if (proxy.Credentials == null)
+                    proxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+
+                WebRequest.DefaultWebProxy = proxy;
+            }
 
             // try each url in the list until one succeeds
             bool allFailedWaitingForResponse = true;
@@ -124,9 +133,9 @@ namespace wyUpdate.Downloader
              internet connection is shot, or the Proxy is shot. Either way it can't 
              hurt to try downloading without the proxy:
             */
-            if (allFailedWaitingForResponse && CustomProxy == null)
+            if (allFailedWaitingForResponse && WebRequest.DefaultWebProxy != null)
             {
-                //try the sites again without the proxy
+                // try the sites again without a proxy
                 WebRequest.DefaultWebProxy = null;
 
                 foreach (string s in urlList)

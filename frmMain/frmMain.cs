@@ -517,6 +517,10 @@ namespace wyUpdate
                             commands["proxyd"] ?? string.Empty
                             );
                     }
+                    else
+                    {
+                        FileDownloader.CustomProxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                    }
                 }
 
                 // only allow silent uninstalls 
