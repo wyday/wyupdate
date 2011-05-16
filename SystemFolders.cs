@@ -106,8 +106,9 @@ namespace wyUpdate.Common
                 // on x64: %ProgramFiles(x86)%\Common Files
                 // on x86: %ProgramFiles%\Common Files
 
-                //CSIDL_PROGRAM_FILES_COMMONX86  = 0x002c
-                SHGetFolderPath(IntPtr.Zero, 0x2c, IntPtr.Zero, 0, path);
+                //CSIDL_PROGRAM_FILES_COMMONX86  = 0x002c (Doesn't work on Windows XP x86)
+                //CSIDL_PROGRAM_FILES_COMMON = 0x02b
+                SHGetFolderPath(IntPtr.Zero, Is64Bit() ? 0x2c : 0x2b, IntPtr.Zero, 0, path);
 
                 m_CommonProgramFilesx86 = path.ToString();
             }
