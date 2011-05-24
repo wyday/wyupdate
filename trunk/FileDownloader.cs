@@ -697,6 +697,7 @@ namespace wyUpdate.Downloader
         static WebRequest GetRequest(string url)
         {
             WebRequest request = WebRequest.Create(url);
+            request.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
 
             if (request is HttpWebRequest)
             {
