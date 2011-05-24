@@ -217,9 +217,20 @@ namespace wyUpdate
 
             if (isAutoUpdateMode)
             {
-                // create the temp folder where we'll store the updates long term
-                if (tempDirectory == null)
-                    tempDirectory = CreateAutoUpdateTempFolder();
+                try
+                {
+                    // create the temp folder where we'll store the updates long term
+                    if (tempDirectory == null)
+                        tempDirectory = CreateAutoUpdateTempFolder();
+                }
+                catch (Exception ex)
+                {
+                    error = clientLang.GeneralUpdateError;
+                    errorDetails = "Failed to create the automatic updater temp folder: " + ex.Message;
+
+                    ShowFrame(Frame.Error);
+                    return;
+                }
                 
                 try
                 {
