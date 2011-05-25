@@ -298,6 +298,14 @@ namespace wyUpdate
                     // If we're updating from a service (i.e. no-ui), then close on *either* success or failure.
                     // If we're in normal mode but the user has specified they want "CloseOnSuccess", then do it.
 
+                    if (log != null)
+                    {
+                        if (frameNum == Frame.UpdatedSuccessfully)
+                            log.Write("Updated successfully.");
+                        else
+                            log.Write(error + " - " + errorDetails);
+                    }
+
                     Close();
                     return;
                 }

@@ -45,10 +45,12 @@ namespace wyUpdate
 
             try
             {
-                // write necessary info (base/temp dirs, new client files, etc.) to a file
-                SaveSelfUpdateData(Path.Combine(tempDirectory, "selfUpdate.sup"));
+                string selfUpdatePath = Path.Combine(tempDirectory, "selfUpdate.sup");
 
-                psi.Arguments = "-supdf:\"" + Path.Combine(tempDirectory, "selfUpdate.sup") + "\"";
+                // write necessary info (base/temp dirs, new client files, etc.) to a file
+                SaveSelfUpdateData(selfUpdatePath);
+
+                psi.Arguments = "-supdf:\"" + selfUpdatePath + "\"";
 
                 Process.Start(psi);
                 Close();
