@@ -77,7 +77,7 @@ namespace wyUpdate
 
         // handle hidden form
         bool _isApplicationRun = true;
-        
+
         // start hidden, close if no update, show if update
         bool QuickCheck;
         bool QuickCheckNoErr;
@@ -86,6 +86,8 @@ namespace wyUpdate
 
         // this is only set for standalone service updating (not updating a service via the AutomaticUpdater)
         bool UpdatingFromService;
+
+        Logger log;
 
         string forcedLanguageCulture;
 
@@ -451,6 +453,9 @@ namespace wyUpdate
                     {
                         SkipUpdateInfo = true;
                         UpdatingFromService = true;
+
+                        if (!string.IsNullOrEmpty(commands["logfile"]))
+                            log = new Logger(commands["logfile"]);
                     }
                 }
 

@@ -51,9 +51,6 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(serverOverwrite))
                     WriteFiles.WriteDeprecatedString(fs, 0x09, serverOverwrite);
 
-                if (!string.IsNullOrEmpty(autoUpdateStateFile))
-                    WriteFiles.WriteString(fs, 0x0A, autoUpdateStateFile);
-
                 if (!string.IsNullOrEmpty(updatePathVar))
                     WriteFiles.WriteString(fs, 0x0C, updatePathVar);
 
@@ -150,9 +147,6 @@ namespace wyUpdate
                             break;
                         case 0x09:
                             serverOverwrite = ReadFiles.ReadDeprecatedString(fs);
-                            break;
-                        case 0x0A:
-                            autoUpdateStateFile = ReadFiles.ReadString(fs);
                             break;
                         case 0x0C:
                             updatePathVar = ReadFiles.ReadString(fs);

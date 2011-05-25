@@ -508,7 +508,7 @@ namespace wyUpdate
                                                                            : closestMatch.Length + 1));
 
             Directory.CreateDirectory(guidCacheFolder);
-            
+
             // create the blank GUID file
             using (File.Create(Path.Combine(guidCacheFolder, guid))) ;
 
@@ -587,6 +587,16 @@ namespace wyUpdate
             {
                 // Write any file-identification data you want to here
                 WriteFiles.WriteHeader(fs, "IUAUFV1");
+
+                if (SelfUpdateState == SelfUpdateState.Extracted)
+                {
+                    string selfUpdatePath = Path.Combine(tempDirectory, "selfUpdate.sup");
+
+                    // save the self update file
+                    SaveSelfUpdateData(selfUpdatePath);
+
+                    WriteFiles.WriteString(fs, 0x0D, selfUpdatePath);
+                }
 
                 // Step on {Checked = 2, Downloaded = 4, Extracted = 6}
                 WriteFiles.WriteInt(fs, 0x01, (int)updateStepOn);
@@ -720,6 +730,10 @@ namespace wyUpdate
 
                         case 0x0A:
                             oldSelfLocation = ReadFiles.ReadString(fs);
+                            break;
+
+                        case 0x0D: // load the self update file
+                            LoadSelfUpdateData(ReadFiles.ReadString(fs));
                             break;
 
                         default:
