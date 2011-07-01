@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-10 09:50:43>
+// Time-stamp: <2011-June-18 00:22:35>
 //
 // ------------------------------------------------------------------
 //
@@ -1004,12 +1004,105 @@ namespace Ionic.Zip
             set
             {
                 if ((value != 0) && (value != -1) && (value < 64 * 1024))
-                    throw new ArgumentException();
+                    throw new ArgumentOutOfRangeException("value must be greater than 64k, or 0, or -1");
                 _ParallelDeflateThreshold = value;
             }
             get
             {
                 return _ParallelDeflateThreshold;
+            }
+        }
+
+
+        /// <summary>
+        ///   The maximum number of buffer pairs to use when performing
+        ///   parallel compression.
+        /// </summary>
+        ///
+        /// <remarks>
+        /// <para>
+        ///   This property sets an upper limit on the number of memory
+        ///   buffer pairs to create when performing parallel
+        ///   compression.  The implementation of the parallel
+        ///   compression stream allocates multiple buffers to
+        ///   facilitate parallel compression.  As each buffer fills up,
+        ///   the stream uses <see
+        ///   cref="System.Threading.ThreadPool.QueueUserWorkItem(WaitCallback)">
+        ///   ThreadPool.QueueUserWorkItem()</see> to compress those
+        ///   buffers in a background threadpool thread. After a buffer
+        ///   is compressed, it is re-ordered and written to the output
+        ///   stream.
+        /// </para>
+        ///
+        /// <para>
+        ///   A higher number of buffer pairs enables a higher degree of
+        ///   parallelism, which tends to increase the speed of compression on
+        ///   multi-cpu computers.  On the other hand, a higher number of buffer
+        ///   pairs also implies a larger memory consumption, more active worker
+        ///   threads, and a higher cpu utilization for any compression. This
+        ///   property enables the application to limit its memory consumption and
+        ///   CPU utilization behavior depending on requirements.
+        /// </para>
+        ///
+        /// <para>
+        ///   For each compression "task" that occurs in parallel, there are 2
+        ///   buffers allocated: one for input and one for output.  This property
+        ///   sets a limit for the number of pairs.  The total amount of storage
+        ///   space allocated for buffering will then be (N*S*2), where N is the
+        ///   number of buffer pairs, S is the size of each buffer (<see
+        ///   cref="CodecBufferSize"/>).  By default, DotNetZip allocates 4 buffer
+        ///   pairs per CPU core, so if your machine has 4 cores, and you retain
+        ///   the default buffer size of 128k, then the
+        ///   ParallelDeflateOutputStream will use 4 * 4 * 2 * 128kb of buffer
+        ///   memory in total, or 4mb, in blocks of 128kb.  If you then set this
+        ///   property to 8, then the number will be 8 * 2 * 128kb of buffer
+        ///   memory, or 2mb.
+        /// </para>
+        ///
+        /// <para>
+        ///   CPU utilization will also go up with additional buffers, because a
+        ///   larger number of buffer pairs allows a larger number of background
+        ///   threads to compress in parallel. If you find that parallel
+        ///   compression is consuming too much memory or CPU, you can adjust this
+        ///   value downward.
+        /// </para>
+        ///
+        /// <para>
+        ///   The default value is 16. Different values may deliver better or
+        ///   worse results, depending on your priorities and the dynamic
+        ///   performance characteristics of your storage and compute resources.
+        /// </para>
+        ///
+        /// <para>
+        ///   This property is not the number of buffer pairs to use; it is an
+        ///   upper limit. An illustration: Suppose you have an application that
+        ///   uses the default value of this property (which is 16), and it runs
+        ///   on a machine with 2 CPU cores. In that case, DotNetZip will allocate
+        ///   4 buffer pairs per CPU core, for a total of 8 pairs.  The upper
+        ///   limit specified by this property has no effect.
+        /// </para>
+        ///
+        /// <para>
+        ///   The application can set this value at any time, but it is
+        ///   effective only if set before calling
+        ///   <c>ZipOutputStream.Write()</c> for the first time.
+        /// </para>
+        /// </remarks>
+        ///
+        /// <seealso cref="ParallelDeflateThreshold"/>
+        ///
+        public int ParallelDeflateMaxBufferPairs
+        {
+            get
+            {
+                return _maxBufferPairs;
+            }
+            set
+            {
+                if (value < 4)
+                    throw new ArgumentOutOfRangeException("ParallelDeflateMaxBufferPairs",
+                                                "Value must be 4 or greater.");
+                _maxBufferPairs = value;
             }
         }
 #endif
@@ -1081,6 +1174,12 @@ namespace Ionic.Zip
                 throw new System.InvalidOperationException("The stream has been closed.");
             }
 
+            if (buffer==null)
+            {
+                _exceptionPending = true;
+                throw new System.ArgumentNullException("buffer");
+            }
+
             if (_currentEntry == null)
             {
                 _exceptionPending = true;
@@ -1096,7 +1195,8 @@ namespace Ionic.Zip
             if (_needToWriteEntryHeader)
                 _InitiateCurrentEntry(false);
 
-            _entryOutputStream.Write(buffer, offset, count);
+            if (count != 0)
+                _entryOutputStream.Write(buffer, offset, count);
         }
 
 
@@ -1183,6 +1283,9 @@ namespace Ionic.Zip
         ///
         public ZipEntry PutNextEntry(String entryName)
         {
+            if (String.IsNullOrEmpty(entryName))
+                throw new ArgumentNullException("entryName");
+
             if (_disposed)
             {
                 _exceptionPending = true;
@@ -1194,8 +1297,10 @@ namespace Ionic.Zip
             _currentEntry._container = new ZipContainer(this);
             _currentEntry._BitField |= 0x0008;  // workitem 8932
             _currentEntry.SetEntryTimes(DateTime.Now, DateTime.Now, DateTime.Now);
-            _currentEntry.CompressionLevel = CompressionLevel;
-            _currentEntry.Encryption = Encryption;
+            _currentEntry.CompressionLevel = this.CompressionLevel;
+            _currentEntry.Encryption = this.Encryption;
+            // workitem 12634
+            _currentEntry.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;
             _currentEntry.Password = _password;
 
             if (entryName.EndsWith("/"))  _currentEntry.MarkAsDirectory();
@@ -1266,7 +1371,10 @@ namespace Ionic.Zip
 
                 _currentEntry.FinishOutputStream(_outputStream, _outputCounter, _encryptor, _deflater, _entryOutputStream);
                 _currentEntry.PostProcessOutput(_outputStream);
-                _anyEntriesUsedZip64 |= _currentEntry.OutputUsedZip64.Value;
+                // workitem 12964
+                if (_currentEntry.OutputUsedZip64!=null)
+                    _anyEntriesUsedZip64 |= _currentEntry.OutputUsedZip64.Value;
+
                 // reset all the streams
                 _outputCounter = null; _encryptor = _deflater = null; _entryOutputStream = null;
             }
@@ -1291,19 +1399,14 @@ namespace Ionic.Zip
         ///
         /// </remarks>
         ///
-        /// <param name="notCalledFromFinalizer">set this to true, always.</param>
-        protected override void Dispose(bool notCalledFromFinalizer)
+        /// <param name="disposing">set this to true, always.</param>
+        protected override void Dispose(bool disposing)
         {
             if (_disposed) return;
 
-            if (notCalledFromFinalizer)
+            if (disposing) // not called from finalizer
             {
-                // When ZipOutputStream is used within a using clause, and an exception is
-                // thrown within the scope of the using, Close()/Dispose() is invoked implicitly
-                // before processing the initial exception.  In that case, _exceptionPending
-                // is true, and we don't want to try to write anything.  It can cause
-                // additional exceptions that mask the original one.  Eventually the
-                // original exception will be propagated to the application.
+                // handle pending exceptions
                 if (!_exceptionPending)
                 {
                     _FinishCurrentEntry();
@@ -1422,10 +1525,12 @@ namespace Ionic.Zip
         internal Zip64Option _zip64;
         private Dictionary<String, ZipEntry> _entriesWritten;
         private int _entryCount;
-        private System.Text.Encoding _provisionalAlternateEncoding;
+        private System.Text.Encoding _provisionalAlternateEncoding
+            = System.Text.Encoding.GetEncoding("IBM437"); // default = IBM437
+
         private bool _leaveUnderlyingStreamOpen;
         private bool _disposed;
-        private bool _exceptionPending;
+        private bool _exceptionPending; // **see note below
         private bool _anyEntriesUsedZip64, _directoryNeededZip64;
         private CountingStream _outputCounter;
         private Stream _encryptor;
@@ -1437,7 +1542,22 @@ namespace Ionic.Zip
 #if !NETCF
         internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
         private long _ParallelDeflateThreshold;
+        private int _maxBufferPairs = 16;
 #endif
+
+        // **Note regarding exceptions:
+
+        // When ZipOutputStream is employed within a using clause, which
+        // is the typical scenario, and an exception is thrown within
+        // the scope of the using, Close()/Dispose() is invoked
+        // implicitly before processing the initial exception.  In that
+        // case, _exceptionPending is true, and we don't want to try to
+        // write anything in the Close/Dispose logic.  Doing so can
+        // cause additional exceptions that mask the original one. So,
+        // the _exceptionPending flag is used to track that, and to
+        // allow the original exception to be propagated to the
+        // application without extra "noise."
+
     }
 
 
@@ -1470,6 +1590,7 @@ namespace Ionic.Zip
             get
             {
                 if (_zf != null) return _zf.Name;
+                if (_zis != null) throw new NotSupportedException();
                 return _zos.Name;
             }
         }
@@ -1479,6 +1600,7 @@ namespace Ionic.Zip
             get
             {
                 if (_zf != null) return _zf._Password;
+                if (_zis != null) return _zis._Password;
                 return _zos._password;
             }
         }
@@ -1488,6 +1610,7 @@ namespace Ionic.Zip
             get
             {
                 if (_zf != null) return _zf._zip64;
+                if (_zis != null) throw new NotSupportedException();
                 return _zos._zip64;
             }
         }
@@ -1497,6 +1620,7 @@ namespace Ionic.Zip
             get
             {
                 if (_zf != null) return _zf.BufferSize;
+                if (_zis != null) throw new NotSupportedException();
                 return 0;
             }
         }
@@ -1507,12 +1631,13 @@ namespace Ionic.Zip
             get
             {
                 if (_zf != null) return _zf.ParallelDeflater;
+                if (_zis != null) return null;
                 return _zos.ParallelDeflater;
             }
             set
             {
                 if (_zf != null) _zf.ParallelDeflater = value;
-                else _zos.ParallelDeflater = value;
+                else if (_zos != null) _zos.ParallelDeflater = value;
             }
         }
 
@@ -1524,6 +1649,14 @@ namespace Ionic.Zip
                 return _zos.ParallelDeflateThreshold;
             }
         }
+        public int ParallelDeflateMaxBufferPairs
+        {
+            get
+            {
+                if (_zf != null) return _zf.ParallelDeflateMaxBufferPairs;
+                return _zos.ParallelDeflateMaxBufferPairs;
+            }
+        }
 #endif
 
         public int CodecBufferSize
@@ -1531,6 +1664,7 @@ namespace Ionic.Zip
             get
             {
                 if (_zf != null) return _zf.CodecBufferSize;
+                if (_zis != null) return _zis.CodecBufferSize;
                 return _zos.CodecBufferSize;
             }
         }

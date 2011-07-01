@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2009-December-26 15:08:43>
+// Time-stamp: <2011-June-16 10:59:34>
 //
 // ------------------------------------------------------------------
 //
@@ -253,28 +253,30 @@ namespace Ionic.Zip
                     OnExtractEntry(n, false, e, path);
                     if (_extractOperationCanceled)
                         break;
-
                 }
 
-                // workitem 8264:
-                // now, set times on directory entries, again.
-                // The problem is, extracting a file changes the times on the parent
-                // directory.  So after all files have been extracted, we have to
-                // run through the directories again.
-                foreach (ZipEntry e in _entries.Values)
+                if (!_extractOperationCanceled)
                 {
-                    // check if it is a directory
-                    if ((e.IsDirectory) || (e.FileName.EndsWith("/")))
+                    // workitem 8264:
+                    // now, set times on directory entries, again.
+                    // The problem is, extracting a file changes the times on the parent
+                    // directory.  So after all files have been extracted, we have to
+                    // run through the directories again.
+                    foreach (ZipEntry e in _entries.Values)
                     {
-                        string outputFile = (e.FileName.StartsWith("/"))
-                            ? Path.Combine(path, e.FileName.Substring(1))
-                            : Path.Combine(path, e.FileName);
+                        // check if it is a directory
+                        if ((e.IsDirectory) || (e.FileName.EndsWith("/")))
+                        {
+                            string outputFile = (e.FileName.StartsWith("/"))
+                                ? Path.Combine(path, e.FileName.Substring(1))
+                                : Path.Combine(path, e.FileName);
 
-                        e._SetTimes(outputFile, false);
+                            e._SetTimes(outputFile, false);
+                        }
                     }
+                    OnExtractAllCompleted(path);
                 }
 
-                OnExtractAllCompleted(path);
             }
             finally
             {

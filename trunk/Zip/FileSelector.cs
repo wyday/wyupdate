@@ -3,7 +3,7 @@
 // FileSelector.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2008-2010 Dino Chiesa.
+// Copyright (c) 2008-2011 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -16,8 +16,7 @@
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs):
-// Time-stamp: <2010-February-24 22:58:10>
+// last saved: <2011-June-21 16:43:06>
 //
 // ------------------------------------------------------------------
 //
@@ -100,9 +99,9 @@ namespace Ionic
         internal abstract bool Evaluate(string filename);
 
         [System.Diagnostics.Conditional("SelectorTrace")]
-        protected void CriterionTrace(string format, params object[] args)
+        protected static void CriterionTrace(string format, params object[] args)
         {
-            System.Console.WriteLine("  " + format, args);
+            //System.Console.WriteLine("  " + format, args);
         }
     }
 
@@ -847,30 +846,123 @@ namespace Ionic
         }
 
 
+        public static class RegexAssertions
+        {
+            public static readonly String PrecededByOddNumberOfSingleQuotes = "(?<=(?:[^']*'[^']*')*'[^']*)";
+            public static readonly String FollowedByOddNumberOfSingleQuotesAndLineEnd = "(?=[^']*'(?:[^']*'[^']*')*[^']*$)";
+
+            public static readonly String PrecededByEvenNumberOfSingleQuotes = "(?<=(?:[^']*'[^']*')*[^']*)";
+            public static readonly String FollowedByEvenNumberOfSingleQuotesAndLineEnd = "(?=(?:[^']*'[^']*')*[^']*$)";
+        }
+
+
+        private static string NormalizeCriteriaExpression(string source)
+        {
+            // The goal here is to normalize the criterion expression. At output, in
+            // the transformed criterion string, every significant syntactic element
+            // - a property element, grouping paren for the boolean logic, operator
+            // ( = < > != ), conjunction, or property value - will be separated from
+            // its neighbors by at least one space. Thus,
+            //
+            // before                         after
+            // -------------------------------------------------------------------
+            // name=*.txt                     name = *.txt
+            // (size>100)AND(name=*.txt)      ( size > 100 ) AND ( name = *.txt )
+            //
+            // This is relatively straightforward using regular expression
+            // replacement. This method applies a distinct regex pattern and
+            // corresponding replacement string for each one of a number of cases:
+            // an open paren followed by a word; a word followed by a close-paren; a
+            // pair of open parens; a close paren followed by a word (which should
+            // then be followed by an open paren). And so on. These patterns and
+            // replacements are all stored in prPairs. By applying each of these
+            // regex replacements in turn, we get the transformed string. Easy.
+            //
+            // The resulting "normalized" criterion string, is then used as the
+            // subject that gets parsed, by splitting the string into tokens that
+            // are separated by spaces.  Here, there's a twist. The spaces within
+            // single-quote delimiters do not delimit distinct tokens.  So, this
+            // normalization method temporarily replaces those spaces with
+            // ASCII 6 (0x06), a control character which is not a legal
+            // character in a filename. The parsing logic that happens later will
+            // revert that change, restoring the original value of the filename
+            // specification.
+            //
+            // To illustrate, for a "before" string of [(size>100)AND(name='Name
+            // (with Parens).txt')] , the "after" string is [( size > 100 ) AND (
+            // name = 'Name\u0006(with\u0006Parens).txt' )].
+            //
+
+            string[][] prPairs =
+                {
+                    // A. opening double parens - insert a space between them
+                    new string[] { @"([^']*)\(\(([^']+)", "$1( ($2" },
+
+                    // B. closing double parens - insert a space between
+                    new string[] { @"(.)\)\)", "$1) )" },
+
+                    // C. single open paren with a following word - insert a space between
+                    new string[] { @"\((\S)", "( $1" },
+
+                    // D. single close paren with a preceding word - insert a space between the two
+                    new string[] { @"(\S)\)", "$1 )" },
+
+                    // E. close paren at line start?, insert a space before the close paren
+                    // this seems like a degenerate case.  I don't recall why it's here.
+                    new string[] { @"^\)", " )" },
+
+                    // F. a word (likely a conjunction) followed by an open paren - insert a space between
+                    new string[] { @"(\S)\(", "$1 (" },
+
+                    // G. single close paren followed by word - insert a paren after close paren
+                    new string[] { @"\)(\S)", ") $1" },
+
+                    // H. insert space between = and a following single quote
+                    new string[] { @"(=)('[^']*')", "$1 $2" },
+
+                    // I. insert space between property names and the following operator
+                    //new string[] { @"([^ ])([><(?:!=)=])", "$1 $2" },
+                    new string[] { @"([^ !><])(>|<|!=|=)", "$1 $2" },
+
+                    // J. insert spaces between operators and the following values
+                    new string[] { @"(>|<|!=|=)([^ =])", "$1 $2" },
+
+                    // K. replace fwd slash with backslash
+                    new string[] { @"/", "\\" },
+                };
+
+
+            string interim = source;
+
+            for (int i=0; i < prPairs.Length; i++)
+            {
+                char caseIdx = (char)('A' + i);
+                string pattern = RegexAssertions.PrecededByEvenNumberOfSingleQuotes +
+                    prPairs[i][0] +
+                    RegexAssertions.FollowedByEvenNumberOfSingleQuotesAndLineEnd;
+
+                interim = Regex.Replace(interim, pattern, prPairs[i][1]);
+            }
+
+            // match a space, followed by an odd number of single quotes.
+            // This matches spaces only inside a pair of single quote delimiters.
+            var regexPattern = " " +
+                               RegexAssertions.FollowedByOddNumberOfSingleQuotesAndLineEnd;
+
+            // Replace all spaces that appear inside single quotes, with
+            // ascii 6.  This allows a split on spaces to get tokens in
+            // the expression. The split will not split any filename or
+            // wildcard that appears within single quotes. After tokenizing, we
+            // need to replace ascii 6 with ascii 32 to revert the
+            // spaces within quotes.
+            return Regex.Replace(interim, regexPattern, "\u0006");
+        }
+
 
         private static SelectionCriterion _ParseCriterion(String s)
         {
             if (s == null) return null;
-
-            // inject spaces after open paren and before close paren
-            string[][] prPairs =
-                {
-                    new string[] { @"\(\(", "( (" },
-                    new string[] { @"\)\)", ") )" },
-                    new string[] { @"\((\S)", "( $1" },
-                    new string[] { @"(\S)\)", "$1 )" },
-                    new string[] { @"(\S)\(", "$1 (" },
-                    new string[] { @"\)(\S)", ") $1" },
-                    new string[] { @"([^ ]+)>([^ ]+)", "$1 > $2" },
-                    new string[] { @"([^ ]+)<([^ ]+)", "$1 < $2" },
-                    new string[] { @"([^ ]+)!=([^ ]+)", "$1 != $2" },
-                    new string[] { @"([^ ]+)=([^ ]+)", "$1 = $2" },
-                };
-            for (int i = 0; i < prPairs.Length; i++)
-            {
-                Regex rgx = new Regex(prPairs[i][0]);
-                s = rgx.Replace(s, prPairs[i][1]);
-            }
+            s = NormalizeCriteriaExpression(s);
 
             // shorthand for filename glob
             if (s.IndexOf(" ") == -1)
@@ -1023,23 +1115,11 @@ namespace Ionic
                                 throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
 
                             string m = tokens[i + 2];
-                            // handle single-quoted filespecs (used to include spaces in filename patterns)
+
+                            // handle single-quoted filespecs (used to include
+                            // spaces in filename patterns)
                             if (m.StartsWith("'"))
-                            {
-                                int ix = i;
-                                if (!m.EndsWith("'"))
-                                {
-                                    do
-                                    {
-                                        i++;
-                                        if (tokens.Length <= i + 2)
-                                            throw new ArgumentException(String.Join(" ", tokens, ix, tokens.Length - ix));
-                                        m += " " + tokens[i + 2];
-                                    } while (!tokens[i + 2].EndsWith("'"));
-                                }
-                                // trim off leading and trailing single quotes
-                                m = m.Substring(1, m.Length - 2);
-                            }
+                                m = m.Replace("\u0006", " ");
 
                             current = new NameCriterion
                             {
@@ -1162,14 +1242,15 @@ namespace Ionic
 
 
         /// <summary>
-        /// Returns the names of the files in the specified directory that fit the selection
-        /// criteria specified in the FileSelector, optionally recursing through subdirectories.
+        /// Returns the names of the files in the specified directory that fit
+        /// the selection criteria specified in the FileSelector, optionally
+        /// recursing through subdirectories.
         /// </summary>
         ///
         /// <remarks>
-        /// This method applies the file selection criteria contained in the FileSelector to the
-        /// files contained in the given directory, and returns the names of files that
-        /// conform to the criteria.
+        /// This method applies the file selection criteria contained in the
+        /// FileSelector to the files contained in the given directory, and returns
+        /// the names of files that conform to the criteria.
         /// </remarks>
         ///
         /// <param name="directory">
@@ -1177,7 +1258,8 @@ namespace Ionic
         /// </param>
         ///
         /// <param name="recurseDirectories">
-        /// Whether to recurse through subdirectories when applying the file selection criteria.
+        /// Whether to recurse through subdirectories when applying the file
+        /// selection criteria.
         /// </param>
         ///
         /// <returns>
@@ -1241,8 +1323,9 @@ namespace Ionic
     {
         private EnumUtil() { }
         /// <summary>
-        /// Returns the value of the DescriptionAttribute if the specified Enum value has one.
-        /// If not, returns the ToString() representation of the Enum value.
+        ///   Returns the value of the DescriptionAttribute if the specified Enum
+        ///   value has one.  If not, returns the ToString() representation of the
+        ///   Enum value.
         /// </summary>
         /// <param name="value">The Enum to get the description for</param>
         /// <returns></returns>
@@ -1257,12 +1340,14 @@ namespace Ionic
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more
-        /// enumerated constants to an equivalent enumerated object.
-        /// Note: use the DescriptionAttribute on enum values to enable this.
+        ///   Converts the string representation of the name or numeric value of one
+        ///   or more enumerated constants to an equivalent enumerated object.
+        ///   Note: use the DescriptionAttribute on enum values to enable this.
         /// </summary>
         /// <param name="enumType">The System.Type of the enumeration.</param>
-        /// <param name="stringRepresentation">A string containing the name or value to convert.</param>
+        /// <param name="stringRepresentation">
+        ///   A string containing the name or value to convert.
+        /// </param>
         /// <returns></returns>
         internal static object Parse(Type enumType, string stringRepresentation)
         {
@@ -1270,14 +1355,17 @@ namespace Ionic
         }
 
         /// <summary>
-        /// Converts the string representation of the name or numeric value of one or more
-        /// enumerated constants to an equivalent enumerated object.
-        /// A parameter specified whether the operation is case-sensitive.
-        /// Note: use the DescriptionAttribute on enum values to enable this.
+        ///   Converts the string representation of the name or numeric value of one
+        ///   or more enumerated constants to an equivalent enumerated object.  A
+        ///   parameter specified whether the operation is case-sensitive.  Note:
+        ///   use the DescriptionAttribute on enum values to enable this.
         /// </summary>
         /// <param name="enumType">The System.Type of the enumeration.</param>
-        /// <param name="stringRepresentation">A string containing the name or value to convert.</param>
-        /// <param name="ignoreCase">Whether the operation is case-sensitive or not.</param>
+        /// <param name="stringRepresentation">
+        ///   A string containing the name or value to convert.
+        /// </param>
+        /// <param name="ignoreCase">
+        ///   Whether the operation is case-sensitive or not.</param>
         /// <returns></returns>
         internal static object Parse(Type enumType, string stringRepresentation, bool ignoreCase)
         {

@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-14 18:43:49>
+// Time-stamp: <2011-June-18 02:53:50>
 //
 // ------------------------------------------------------------------
 //
@@ -508,14 +508,16 @@ namespace  Ionic.Zip
                     _exceptionPending = true;
                     throw new System.InvalidOperationException("The stream has been closed.");
                 }
-                _password = value;
+                _Password = value;
             }
         }
 
 
-        private void _SetupStream()
+        private void SetupStream()
         {
-            _crcStream= _currentEntry.InternalOpenReader(_password);
+            // Seek to the correct posn in the file, and open a
+            // stream that can be read.
+            _crcStream= _currentEntry.InternalOpenReader(_Password);
             _LeftToRead = _crcStream.Length;
             _needSetup = false;
         }
@@ -562,7 +564,7 @@ namespace  Ionic.Zip
             }
 
             if (_needSetup)
-                _SetupStream();
+                SetupStream();
 
             if (_LeftToRead == 0) return 0;
 
@@ -631,8 +633,19 @@ namespace  Ionic.Zip
                 // workitem 10178
                 Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
             }
+            // workitem 10923
+            else if (_firstEntry)
+            {
+                // we've already read one entry.
+                // Seek to the end of it.
+                _inputStream.Seek(_endOfEntry, SeekOrigin.Begin);
+                Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(_inputStream);
+            }
 
             _currentEntry = ZipEntry.ReadEntry(_container, !_firstEntry);
+            // ReadEntry leaves the file position after all the entry
+            // data and the optional bit-3 data descriptpr.  This is
+            // where the next entry would normally start.
             _endOfEntry = _inputStream.Position;
             _firstEntry = true;
             _needSetup = true;
@@ -658,11 +671,11 @@ namespace  Ionic.Zip
         ///
         /// </remarks>
         ///
-        protected override void Dispose(bool notCalledFromFinalizer)
+        protected override void Dispose(bool disposing)
         {
             if (_closed) return;
 
-            if (notCalledFromFinalizer)
+            if (disposing) // not called from finalizer
             {
                 // When ZipInputStream is used within a using clause, and an exception is thrown,
                 // Close() is invoked.  But we don't want to try to write anything in that case.
@@ -784,7 +797,7 @@ namespace  Ionic.Zip
         private ZipContainer _container;
         private Ionic.Zlib.CrcCalculatorStream _crcStream;
         private Int64 _LeftToRead;
-        private String _password;
+        internal String _Password;
         private Int64 _endOfEntry;
         private string _name;
 

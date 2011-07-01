@@ -1,7 +1,7 @@
 // ZipDirEntry.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006-2010 Dino Chiesa and Microsoft Corporation.
+// Copyright (c) 2006-2011 Dino Chiesa .
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-March-06 11:56:38>
+// Time-stamp: <2011-June-16 10:44:34>
 //
 // ------------------------------------------------------------------
 //
@@ -28,6 +28,7 @@
 
 
 using System;
+using System.Collections.Generic;
 
 namespace Ionic.Zip
 {
@@ -80,7 +81,7 @@ namespace Ionic.Zip
                     .Append(string.Format("  Bit Field: 0x{0:X4}\n", this._BitField))
                     .Append(string.Format("  Encrypted?: {0}\n", this._sourceIsEncrypted))
                     .Append(string.Format("  Timeblob: 0x{0:X8} ({1})\n", this._TimeBlob,
-                                          Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)) )
+                                          Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)))
                     .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
                     .Append(string.Format("  Is Text?: {0}\n", this._IsText))
                     .Append(string.Format("  Is Directory?: {0}\n", this._IsDirectory))
@@ -105,7 +106,9 @@ namespace Ionic.Zip
             internal static string AppendCopyToFileName(string f)
             {
                 callCount++;
-                if (callCount > 25) throw new Exception("Runaway!!!");
+                if (callCount > 25)
+                    throw new OverflowException("overflow while creating filename");
+
                 int n = 1;
                 int r = f.LastIndexOf(".");
 
@@ -117,31 +120,31 @@ namespace Ionic.Zip
                     {
                         n = Int32.Parse(m.Groups[1].Value) + 1;
                         string copy = String.Format(" (copy {0})", n);
-                        f= f.Substring(0,m.Index) + copy;
+                        f = f.Substring(0, m.Index) + copy;
                     }
                     else
                     {
                         string copy = String.Format(" (copy {0})", n);
-                        f= f + copy;
+                        f = f + copy;
                     }
                 }
                 else
                 {
-                    System.Console.WriteLine("HasExtension");
-                    System.Text.RegularExpressions.Match m = re.Match(f.Substring(0,r));
+                    //System.Console.WriteLine("HasExtension");
+                    System.Text.RegularExpressions.Match m = re.Match(f.Substring(0, r));
                     if (m.Success)
                     {
-                        n= Int32.Parse(m.Groups[1].Value) + 1;
+                        n = Int32.Parse(m.Groups[1].Value) + 1;
                         string copy = String.Format(" (copy {0})", n);
-                        f= f.Substring(0,m.Index) + copy  + f.Substring(r);
+                        f = f.Substring(0, m.Index) + copy + f.Substring(r);
                     }
                     else
                     {
                         string copy = String.Format(" (copy {0})", n);
-                        f= f.Substring(0,r) + copy  + f.Substring(r);
+                        f = f.Substring(0, r) + copy + f.Substring(r);
                     }
 
-                    System.Console.WriteLine("returning f({0})",f);
+                    //System.Console.WriteLine("returning f({0})", f);
                 }
                 return f;
             }
@@ -150,16 +153,22 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Reads one entry from the zip directory structure in the zip file.
+        ///   Reads one entry from the zip directory structure in the zip file.
         /// </summary>
+        ///
         /// <param name="zf">
-        /// The zipfile for which a directory entry will be read.  From this param, the
-        /// method gets the ReadStream and the expected text encoding
-        /// (ProvisionalAlternateEncoding) which is used if the entry is not marked
-        /// UTF-8.
+        ///   The zipfile for which a directory entry will be read.  From this param, the
+        ///   method gets the ReadStream and the expected text encoding
+        ///   (ProvisionalAlternateEncoding) which is used if the entry is not marked
+        ///   UTF-8.
         /// </param>
+        ///
+        /// <param name="previouslySeen">
+        ///   a list of previously seen entry names; used to prevent duplicates.
+        /// </param>
+        ///
         /// <returns>the entry read from the archive.</returns>
-        internal static ZipEntry ReadDirEntry(ZipFile zf)
+        internal static ZipEntry ReadDirEntry(ZipFile zf, List<String> previouslySeen)
         {
             System.IO.Stream s = zf.ReadStream;
             System.Text.Encoding expectedEncoding = zf.ProvisionalAlternateEncoding;
@@ -182,7 +191,7 @@ namespace Ionic.Zip
                     signature != ZipConstants.ZipEntrySignature  // workitem 8299
                     )
                 {
-                    throw new BadReadException(String.Format("  ZipEntry::ReadDirEntry(): Bad signature (0x{0:X8}) at position 0x{1:X8}", signature, s.Position));
+                    throw new BadReadException(String.Format("  Bad signature (0x{0:X8}) at position 0x{1:X8}", signature, s.Position));
                 }
                 return null;
             }
@@ -244,10 +253,10 @@ namespace Ionic.Zip
 
             // workitem 10330
             // insure unique entry names
-            while (zf.ContainsEntry(zde._FileNameInArchive))
+            while (previouslySeen.Contains(zde._FileNameInArchive))
             {
                 zde._FileNameInArchive = CopyHelper.AppendCopyToFileName(zde._FileNameInArchive);
-                zde._metadataChanged= true;
+                zde._metadataChanged = true;
             }
 
             if (zde.AttributesIndicateDirectory)
@@ -299,6 +308,17 @@ namespace Ionic.Zip
                 else
                     zde._LengthOfTrailer += 16;
             }
+
+            // workitem 12744
+            if ((zde._BitField & 0x0800) == 0x0800)
+            {
+                zde._actualEncoding = System.Text.Encoding.UTF8;
+            }
+            else
+            {
+                zde._actualEncoding = expectedEncoding;
+            }
+
 
             if (zde._commentLength > 0)
             {

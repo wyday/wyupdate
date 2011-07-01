@@ -1,7 +1,7 @@
 // Shared.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006-2010 Dino Chiesa.
+// Copyright (c) 2006-2011 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -14,8 +14,7 @@
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs):
-// Time-stamp: <2010-February-14 18:38:37>
+// Last Saved: <2011-June-16 22:22:42>
 //
 // ------------------------------------------------------------------
 //
@@ -120,13 +119,16 @@ namespace Ionic.Zip
         }
 #endif
 
+        private static System.Text.RegularExpressions.Regex doubleDotRegex1 =
+            new System.Text.RegularExpressions.Regex(@"^(.*/)?([^/\\.]+/\\.\\./)(.+)$");
+
         private static string SimplifyFwdSlashPath(string path)
         {
             if (path.StartsWith("./")) path = path.Substring(2);
             path = path.Replace("/./", "/");
+
             // Replace foo/anything/../bar with foo/bar
-            var re = new System.Text.RegularExpressions.Regex(@"^(.*/)?([^/\\.]+/\\.\\./)(.+)$");
-            path = re.Replace(path, "$1$3");
+            path = doubleDotRegex1.Replace(path, "$1$3");
             return path;
         }
 
@@ -196,7 +198,7 @@ namespace Ionic.Zip
         internal static int ReadSignature(System.IO.Stream s)
         {
             int x = 0;
-            try { x = _ReadFourBytes(s, "nul"); }
+            try { x = _ReadFourBytes(s, "n/a"); }
             catch (BadReadException) { }
             return x;
         }
@@ -209,14 +211,14 @@ namespace Ionic.Zip
             int x = 0;
             try
             {
-                x = _ReadFourBytes(s, "nul");
+                x = _ReadFourBytes(s, "n/a");
                 if (x == ZipConstants.ZipEntryDataDescriptorSignature)
                 {
                     // advance past data descriptor - 12 bytes if not zip64
                     s.Seek(12, SeekOrigin.Current);
                     // workitem 10178
                     Workaround_Ladybug318918(s);
-                    x = _ReadFourBytes(s, "nul");
+                    x = _ReadFourBytes(s, "n/a");
                     if (x != ZipConstants.ZipEntrySignature)
                     {
                         // Maybe zip64 was in use for the prior entry.
@@ -224,14 +226,14 @@ namespace Ionic.Zip
                         s.Seek(8, SeekOrigin.Current);
                         // workitem 10178
                         Workaround_Ladybug318918(s);
-                        x = _ReadFourBytes(s, "nul");
+                        x = _ReadFourBytes(s, "n/a");
                         if (x != ZipConstants.ZipEntrySignature)
                         {
                             // seek back to the first spot
                             s.Seek(-24, SeekOrigin.Current);
                             // workitem 10178
                             Workaround_Ladybug318918(s);
-                            x = _ReadFourBytes(s, "nul");
+                            x = _ReadFourBytes(s, "n/a");
                         }
                     }
                 }
@@ -378,6 +380,7 @@ namespace Ionic.Zip
             return adjusted;
         }
 
+#if NECESSARY
         // If I read a time from a file with GetLastWriteTime() (etc), I need
         // to adjust it for display in the .NET environment.
         internal static DateTime AdjustTime_Forward(DateTime time)
@@ -392,7 +395,7 @@ namespace Ionic.Zip
 
             return adjusted;
         }
-
+#endif
 
 
         internal static DateTime PackedToDateTime(Int32 packedDateTime)
@@ -503,19 +506,24 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Create a pseudo-random filename, suitable for use as a temporary file, and open it.
+        ///   Create a pseudo-random filename, suitable for use as a temporary
+        ///   file, and open it.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The System.IO.Path.GetRandomFileName() method is not available on the Compact
-        /// Framework, so this library provides its own substitute on NETCF.
+        ///   The System.IO.Path.GetRandomFileName() method is not available on
+        ///   the Compact Framework, so this library provides its own substitute
+        ///   on NETCF.
         /// </para>
         /// <para>
-        /// produces a filename of the form DotNetZip-xxxxxxxx.tmp, where xxxxxxxx is replaced
-        /// by randomly chosen characters, and creates that file.
+        ///   This method produces a filename of the form
+        ///   DotNetZip-xxxxxxxx.tmp, where xxxxxxxx is replaced by randomly
+        ///   chosen characters, and creates that file.
         /// </para>
         /// </remarks>
-        public static void CreateAndOpenUniqueTempFile(string dir, out Stream fs, out string filename)
+        public static void CreateAndOpenUniqueTempFile(string dir,
+                                                       out Stream fs,
+                                                       out string filename)
         {
             // workitem 9763
             // http://dotnet.org.za/markn/archive/2006/04/15/51594.aspx
@@ -659,31 +667,59 @@ namespace Ionic.Zip
 
 
 
-
     /// <summary>
-    /// A Stream wrapper, used for bookkeeping on input or output
-    /// streams.  In some cases, it is not possible to get the Position
-    /// of a stream, let's say, on a write-only output stream like
-    /// ASP.NET's Response.Output, or on a different write-only stream
-    /// provided as the destination for the zip by the application.
-    /// In this case, we can use this counting stream to count the bytes
-    /// read or written.
+    ///   A decorator stream. It wraps another stream, and performs bookkeeping
+    ///   to keep track of the stream Position.
     /// </summary>
-    internal class CountingStream : System.IO.Stream
+    /// <remarks>
+    ///   <para>
+    ///     In some cases, it is not possible to get the Position of a stream,
+    ///     let's say, on a write-only output stream like ASP.NET's
+    ///     Response.Output, or on a different write-only stream provided as the
+    ///     destination for the zip by the application.  In this case, we can
+    ///     use this counting stream to count the bytes read or written.
+    ///   </para>
+    ///   <para>
+    ///     Consider the scenario of an application that saves a self-extracting
+    ///     archive (SFX), that uses a custom SFX stub.
+    ///   </para>
+    ///   <para>
+    ///     Saving to a filesystem file, the application would open the
+    ///     filesystem file (getting a FileStream), save the custom sfx stub
+    ///     into it, and then call ZipFile.Save(), specifying the same
+    ///     FileStream. ZipFile.Save() does the right thing for the zipentry
+    ///     offsets, by inquiring the Position of the FileStream before writing
+    ///     any data, and then adding that initial offset into any ZipEntry
+    ///     offsets in the zip directory. Everything works fine.
+    ///   </para>
+    ///   <para>
+    ///     Now suppose the application is an ASPNET application and it saves
+    ///     directly to Response.OutputStream. It's not possible for DotNetZip to
+    ///     inquire the Position, so the offsets for the SFX will be wrong.
+    ///   </para>
+    ///   <para>
+    ///     The workaround is for the application to use this class to wrap
+    ///     HttpResponse.OutputStream, then write the SFX stub and the ZipFile
+    ///     into that wrapper stream. Because ZipFile.Save() can inquire the
+    ///     Position, it will then do the right thing with the offsets.
+    ///   </para>
+    /// </remarks>
+    public class CountingStream : System.IO.Stream
     {
+        // workitem 12374: this class is now public
         private System.IO.Stream _s;
         private Int64 _bytesWritten;
         private Int64 _bytesRead;
         private Int64 _initialOffset;
 
         /// <summary>
-        /// The  constructor.
+        /// The constructor.
         /// </summary>
-        /// <param name="s">The underlying stream</param>
-        public CountingStream(System.IO.Stream s)
+        /// <param name="stream">The underlying stream</param>
+        public CountingStream(System.IO.Stream stream)
             : base()
         {
-            _s = s;
+            _s = stream;
             try
             {
                 _initialOffset = _s.Position;
@@ -694,6 +730,9 @@ namespace Ionic.Zip
             }
         }
 
+        /// <summary>
+        ///   Gets the wrapped stream.
+        /// </summary>
         public Stream WrappedStream
         {
             get
@@ -702,16 +741,27 @@ namespace Ionic.Zip
             }
         }
 
+        /// <summary>
+        ///   The count of bytes written out to the stream.
+        /// </summary>
         public Int64 BytesWritten
         {
             get { return _bytesWritten; }
         }
 
+        /// <summary>
+        ///   the count of bytes that have been read from the stream.
+        /// </summary>
         public Int64 BytesRead
         {
             get { return _bytesRead; }
         }
 
+        /// <summary>
+        ///    Subtract delta from the count of bytes written to the stream.
+        ///    This is necessary when seeking back, and writing additional data,
+        ///    as happens in some cases when saving Zip files.
+        /// </summary>
         public void Adjust(Int64 delta)
         {
             _bytesWritten -= delta;
@@ -721,6 +771,13 @@ namespace Ionic.Zip
                 ((CountingStream)_s).Adjust(delta);
         }
 
+        /// <summary>
+        ///   The read method.
+        /// </summary>
+        /// <param name="buffer">The buffer to hold the data read from the stream.</param>
+        /// <param name="offset">the offset within the buffer to copy the first byte read.</param>
+        /// <param name="count">the number of bytes to read.</param>
+        /// <returns>the number of bytes read, after decryption and decompression.</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
             int n = _s.Read(buffer, offset, count);
@@ -728,6 +785,12 @@ namespace Ionic.Zip
             return n;
         }
 
+        /// <summary>
+        ///   Write data into the stream.
+        /// </summary>
+        /// <param name="buffer">The buffer holding data to write to the stream.</param>
+        /// <param name="offset">the offset within that data array to find the first byte to write.</param>
+        /// <param name="count">the number of bytes to write.</param>
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (count == 0) return;
@@ -735,37 +798,59 @@ namespace Ionic.Zip
             _bytesWritten += count;
         }
 
+        /// <summary>
+        ///   Whether the stream can be read.
+        /// </summary>
         public override bool CanRead
         {
             get { return _s.CanRead; }
         }
 
+        /// <summary>
+        ///   Whether it is possible to call Seek() on the stream.
+        /// </summary>
         public override bool CanSeek
         {
             get { return _s.CanSeek; }
         }
 
+        /// <summary>
+        ///   Whether it is possible to call Write() on the stream.
+        /// </summary>
         public override bool CanWrite
         {
             get { return _s.CanWrite; }
         }
 
+        /// <summary>
+        ///   Flushes the underlying stream.
+        /// </summary>
         public override void Flush()
         {
             _s.Flush();
         }
 
+        /// <summary>
+        ///   The length of the underlying stream.
+        /// </summary>
         public override long Length
         {
             get { return _s.Length; }   // bytesWritten??
         }
 
+        /// <summary>
+        ///   Returns the sum of number of bytes written, plus the initial
+        ///   offset before writing.
+        /// </summary>
         public long ComputedPosition
         {
             get { return _initialOffset + _bytesWritten; }
         }
 
 
+        /// <summary>
+        ///   The Position of the stream.
+        /// </summary>
         public override long Position
         {
             get { return _s.Position; }
@@ -777,16 +862,24 @@ namespace Ionic.Zip
             }
         }
 
+        /// <summary>
+        ///   Seek in the stream.
+        /// </summary>
+        /// <param name="offset">the offset point to seek to</param>
+        /// <param name="origin">the reference point from which to seek</param>
+        /// <returns>The new position</returns>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
             return _s.Seek(offset, origin);
         }
 
+        /// <summary>
+        ///   Set the length of the underlying stream.  Be careful with this!
+        /// </summary>
         public override void SetLength(long value)
         {
             _s.SetLength(value);
         }
-
     }
 
 

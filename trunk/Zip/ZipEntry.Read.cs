@@ -1,7 +1,7 @@
 // ZipEntry.Read.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009-2010 Dino Chiesa
+// Copyright (c) 2009-2011 Dino Chiesa
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-11 17:30:55>
+// Time-stamp: <2011-June-18 16:10:15>
 //
 // ------------------------------------------------------------------
 //
@@ -89,7 +89,7 @@ namespace Ionic.Zip
                 Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(ze.ArchiveStream);
                 if (ZipEntry.IsNotValidZipDirEntrySig(signature) && (signature != ZipConstants.EndOfCentralDirectorySignature))
                 {
-                    throw new BadReadException(String.Format("  ZipEntry::ReadHeader(): Bad signature (0x{0:X8}) at position  0x{1:X8}", signature, ze.ArchiveStream.Position));
+                    throw new BadReadException(String.Format("  Bad signature (0x{0:X8}) at position  0x{1:X8}", signature, ze.ArchiveStream.Position));
                 }
                 return false;
             }
@@ -136,10 +136,20 @@ namespace Ionic.Zip
             n = ze.ArchiveStream.Read(block, 0, block.Length);
             bytesRead += n;
 
-            // if the UTF8 bit is set for this entry, override the encoding the application requested.
-            ze._actualEncoding = ((ze._BitField & 0x0800) == 0x0800)
-                ? System.Text.Encoding.UTF8
-                : defaultEncoding;
+            // if the UTF8 bit is set for this entry, override the
+            // encoding the application requested.
+
+            if ((ze._BitField & 0x0800) == 0x0800)
+            {
+                ze._actualEncoding = System.Text.Encoding.UTF8;
+                // workitem 12744
+            }
+            else
+            {
+                ze._actualEncoding = defaultEncoding;
+            }
+
+
 
             // need to use this form of GetString() for .NET CF
             ze._FileNameInArchive = ze._actualEncoding.GetString(block, 0, block.Length);
@@ -297,12 +307,13 @@ namespace Ionic.Zip
             ze._TotalEntrySize = ze._LengthOfHeader + ze._CompressedFileDataSize + ze._LengthOfTrailer;
 
 
-            // We've read in the regular entry header, the extra field, and any encryption
-            // header.  The pointer in the file is now at the start of the filedata, which is
-            // potentially compressed and encrypted.  Just ahead in the file, there are
-            // _CompressedFileDataSize bytes of data, followed by potentially a non-zero length
-            // trailer, consisting of optionally, some encryption stuff (10 byte MAC for AES),
-            // and the bit-3 trailer (16 or 24 bytes).
+            // We've read in the regular entry header, the extra field, and any
+            // encryption header.  The pointer in the file is now at the start of the
+            // filedata, which is potentially compressed and encrypted.  Just ahead in
+            // the file, there are _CompressedFileDataSize bytes of data, followed by
+            // potentially a non-zero length trailer, consisting of optionally, some
+            // encryption stuff (10 byte MAC for AES), and the bit-3 trailer (16 or 24
+            // bytes).
 
             return true;
         }
@@ -339,18 +350,19 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Reads one <c>ZipEntry</c> from the given stream.  If the entry is encrypted, we don't
-        /// decrypt at this point.  We also do not decompress.  Mostly we read metadata.
+        ///   Reads one <c>ZipEntry</c> from the given stream.  The content for
+        ///   the entry does not get decompressed or decrypted.  This method
+        ///   basically reads metadata, and seeks.
         /// </summary>
         /// <param name="zc">the ZipContainer this entry belongs to.</param>
-        /// <param name="first">true of this is the first entry being read from the stream.</param>
+        /// <param name="first">
+        ///   true of this is the first entry being read from the stream.
+        /// </param>
         /// <returns>the <c>ZipEntry</c> read from the stream.</returns>
         internal static ZipEntry ReadEntry(ZipContainer zc, bool first)
         {
             ZipFile zf = zc.ZipFile;
-
             Stream s = zc.ReadStream;
-
             System.Text.Encoding defaultEncoding = zc.ProvisionalAlternateEncoding;
             ZipEntry entry = new ZipEntry();
             entry._Source = ZipEntrySource.ZipFile;
@@ -453,7 +465,6 @@ namespace Ionic.Zip
                 // workitem 10178
                 Ionic.Zip.SharedUtilities.Workaround_Ladybug318918(s);
             }
-
         }
 
 
@@ -465,38 +476,32 @@ namespace Ionic.Zip
         internal int ProcessExtraField(Stream s, Int16 extraFieldLength)
         {
             int additionalBytesRead = 0;
-
-            //Stream s = ArchiveStream;
-
             if (extraFieldLength > 0)
             {
-                byte[] Buffer = this._Extra = new byte[extraFieldLength];
-                additionalBytesRead = s.Read(Buffer, 0, Buffer.Length);
+                byte[] buffer = this._Extra = new byte[extraFieldLength];
+                additionalBytesRead = s.Read(buffer, 0, buffer.Length);
                 long posn = s.Position - additionalBytesRead;
                 int j = 0;
-                while (j+3 < Buffer.Length)
+                while (j + 3 < buffer.Length)
                 {
                     int start = j;
+                    UInt16 headerId = (UInt16)(buffer[j++] + buffer[j++] * 256);
+                    Int16 dataSize = (short)(buffer[j++] + buffer[j++] * 256);
 
-                    UInt16 HeaderId = (UInt16)(Buffer[j] + Buffer[j + 1] * 256);
-                    Int16 DataSize = (short)(Buffer[j + 2] + Buffer[j + 3] * 256);
-
-                    j += 4;
-
-                    switch (HeaderId)
+                    switch (headerId)
                     {
                         case 0x000a:  // NTFS ctime, atime, mtime
-                            j = ProcessExtraFieldWindowsTimes(Buffer, j, DataSize, posn);
+                            j = ProcessExtraFieldWindowsTimes(buffer, j, dataSize, posn);
                             break;
 
                         case 0x5455:  // Unix ctime, atime, mtime
-                            j = ProcessExtraFieldUnixTimes(Buffer, j, DataSize, posn);
+                            j = ProcessExtraFieldUnixTimes(buffer, j, dataSize, posn);
                             break;
 
                         case 0x5855:  // Info-zip Extra field (outdated)
                             // This is outdated, so the field is supported on
                             // read only.
-                            j = ProcessExtraFieldInfoZipTimes(Buffer, j, DataSize, posn);
+                            j = ProcessExtraFieldInfoZipTimes(buffer, j, dataSize, posn);
                             break;
 
                         case 0x7855:  // Unix uid/gid
@@ -509,22 +514,22 @@ namespace Ionic.Zip
                             break;
 
                         case 0x0001: // ZIP64
-                            j = ProcessExtraFieldZip64(Buffer, j, DataSize, posn);
+                            j = ProcessExtraFieldZip64(buffer, j, dataSize, posn);
                             break;
 
 #if AESCRYPTO
                         case 0x9901: // WinZip AES encryption is in use.  (workitem 6834)
                             // we will handle this extra field only  if compressionmethod is 0x63
-                            j = ProcessExtraFieldWinZipAes(Buffer, j, DataSize, posn);
+                            j = ProcessExtraFieldWinZipAes(buffer, j, dataSize, posn);
                             break;
 #endif
                         case 0x0017: // workitem 7968: handle PKWare Strong encryption header
-                            j = ProcessExtraFieldPkwareStrongEncryption(Buffer, j);
+                            j = ProcessExtraFieldPkwareStrongEncryption(buffer, j);
                             break;
                     }
 
                     // move to the next Header in the extra field
-                    j = start + DataSize + 4;
+                    j = start + dataSize + 4;
                 }
             }
             return additionalBytesRead;
@@ -545,22 +550,21 @@ namespace Ionic.Zip
             //                               in the section describing the
             //                               Certificate Processing Method under
             //                               the Strong Encryption Specification)
-            {
-                //Int16 format = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
-                j += 2;
-                _UnsupportedAlgorithmId = (UInt16)(Buffer[j] + Buffer[j + 1] * 256);
-                j += 2;
-                _Encryption_FromZipFile = _Encryption = EncryptionAlgorithm.Unsupported;
 
-                // DotNetZip doesn't support this algorithm, but we don't need to throw here.
-                // we might just be reading the archive, which is fine.  We'll need to
-                // throw if Extract() is called.
-            }
+            j += 2;
+            _UnsupportedAlgorithmId = (UInt16)(Buffer[j++] + Buffer[j++] * 256);
+            _Encryption_FromZipFile = _Encryption = EncryptionAlgorithm.Unsupported;
+
+            // DotNetZip doesn't support this algorithm, but we don't need to throw
+            // here.  we might just be reading the archive, which is fine.  We'll
+            // need to throw if Extract() is called.
+
             return j;
         }
 
+
 #if AESCRYPTO
-        private int ProcessExtraFieldWinZipAes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        private int ProcessExtraFieldWinZipAes(byte[] buffer, int j, Int16 dataSize, long posn)
         {
             if (this._CompressionMethod == 0x0063)
             {
@@ -571,24 +575,21 @@ namespace Ionic.Zip
 
                 //this._aesCrypto = new WinZipAesCrypto(this);
                 // see spec at http://www.winzip.com/aes_info.htm
-                if (DataSize != 7)
-                    throw new BadReadException(String.Format("  Inconsistent WinZip AES datasize (0x{0:X4}) at position 0x{1:X16}", DataSize, posn));
+                if (dataSize != 7)
+                    throw new BadReadException(String.Format("  Inconsistent size (0x{0:X4}) in WinZip AES field at position 0x{1:X16}", dataSize, posn));
 
-                this._WinZipAesMethod = BitConverter.ToInt16(Buffer, j);
+                this._WinZipAesMethod = BitConverter.ToInt16(buffer, j);
                 j += 2;
                 if (this._WinZipAesMethod != 0x01 && this._WinZipAesMethod != 0x02)
                     throw new BadReadException(String.Format("  Unexpected vendor version number (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}",
                         this._WinZipAesMethod, posn));
 
-                Int16 vendorId = BitConverter.ToInt16(Buffer, j);
+                Int16 vendorId = BitConverter.ToInt16(buffer, j);
                 j += 2;
                 if (vendorId != 0x4541)
                     throw new BadReadException(String.Format("  Unexpected vendor ID (0x{0:X4}) for WinZip AES metadata at position 0x{1:X16}", vendorId, posn));
 
-                int keystrength= -1;
-                if (Buffer[j] == 1) keystrength = 128;
-                if (Buffer[j] == 3) keystrength = 256;
-
+                int keystrength = (buffer[j] == 1) ? 128 : (buffer[j] == 3) ? 256 : -1;
                 if (keystrength < 0)
                     throw new BadReadException(String.Format("Invalid key strength ({0})", keystrength));
 
@@ -599,8 +600,8 @@ namespace Ionic.Zip
                 j++;
 
                 // set the actual compression method
-                this._CompressionMethod_FromZipFile=
-                this._CompressionMethod = BitConverter.ToInt16(Buffer, j);
+                this._CompressionMethod_FromZipFile =
+                this._CompressionMethod = BitConverter.ToInt16(buffer, j);
                 j += 2; // for the next segment of the extra field
             }
             return j;
@@ -608,8 +609,9 @@ namespace Ionic.Zip
 
 #endif
 
+        private delegate T Func<T>();
 
-        private int ProcessExtraFieldZip64(byte[] Buffer, int j, Int16 DataSize, long posn)
+        private int ProcessExtraFieldZip64(byte[] buffer, int j, Int16 dataSize, long posn)
         {
             // The PKWare spec says that any of {UncompressedSize, CompressedSize,
             // RelativeOffset} exceeding 0xFFFFFFFF can lead to the ZIP64 header,
@@ -621,41 +623,28 @@ namespace Ionic.Zip
             this._InputUsesZip64 = true;
 
             // workitem 7941: check datasize before reading.
-            if (DataSize > 28)
-                throw new BadReadException(String.Format("  Inconsistent datasize (0x{0:X4}) for ZIP64 extra field at position 0x{1:X16}",
-                                                         DataSize, posn));
-            int remainingData = DataSize;
+            if (dataSize > 28)
+                throw new BadReadException(String.Format("  Inconsistent size (0x{0:X4}) for ZIP64 extra field at position 0x{1:X16}",
+                                                         dataSize, posn));
+            int remainingData = dataSize;
+
+            var slurp = new Func<Int64>( () => {
+                    if (remainingData < 8)
+                        throw new BadReadException(String.Format("  Missing data for ZIP64 extra field, position 0x{0:X16}", posn));
+                    var x = BitConverter.ToInt64(buffer, j);
+                    j+= 8;
+                    remainingData -= 8;
+                    return x;
+                });
 
             if (this._UncompressedSize == 0xFFFFFFFF)
-            {
-                if (remainingData < 8)
-                    throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Uncompressed Size) at position 0x{1:X16}",
-                                                             posn));
+                this._UncompressedSize = slurp();
 
-                this._UncompressedSize = BitConverter.ToInt64(Buffer, j);
-                j += 8;
-                remainingData -= 8;
-            }
             if (this._CompressedSize == 0xFFFFFFFF)
-            {
-                if (remainingData < 8)
-                    throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Compressed Size) at position 0x{1:X16}",
-                                                             posn));
+                this._CompressedSize = slurp();
 
-                this._CompressedSize = BitConverter.ToInt64(Buffer, j);
-                j += 8;
-                remainingData -= 8;
-            }
             if (this._RelativeOffsetOfLocalHeader == 0xFFFFFFFF)
-            {
-                if (remainingData < 8)
-                    throw new BadReadException(String.Format("  Missing data for ZIP64 extra field (Relative Offset) at position 0x{1:X16}",
-                                                             posn));
-
-                this._RelativeOffsetOfLocalHeader = BitConverter.ToInt64(Buffer, j);
-                j += 8;
-                remainingData -= 8;
-            }
+                this._RelativeOffsetOfLocalHeader = slurp();
 
             // Ignore anything else. Potentially there are 4 more bytes for the
             // disk start number.  DotNetZip currently doesn't handle multi-disk
@@ -664,16 +653,16 @@ namespace Ionic.Zip
         }
 
 
-        private int ProcessExtraFieldInfoZipTimes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        private int ProcessExtraFieldInfoZipTimes(byte[] buffer, int j, Int16 dataSize, long posn)
         {
-            if (DataSize != 12 && DataSize != 8)
-                throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for InfoZip v1 extra field at position 0x{1:X16}", DataSize, posn));
+            if (dataSize != 12 && dataSize != 8)
+                throw new BadReadException(String.Format("  Unexpected size (0x{0:X4}) for InfoZip v1 extra field at position 0x{1:X16}", dataSize, posn));
 
-            Int32 timet = BitConverter.ToInt32(Buffer, j);
+            Int32 timet = BitConverter.ToInt32(buffer, j);
             this._Mtime = _unixEpoch.AddSeconds(timet);
             j += 4;
 
-            timet = BitConverter.ToInt32(Buffer, j);
+            timet = BitConverter.ToInt32(buffer, j);
             this._Atime = _unixEpoch.AddSeconds(timet);
             j += 4;
 
@@ -685,60 +674,51 @@ namespace Ionic.Zip
 
 
 
-        private int ProcessExtraFieldUnixTimes(byte[] Buffer, int j, Int16 DataSize, long posn)
+        private int ProcessExtraFieldUnixTimes(byte[] buffer, int j, Int16 dataSize, long posn)
         {
             // The Unix filetimes are 32-bit unsigned integers,
             // storing seconds since Unix epoch.
+
+            if (dataSize != 13 && dataSize != 9 && dataSize != 5)
+                throw new BadReadException(String.Format("  Unexpected size (0x{0:X4}) for Extended Timestamp extra field at position 0x{1:X16}", dataSize, posn));
+
+            int remainingData = dataSize;
+
+            var slurp = new Func<DateTime>( () => {
+                    Int32 timet = BitConverter.ToInt32(buffer, j);
+                    j += 4;
+                    remainingData -= 4;
+                    return _unixEpoch.AddSeconds(timet);
+                });
+
+            if (dataSize == 13 || _readExtraDepth > 0)
             {
-                if (DataSize != 13 && DataSize != 9 && DataSize != 5)
-                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for Extended Timestamp extra field at position 0x{1:X16}", DataSize, posn));
+                byte flag = buffer[j++];
+                remainingData--;
 
-                int remainingData = DataSize;
+                if ((flag & 0x0001) != 0 && remainingData >= 4)
+                    this._Mtime = slurp();
 
-                if (DataSize == 13 || _readExtraDepth > 0)
-                {
-                    byte flag = Buffer[j++];
-                    remainingData--;
-                    if ((flag & 0x0001) != 0 && remainingData >= 4)
-                    {
-                        Int32 timet = BitConverter.ToInt32(Buffer, j);
-                        this._Mtime = _unixEpoch.AddSeconds(timet);
-                        j += 4;
-                        remainingData -= 4;
-                    }
+                 this._Atime = ((flag & 0x0002) != 0 && remainingData >= 4)
+                     ? slurp()
+                     : DateTime.UtcNow;
 
-                    if ((flag & 0x0002) != 0 && remainingData >= 4)
-                    {
-                        Int32 timet = BitConverter.ToInt32(Buffer, j);
-                        this._Atime = _unixEpoch.AddSeconds(timet);
-                        j += 4;
-                        remainingData -= 4;
-                    }
-                    else
-                        this._Atime = DateTime.UtcNow;
+                 this._Ctime =  ((flag & 0x0004) != 0 && remainingData >= 4)
+                     ? slurp()
+                     :DateTime.UtcNow;
 
-                    if ((flag & 0x0004) != 0 && remainingData >= 4)
-                    {
-                        Int32 timet = BitConverter.ToInt32(Buffer, j);
-                        this._Ctime = _unixEpoch.AddSeconds(timet);
-                        j += 4;
-                        remainingData -= 4;
-                    }
-                    else
-                        this._Ctime = DateTime.UtcNow;
-
-                    _timestamp |= ZipEntryTimestamp.Unix;
-                    _ntfsTimesAreSet = true;
-                    _emitUnixTimes = true;
-                }
-                else
-                    ReadExtraField(); // will recurse
-
+                _timestamp |= ZipEntryTimestamp.Unix;
+                _ntfsTimesAreSet = true;
+                _emitUnixTimes = true;
             }
+            else
+                ReadExtraField(); // will recurse
+
             return j;
         }
 
-        private int ProcessExtraFieldWindowsTimes(byte[] Buffer, int j, Int16 DataSize, long posn)
+
+        private int ProcessExtraFieldWindowsTimes(byte[] buffer, int j, Int16 dataSize, long posn)
         {
             // The NTFS filetimes are 64-bit unsigned integers, stored in Intel
             // (least significant byte first) byte order. They are expressed as the
@@ -753,51 +733,46 @@ namespace Ionic.Zip
             // mtime      8 bytes    win32 ticks since win32epoch
             // atime      8 bytes    win32 ticks since win32epoch
             // ctime      8 bytes    win32 ticks since win32epoch
+
+            if (dataSize != 32)
+                throw new BadReadException(String.Format("  Unexpected size (0x{0:X4}) for NTFS times extra field at position 0x{1:X16}", dataSize, posn));
+
+            j += 4;  // reserved
+            Int16 timetag = (Int16)(buffer[j] + buffer[j + 1] * 256);
+            Int16 addlsize = (Int16)(buffer[j + 2] + buffer[j + 3] * 256);
+            j += 4;  // tag and size
+
+            if (timetag == 0x0001 && addlsize == 24)
             {
-                if (DataSize != 32)
-                    throw new BadReadException(String.Format("  Unexpected datasize (0x{0:X4}) for NTFS times extra field at position 0x{1:X16}", DataSize, posn));
+                Int64 z = BitConverter.ToInt64(buffer, j);
+                this._Mtime = DateTime.FromFileTimeUtc(z);
+                j += 8;
 
-                j += 4;  // reserved
-                Int16 timetag = (Int16)(Buffer[j] + Buffer[j + 1] * 256);
-                Int16 addlsize = (Int16)(Buffer[j + 2] + Buffer[j + 3] * 256);
-                j += 4;  // tag and size
+                // At this point the library *could* set the LastModified value
+                // to coincide with the Mtime value.  In theory, they refer to
+                // the same property of the file, and should be the same anyway,
+                // allowing for differences in precision.  But they are
+                // independent quantities in the zip archive, and this library
+                // will keep them separate in the object model. There is no ill
+                // effect from this, because as files are extracted, the
+                // higher-precision value (Mtime) is used if it is present.
+                // Apps may wish to compare the Mtime versus LastModified
+                // values, but any difference when both are present is not
+                // germaine to the correctness of the library. but note: when
+                // explicitly setting either value, both are set. See the setter
+                // for LastModified or the SetNtfsTimes() method.
 
-                if (timetag == 0x0001 && addlsize == 24)
-                {
-                    Int64 z = BitConverter.ToInt64(Buffer, j);
-                    this._Mtime = DateTime.FromFileTimeUtc(z);
-                    j += 8;
+                z = BitConverter.ToInt64(buffer, j);
+                this._Atime = DateTime.FromFileTimeUtc(z);
+                j += 8;
 
-                    // At this point the library *could* set the
-                    // LastModified value to coincide with the Mtime
-                    // value.  In theory, they refer to the same
-                    // property of the file, and should be the same
-                    // anyway, allowing for differences in precision.
-                    // But they are independent quantities in the zip
-                    // archive, and this library will keep them separate
-                    // in the object model. There is no ill effect from
-                    // this, because as files are extracted, the
-                    // higher-precision value (Mtime) is used if it is
-                    // present.  Apps may wish to compare the Mtime
-                    // versus LastModified values, but any difference
-                    // when both are present is not germaine to the
-                    // correctness of the library. but note: when
-                    // explicitly setting either value, both are
-                    // set. See the setter for LastModified or
-                    // the SetNtfsTimes() method.
+                z = BitConverter.ToInt64(buffer, j);
+                this._Ctime = DateTime.FromFileTimeUtc(z);
+                j += 8;
 
-                    z = BitConverter.ToInt64(Buffer, j);
-                    this._Atime = DateTime.FromFileTimeUtc(z);
-                    j += 8;
-
-                    z = BitConverter.ToInt64(Buffer, j);
-                    this._Ctime = DateTime.FromFileTimeUtc(z);
-                    j += 8;
-
-                    _ntfsTimesAreSet = true;
-                    _timestamp |= ZipEntryTimestamp.Windows;
-                    _emitNtfsTimes = true;
-                }
+                _ntfsTimesAreSet = true;
+                _timestamp |= ZipEntryTimestamp.Windows;
+                _emitNtfsTimes = true;
             }
             return j;
         }
