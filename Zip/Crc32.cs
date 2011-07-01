@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-16 13:16:27>
+// Time-stamp: <2011-June-13 17:24:52>
 //
 // ------------------------------------------------------------------
 //
@@ -487,11 +487,16 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Indicates whether the stream supports seeking.
+        ///   Indicates whether the stream supports seeking.
         /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     Always returns false.
+        ///   </para>
+        /// </remarks>
         public override bool CanSeek
         {
-            get { return _innerStream.CanSeek; }
+            get { return false; }
         }
 
         /// <summary>
@@ -524,32 +529,36 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Not implemented.
+        /// The getter for this property returns the total bytes read.
+        /// If you use the setter, it will throw
+        /// <see cref="NotSupportedException"/>
         /// </summary>
         public override long Position
         {
             get { return _Crc32.TotalBytesRead; }
-            set { throw new NotImplementedException(); }
+            set { throw new NotSupportedException(); }
         }
 
         /// <summary>
-        /// Not implemented.
+        /// Seeking is not supported on this stream. This method always throws
+        /// <see cref="NotSupportedException"/>
         /// </summary>
         /// <param name="offset">N/A</param>
         /// <param name="origin">N/A</param>
         /// <returns>N/A</returns>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
-        /// Not implemented.
+        /// This method always throws
+        /// <see cref="NotSupportedException"/>
         /// </summary>
         /// <param name="value">N/A</param>
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
 

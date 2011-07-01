@@ -1,21 +1,21 @@
 // ZipCrypto.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2008, 2009, 2011 Dino Chiesa
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-September-11 20:46:18>
+// last saved (in emacs):
+// Time-stamp: <2011-June-16 19:56:17>
 //
 // ------------------------------------------------------------------
 //
@@ -29,32 +29,37 @@ using System;
 
 namespace Ionic.Zip
 {
-    /// <summary> 
-    /// This class implements the "traditional" or "classic" PKZip encryption,
-    /// which today is considered to be weak. On the other hand it is
-    /// ubiquitous. This class is intended for use only by the DotNetZip library.
+    /// <summary>
+    ///   This class implements the "traditional" or "classic" PKZip encryption,
+    ///   which today is considered to be weak. On the other hand it is
+    ///   ubiquitous. This class is intended for use only by the DotNetZip
+    ///   library.
     /// </summary>
+    ///
     /// <remarks>
-    /// Most uses of the DotNetZip library will not involve direct calls into the
-    /// ZipCrypto class.  Instead, the ZipCrypto class is instantiated and used by
-    /// the ZipEntry() class when encryption or decryption on an entry is employed.
-    /// If for some reason you really wanted to use a weak encryption algorithm
-    /// in some other application, you might use this library.  But you would be much
-    /// better off using one of the built-in strong encryption libraries in the 
-    /// .NET Framework, like the AES algorithm or SHA. 
+    ///   Most uses of the DotNetZip library will not involve direct calls into
+    ///   the ZipCrypto class.  Instead, the ZipCrypto class is instantiated and
+    ///   used by the ZipEntry() class when encryption or decryption on an entry
+    ///   is employed.  If for some reason you really wanted to use a weak
+    ///   encryption algorithm in some other application, you might use this
+    ///   library.  But you would be much better off using one of the built-in
+    ///   strong encryption libraries in the .NET Framework, like the AES
+    ///   algorithm or SHA.
     /// </remarks>
     internal class ZipCrypto
     {
         /// <summary>
-        /// The default constructor for ZipCrypto.
+        ///   The default constructor for ZipCrypto.
         /// </summary>
         ///
         /// <remarks>
-        /// This class is intended for internal use by the library only. It's probably not useful to you. Seriously.
-        /// Stop reading this documentation.  It's a waste of your time.  Go do something else.
-        /// Check the football scores. Go get an ice cream with a friend.  Seriously.
+        ///   This class is intended for internal use by the library only. It's
+        ///   probably not useful to you. Seriously.  Stop reading this
+        ///   documentation.  It's a waste of your time.  Go do something else.
+        ///   Check the football scores. Go get an ice cream with a friend.
+        ///   Seriously.
         /// </remarks>
-        /// 
+        ///
         private ZipCrypto() { }
 
         public static ZipCrypto ForWrite(string password)
@@ -82,12 +87,12 @@ namespace Ionic.Zip
             ZipEntry.ReadWeakEncryptionHeader(s, eh);
 
             // Decrypt the header.  This has a side effect of "further initializing the
-            // encryption keys" in the traditional zip encryption. 
+            // encryption keys" in the traditional zip encryption.
             byte[] DecryptedHeader = z.DecryptMessage(eh, eh.Length);
 
             // CRC check
-            // According to the pkzip spec, the final byte in the decrypted header 
-            // is the highest-order byte in the CRC. We check it here. 
+            // According to the pkzip spec, the final byte in the decrypted header
+            // is the highest-order byte in the CRC. We check it here.
             if (DecryptedHeader[11] != (byte)((e._Crc32 >> 24) & 0xff))
             {
                 // In the case that bit 3 of the general purpose bit flag is set to
@@ -97,9 +102,24 @@ namespace Ionic.Zip
                 // lastmodified time, rather than the high-order byte of the CRC, to
                 // verify the password.
                 //
-                // This is not documented in the PKWare Appnote.txt.  
-                // This was discovered this by analysis of the Crypt.c source file in the InfoZip library
-                // http://www.info-zip.org/pub/infozip/
+                // This is not documented in the PKWare Appnote.txt.  It was
+                // discovered this by analysis of the Crypt.c source file in the
+                // InfoZip library http://www.info-zip.org/pub/infozip/
+                //
+                // The reason for this is that the CRC for a file cannot be known
+                // until the entire contents of the file have been streamed. This
+                // means a tool would have to read the file content TWICE in its
+                // entirety in order to perform PKZIP encryption - once to compute
+                // the CRC, and again to actually encrypt.
+                //
+                // This is so important for performance that using the timeblob as
+                // the verification should be the standard practice for DotNetZip
+                // when using PKZIP encryption. This implies that bit 3 must be
+                // set. The downside is that some tools still cannot cope with ZIP
+                // files that use bit 3.  Therefore, DotNetZip DOES NOT force bit 3
+                // when PKZIP encryption is in use, and instead, reads the stream
+                // twice.
+                //
 
                 if ((e._BitField & 0x0008) != 0x0008)
                 {
@@ -110,7 +130,7 @@ namespace Ionic.Zip
                     throw new BadPasswordException("The password did not match.");
                 }
 
-                // We have a good password. 
+                // We have a good password.
             }
             else
             {
@@ -122,14 +142,14 @@ namespace Ionic.Zip
 
 
 
-        /// <summary> 
+        /// <summary>
         /// From AppNote.txt:
         /// unsigned char decrypt_byte()
         ///     local unsigned short temp
         ///     temp :=- Key(2) | 2
         ///     decrypt_byte := (temp * (temp ^ 1)) bitshift-right 8
         /// end decrypt_byte
-        /// </summary>          
+        /// </summary>
         private byte MagicByte
         {
             get
@@ -139,7 +159,7 @@ namespace Ionic.Zip
             }
         }
 
-        // Decrypting: 
+        // Decrypting:
         // From AppNote.txt:
         // loop for i from 0 to 11
         //     C := buffer(i) ^ decrypt_byte()
@@ -148,115 +168,129 @@ namespace Ionic.Zip
         // end loop
 
 
-        /// <summary> 
-        /// Call this method on a cipher text to render the plaintext. You must
-        /// first initialize the cipher with a call to InitCipher.
-        /// </summary>          
+        /// <summary>
+        ///   Call this method on a cipher text to render the plaintext. You must
+        ///   first initialize the cipher with a call to InitCipher.
+        /// </summary>
+        ///
         /// <example>
-        /// <code>
-        /// var cipher = new ZipCrypto();
-        /// cipher.InitCipher(Password);
-        /// // Decrypt the header.  This has a side effect of "further initializing the
-        /// // encryption keys" in the traditional zip encryption. 
-        /// byte[] DecryptedMessage = cipher.DecryptMessage(EncryptedMessage);
-        /// </code>
+        ///   <code>
+        ///     var cipher = new ZipCrypto();
+        ///     cipher.InitCipher(Password);
+        ///     // Decrypt the header.  This has a side effect of "further initializing the
+        ///     // encryption keys" in the traditional zip encryption.
+        ///     byte[] DecryptedMessage = cipher.DecryptMessage(EncryptedMessage);
+        ///   </code>
         /// </example>
+        ///
         /// <param name="cipherText">The encrypted buffer.</param>
         /// <param name="length">
-        /// The number of bytes to encrypt.  
-        /// Should be less than or equal to CipherText.Length.
+        ///   The number of bytes to encrypt.
+        ///   Should be less than or equal to CipherText.Length.
         /// </param>
+        ///
         /// <returns>The plaintext.</returns>
         public byte[] DecryptMessage(byte[] cipherText, int length)
         {
-
             if (cipherText == null)
-                throw new System.ArgumentException("Bad length during Decryption: cipherText must be non-null.", "cipherText");
-            if (length > cipherText.Length)
-                throw new System.ArgumentException("Bad length during Decryption: the length parameter must be smaller than or equal to the size of the destination array.", "length");
+                throw new ArgumentNullException("cipherText");
 
-            byte[] PlainText = new byte[length];
+            if (length > cipherText.Length)
+                throw new ArgumentOutOfRangeException("length",
+                                                      "Bad length during Decryption: the length parameter must be smaller than or equal to the size of the destination array.");
+
+            byte[] plainText = new byte[length];
             for (int i = 0; i < length; i++)
             {
                 byte C = (byte)(cipherText[i] ^ MagicByte);
                 UpdateKeys(C);
-                PlainText[i] = C;
+                plainText[i] = C;
             }
-            return PlainText;
+            return plainText;
         }
 
         /// <summary>
-        /// This is the converse of DecryptMessage.  It encrypts the plaintext
-        /// and produces a ciphertext. 
+        ///   This is the converse of DecryptMessage.  It encrypts the plaintext
+        ///   and produces a ciphertext.
         /// </summary>
-        /// <param name="plaintext">The plain text buffer.</param>
+        ///
+        /// <param name="plainText">The plain text buffer.</param>
+        ///
         /// <param name="length">
-        /// The number of bytes to encrypt.  
-        /// Should be less than or equal to PlainText.Length.
+        ///   The number of bytes to encrypt.
+        ///   Should be less than or equal to plainText.Length.
         /// </param>
+        ///
         /// <returns>The ciphertext.</returns>
-        public byte[] EncryptMessage(byte[] plaintext, int length)
+        public byte[] EncryptMessage(byte[] plainText, int length)
         {
-            if (plaintext == null)
-                throw new System.ArgumentException("Bad length during Encryption: the plainText must be non-null.", "plaintext");
+            if (plainText == null)
+                throw new ArgumentNullException("plaintext");
 
-            if (length > plaintext.Length)
-                throw new System.ArgumentException("Bad length during Encryption: The length parameter must be smaller than or equal to the size of the destination array.", "length");
+            if (length > plainText.Length)
+                throw new ArgumentOutOfRangeException("length",
+                                                      "Bad length during Encryption: The length parameter must be smaller than or equal to the size of the destination array.");
 
-            byte[] CipherText = new byte[length];
+            byte[] cipherText = new byte[length];
             for (int i = 0; i < length; i++)
             {
-                byte C = plaintext[i];
-                CipherText[i] = (byte)(plaintext[i] ^ MagicByte);
+                byte C = plainText[i];
+                cipherText[i] = (byte)(plainText[i] ^ MagicByte);
                 UpdateKeys(C);
             }
-            return CipherText;
+            return cipherText;
         }
 
 
         /// <summary>
-        /// This initializes the cipher with the given password. 
-        /// See AppNote.txt for details. 
+        ///   This initializes the cipher with the given password.
+        ///   See AppNote.txt for details.
         /// </summary>
-        /// <param name="passphrase">The passphrase for encrypting or decrypting with this cipher.
+        ///
+        /// <param name="passphrase">
+        ///   The passphrase for encrypting or decrypting with this cipher.
         /// </param>
+        ///
         /// <remarks>
         /// <code>
         /// Step 1 - Initializing the encryption keys
         /// -----------------------------------------
-        /// Start with these keys:        
+        /// Start with these keys:
         /// Key(0) := 305419896 (0x12345678)
         /// Key(1) := 591751049 (0x23456789)
         /// Key(2) := 878082192 (0x34567890)
-        /// 
+        ///
         /// Then, initialize the keys with a password:
-        /// 
+        ///
         /// loop for i from 0 to length(password)-1
         ///     update_keys(password(i))
         /// end loop
-        /// 
+        ///
         /// Where update_keys() is defined as:
-        /// 
+        ///
         /// update_keys(char):
         ///   Key(0) := crc32(key(0),char)
         ///   Key(1) := Key(1) + (Key(0) bitwiseAND 000000ffH)
         ///   Key(1) := Key(1) * 134775813 + 1
         ///   Key(2) := crc32(key(2),key(1) rightshift 24)
         /// end update_keys
-        /// 
+        ///
         /// Where crc32(old_crc,char) is a routine that given a CRC value and a
         /// character, returns an updated CRC value after applying the CRC-32
         /// algorithm described elsewhere in this document.
         ///
         /// </code>
+        ///
         /// <para>
-        /// After the keys are initialized, then you can use the cipher to encrypt
-        /// the plaintext. 
+        ///   After the keys are initialized, then you can use the cipher to
+        ///   encrypt the plaintext.
         /// </para>
+        ///
         /// <para>
-        /// Essentially we encrypt the password with the keys, then discard the 
-        /// ciphertext for the password. This initializes the keys for later use.
+        ///   Essentially we encrypt the password with the keys, then discard the
+        ///   ciphertext for the password. This initializes the keys for later use.
         /// </para>
+        ///
         /// </remarks>
         public void InitCipher(string passphrase)
         {
@@ -273,18 +307,6 @@ namespace Ionic.Zip
             _Keys[1] = _Keys[1] * 0x08088405 + 1;
             _Keys[2] = (UInt32)crc32.ComputeCrc32((int)_Keys[2], (byte)(_Keys[1] >> 24));
         }
-
-        ///// <summary>
-        ///// Generate random keys for this crypto effort. This is what you want 
-        ///// to do when you encrypt. 
-        ///// </summary>
-        //public void GenerateRandomKeys()
-        //{
-        //    var rnd = new System.Random();
-        //    _Keys[0] = (uint)rnd.Next();
-        //    _Keys[1] = (uint)rnd.Next();
-        //    _Keys[2] = (uint)rnd.Next();
-        //}
 
         ///// <summary>
         ///// The byte array representing the seed keys used.
@@ -326,8 +348,8 @@ namespace Ionic.Zip
     }
 
     /// <summary>
-    /// A Stream for reading and concurrently decrypting data from a zip file, 
-    /// or for writing and concurrently encrypting data to a zip file.
+    ///   A Stream for reading and concurrently decrypting data from a zip file,
+    ///   or for writing and concurrently encrypting data to a zip file.
     /// </summary>
     internal class ZipCipherStream : System.IO.Stream
     {
@@ -335,9 +357,7 @@ namespace Ionic.Zip
         private System.IO.Stream _s;
         private CryptoMode _mode;
 
-        /// <summary>
-        /// The  constructor.
-        /// </summary>
+        /// <summary>  The constructor. </summary>
         /// <param name="s">The underlying stream</param>
         /// <param name="mode">To either encrypt or decrypt.</param>
         /// <param name="cipher">The pre-initialized ZipCrypto object.</param>
@@ -352,7 +372,10 @@ namespace Ionic.Zip
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (_mode == CryptoMode.Encrypt)
-                throw new NotImplementedException();
+                throw new NotSupportedException("This stream does not encrypt via Read()");
+
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
 
             byte[] db = new byte[count];
             int n = _s.Read(db, 0, count);
@@ -367,10 +390,13 @@ namespace Ionic.Zip
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (_mode == CryptoMode.Decrypt)
-                throw new NotImplementedException();
+                throw new NotSupportedException("This stream does not Decrypt via Write()");
+
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
 
             // workitem 7696
-            if (count == 0) return; 
+            if (count == 0) return;
 
             byte[] plaintext = null;
             if (offset != 0)
@@ -404,27 +430,27 @@ namespace Ionic.Zip
 
         public override void Flush()
         {
-            //throw new NotImplementedException();
+            //throw new NotSupportedException();
         }
 
         public override long Length
         {
-            get { throw new NotImplementedException(); }
+            get { throw new NotSupportedException(); }
         }
 
         public override long Position
         {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
+            get { throw new NotSupportedException(); }
+            set { throw new NotSupportedException(); }
         }
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

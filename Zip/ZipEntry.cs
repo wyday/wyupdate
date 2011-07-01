@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-February-26 14:45:25>
+// Time-stamp: <2011-June-14 10:59:54>
 //
 // ------------------------------------------------------------------
 //
@@ -853,7 +853,7 @@ namespace Ionic.Zip
             set
             {
                 if (_container.ZipFile == null)
-                    throw new ZipException("Cannot rename ZipEntry; not supported in ZipOutputStream/ZipInputStream.");
+                    throw new ZipException("Cannot rename; this is not supported in ZipOutputStream/ZipInputStream.");
 
                 // rename the entry!
                 if (String.IsNullOrEmpty(value)) throw new ZipException("The FileName must be non empty and non-null.");
@@ -922,7 +922,7 @@ namespace Ionic.Zip
             set
             {
                 if (this._Source != ZipEntrySource.Stream)
-                    throw new ZipException("You must not set the input stream for this ZipEntry.");
+                    throw new ZipException("You must not set the input stream for this entry.");
 
                 _sourceWasJitProvided = true;
                 _sourceStream = value;
@@ -1356,7 +1356,7 @@ namespace Ionic.Zip
                 if (value == (CompressionMethod)_CompressionMethod) return; // nothing to do.
 
                 if (value != CompressionMethod.None && value != CompressionMethod.Deflate)
-                    throw new InvalidOperationException("Unsupported compression method. Specify CompressionMethod.Deflate or CompressionMethod.None.");
+                    throw new InvalidOperationException("Unsupported compression method. Specify Deflate or None.");
 
                 // If the source is a zip archive and there was encryption on the
                 // entry, changing the compression method is not supported.
@@ -1904,8 +1904,8 @@ namespace Ionic.Zip
                         _Encryption = EncryptionAlgorithm.PkzipWeak;
                     }
                 }
-
             }
+            private get { return _Password; }
         }
 
 

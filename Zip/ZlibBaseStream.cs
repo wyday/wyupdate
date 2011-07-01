@@ -1,21 +1,21 @@
 // ZlibBaseStream.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-October-28 15:45:15>
+// last saved (in emacs):
+// Time-stamp: <2011-June-21 21:01:32>
 //
 // ------------------------------------------------------------------
 //
@@ -238,11 +238,12 @@ namespace Ionic.Zlib
                         if (_z.TotalBytesOut == 0L)
                             return;
 
-                        // Read and potentially verify the GZIP trailer: CRC32 and  size mod 2^32
+                        // Read and potentially verify the GZIP trailer:
+                        // CRC32 and  size mod 2^32
                         byte[] trailer = new byte[8];
 
-                        // workitem 8679
-                        if (_z.AvailableBytesIn != 8)
+                        // workitems 8679 & 12544
+                        if (_z.AvailableBytesIn < 8)
                         {
                             // Make sure we have read to the end of the stream
                             Array.Copy(_z.InputBuffer, _z.NextIn, trailer, 0, _z.AvailableBytesIn);
@@ -492,7 +493,7 @@ namespace Ionic.Zlib
 
 
             // workitem 8557
-            // is there more room in output? 
+            // is there more room in output?
             if (_z.AvailableBytesOut > 0)
             {
                 if (rc == ZlibConstants.Z_OK && _z.AvailableBytesIn == 0)
@@ -569,7 +570,7 @@ namespace Ionic.Zlib
             {
                 compressor.Write(uncompressed, 0, uncompressed.Length);
             }
-        }        
+        }
 
         public static void CompressBuffer(byte[] b, Stream compressor)
         {
@@ -619,7 +620,7 @@ namespace Ionic.Zlib
                 }
                 return output.ToArray();
             }
-        }        
+        }
 
     }
 
