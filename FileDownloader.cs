@@ -182,6 +182,8 @@ namespace wyUpdate.Downloader
 
         public static void EnableLazySSL()
         {
+            ServicePointManager.Expect100Continue = false;
+
             //Add a delegate that accepts all SSL's. Corrupt or not.
             ServicePointManager.ServerCertificateValidationCallback += OnCheckSSLCert;
         }
@@ -703,8 +705,11 @@ namespace wyUpdate.Downloader
             {
                 request.Credentials = CredentialCache.DefaultCredentials;
 
-                // use a proper user agent
-                ((HttpWebRequest)request).UserAgent = "wyUpdate / " + VersionTools.FromExecutingAssembly();
+                // Some servers explode if the user agent is missing.
+                // Some servers explode if the user agent is "non-standard" (e.g. "wyUpdate / " + VersionTools.FromExecutingAssembly())
+
+                // Thus we're forced to mimic IE 9 User agent
+                ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 6.1; en-US; wyUpdate)";
             }
 
             return request;
