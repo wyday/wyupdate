@@ -8,7 +8,7 @@
 // CPUs for the DEFLATE computation.
 //
 // last saved:
-// Time-stamp: <2011-June-15 14:56:17>
+// Time-stamp: <2011-July-11 21:51:32>
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 by Dino Chiesa
@@ -782,12 +782,12 @@ namespace Ionic.Zlib
 
 
         /// <summary>The Dispose method</summary>
-        protected override void Dispose(bool disposeManagedResources)
+        /// <param name="disposing">
+        ///   indicates whether the Dispose method was invoked by user code.
+        /// </param>
+        protected override void Dispose(bool disposing)
         {
-            if (disposeManagedResources)
-            {
-                // dispose managed resources
-            }
+            base.Dispose(disposing);
         }
 
 
@@ -800,6 +800,10 @@ namespace Ionic.Zlib
         ///   to call Close() on the stream first, then you can call Reset() on
         ///   it, to use it again on another stream.
         /// </remarks>
+        ///
+        /// <param name="stream">
+        ///   The new output stream for this era.
+        /// </param>
         ///
         /// <example>
         /// <code>
@@ -1320,6 +1324,20 @@ namespace Ionic.Zlib
         /// <summary>
         /// This method always throws a NotSupportedException.
         /// </summary>
+        /// <param name="buffer">
+        ///   The buffer into which data would be read, IF THIS METHOD
+        ///   ACTUALLY DID ANYTHING.
+        /// </param>
+        /// <param name="offset">
+        ///   The offset within that data array at which to insert the
+        ///   data that is read, IF THIS METHOD ACTUALLY DID
+        ///   ANYTHING.
+        /// </param>
+        /// <param name="count">
+        ///   The number of bytes to write, IF THIS METHOD ACTUALLY DID
+        ///   ANYTHING.
+        /// </param>
+        /// <returns>nothing.</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
             throw new NotSupportedException();
@@ -1328,6 +1346,14 @@ namespace Ionic.Zlib
         /// <summary>
         /// This method always throws a NotSupportedException.
         /// </summary>
+        /// <param name="offset">
+        ///   The offset to seek to....
+        ///   IF THIS METHOD ACTUALLY DID ANYTHING.
+        /// </param>
+        /// <param name="origin">
+        ///   The reference specifying how to apply the offset....  IF
+        ///   THIS METHOD ACTUALLY DID ANYTHING.
+        /// </param>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
             throw new NotSupportedException();
@@ -1336,6 +1362,10 @@ namespace Ionic.Zlib
         /// <summary>
         /// This method always throws a NotSupportedException.
         /// </summary>
+        /// <param name="value">
+        ///   The new value for the stream length....  IF
+        ///   THIS METHOD ACTUALLY DID ANYTHING.
+        /// </param>
         public override void SetLength(long value)
         {
             throw new NotSupportedException();

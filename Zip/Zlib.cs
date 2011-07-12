@@ -14,7 +14,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Last Saved: <2011-June-20 14:17:29>
+// Last Saved: <2011-July-06 11:02:11>
 //
 // ------------------------------------------------------------------
 //
@@ -429,6 +429,10 @@ namespace Ionic.Zlib
         // NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
         private static readonly int NMAX = 5552;
 
+
+#pragma warning disable 3001
+#pragma warning disable 3002
+
         /// <summary>
         ///   Calculates the Adler32 checksum.
         /// </summary>
@@ -491,6 +495,8 @@ namespace Ionic.Zlib
             }
             return (uint)((s2 << 16) | s1);
         }
+#pragma warning restore 3001
+#pragma warning restore 3002
 
     }
 

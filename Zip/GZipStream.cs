@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2010-January-09 12:04:28>
+// Time-stamp: <2011-July-11 21:42:34>
 //
 // ------------------------------------------------------------------
 //
@@ -611,12 +611,28 @@ namespace Ionic.Zlib
         #region Stream methods
 
         /// <summary>
-        /// Dispose the stream.
+        ///   Dispose the stream.
         /// </summary>
         /// <remarks>
-        /// This may or may not result in a <c>Close()</c> call on the captive stream.
-        /// See the doc on constructors that take a <c>leaveOpen</c> parameter for more information.
+        ///   <para>
+        ///     This may or may not result in a <c>Close()</c> call on the captive
+        ///     stream.  See the constructors that have a <c>leaveOpen</c> parameter
+        ///     for more information.
+        ///   </para>
+        ///   <para>
+        ///     This method may be invoked in two distinct scenarios.  If disposing
+        ///     == true, the method has been called directly or indirectly by a
+        ///     user's code, for example via the public Dispose() method. In this
+        ///     case, both managed and unmanaged resources can be referenced and
+        ///     disposed.  If disposing == false, the method has been called by the
+        ///     runtime from inside the object finalizer and this method should not
+        ///     reference other objects; in that case only unmanaged resources must
+        ///     be referenced or disposed.
+        ///   </para>
         /// </remarks>
+        /// <param name="disposing">
+        ///   indicates whether the Dispose method was invoked by user code.
+        /// </param>
         protected override void Dispose(bool disposing)
         {
             try

@@ -14,7 +14,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Last Saved: <2011-June-16 22:22:42>
+// Last Saved: <2011-July-11 20:34:54>
 //
 // ------------------------------------------------------------------
 //
@@ -673,11 +673,12 @@ namespace Ionic.Zip
     /// </summary>
     /// <remarks>
     ///   <para>
-    ///     In some cases, it is not possible to get the Position of a stream,
-    ///     let's say, on a write-only output stream like ASP.NET's
-    ///     Response.Output, or on a different write-only stream provided as the
-    ///     destination for the zip by the application.  In this case, we can
-    ///     use this counting stream to count the bytes read or written.
+    ///     In some cases, it is not possible to get the Position of a stream, let's
+    ///     say, on a write-only output stream like ASP.NET's
+    ///     <c>Response.OutputStream</c>, or on a different write-only stream
+    ///     provided as the destination for the zip by the application.  In this
+    ///     case, programmers can use this counting stream to count the bytes read
+    ///     or written.
     ///   </para>
     ///   <para>
     ///     Consider the scenario of an application that saves a self-extracting
@@ -685,23 +686,23 @@ namespace Ionic.Zip
     ///   </para>
     ///   <para>
     ///     Saving to a filesystem file, the application would open the
-    ///     filesystem file (getting a FileStream), save the custom sfx stub
-    ///     into it, and then call ZipFile.Save(), specifying the same
-    ///     FileStream. ZipFile.Save() does the right thing for the zipentry
-    ///     offsets, by inquiring the Position of the FileStream before writing
+    ///     filesystem file (getting a <c>FileStream</c>), save the custom sfx stub
+    ///     into it, and then call <c>ZipFile.Save()</c>, specifying the same
+    ///     FileStream. <c>ZipFile.Save()</c> does the right thing for the zipentry
+    ///     offsets, by inquiring the Position of the <c>FileStream</c> before writing
     ///     any data, and then adding that initial offset into any ZipEntry
     ///     offsets in the zip directory. Everything works fine.
     ///   </para>
     ///   <para>
     ///     Now suppose the application is an ASPNET application and it saves
-    ///     directly to Response.OutputStream. It's not possible for DotNetZip to
-    ///     inquire the Position, so the offsets for the SFX will be wrong.
+    ///     directly to <c>Response.OutputStream</c>. It's not possible for DotNetZip to
+    ///     inquire the <c>Position</c>, so the offsets for the SFX will be wrong.
     ///   </para>
     ///   <para>
     ///     The workaround is for the application to use this class to wrap
-    ///     HttpResponse.OutputStream, then write the SFX stub and the ZipFile
-    ///     into that wrapper stream. Because ZipFile.Save() can inquire the
-    ///     Position, it will then do the right thing with the offsets.
+    ///     <c>HttpResponse.OutputStream</c>, then write the SFX stub and the ZipFile
+    ///     into that wrapper stream. Because <c>ZipFile.Save()</c> can inquire the
+    ///     <c>Position</c>, it will then do the right thing with the offsets.
     ///   </para>
     /// </remarks>
     public class CountingStream : System.IO.Stream

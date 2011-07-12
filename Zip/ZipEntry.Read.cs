@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-18 16:10:15>
+// Time-stamp: <2011-July-09 21:31:28>
 //
 // ------------------------------------------------------------------
 //
@@ -141,22 +141,13 @@ namespace Ionic.Zip
 
             if ((ze._BitField & 0x0800) == 0x0800)
             {
-                ze._actualEncoding = System.Text.Encoding.UTF8;
                 // workitem 12744
+                ze.AlternateEncoding = System.Text.Encoding.UTF8;
+                ze.AlternateEncodingUsage = ZipOption.Always;
             }
-            else
-            {
-                ze._actualEncoding = defaultEncoding;
-            }
-
-
 
             // need to use this form of GetString() for .NET CF
-            ze._FileNameInArchive = ze._actualEncoding.GetString(block, 0, block.Length);
-
-            // when creating an entry by reading, the LocalFileName is the same as the FileNameInArchive
-            // No, on second thought, I think it should be empty (null).
-            //ze._LocalFileName = ze._FileNameInArchive;
+            ze._FileNameInArchive = ze.AlternateEncoding.GetString(block, 0, block.Length);
 
             // workitem 6898
             if (ze._FileNameInArchive.EndsWith("/")) ze.MarkAsDirectory();
@@ -363,7 +354,7 @@ namespace Ionic.Zip
         {
             ZipFile zf = zc.ZipFile;
             Stream s = zc.ReadStream;
-            System.Text.Encoding defaultEncoding = zc.ProvisionalAlternateEncoding;
+            System.Text.Encoding defaultEncoding = zc.AlternateEncoding;
             ZipEntry entry = new ZipEntry();
             entry._Source = ZipEntrySource.ZipFile;
             entry._container = zc;
@@ -468,11 +459,36 @@ namespace Ionic.Zip
         }
 
 
+        /// <summary>
+        ///   Finds a particular segment in the given extra field.
+        ///   This is used when modifying a previously-generated
+        ///   extra field, in particular when removing the AES crypto
+        ///   segment in the extra field.
+        /// </summary>
+        static internal int FindExtraFieldSegment(byte[] extra, int offx, UInt16 targetHeaderId)
+        {
+            int j = offx;
+            while (j + 3 < extra.Length)
+            {
+                UInt16 headerId = (UInt16)(extra[j++] + extra[j++] * 256);
+                if (headerId == targetHeaderId) return j-2;
 
-        // At current cursor position in the stream, read the extra field,
-        // and set the properties on the ZipEntry instance appropriately.
-        // This can be called when processing the Extra field in the Central Directory,
-        // or in the local header.
+                // else advance to next segment
+                Int16 dataSize = (short)(extra[j++] + extra[j++] * 256);
+                j+= dataSize;
+            }
+
+            return -1;
+        }
+
+
+        /// <summary>
+        ///   At current cursor position in the stream, read the extra
+        ///   field, and set the properties on the ZipEntry instance
+        ///   appropriately.  This can be called when processing the
+        ///   Extra field in the Central Directory, or in the local
+        ///   header.
+        /// </summary>
         internal int ProcessExtraField(Stream s, Int16 extraFieldLength)
         {
             int additionalBytesRead = 0;

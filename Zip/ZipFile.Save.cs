@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-22 00:25:59>
+// Time-stamp: <2011-July-06 17:56:05>
 //
 // ------------------------------------------------------------------
 //
@@ -156,12 +156,14 @@ namespace Ionic.Zip
                     ? zss.CurrentSegment
                     : 1;
 
-                bool directoryNeededZip64 = ZipOutput.WriteCentralDirectoryStructure(WriteStream,
-                                                         c,
-                                                         _numberOfSegmentsForMostRecentSave,
-                                                         _zip64,
-                                                         Comment,
-                                                         ProvisionalAlternateEncoding);
+                bool directoryNeededZip64 =
+                    ZipOutput.WriteCentralDirectoryStructure
+                    (WriteStream,
+                     c,
+                     _numberOfSegmentsForMostRecentSave,
+                     _zip64,
+                     Comment,
+                     new ZipContainer(this));
 
                 OnSaveEvent(ZipProgressEventType.Saving_AfterSaveTempArchive);
 
@@ -504,7 +506,7 @@ namespace Ionic.Zip
                                                           uint numSegments,
                                                           Zip64Option zip64,
                                                           String comment,
-                                                          System.Text.Encoding encoding)
+                                                          ZipContainer container)
         {
             var zss = s as ZipSegmentedStream;
             if (zss != null)
@@ -584,7 +586,7 @@ namespace Ionic.Zip
                 }
 
                 var a = GenZip64EndOfCentralDirectory(Start, Finish, countOfEntries, numSegments);
-                a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, encoding);
+                a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, container);
                 if (startSegment != 0)
                 {
                     UInt32 thisSegment = zss.ComputeSegment(a.Length + a2.Length);
@@ -610,7 +612,7 @@ namespace Ionic.Zip
                 s.Write(a, 0, a.Length);
             }
             else
-                a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, encoding);
+                a2 = GenCentralDirectoryFooter(Start, Finish, zip64, countOfEntries, comment, container);
 
 
             // now, the regular footer
@@ -640,14 +642,36 @@ namespace Ionic.Zip
         }
 
 
+        private static System.Text.Encoding GetEncoding(ZipContainer container, string t)
+        {
+            switch (container.AlternateEncodingUsage)
+            {
+                case ZipOption.Always:
+                    return container.AlternateEncoding;
+                case ZipOption.Never:
+                    return container.DefaultEncoding;
+            }
+
+            // AsNecessary is in force
+            var e = container.DefaultEncoding;
+            if (t == null) return e;
+
+            var bytes = e.GetBytes(t);
+            var t2 = e.GetString(bytes,0,bytes.Length);
+            if (t2.Equals(t)) return e;
+            return container.AlternateEncoding;
+        }
+
+
 
         private static byte[] GenCentralDirectoryFooter(long StartOfCentralDirectory,
                                                         long EndOfCentralDirectory,
                                                         Zip64Option zip64,
                                                         int entryCount,
                                                         string comment,
-                                                        System.Text.Encoding encoding)
+                                                        ZipContainer container)
         {
+            System.Text.Encoding encoding = GetEncoding(container, comment);
             int j = 0;
             int bufferLength = 22;
             byte[] block = null;

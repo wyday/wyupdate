@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-22 19:06:34>
+// Time-stamp: <2011-July-11 12:04:09>
 //
 // ------------------------------------------------------------------
 //
@@ -323,7 +323,8 @@ namespace Ionic.Zip
                                    EventHandler<ReadProgressEventArgs> readProgress)
         {
             ZipFile zf = new ZipFile();
-            zf.ProvisionalAlternateEncoding = encoding ?? DefaultEncoding;
+            zf.AlternateEncoding = encoding ?? DefaultEncoding;
+            zf.AlternateEncodingUsage = ZipOption.Always;
             zf._StatusMessageTextWriter = statusMessageWriter;
             zf._name = fileName;
             if (readProgress != null)
@@ -529,7 +530,8 @@ namespace Ionic.Zip
 
             ZipFile zf = new ZipFile();
             zf._StatusMessageTextWriter = statusMessageWriter;
-            zf._provisionalAlternateEncoding = encoding ?? DefaultEncoding;
+            zf._alternateEncoding = encoding ?? ZipFile.DefaultEncoding;
+            zf._alternateEncodingUsage = ZipOption.Always;
             if (readProgress != null)
                 zf.ReadProgress += readProgress;
             zf._readstream = (zipStream.Position == 0L)
@@ -622,6 +624,7 @@ namespace Ionic.Zip
                     }
                     else
                     {
+                        zf._OffsetOfCentralDirectory = offset32;
                         // change for workitem 8098
                         s.Seek(offset32, SeekOrigin.Begin);
                     }
@@ -666,17 +669,18 @@ namespace Ionic.Zip
         private static void Zip64SeekToCentralDirectory(ZipFile zf)
         {
             Stream s = zf.ReadStream;
-
             byte[] block = new byte[16];
 
-            // seek back to find the ZIP64 EoCD
+            // seek back to find the ZIP64 EoCD.
             // I think this might not work for .NET CF ?
             s.Seek(-40, SeekOrigin.Current);
             s.Read(block, 0, 16);
 
-            Int64 Offset64 = BitConverter.ToInt64(block, 8);
+            Int64 offset64 = BitConverter.ToInt64(block, 8);
+            zf._OffsetOfCentralDirectory = 0xFFFFFFFF;
+            zf._OffsetOfCentralDirectory64 = offset64;
             // change for workitem 8098
-            s.Seek(Offset64, SeekOrigin.Begin);
+            s.Seek(offset64, SeekOrigin.Begin);
             //zf.SeekFromOrigin(Offset64);
 
             uint datum = (uint)Ionic.Zip.SharedUtilities.ReadInt(s);
@@ -689,9 +693,9 @@ namespace Ionic.Zip
             block = new byte[Size];
             s.Read(block, 0, block.Length);
 
-            Offset64 = BitConverter.ToInt64(block, 36);
+            offset64 = BitConverter.ToInt64(block, 36);
             // change for workitem 8098
-            s.Seek(Offset64, SeekOrigin.Begin);
+            s.Seek(offset64, SeekOrigin.Begin);
             //zf.SeekFromOrigin(Offset64);
         }
 
@@ -716,7 +720,8 @@ namespace Ionic.Zip
             // workitem 9214
             bool inputUsesZip64 = false;
             ZipEntry de;
-            var previouslySeen = new List<String>();
+            // in lieu of hashset, use a dictionary
+            var previouslySeen = new Dictionary<String,object>();
             while ((de = ZipEntry.ReadDirEntry(zf, previouslySeen)) != null)
             {
                 de.ResetDirEntry();
@@ -729,7 +734,7 @@ namespace Ionic.Zip
 
                 // workitem 9214
                 if (de._InputUsesZip64) inputUsesZip64 = true;
-                previouslySeen.Add(de.FileName); // to prevent dupes
+                previouslySeen.Add(de.FileName, null); // to prevent dupes
             }
 
             // workitem 9214; auto-set the zip64 flag
@@ -787,7 +792,8 @@ namespace Ionic.Zip
             try
             {
                 ZipEntry de;
-                var previouslySeen = new List<String>();
+                // in lieu of hashset, use a dictionary
+                var previouslySeen = new Dictionary<String,Object>();
                 while ((de = ZipEntry.ReadDirEntry(zf, previouslySeen)) != null)
                 {
                     // Housekeeping: Since ZipFile exposes ZipEntry elements in the enumerator,
@@ -801,7 +807,7 @@ namespace Ionic.Zip
                         e1._Comment = de.Comment;
                         if (de.IsDirectory) e1.MarkAsDirectory();
                     }
-                    previouslySeen.Add(de.FileName); // to prevent dupes
+                    previouslySeen.Add(de.FileName,null); // to prevent dupes
                 }
 
                 // workitem 8299
@@ -935,27 +941,8 @@ namespace Ionic.Zip
                 // characters the already-encoded bytes refer
                 // to. Therefore, must do what the user tells us.
 
-                string s1 = zf._provisionalAlternateEncoding.GetString(block, 0, block.Length);
+                string s1 = zf.AlternateEncoding.GetString(block, 0, block.Length);
                 zf.Comment = s1;
-
-                #if COMPLICATED
-                string s1 = DefaultEncoding.GetString(block, 0, block.Length);
-                byte[] b2 = DefaultEncoding.GetBytes(s1);
-                if (BlocksAreEqual(block, b2))
-                {
-                    zf.Comment = s1;
-                }
-                else
-                {
-                    // need alternate (non IBM437) encoding
-                    // workitem 6415
-                    // use UTF8 if the caller hasn't already set a non-default encoding
-                    System.Text.Encoding e = (zf._provisionalAlternateEncoding.CodePage == 437)
-                        ? System.Text.Encoding.UTF8
-                        : zf._provisionalAlternateEncoding;
-                    zf.Comment = e.GetString(block, 0, block.Length);
-                }
-                #endif
             }
         }
 

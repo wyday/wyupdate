@@ -1,21 +1,21 @@
 // Events.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2006, 2007, 2008, 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-October-23 18:56:24>
+// last saved (in emacs):
+// Time-stamp: <2011-July-11 10:03:12>
 //
 // ------------------------------------------------------------------
 //
@@ -44,17 +44,17 @@ namespace Ionic.Zip
     ///
     /// <example>
     ///
-    /// This example shows how to define a WriteDelegate that obtains a DataSet, and then 
-    /// writes the XML for the DataSet into the zip archive.  There's no need to 
-    /// save the XML to a disk file first. 
-    /// 
+    /// This example shows how to define a WriteDelegate that obtains a DataSet, and then
+    /// writes the XML for the DataSet into the zip archive.  There's no need to
+    /// save the XML to a disk file first.
+    ///
     /// <code lang="C#">
     /// private void WriteEntry (String filename, Stream output)
     /// {
     ///     DataSet ds1 = ObtainDataSet();
     ///     ds1.WriteXml(output);
     /// }
-    /// 
+    ///
     /// private void Run()
     /// {
     ///     using (var zip = new ZipFile())
@@ -66,59 +66,59 @@ namespace Ionic.Zip
     /// </code>
     ///
     /// <code lang="vb">
-    /// Private Sub WriteEntry (ByVal filename As String, ByVal output As Stream) 
+    /// Private Sub WriteEntry (ByVal filename As String, ByVal output As Stream)
     ///     DataSet ds1 = ObtainDataSet()
     ///     ds1.WriteXml(stream)
     /// End Sub
-    /// 
+    ///
     /// Public Sub Run()
     ///     Using zip = New ZipFile
     ///         zip.AddEntry(zipEntryName, New WriteDelegate(AddressOf WriteEntry))
     ///         zip.Save(zipFileName)
     ///     End Using
     /// End Sub
-    /// </code> 
+    /// </code>
     /// </example>
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, WriteDelegate)"/>
     public delegate void WriteDelegate(string entryName, System.IO.Stream stream);
 
-    
+
     /// <summary>
     ///   Delegate in which the application opens the stream, just-in-time, for the named entry.
     /// </summary>
-    /// 
+    ///
     /// <param name="entryName">
     /// The name of the ZipEntry that the application should open the stream for.
     /// </param>
-    /// 
+    ///
     /// <remarks>
     ///   When you add an entry via <see cref="Ionic.Zip.ZipFile.AddEntry(string,
     ///   OpenDelegate, CloseDelegate)"/>, the application code provides the logic that
-    ///   opens and closes the stream for the given ZipEntry. 
+    ///   opens and closes the stream for the given ZipEntry.
     /// </remarks>
     ///
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
     public delegate System.IO.Stream OpenDelegate(string entryName);
-    
+
     /// <summary>
     ///   Delegate in which the application closes the stream, just-in-time, for the named entry.
     /// </summary>
-    /// 
+    ///
     /// <param name="entryName">
     /// The name of the ZipEntry that the application should close the stream for.
     /// </param>
-    /// 
+    ///
     /// <param name="stream">The stream to be closed.</param>
     ///
     /// <remarks>
     ///   When you add an entry via <see cref="Ionic.Zip.ZipFile.AddEntry(string,
     ///   OpenDelegate, CloseDelegate)"/>, the application code provides the logic that
-    ///   opens and closes the stream for the given ZipEntry. 
+    ///   opens and closes the stream for the given ZipEntry.
     /// </remarks>
     ///
     /// <seealso cref="Ionic.Zip.ZipFile.AddEntry(string, OpenDelegate, CloseDelegate)"/>
     public delegate void CloseDelegate(string entryName, System.IO.Stream stream);
-    
+
     /// <summary>
     ///   Delegate for the callback by which the application tells the
     ///   library the CompressionLevel to use for a file.
@@ -136,10 +136,16 @@ namespace Ionic.Zip
     public delegate Ionic.Zlib.CompressionLevel SetCompressionCallback(string localFileName, string fileNameInArchive);
 
     /// <summary>
-    /// In an EventArgs type, indicates which sort of progress event is being reported. 
+    ///   In an EventArgs type, indicates which sort of progress event is being
+    ///   reported.
     /// </summary>
     /// <remarks>
-    /// There are events for reading, events for saving, and events for extracting. 
+    ///   There are events for reading, events for saving, and events for
+    ///   extracting. This enumeration allows a single EventArgs type to be sued to
+    ///   describe one of multiple subevents. For example, a SaveProgress event is
+    ///   invoked before, after, and during the saving of a single entry.  The value
+    ///   of an enum with this type, specifies which event is being triggered.  The
+    ///   same applies to Extraction, Reading and Adding events.
     /// </remarks>
     public enum ZipProgressEventType
     {
@@ -211,13 +217,13 @@ namespace Ionic.Zip
         Saving_AfterSaveTempArchive,
 
         /// <summary>
-        /// Indicates that the temporary file is about to be renamed to the final archive 
+        /// Indicates that the temporary file is about to be renamed to the final archive
         /// name during a Save() operation.
         /// </summary>
         Saving_BeforeRenameTempArchive,
 
         /// <summary>
-        /// Indicates that the temporary file is has just been renamed to the final archive 
+        /// Indicates that the temporary file is has just been renamed to the final archive
         /// name during a Save() operation.
         /// </summary>
         Saving_AfterRenameTempArchive,
@@ -235,17 +241,17 @@ namespace Ionic.Zip
         Saving_EntryBytesRead,
 
         /// <summary>
-        /// Indicates that an entry is about to be extracted. 
+        /// Indicates that an entry is about to be extracted.
         /// </summary>
         Extracting_BeforeExtractEntry,
 
         /// <summary>
-        /// Indicates that an entry has just been extracted. 
+        /// Indicates that an entry has just been extracted.
         /// </summary>
         Extracting_AfterExtractEntry,
 
         /// <summary>
-        /// Indicates that extraction of an entry would overwrite an existing filesystem file. 
+        /// Indicates that extraction of an entry would overwrite an existing filesystem file.
         /// </summary>
         Extracting_ExtractEntryWouldOverwrite,
 
@@ -266,17 +272,17 @@ namespace Ionic.Zip
         Extracting_AfterExtractAll,
 
         /// <summary>
-        /// Indicates that an error has occurred while saving a zip file. 
+        /// Indicates that an error has occurred while saving a zip file.
         /// This generally means the file cannot be opened, because it has been
-        /// removed, or because it is locked by another process.  It can also 
-        /// mean that the file cannot be Read, because of a range lock conflict. 
+        /// removed, or because it is locked by another process.  It can also
+        /// mean that the file cannot be Read, because of a range lock conflict.
         /// </summary>
         Error_Saving,
     }
 
 
     /// <summary>
-    /// Provides information about the progress of a save, read, or extract operation. 
+    /// Provides information about the progress of a save, read, or extract operation.
     /// This is a base class; you will probably use one of the classes derived from this one.
     /// </summary>
     public class ZipProgressEventArgs : EventArgs
@@ -317,7 +323,7 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// In an event handler, set this to cancel the save or extract 
+        /// In an event handler, set this to cancel the save or extract
         /// operation that is in progress.
         /// </summary>
         public bool Cancel
@@ -346,7 +352,7 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// The number of bytes read or written so far for this entry.  
+        /// The number of bytes read or written so far for this entry.
         /// </summary>
         public Int64 BytesTransferred
         {
@@ -358,7 +364,7 @@ namespace Ionic.Zip
 
         /// <summary>
         /// Total number of bytes that will be read or written for this entry.
-        /// This number will be -1 if the value cannot be determined. 
+        /// This number will be -1 if the value cannot be determined.
         /// </summary>
         public Int64 TotalBytesToTransfer
         {
@@ -419,7 +425,7 @@ namespace Ionic.Zip
 
     }
 
-    
+
     /// <summary>
     /// Provides information about the progress of a Add operation.
     /// </summary>
@@ -613,8 +619,8 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Number of entries extracted so far.  This is set only if the 
-        /// EventType is Extracting_BeforeExtractEntry or Extracting_AfterExtractEntry, and 
+        /// Number of entries extracted so far.  This is set only if the
+        /// EventType is Extracting_BeforeExtractEntry or Extracting_AfterExtractEntry, and
         /// the Extract() is occurring witin the scope of a call to ExtractAll().
         /// </summary>
         public int EntriesExtracted
@@ -623,7 +629,7 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        /// Returns the extraction target location, a filesystem path. 
+        /// Returns the extraction target location, a filesystem path.
         /// </summary>
         public String ExtractLocation
         {
@@ -635,7 +641,7 @@ namespace Ionic.Zip
 
 
     /// <summary>
-    /// Provides information about the an error that occurred while zipping. 
+    /// Provides information about the an error that occurred while zipping.
     /// </summary>
     public class ZipErrorEventArgs : ZipProgressEventArgs
     {
@@ -652,7 +658,7 @@ namespace Ionic.Zip
                 };
             return x;
         }
-        
+
         /// <summary>
         /// Returns the exception that occurred, if any.
         /// </summary>
@@ -660,7 +666,7 @@ namespace Ionic.Zip
         {
             get { return _exc; }
         }
-        
+
         /// <summary>
         /// Returns the name of the file that caused the exception, if any.
         /// </summary>

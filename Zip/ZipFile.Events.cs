@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-16 18:00:33>
+// Time-stamp: <2011-July-09 08:42:35>
 //
 // ------------------------------------------------------------------
 //
@@ -1108,6 +1108,15 @@ namespace Ionic.Zip
         ///    <c>ZipEntry</c> to <c>ZipErrorAction.Throw</c>.) If you set the
         ///    <c>ZipErrorEventArgs.Cancel</c> to true, the entire <c>Save()</c> will be
         ///    canceled.
+        ///  </para>
+        ///
+        ///  <para>
+        ///    In the case that you use <c>ZipErrorAction.Skip</c>, implying that
+        ///    you want to skip the entry for which there's been an error, DotNetZip
+        ///    tries to seek backwards in the output stream, and truncate all bytes
+        ///    written on behalf of that particular entry. This works only if the
+        ///    output stream is seekable.  It will not work, for example, when using
+        ///    ASPNET's Response.OutputStream.
         ///  </para>
         ///
         /// </remarks>

@@ -484,22 +484,31 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        ///   The zip spec does not describe how to encode the comment string in a code
-        ///   page other than IBM437.  Therefore, for "compliant" zip tools and
-        ///   libraries, comments will use IBM437.  However, there are situations where
-        ///   you want an encoded Comment, for example using code page 950 "Big-5
-        ///   Chinese".  DotNetZip will encode the comment in the code page specified by
-        ///   <see cref="ProvisionalAlternateEncoding"/>, at the time of the call to
-        ///   <c>ZipFile.Save()</c>.
+        ///   The specification does not describe how to indicate the encoding used
+        ///   on a comment string. Many "compliant" zip tools and libraries use
+        ///   IBM437 as the code page for comments; DotNetZip, too, follows that
+        ///   practice.  On the other hand, there are situations where you want a
+        ///   Comment to be encoded with something else, for example using code page
+        ///   950 "Big-5 Chinese". To fill that need, DotNetZip will encode the
+        ///   comment following the same procedure it follows for encoding
+        ///   filenames: (a) if <see cref="AlternateEncodingUsage"/> is
+        ///   <c>Never</c>, it uses the default encoding (IBM437). (b) if <see
+        ///   cref="AlternateEncodingUsage"/> is <c>Always</c>, it always uses the
+        ///   alternate encoding (<see cref="AlternateEncoding"/>). (c) if <see
+        ///   cref="AlternateEncodingUsage"/> is <c>AsNecessary</c>, it uses the
+        ///   alternate encoding only if the default encoding is not sufficient for
+        ///   encoding the comment - in other words if decoding the result does not
+        ///   produce the original string.  This decision is taken at the time of
+        ///   the call to <c>ZipFile.Save()</c>.
         /// </para>
         ///
         /// <para>
         ///   When creating a zip archive using this library, it is possible to change
-        ///   the value of <see cref="ProvisionalAlternateEncoding" /> between each
+        ///   the value of <see cref="AlternateEncoding" /> between each
         ///   entry you add, and between adding entries and the call to
         ///   <c>Save()</c>. Don't do this.  It will likely result in a zip file that is
         ///   not readable by any tool or application.  For best interoperability, leave
-        ///   <see cref="ProvisionalAlternateEncoding" /> alone, or specify it only
+        ///   <see cref="AlternateEncoding"/> alone, or specify it only
         ///   once, before adding any entries to the <c>ZipFile</c> instance.
         /// </para>
         ///
@@ -519,8 +528,8 @@ namespace Ionic.Zip
 
         /// <summary>
         ///   Specifies whether the Creation, Access, and Modified times for entries
-        ///   added to the zip file will be emitted in "Windows format" when the zip
-        ///   archive is saved.
+        ///   added to the zip file will be emitted in &#147;Windows format&#148;
+        ///   when the zip archive is saved.
         /// </summary>
         ///
         /// <remarks>
@@ -905,15 +914,27 @@ namespace Ionic.Zip
         /// </para>
         /// </remarks>
         /// <seealso cref="ProvisionalAlternateEncoding"/>
+        [Obsolete("Beginning with v1.9.1.6 of DotNetZip, this property is obsolete.  It will be removed in a future version of the library. Your applications should  use AlternateEncoding and AlternateEncodingUsage instead.")]
         public bool UseUnicodeAsNecessary
         {
             get
             {
-                return _provisionalAlternateEncoding == System.Text.Encoding.GetEncoding("UTF-8");
+                return (_alternateEncoding == System.Text.Encoding.GetEncoding("UTF-8")) &&
+                    (_alternateEncodingUsage == ZipOption.AsNecessary);
             }
             set
             {
-                _provisionalAlternateEncoding = (value) ? System.Text.Encoding.GetEncoding("UTF-8") : DefaultEncoding;
+                if (value)
+                {
+                    _alternateEncoding = System.Text.Encoding.GetEncoding("UTF-8");
+                    _alternateEncodingUsage = ZipOption.AsNecessary;
+
+                }
+                else
+                {
+                    _alternateEncoding = Ionic.Zip.ZipFile.DefaultEncoding;
+                    _alternateEncodingUsage = ZipOption.Never;
+                }
             }
         }
 
@@ -1256,17 +1277,63 @@ namespace Ionic.Zip
         /// </example>
         ///
         /// <seealso cref="Ionic.Zip.ZipFile.DefaultEncoding">DefaultEncoding</seealso>
+        [Obsolete("use AlternateEncoding instead.")]
         public System.Text.Encoding ProvisionalAlternateEncoding
         {
             get
             {
-                return _provisionalAlternateEncoding;
+                if (_alternateEncodingUsage == ZipOption.AsNecessary)
+                    return _alternateEncoding;
+                return null;
             }
             set
             {
-                _provisionalAlternateEncoding = value;
+                _alternateEncoding = value;
+                _alternateEncodingUsage = ZipOption.AsNecessary;
             }
         }
+
+
+        /// <summary>
+        ///   A Text Encoding to use when encoding the filenames and comments for
+        ///   all the ZipEntry items, during a ZipFile.Save() operation.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     Whether the encoding specified here is used during the save depends
+        ///     on <see cref="AlternateEncodingUsage"/>.
+        ///   </para>
+        /// </remarks>
+        public System.Text.Encoding AlternateEncoding
+        {
+            get
+            {
+                return _alternateEncoding;
+            }
+            set
+            {
+                _alternateEncoding = value;
+            }
+        }
+
+
+        /// <summary>
+        ///   A flag that tells if and when this instance should apply
+        ///   AlternateEncoding to encode the filenames and comments associated to
+        ///   of ZipEntry objects contained within this instance.
+        /// </summary>
+        public ZipOption AlternateEncodingUsage
+        {
+            get
+            {
+                return _alternateEncodingUsage;
+            }
+            set
+            {
+                _alternateEncodingUsage = value;
+            }
+        }
+
 
         /// <summary>
         /// The default text encoding used in zip archives.  It is numeric 437, also
@@ -1280,7 +1347,6 @@ namespace Ionic.Zip
                 return _defaultEncoding;
             }
         }
-        private static System.Text.Encoding _defaultEncoding = System.Text.Encoding.GetEncoding("IBM437");
 
 
         /// <summary>
@@ -2250,7 +2316,8 @@ namespace Ionic.Zip
                 using (ZipFile x = new ZipFile())
                 {
                     x._name = this._name;
-                    x.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;
+                    x.AlternateEncoding = this.AlternateEncoding;
+                    x.AlternateEncodingUsage = this.AlternateEncodingUsage;
                     ReadIntoInstance(x);
                     // copy the contents of the entries.
                     // cannot just replace the entries - the app may be holding them
@@ -2419,8 +2486,9 @@ namespace Ionic.Zip
         {
             try
             {
+                AlternateEncoding = encoding;
+                AlternateEncodingUsage = ZipOption.Always;
                 _InitInstance(fileName, null);
-                ProvisionalAlternateEncoding = encoding;
             }
             catch (Exception e1)
             {
@@ -2510,8 +2578,9 @@ namespace Ionic.Zip
         /// </param>
         public ZipFile(System.Text.Encoding encoding)
         {
+            AlternateEncoding = encoding;
+            AlternateEncodingUsage = ZipOption.Always;
             _InitInstance(null, null);
-            ProvisionalAlternateEncoding = encoding;
         }
 
 
@@ -2659,8 +2728,9 @@ namespace Ionic.Zip
         {
             try
             {
+                AlternateEncoding = encoding;
+                AlternateEncodingUsage = ZipOption.Always;
                 _InitInstance(fileName, statusMessageWriter);
-                ProvisionalAlternateEncoding = encoding;
             }
             catch (Exception e1)
             {
@@ -3510,9 +3580,13 @@ namespace Ionic.Zip
         private EncryptionAlgorithm _Encryption;
         private bool _JustSaved;
         private long _locEndOfCDS = -1;
+        private uint _OffsetOfCentralDirectory;
+        private Int64 _OffsetOfCentralDirectory64;
         private Nullable<bool> _OutputUsesZip64;
         internal bool _inExtractAll;
-        private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437"); // default = IBM437
+        private System.Text.Encoding _alternateEncoding = System.Text.Encoding.GetEncoding("IBM437"); // UTF-8
+        private ZipOption _alternateEncodingUsage = ZipOption.Never;
+        private static System.Text.Encoding _defaultEncoding = System.Text.Encoding.GetEncoding("IBM437");
 
         private int _BufferSize = BufferSizeDefault;
 
@@ -3621,6 +3695,37 @@ namespace Ionic.Zip
         AsNecessary = 1,
         /// <summary>
         /// Always use ZIP64 extensions when writing zip archives, even when unnecessary.
+        /// (For COM clients, this is a 2.)
+        /// </summary>
+        Always
+    }
+
+
+    /// <summary>
+    ///  An enum representing the values on a three-way toggle switch
+    ///  for various options in the library. This might be used to
+    ///  specify whether to employ a particular text encoding, or to use
+    ///  ZIP64 extensions, or some other option.
+    /// </summary>
+    public enum ZipOption
+    {
+        /// <summary>
+        /// The default behavior. This is the same as "Never".
+        /// (For COM clients, this is a 0 (zero).)
+        /// </summary>
+        Default = 0,
+        /// <summary>
+        /// Never use the associated option.
+        /// (For COM clients, this is a 0 (zero).)
+        /// </summary>
+        Never = 0,
+        /// <summary>
+        /// Use the associated behavior "as necessary."
+        /// (For COM clients, this is a 1.)
+        /// </summary>
+        AsNecessary = 1,
+        /// <summary>
+        /// Use the associated behavior Always, whether necessary or not.
         /// (For COM clients, this is a 2.)
         /// </summary>
         Always
