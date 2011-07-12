@@ -846,7 +846,7 @@ namespace Ionic
         }
 
 
-        public static class RegexAssertions
+        private static class RegexAssertions
         {
             public static readonly String PrecededByOddNumberOfSingleQuotes = "(?<=(?:[^']*'[^']*')*'[^']*)";
             public static readonly String FollowedByOddNumberOfSingleQuotesAndLineEnd = "(?=[^']*'(?:[^']*'[^']*')*[^']*$)";

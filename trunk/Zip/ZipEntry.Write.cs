@@ -16,7 +16,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Last Saved: <2011-June-19 18:10:55>
+// Last Saved: <2011-July-09 21:35:45>
 //
 // ------------------------------------------------------------------
 //
@@ -46,15 +46,16 @@ namespace Ionic.Zip
 
             // Version Made By
             // workitem 7071
-            // We must not overwrite the VersionMadeBy field when writing out a zip archive.
-            // The VersionMadeBy tells the zip reader the meaning of the File attributes.
-            // Overwriting the VersionMadeBy will result in inconsistent metadata.
-            // Consider the scenario where the application opens and reads a zip file that had been created
-            // on Linux. Then the app adds one file to the Zip archive, and saves it.
-            // The file attributes for all the entries added on Linux will be significant
-            // for Linux.  Therefore the VersionMadeBy for those entries must not be changed.
-            // Only the entries that are actually created on Windows NTFS should get the
-            // VersionMadeBy indicating Windows/NTFS.
+            // We must not overwrite the VersionMadeBy field when writing out a zip
+            // archive.  The VersionMadeBy tells the zip reader the meaning of the
+            // File attributes.  Overwriting the VersionMadeBy will result in
+            // inconsistent metadata.  Consider the scenario where the application
+            // opens and reads a zip file that had been created on Linux. Then the
+            // app adds one file to the Zip archive, and saves it.  The file
+            // attributes for all the entries added on Linux will be significant for
+            // Linux.  Therefore the VersionMadeBy for those entries must not be
+            // changed.  Only the entries that are actually created on Windows NTFS
+            // should get the VersionMadeBy indicating Windows/NTFS.
             bytes[i++] = (byte)(_VersionMadeBy & 0x00FF);
             bytes[i++] = (byte)((_VersionMadeBy & 0xFF00) >> 8);
 
@@ -130,7 +131,7 @@ namespace Ionic.Zip
                 bytes[i++] = (byte)((_UncompressedSize & 0xFF000000) >> 24);
             }
 
-            byte[] fileNameBytes = _GetEncodedFileNameBytes();
+            byte[] fileNameBytes = GetEncodedFileNameBytes();
             Int16 filenameLength = (Int16)fileNameBytes.Length;
             bytes[i++] = (byte)(filenameLength & 0x00FF);
             bytes[i++] = (byte)((filenameLength & 0xFF00) >> 8);
@@ -139,30 +140,36 @@ namespace Ionic.Zip
             _presumeZip64 = _OutputUsesZip64.Value;
 
             // workitem 11131
+            //
             // cannot generate the extra field again, here's why: In the case of a
             // zero-byte entry, which uses encryption, DotNetZip will "remove" the
             // encryption from the entry.  It does this in PostProcessOutput; it
             // modifies the entry header, and rewrites it, resetting the Bitfield
             // (one bit indicates encryption), and potentially resetting the
-            // compression method (for AES the Comp method is 0x63).  It the calls
-            // SetLength() to truncate the stream to remove the encryption header
-            // (12 bytes for AES256).  But, it leaves the previously-generated
-            // "Extra Field" data in the entry header. This extra field data is
-            // now "orphaned" - it refers to AES encryption when in fact no AES
-            // encryption is used. But no problem, the PKWARE spec says that
-            // unrecognized extra fields can just be ignored. ok.  This means the
-            // length of the Extra Field remains the same; there are 11 bytes in
-            // there pertaining to AES which are unused.
+            // compression method - for AES the Compression method is 0x63, and it
+            // would get reset to zero (no compression).  It then calls SetLength()
+            // to truncate the stream to remove the encryption header (12 bytes for
+            // AES256).  But, it leaves the previously-generated "Extra Field"
+            // metadata (11 bytes) for AES in the entry header. This extra field
+            // data is now "orphaned" - it refers to AES encryption when in fact no
+            // AES encryption is used. But no problem, the PKWARE spec says that
+            // unrecognized extra fields can just be ignored. ok.  After "removal"
+            // of AES encryption, the length of the Extra Field can remains the
+            // same; it's just that there will be 11 bytes in there that previously
+            // pertained to AES which are now unused. Even the field code is still
+            // there, but it will be unused by readers, as the encryption bit is not
+            // set.
             //
             // Re-calculating the Extra field now would produce a block that is 11
             // bytes shorter, and that mismatch - between the extra field in the
             // local header and the extra field in the Central Directory - would
-            // cause problems. So we can't do that. It's all good though, because
-            // though the content may have changed, the length definitely has
-            // not. Also, the _EntryHeader contains the "updated" extra field
-            // (after PostProcessOutput) at offset (30 + filenameLength).
+            // cause problems. (where? why? what problems?)  So we can't do
+            // that. It's all good though, because though the content may have
+            // changed, the length definitely has not. Also, the _EntryHeader
+            // contains the "updated" extra field (after PostProcessOutput) at
+            // offset (30 + filenameLength).
 
-            // _Extra = ConstructExtraField(true);
+            _Extra = ConstructExtraField(true);
 
             Int16 extraFieldLength = (Int16)((_Extra == null) ? 0 : _Extra.Length);
             bytes[i++] = (byte)(extraFieldLength & 0x00FF);
@@ -194,13 +201,28 @@ namespace Ionic.Zip
             bytes[i++] = (byte)((_ExternalFileAttrs & 0xFF000000) >> 24);
 
             // workitem 11131
-            // relative offset of local header
-            // Either it is 0xFFFFFFFF, indicating ZIP64, or it is a valid offset.
-            // In either case, just write it out.
-            bytes[i++] = (byte)(_RelativeOffsetOfLocalHeader & 0x000000FF);
-            bytes[i++] = (byte)((_RelativeOffsetOfLocalHeader & 0x0000FF00) >> 8);
-            bytes[i++] = (byte)((_RelativeOffsetOfLocalHeader & 0x00FF0000) >> 16);
-            bytes[i++] = (byte)((_RelativeOffsetOfLocalHeader & 0xFF000000) >> 24);
+            // relative offset of local header.
+            //
+            // If necessary to go to 64-bit value, then emit 0xFFFFFFFF,
+            // else write out the value.
+            //
+            // Even if zip64 is required for other reasons - number of the entry
+            // > 65534, or uncompressed size of the entry > MAX_INT32, the ROLH
+            // need not be stored in a 64-bit field .
+            if (_RelativeOffsetOfLocalHeader > 0xFFFFFFFFL) // _OutputUsesZip64.Value
+            {
+                bytes[i++] = 0xFF;
+                bytes[i++] = 0xFF;
+                bytes[i++] = 0xFF;
+                bytes[i++] = 0xFF;
+            }
+            else
+            {
+                bytes[i++] = (byte)(_RelativeOffsetOfLocalHeader & 0x000000FF);
+                bytes[i++] = (byte)((_RelativeOffsetOfLocalHeader & 0x0000FF00) >> 8);
+                bytes[i++] = (byte)((_RelativeOffsetOfLocalHeader & 0x00FF0000) >> 16);
+                bytes[i++] = (byte)((_RelativeOffsetOfLocalHeader & 0xFF000000) >> 24);
+            }
 
             // actual filename
             Buffer.BlockCopy(fileNameBytes, 0, bytes, i, filenameLength);
@@ -215,11 +237,18 @@ namespace Ionic.Zip
                 // if not, copy from Extra. This would be unnecessary if I just
                 // updated the Extra field when updating EntryHeader, in
                 // PostProcessOutput.
-                byte[] h = _EntryHeader ?? _Extra;
-                int offx = (h == _EntryHeader) ? 30 + filenameLength : 0;
+
+                //?? I don't understand why I wouldn't want to just use
+                // the recalculated Extra field. ??
+
+                // byte[] h = _EntryHeader ?? _Extra;
+                // int offx = (h == _EntryHeader) ? 30 + filenameLength : 0;
+                // Buffer.BlockCopy(h, offx, bytes, i, extraFieldLength);
+                // i += extraFieldLength;
+
+                byte[] h = _Extra;
+                int offx = 0;
                 Buffer.BlockCopy(h, offx, bytes, i, extraFieldLength);
-                // for (j = 0; j < extraFieldLength; j++)
-                //     bytes[i + j] = h[offx + j];
                 i += extraFieldLength;
             }
 
@@ -305,16 +334,17 @@ namespace Ionic.Zip
                 i += 8;
                 // compressed size
                 Array.Copy(BitConverter.GetBytes(_CompressedSize), 0, block, i, 8);
+                i += 8;
 
                 // workitem 7924 - only include this if the "extra" field is for
                 // use in the central directory.  It is unnecessary and not useful
                 // for local header; makes WinZip choke.
                 if (forCentralDirectory)
                 {
-                    i += 8;
                     // relative offset
                     Array.Copy(BitConverter.GetBytes(_RelativeOffsetOfLocalHeader), 0, block, i, 8);
                     i += 8;
+
                     // starting disk number
                     Array.Copy(BitConverter.GetBytes(0), 0, block, i, 4);
                 }
@@ -482,22 +512,31 @@ namespace Ionic.Zip
 
 
 
-        // workitem 6513: when writing, use alt encoding only when ibm437 will not do
-        private System.Text.Encoding GenerateCommentBytes()
-        {
-            _CommentBytes = ibm437.GetBytes(_Comment);
-            // need to use this form of GetString() for .NET CF
-            string s1 = ibm437.GetString(_CommentBytes, 0, _CommentBytes.Length);
-            if (s1 == _Comment)
-                return ibm437;
+        // private System.Text.Encoding GenerateCommentBytes()
+        // {
+        //     var getEncoding = new Func<System.Text.Encoding>({
+        //     switch (AlternateEncodingUsage)
+        //     {
+        //         case ZipOption.Always:
+        //             return AlternateEncoding;
+        //         case ZipOption.Never:
+        //             return ibm437;
+        //     }
+        //     var cb = ibm437.GetBytes(_Comment);
+        //     // need to use this form of GetString() for .NET CF
+        //     string s1 = ibm437.GetString(cb, 0, cb.Length);
+        //     if (s1 == _Comment)
+        //         return ibm437;
+        //     return AlternateEncoding;
+        //     });
+        //
+        //     var encoding = getEncoding();
+        //     _CommentBytes = encoding.GetBytes(_Comment);
+        //     return encoding;
+        // }
 
-            _CommentBytes = _provisionalAlternateEncoding.GetBytes(_Comment);
-            return _provisionalAlternateEncoding;
-        }
 
-
-        // workitem 6513
-        private byte[] _GetEncodedFileNameBytes()
+        private string NormalizeFileName()
         {
             // here, we need to flip the backslashes to forward-slashes,
             // also, we need to trim the \\server\share syntax from any UNC path.
@@ -529,64 +568,96 @@ namespace Ionic.Zip
             {
                 s1 = SlashFixed;
             }
+            return s1;
+        }
 
+
+        /// <summary>
+        ///   generate and return a byte array that encodes the filename
+        ///   for the entry.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     side effects: generate and store into _CommentBytes the
+        ///     byte array for any comment attached to the entry. Also
+        ///     sets _actualEncoding to indicate the actual encoding
+        ///     used. The same encoding is used for both filename and
+        ///     comment.
+        ///   </para>
+        /// </remarks>
+        private byte[] GetEncodedFileNameBytes()
+        {
+            // workitem 6513
+            var s1 = NormalizeFileName();
+
+            switch(AlternateEncodingUsage)
+            {
+                case ZipOption.Always:
+                    if (!(_Comment == null || _Comment.Length == 0))
+                        _CommentBytes = AlternateEncoding.GetBytes(_Comment);
+                    _actualEncoding = AlternateEncoding;
+                    return AlternateEncoding.GetBytes(s1);
+
+                case ZipOption.Never:
+                    if (!(_Comment == null || _Comment.Length == 0))
+                        _CommentBytes = ibm437.GetBytes(_Comment);
+                    _actualEncoding = ibm437;
+                    return ibm437.GetBytes(s1);
+            }
+
+            // arriving here means AlternateEncodingUsage is "AsNecessary"
+
+            // case ZipOption.AsNecessary:
             // workitem 6513: when writing, use the alternative encoding
             // only when _actualEncoding is not yet set (it can be set
             // during Read), and when ibm437 will not do.
-
-            // workitem 12744
-            if (_actualEncoding != null)
-            {
-                if (!(_Comment == null || _Comment.Length == 0))
-                    _CommentBytes = _actualEncoding.GetBytes(_Comment);
-                return _actualEncoding.GetBytes(s1);
-            }
 
             byte[] result = ibm437.GetBytes(s1);
             // need to use this form of GetString() for .NET CF
             string s2 = ibm437.GetString(result, 0, result.Length);
             _CommentBytes = null;
-            if (s2 == s1)
+            if (s2 != s1)
             {
-                // file can be encoded with ibm437, now try comment
-
-                // case 1: no comment.  use ibm437
-                if (_Comment == null || _Comment.Length == 0)
-                {
-                    _actualEncoding = ibm437;
-                    return result;
-                }
-
-                // there is a comment.  Get the encoded form.
-                System.Text.Encoding commentEncoding = GenerateCommentBytes();
-
-                // case 2: if the comment also uses 437, we're good.
-                if (commentEncoding.CodePage == 437)
-                {
-                    _actualEncoding = ibm437;
-                    return result;
-                }
-
-                // case 3: comment requires non-437 code page.  Use the same
-                // code page for the filename.
-                _actualEncoding = commentEncoding;
-                result = commentEncoding.GetBytes(s1);
-                return result;
-            }
-            else
-            {
-                // Cannot encode with ibm437 safely.
-                // Therefore, use the provisional alternate encoding
-                result = _provisionalAlternateEncoding.GetBytes(s1);
+                // Encoding the filename with ibm437 does not allow round-trips.
+                // Therefore, use the alternate encoding.  Assume it will work,
+                // no checking of round trips here.
+                result = AlternateEncoding.GetBytes(s1);
                 if (_Comment != null && _Comment.Length != 0)
-                {
-                    _CommentBytes = _provisionalAlternateEncoding.GetBytes(_Comment);
-                }
-
-                _actualEncoding = _provisionalAlternateEncoding;
+                    _CommentBytes = AlternateEncoding.GetBytes(_Comment);
+                _actualEncoding = AlternateEncoding;
                 return result;
             }
+
+            _actualEncoding = ibm437;
+
+            // Using ibm437, FileName can be encoded without information
+            // loss; now try the Comment.
+
+            // if there is no comment, use ibm437.
+            if (_Comment == null || _Comment.Length == 0)
+                return result;
+
+            // there is a comment. Get the encoded form.
+            byte[] cbytes = ibm437.GetBytes(_Comment);
+            string c2 = ibm437.GetString(cbytes,0,cbytes.Length);
+
+            // Check for round-trip.
+            if (c2 != Comment)
+            {
+                // Comment cannot correctly be encoded with ibm437.  Use
+                // the alternate encoding.
+
+                result = AlternateEncoding.GetBytes(s1);
+                _CommentBytes = AlternateEncoding.GetBytes(_Comment);
+                _actualEncoding = AlternateEncoding;
+                return result;
+            }
+
+            // use IBM437
+            _CommentBytes = cbytes;
+            return result;
         }
+
 
 
         private bool WantReadAgain()
@@ -800,7 +871,7 @@ namespace Ionic.Zip
             // Get byte array. Side effect: sets ActualEncoding.
             // Must determine encoding before setting the bitfield.
             // workitem 6513
-            byte[] fileNameBytes = _GetEncodedFileNameBytes();
+            byte[] fileNameBytes = GetEncodedFileNameBytes();
             Int16 filenameLength = (Int16)fileNameBytes.Length;
 
             // general purpose bitfield
@@ -826,7 +897,7 @@ namespace Ionic.Zip
             //                 _BitField |= 0x0020;
 
             // set the UTF8 bit if necessary
-            if (ActualEncoding.CodePage == System.Text.Encoding.UTF8.CodePage) _BitField |= 0x0800;
+            if (_actualEncoding.CodePage == System.Text.Encoding.UTF8.CodePage) _BitField |= 0x0800;
 
             // The PKZIP spec says that if bit 3 is set (0x0008) in the General
             // Purpose BitField, then the CRC, Compressed size, and uncompressed
@@ -1485,9 +1556,27 @@ namespace Ionic.Zip
                     // turn off the encryption bit
                     _BitField &= ~(0x0001);
 
+                    // copy the updated bitfield value into the header
                     int j = 6;
                     _EntryHeader[j++] = (byte)(_BitField & 0x00FF);
                     _EntryHeader[j++] = (byte)((_BitField & 0xFF00) >> 8);
+
+#if AESCRYPTO
+                    if (Encryption == EncryptionAlgorithm.WinZipAes128 ||
+                        Encryption == EncryptionAlgorithm.WinZipAes256)
+                    {
+                        // Fix the extra field - overwrite the 0x9901 headerId
+                        // with dummy data. (arbitrarily, 0x9999)
+                        Int16 fnLength = (short)(_EntryHeader[26] + _EntryHeader[27] * 256);
+                        int offx = 30 + fnLength;
+                        int aesIndex = FindExtraFieldSegment(_EntryHeader, offx, 0x9901);
+                        if (aesIndex >= 0)
+                        {
+                            _EntryHeader[aesIndex++] = 0x99;
+                            _EntryHeader[aesIndex++] = 0x99;
+                        }
+                    }
+#endif
                 }
 
                 CompressionMethod = 0;
@@ -1550,11 +1639,10 @@ namespace Ionic.Zip
                 for (int j = 0; j < 8; j++)
                     _EntryHeader[i++] = 0xff;
 
-                // At this point we need to find the "Extra field" that
-                // follows the filename.  We had already emitted it, but
-                // the data (uncomp, comp, Relative Offset of Local
-                // Header) was not available at the time we did so.
-                // Here, we emit it again, with final values.
+                // At this point we need to find the "Extra field" that follows the
+                // filename.  We had already emitted it, but the data (uncomp, comp,
+                // ROLH) was not available at the time we did so.  Here, we emit it
+                // again, with final values.
 
                 i = 30 + filenameLength;
                 _EntryHeader[i++] = 0x01;  // zip64
@@ -2032,12 +2120,18 @@ namespace Ionic.Zip
                             ZipErrorAction == ZipErrorAction.Retry)
                         {
                             // must reset file pointer here.
-                            if (!s.CanSeek) throw;
-                            long p1 = s.Position;
-                            s.Seek(_future_ROLH, SeekOrigin.Begin);
-                            long p2 = s.Position;
-                            s.SetLength(s.Position);  // to prevent garbage if this is the last entry
-                            if (cs1 != null) cs1.Adjust(p1 - p2);
+                            // workitem 13903 - seek back only when necessary
+                            long p1 = (cs1 != null)
+                                ? cs1.ComputedPosition
+                                : s.Position;
+                            long delta = p1 - _future_ROLH;
+                            if (delta > 0)
+                            {
+                                s.Seek(delta, SeekOrigin.Current); // may throw
+                                long p2 = s.Position;
+                                s.SetLength(s.Position);  // to prevent garbage if this is the last entry
+                                if (cs1 != null) cs1.Adjust(p1 - p2);
+                            }
                             if (ZipErrorAction == ZipErrorAction.Skip)
                             {
                                 WriteStatus("Skipping file {0} (exception: {1})", LocalFileName, exc1.ToString());

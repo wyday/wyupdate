@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-14 10:59:54>
+// Time-stamp: <2011-July-04 22:29:39>
 //
 // ------------------------------------------------------------------
 //
@@ -57,6 +57,8 @@ namespace Ionic.Zip
             _CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
             _Encryption = EncryptionAlgorithm.None;
             _Source = ZipEntrySource.None;
+            AlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
+            AlternateEncodingUsage = ZipOption.Never;
         }
 
         /// <summary>
@@ -1073,10 +1075,12 @@ namespace Ionic.Zip
         ///
         /// <para>
         ///   By default, the <c>Comment</c> is encoded in IBM437 code page. You can
-        ///   specify an alternative with <see cref="ProvisionalAlternateEncoding"/>
+        ///   specify an alternative with <see cref="AlternateEncoding"/> and
+        ///  <see cref="AlternateEncodingUsage"/>.
         /// </para>
         /// </remarks>
-        /// <seealso cref="ProvisionalAlternateEncoding"/>
+        /// <seealso cref="AlternateEncoding"/>
+        /// <seealso cref="AlternateEncodingUsage"/>
         public string Comment
         {
             get { return _Comment; }
@@ -2087,21 +2091,33 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
+        [Obsolete("Beginning with v1.9.1.6 of DotNetZip, this property is obsolete.  It will be removed in a future version of the library. Your applications should  use AlternateEncoding and AlternateEncodingUsage instead.")]
         public bool UseUnicodeAsNecessary
         {
             get
             {
-                return _provisionalAlternateEncoding == System.Text.Encoding.GetEncoding("UTF-8");
+                return (AlternateEncoding == System.Text.Encoding.GetEncoding("UTF-8")) &&
+                    (AlternateEncodingUsage == ZipOption.AsNecessary);
             }
             set
             {
-                _provisionalAlternateEncoding = (value) ? System.Text.Encoding.GetEncoding("UTF-8") : Ionic.Zip.ZipFile.DefaultEncoding;
+                if (value)
+                {
+                    AlternateEncoding = System.Text.Encoding.GetEncoding("UTF-8");
+                    AlternateEncodingUsage = ZipOption.AsNecessary;
+
+                }
+                else
+                {
+                    AlternateEncoding = Ionic.Zip.ZipFile.DefaultEncoding;
+                    AlternateEncodingUsage = ZipOption.Never;
+                }
             }
         }
 
         /// <summary>
-        /// The text encoding to use for the FileName and Comment on this ZipEntry, when the
-        /// default encoding is insufficient.
+        /// The text encoding to use for the FileName and Comment on this ZipEntry,
+        /// when the default encoding is insufficient.
         /// </summary>
         ///
         /// <remarks>
@@ -2151,55 +2167,114 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// </remarks>
+        [Obsolete("This property is obsolete since v1.9.1.6. Use AlternateEncoding and AlternateEncodingUsage instead.", true)]
         public System.Text.Encoding ProvisionalAlternateEncoding
         {
-            get
-            {
-                return _provisionalAlternateEncoding;
-            }
-            set
-            {
-                _provisionalAlternateEncoding = value;
-            }
+            get; set;
+        }
+
+        /// <summary>
+        ///   Specifies the alternate text encoding used by this ZipEntry
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     The default text encoding used in Zip files for encoding filenames and
+        ///     comments is IBM437, which is something like a superset of ASCII.  In
+        ///     cases where this is insufficient, applications can specify an
+        ///     alternate encoding.
+        ///   </para>
+        ///   <para>
+        ///     When creating a zip file, the usage of the alternate encoding is
+        ///     governed by the <see cref="AlternateEncodingUsage"/> property.
+        ///     Typically you would set both properties to tell DotNetZip to employ an
+        ///     encoding that is not IBM437 in the zipfile you are creating.
+        ///   </para>
+        ///   <para>
+        ///     Keep in mind that because the ZIP specification states that the only
+        ///     valid encodings to use are IBM437 and UTF-8, if you use something
+        ///     other than that, then zip tools and libraries may not be able to
+        ///     successfully read the zip archive you generate.
+        ///   </para>
+        ///   <para>
+        ///     The zip specification states that applications should presume that
+        ///     IBM437 is in use, except when a special bit is set, which indicates
+        ///     UTF-8. There is no way to specify an arbitrary code page, within the
+        ///     zip file itself. When you create a zip file encoded with gb2312 or
+        ///     ibm861 or anything other than IBM437 or UTF-8, then the application
+        ///     that reads the zip file needs to "know" which code page to use. In
+        ///     some cases, the code page used when reading is chosen implicitly. For
+        ///     example, WinRar uses the ambient code page for the host desktop
+        ///     operating system. The pitfall here is that if you create a zip in
+        ///     Copenhagen and send it to Tokyo, the reader of the zipfile may not be
+        ///     able to decode successfully.
+        ///   </para>
+        /// </remarks>
+        /// <example>
+        ///   This example shows how to create a zipfile encoded with a
+        ///   language-specific encoding:
+        /// <code>
+        ///   using (var zip = new ZipFile())
+        ///   {
+        ///      zip.AlternateEnoding = System.Text.Encoding.GetEncoding("ibm861");
+        ///      zip.AlternateEnodingUsage = ZipOption.Always;
+        ///      zip.AddFileS(arrayOfFiles);
+        ///      zip.Save("Myarchive-Encoded-in-IBM861.zip");
+        ///   }
+        /// </code>
+        /// </example>
+        public System.Text.Encoding AlternateEncoding
+        {
+            get; set;
         }
 
 
         /// <summary>
-        /// The text encoding actually used for this ZipEntry.
+        ///   Describes if and when this instance should apply
+        ///   AlternateEncoding to encode the FileName and Comment, when
+        ///   saving.
         /// </summary>
-        ///
-        /// <remarks>
-        ///
-        /// <para>
-        ///   This read-only property describes the encoding used by the
-        ///   <c>ZipEntry</c>.  If the entry has been read in from an existing ZipFile,
-        ///   then it may take the value UTF-8, if the entry is coded to specify UTF-8.
-        ///   If the entry does not specify UTF-8, the typical case, then the encoding
-        ///   used is whatever the application specified in the call to
-        ///   <c>ZipFile.Read()</c>. If the application has used one of the overloads of
-        ///   <c>ZipFile.Read()</c> that does not accept an encoding parameter, then the
-        ///   encoding used is IBM437, which is the default encoding described in the
-        ///   ZIP specification.  </para>
-        ///
-        /// <para>
-        ///   If the entry is being created, then the value of ActualEncoding is taken
-        ///   according to the logic described in the documentation for <see
-        ///   cref="ZipFile.ProvisionalAlternateEncoding" />.  </para>
-        ///
-        /// <para>
-        ///   An application might be interested in retrieving this property to see if
-        ///   an entry read in from a file has used Unicode (UTF-8).  </para>
-        ///
-        /// </remarks>
-        ///
-        /// <seealso cref="ZipFile.ProvisionalAlternateEncoding" />
-        public System.Text.Encoding ActualEncoding
+        public ZipOption AlternateEncodingUsage
         {
-            get
-            {
-                return _actualEncoding;
-            }
+            get; set;
         }
+
+
+        // /// <summary>
+        // /// The text encoding actually used for this ZipEntry.
+        // /// </summary>
+        // ///
+        // /// <remarks>
+        // ///
+        // /// <para>
+        // ///   This read-only property describes the encoding used by the
+        // ///   <c>ZipEntry</c>.  If the entry has been read in from an existing ZipFile,
+        // ///   then it may take the value UTF-8, if the entry is coded to specify UTF-8.
+        // ///   If the entry does not specify UTF-8, the typical case, then the encoding
+        // ///   used is whatever the application specified in the call to
+        // ///   <c>ZipFile.Read()</c>. If the application has used one of the overloads of
+        // ///   <c>ZipFile.Read()</c> that does not accept an encoding parameter, then the
+        // ///   encoding used is IBM437, which is the default encoding described in the
+        // ///   ZIP specification.  </para>
+        // ///
+        // /// <para>
+        // ///   If the entry is being created, then the value of ActualEncoding is taken
+        // ///   according to the logic described in the documentation for <see
+        // ///   cref="ZipFile.ProvisionalAlternateEncoding" />.  </para>
+        // ///
+        // /// <para>
+        // ///   An application might be interested in retrieving this property to see if
+        // ///   an entry read in from a file has used Unicode (UTF-8).  </para>
+        // ///
+        // /// </remarks>
+        // ///
+        // /// <seealso cref="ZipFile.ProvisionalAlternateEncoding" />
+        // public System.Text.Encoding ActualEncoding
+        // {
+        //     get
+        //     {
+        //         return _actualEncoding;
+        //     }
+        // }
 
 
 
@@ -2358,36 +2433,77 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Indicates whether an entry is mark as a text file.
+        ///   Indicates whether an entry is marked as a text file. Be careful when
+        ///   using on this property. Unless you have a good reason, you should
+        ///   probably ignore this property.
         /// </summary>
-        /// <remarks>
         ///
+        /// <remarks>
         /// <para>
-        ///   The ZIP format includes a provision for specifying whether an entry in the
-        ///   zip archive is a text or binary file.  Such a distinction may seem
-        ///   irrelevant now, but some zip tools or libraries, in particular older
-        ///   PKUnzip on IBM mainframes, require this bit to be set in order to unzip
-        ///   text and binary files properly.  Set this property to true to set the Text
-        ///   bit for an entry that represents a text file, if you want your zip files
-        ///   to be readable by these older zip tools and libraries.
+        ///   The ZIP format includes a provision for specifying whether an entry in
+        ///   the zip archive is a text or binary file.  This property exposes that
+        ///   metadata item. Be careful when using this property: It's not clear
+        ///   that this property as a firm meaning, across tools and libraries.
         /// </para>
         ///
         /// <para>
-        ///   When writing a zip file, you must set the property before calling
+        ///   To be clear, when reading a zip file, the property value may or may
+        ///   not be set, and its value may or may not be valid.  Not all entries
+        ///   that you may think of as "text" entries will be so marked, and entries
+        ///   marked as "text" are not guaranteed in any way to be text entries.
+        ///   Whether the value is set and set correctly depends entirely on the
+        ///   application that produced the zip file.
+        /// </para>
+        ///
+        /// <para>
+        ///   There are many zip tools available, and when creating zip files, some
+        ///   of them "respect" the IsText metadata field, and some of them do not.
+        ///   Unfortunately, even when an application tries to do "the right thing",
+        ///   it's not always clear what "the right thing" is.
+        /// </para>
+        ///
+        /// <para>
+        ///   There's no firm definition of just what it means to be "a text file",
+        ///   and the zip specification does not help in this regard. Twenty years
+        ///   ago, text was ASCII, each byte was less than 127. IsText meant, all
+        ///   bytes in the file were less than 127.  These days, it is not the case
+        ///   that all text files have all bytes less than 127.  Any unicode file
+        ///   may have bytes that are above 0x7f.  The zip specification has nothing
+        ///   to say on this topic. Therefore, it's not clear what IsText really
+        ///   means.
+        /// </para>
+        ///
+        /// <para>
+        ///   This property merely tells a reading application what is stored in the
+        ///   metadata for an entry, without guaranteeing its validity or its
+        ///   meaning.
+        /// </para>
+        ///
+        /// <para>
+        ///   When DotNetZip is used to create a zipfile, it attempts to set this
+        ///   field "correctly." For example, if a file ends in ".txt", this field
+        ///   will be set. Your application may override that default setting.  When
+        ///   writing a zip file, you must set the property before calling
         ///   <c>Save()</c> on the ZipFile.
         /// </para>
         ///
         /// <para>
-        ///   If you are not having compatibility problems with zip archives, you can
-        ///   safely ignore this property.
-        /// </para>
+        ///   When reading a zip file, a more general way to decide just what kind
+        ///   of file is contained in a particular entry is to use the file type
+        ///   database stored in the operating system.  The operating system stores
+        ///   a table that says, a file with .jpg extension is a JPG image file, a
+        ///   file with a .xml extension is an XML document, a file with a .txt is a
+        ///   pure ASCII text document, and so on.  To get this information on
+        ///   Windows, <see
+        ///   href="http://www.codeproject.com/KB/cs/GetFileTypeAndIcon.aspx"> you
+        ///   need to read and parse the registry.</see> </para>
         /// </remarks>
         ///
         /// <example>
         /// <code>
         /// using (var zip = new ZipFile())
         /// {
-        ///     var e = zip.UpdateFile("Descriptions.txt", "");
+        ///     var e = zip.UpdateFile("Descriptions.mme", "");
         ///     e.IsText = true;
         ///     zip.Save(zipPath);
         /// }
@@ -2395,7 +2511,7 @@ namespace Ionic.Zip
         ///
         /// <code lang="VB">
         /// Using zip As New ZipFile
-        ///     Dim e2 as ZipEntry = zip.AddFile("Descriptions.txt", "")
+        ///     Dim e2 as ZipEntry = zip.AddFile("Descriptions.mme", "")
         ///     e.IsText= True
         ///     zip.Save(zipPath)
         /// End Using
@@ -2587,7 +2703,7 @@ namespace Ionic.Zip
         private UInt32 _diskNumber;
 
         private static System.Text.Encoding ibm437 = System.Text.Encoding.GetEncoding("IBM437");
-        private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
+        //private System.Text.Encoding _provisionalAlternateEncoding = System.Text.Encoding.GetEncoding("IBM437");
         private System.Text.Encoding _actualEncoding;
 
         internal ZipContainer _container;

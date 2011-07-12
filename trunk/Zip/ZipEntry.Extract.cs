@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-18 02:40:20>
+// Time-stamp: <2011-July-06 11:05:10>
 //
 // ------------------------------------------------------------------
 //
@@ -1024,8 +1024,12 @@ namespace Ionic.Zip
                 var zss = input as ZipSegmentedStream;
                 if (zss != null)
                 {
+#if NETCF
+                    zss.Close();
+#else
                     // need to dispose it
                     zss.Dispose();
+#endif
                     _archiveStream = null;
                 }
             }

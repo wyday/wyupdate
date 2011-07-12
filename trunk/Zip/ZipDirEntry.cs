@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-16 10:44:34>
+// Time-stamp: <2011-July-11 12:03:03>
 //
 // ------------------------------------------------------------------
 //
@@ -70,26 +70,41 @@ namespace Ionic.Zip
             get
             {
                 var builder = new System.Text.StringBuilder();
-                builder.Append(string.Format("ZipEntry: {0}\n", this.FileName))
-                    .Append(string.Format("  Version Made By: 0x{0:X}\n", this._VersionMadeBy))
-                    .Append(string.Format("  Version Needed: 0x{0:X}\n", this.VersionNeeded))
-                    .Append(string.Format("  Compression Method: {0}\n", this.CompressionMethod))
-                    .Append(string.Format("  Compressed: 0x{0:X}\n", this.CompressedSize))
-                    .Append(string.Format("  Uncompressed: 0x{0:X}\n", this.UncompressedSize))
-                    .Append(string.Format("  Disk Number: {0}\n", this._diskNumber))
-                    .Append(string.Format("  Relative Offset: 0x{0:X}\n", this._RelativeOffsetOfLocalHeader))
-                    .Append(string.Format("  Bit Field: 0x{0:X4}\n", this._BitField))
-                    .Append(string.Format("  Encrypted?: {0}\n", this._sourceIsEncrypted))
-                    .Append(string.Format("  Timeblob: 0x{0:X8} ({1})\n", this._TimeBlob,
-                                          Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)))
-                    .Append(string.Format("  CRC: 0x{0:X8}\n", this._Crc32))
-                    .Append(string.Format("  Is Text?: {0}\n", this._IsText))
-                    .Append(string.Format("  Is Directory?: {0}\n", this._IsDirectory))
-                    .Append(string.Format("  Is Zip64?: {0}\n", this._InputUsesZip64));
+                builder
+                    .Append(string.Format("          ZipEntry: {0}\n", this.FileName))
+                    .Append(string.Format("   Version Made By: {0}\n", this._VersionMadeBy))
+                    .Append(string.Format(" Needed to extract: {0}\n", this.VersionNeeded));
+
+                if (this._IsDirectory)
+                    builder.Append("        Entry type: directory\n");
+                else
+                {
+                    builder.Append(string.Format("         File type: {0}\n", this._IsText? "text":"binary"))
+                        .Append(string.Format("       Compression: {0}\n", this.CompressionMethod))
+                        .Append(string.Format("        Compressed: 0x{0:X}\n", this.CompressedSize))
+                        .Append(string.Format("      Uncompressed: 0x{0:X}\n", this.UncompressedSize))
+                        .Append(string.Format("             CRC32: 0x{0:X8}\n", this._Crc32));
+                }
+                builder.Append(string.Format("       Disk Number: {0}\n", this._diskNumber));
+                if (this._RelativeOffsetOfLocalHeader > 0xFFFFFFFF)
+                    builder
+                        .Append(string.Format("   Relative Offset: 0x{0:X16}\n", this._RelativeOffsetOfLocalHeader));
+                        else
+                    builder
+                        .Append(string.Format("   Relative Offset: 0x{0:X8}\n", this._RelativeOffsetOfLocalHeader));
+
+                    builder
+                    .Append(string.Format("         Bit Field: 0x{0:X4}\n", this._BitField))
+                    .Append(string.Format("        Encrypted?: {0}\n", this._sourceIsEncrypted))
+                    .Append(string.Format("          Timeblob: 0x{0:X8}\n", this._TimeBlob))
+                        .Append(string.Format("              Time: {0}\n", Ionic.Zip.SharedUtilities.PackedToDateTime(this._TimeBlob)));
+
+                builder.Append(string.Format("         Is Zip64?: {0}\n", this._InputUsesZip64));
                 if (!string.IsNullOrEmpty(this._Comment))
                 {
-                    builder.Append(string.Format("  Comment: {0}\n", this._Comment));
+                    builder.Append(string.Format("           Comment: {0}\n", this._Comment));
                 }
+                builder.Append("\n");
                 return builder.ToString();
             }
         }
@@ -168,10 +183,13 @@ namespace Ionic.Zip
         /// </param>
         ///
         /// <returns>the entry read from the archive.</returns>
-        internal static ZipEntry ReadDirEntry(ZipFile zf, List<String> previouslySeen)
+        internal static ZipEntry ReadDirEntry(ZipFile zf,
+                                              Dictionary<String,Object> previouslySeen)
         {
             System.IO.Stream s = zf.ReadStream;
-            System.Text.Encoding expectedEncoding = zf.ProvisionalAlternateEncoding;
+            System.Text.Encoding expectedEncoding = (zf.AlternateEncodingUsage == ZipOption.Always)
+                ? zf.AlternateEncoding
+                : ZipFile.DefaultEncoding;
 
             int signature = Ionic.Zip.SharedUtilities.ReadSignature(s);
             // return null if this is not a local file header signature
@@ -203,7 +221,7 @@ namespace Ionic.Zip
 
             int i = 0;
             ZipEntry zde = new ZipEntry();
-            zde.ProvisionalAlternateEncoding = expectedEncoding;
+            zde.AlternateEncoding = expectedEncoding;
             zde._Source = ZipEntrySource.ZipFile;
             zde._container = new ZipContainer(zf);
 
@@ -253,7 +271,7 @@ namespace Ionic.Zip
 
             // workitem 10330
             // insure unique entry names
-            while (previouslySeen.Contains(zde._FileNameInArchive))
+            while (previouslySeen.ContainsKey(zde._FileNameInArchive))
             {
                 zde._FileNameInArchive = CopyHelper.AppendCopyToFileName(zde._FileNameInArchive);
                 zde._metadataChanged = true;
@@ -267,7 +285,9 @@ namespace Ionic.Zip
             zde._CompressedFileDataSize = zde._CompressedSize;
             if ((zde._BitField & 0x01) == 0x01)
             {
-                zde._Encryption_FromZipFile = zde._Encryption = EncryptionAlgorithm.PkzipWeak; // this may change after processing the Extra field
+                // this may change after processing the Extra field
+                zde._Encryption_FromZipFile = zde._Encryption =
+                    EncryptionAlgorithm.PkzipWeak;
                 zde._sourceIsEncrypted = true;
             }
 
@@ -310,15 +330,11 @@ namespace Ionic.Zip
             }
 
             // workitem 12744
-            if ((zde._BitField & 0x0800) == 0x0800)
-            {
-                zde._actualEncoding = System.Text.Encoding.UTF8;
-            }
-            else
-            {
-                zde._actualEncoding = expectedEncoding;
-            }
+            zde.AlternateEncoding = ((zde._BitField & 0x0800) == 0x0800)
+                ? System.Text.Encoding.UTF8
+                :expectedEncoding;
 
+            zde.AlternateEncodingUsage = ZipOption.Always;
 
             if (zde._commentLength > 0)
             {

@@ -394,7 +394,8 @@ namespace wyUpdate.Common
                 ZipEntry entry;
                 using (ZipFile zip = new ZipFile(outputFilename))
                 {
-                    zip.UseUnicodeAsNecessary = true;
+                    zip.AlternateEncoding = Encoding.UTF8;
+                    zip.AlternateEncodingUsage = ZipOption.AsNecessary;
 
                     // 0 (store only) to 9 (best compression)
                     zip.CompressionLevel = Ionic.Zlib.CompressionLevel.Level7;

@@ -24,6 +24,7 @@ namespace wyUpdate.Common
         static string m_CommonProgramFilesx86;
         static string m_CommonProgramFilesx64;
 
+        static string m_UserProfile;
 
         public static string GetCommonAppData()
         {
@@ -158,6 +159,22 @@ namespace wyUpdate.Common
             }
 
             return m_RootDrive;
+        }
+
+        public static string GetUserProfile()
+        {
+            if (m_UserProfile == null)
+            {
+                StringBuilder path = new StringBuilder(256);
+
+                // %userprofile%
+                //CSIDL_PROFILE  = 0x0028
+                SHGetFolderPath(IntPtr.Zero, 0x28, IntPtr.Zero, 0, path);
+
+                m_UserProfile = path.ToString();
+            }
+
+            return m_UserProfile;
         }
 
         [DllImport("shell32.dll")]

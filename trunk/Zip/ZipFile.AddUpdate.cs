@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-17 11:38:52>
+// Time-stamp: <2011-July-06 21:29:58>
 //
 // ------------------------------------------------------------------
 //
@@ -1131,7 +1131,7 @@ namespace Ionic.Zip
         /// </example>
         public ZipEntry AddEntry(string entryName, string content)
         {
-            return AddEntry(entryName, content, System.Text.Encoding.Default);
+            return AddEntry(entryName, content, _alternateEncoding);
         }
 
 
@@ -1590,7 +1590,8 @@ namespace Ionic.Zip
             ze.ExtractExistingFile = ExtractExistingFile;
             ze.ZipErrorAction = this.ZipErrorAction;
             ze.SetCompression = SetCompression;
-            ze.ProvisionalAlternateEncoding = ProvisionalAlternateEncoding;
+            ze.AlternateEncoding = AlternateEncoding;
+            ze.AlternateEncodingUsage = AlternateEncodingUsage;
             ze.Password = _Password;
             ze.Encryption = Encryption;
             ze.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
@@ -1606,16 +1607,18 @@ namespace Ionic.Zip
 
         /// <summary>
         ///   Updates the given entry in the <c>ZipFile</c>, using the given
-        ///   string as input.
+        ///   string as content for the <c>ZipEntry</c>.
         /// </summary>
         ///
         /// <remarks>
         ///
         /// <para>
-        ///   Calling this method is equivalent to removing the <c>ZipEntry</c>
-        ///   for the given file name and directory path, if it exists, and then
-        ///   calling <see cref="AddEntry(String,String)" />.  See the
-        ///   documentation for that method for further explanation.
+        ///   Calling this method is equivalent to removing the <c>ZipEntry</c> for
+        ///   the given file name and directory path, if it exists, and then calling
+        ///   <see cref="AddEntry(String,String)" />.  See the documentation for that
+        ///   method for further explanation. The string content is encoded using
+        ///   IBM437. This encoding is distinct from the encoding used for the
+        ///   filename itself.  See <see cref="AlternateEncoding"/>.
         /// </para>
         ///
         /// </remarks>
@@ -1659,28 +1662,76 @@ namespace Ionic.Zip
         /// <param name="encoding">
         ///   The text encoding to use when encoding the string. Be aware: This is
         ///   distinct from the text encoding used to encode the filename. See <see
-        ///   cref="ProvisionalAlternateEncoding" />.
+        ///   cref="AlternateEncoding" />.
         /// </param>
         ///
         /// <returns>The <c>ZipEntry</c> added.</returns>
         ///
         public ZipEntry UpdateEntry(string entryName, string content, System.Text.Encoding encoding)
         {
-            if (String.IsNullOrEmpty(entryName))
-                throw new ArgumentNullException("entryName");
-
-            string directoryPathInArchive = null;
-            if (entryName.IndexOf('\\') != -1)
-            {
-                directoryPathInArchive = Path.GetDirectoryName(entryName);
-                entryName = Path.GetFileName(entryName);
-            }
-            string key = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
-
-            if (this[key] != null)
-                this.RemoveEntry(key);
-
+            RemoveEntryForUpdate(entryName);
             return AddEntry(entryName, content, encoding);
+        }
+
+
+
+        /// <summary>
+        ///   Updates the given entry in the <c>ZipFile</c>, using the given delegate
+        ///   as the source for content for the <c>ZipEntry</c>.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   Calling this method is equivalent to removing the <c>ZipEntry</c> for the
+        ///   given file name and directory path, if it exists, and then calling <see
+        ///   cref="AddEntry(String,WriteDelegate)" />.  See the
+        ///   documentation for that method for further explanation.
+        /// </remarks>
+        ///
+        /// <param name="entryName">
+        ///   The name, including any path, to use within the archive for the entry.
+        /// </param>
+        ///
+        /// <param name="writer">the delegate which will write the entry content.</param>
+        ///
+        /// <returns>The <c>ZipEntry</c> added.</returns>
+        ///
+        public ZipEntry UpdateEntry(string entryName, WriteDelegate writer)
+        {
+            RemoveEntryForUpdate(entryName);
+            return AddEntry(entryName, writer);
+        }
+
+
+
+        /// <summary>
+        ///   Updates the given entry in the <c>ZipFile</c>, using the given delegates
+        ///   to open and close the stream that provides the content for the <c>ZipEntry</c>.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   Calling this method is equivalent to removing the <c>ZipEntry</c> for the
+        ///   given file name and directory path, if it exists, and then calling <see
+        ///   cref="AddEntry(String,OpenDelegate, CloseDelegate)" />.  See the
+        ///   documentation for that method for further explanation.
+        /// </remarks>
+        ///
+        /// <param name="entryName">
+        ///   The name, including any path, to use within the archive for the entry.
+        /// </param>
+        ///
+        /// <param name="opener">
+        ///  the delegate that will be invoked to open the stream
+        /// </param>
+        /// <param name="closer">
+        ///  the delegate that will be invoked to close the stream
+        /// </param>
+        ///
+        /// <returns>The <c>ZipEntry</c> added or updated.</returns>
+        ///
+        public ZipEntry UpdateEntry(string entryName, OpenDelegate opener, CloseDelegate closer)
+        {
+            RemoveEntryForUpdate(entryName);
+            return AddEntry(entryName, opener, closer);
         }
 
 
@@ -1725,6 +1776,13 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry UpdateEntry(string entryName, Stream stream)
         {
+            RemoveEntryForUpdate(entryName);
+            return AddEntry(entryName, stream);
+        }
+
+
+        private void RemoveEntryForUpdate(string entryName)
+        {
             if (String.IsNullOrEmpty(entryName))
                 throw new ArgumentNullException("entryName");
 
@@ -1734,12 +1792,9 @@ namespace Ionic.Zip
                 directoryPathInArchive = Path.GetDirectoryName(entryName);
                 entryName = Path.GetFileName(entryName);
             }
-            string key = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
-
+            var key = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
             if (this[key] != null)
                 this.RemoveEntry(key);
-
-            return AddEntry(entryName, stream);
         }
 
 
@@ -1788,19 +1843,7 @@ namespace Ionic.Zip
         ///
         public ZipEntry UpdateEntry(string entryName, byte[] byteContent)
         {
-            if (String.IsNullOrEmpty(entryName))
-                throw new ArgumentNullException("entryName");
-
-            string directoryPathInArchive = null;
-            if (entryName.IndexOf('\\') != -1)
-            {
-                directoryPathInArchive = Path.GetDirectoryName(entryName);
-                entryName = Path.GetFileName(entryName);
-            }
-            var key = ZipEntry.NameInArchive(entryName, directoryPathInArchive);
-            if (this[key] != null)
-                this.RemoveEntry(key);
-
+            RemoveEntryForUpdate(entryName);
             return AddEntry(entryName, byteContent);
         }
 
@@ -1960,10 +2003,12 @@ namespace Ionic.Zip
         /// <returns>The <c>ZipEntry</c> added.</returns>
         public ZipEntry AddDirectoryByName(string directoryNameInArchive)
         {
-            ZipEntry dir = ZipEntry.CreateFromNothing(directoryNameInArchive);    // workitem 9073
+            // workitem 9073
+            ZipEntry dir = ZipEntry.CreateFromNothing(directoryNameInArchive);
             dir._container = new ZipContainer(this);
             dir.MarkAsDirectory();
-            dir.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;  // workitem 8984
+            dir.AlternateEncoding = this.AlternateEncoding;  // workitem 8984
+            dir.AlternateEncodingUsage = this.AlternateEncodingUsage;
             dir.SetEntryTimes(DateTime.Now,DateTime.Now,DateTime.Now);
             dir.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
             dir.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;
@@ -2037,7 +2082,8 @@ namespace Ionic.Zip
             {
                 baseDir = ZipEntry.CreateFromFile(directoryName, dirForEntries);
                 baseDir._container = new ZipContainer(this);
-                baseDir.ProvisionalAlternateEncoding = this.ProvisionalAlternateEncoding;  // workitem 6410
+                baseDir.AlternateEncoding = this.AlternateEncoding;  // workitem 6410
+                baseDir.AlternateEncodingUsage = this.AlternateEncodingUsage;
                 baseDir.MarkAsDirectory();
                 baseDir.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
                 baseDir.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;

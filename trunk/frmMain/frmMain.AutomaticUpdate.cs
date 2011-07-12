@@ -472,8 +472,13 @@ namespace wyUpdate
         /// <returns>The directory to the cache folder</returns>
         static string GetCacheFolder(string guid)
         {
+            string userprofile = SystemFolders.GetUserProfile();
+
+            if (string.IsNullOrEmpty(userprofile))
+                throw new Exception("Failed to retrieve the user profile folder.");
+
             // C:\Users\USERNAME\wc
-            string temp = Path.Combine(Environment.GetEnvironmentVariable("userprofile"), "wc");
+            string temp = Path.Combine(userprofile, "wc");
 
             // if the folder temp folder doesn't exist, create the folder with hidden attributes
             if (!Directory.Exists(temp))
@@ -491,7 +496,7 @@ namespace wyUpdate
             {
                 string name = Path.GetFileName(dirs[i]);
 
-                if (guid.IndexOf(name) == 0)
+                if (!string.IsNullOrEmpty(name) && guid.IndexOf(name) == 0)
                 {
                     // see if the partial-matching folder contains an empty GUID file
                     if (File.Exists(Path.Combine(dirs[i], guid)))
@@ -502,10 +507,7 @@ namespace wyUpdate
             }
 
             // the folder doesn't exist, so we'll create it
-            string guidCacheFolder = Path.Combine(temp, guid.Substring(0,
-                                                                       closestMatch == null
-                                                                           ? 1
-                                                                           : closestMatch.Length + 1));
+            string guidCacheFolder = Path.Combine(temp, guid.Substring(0, closestMatch == null ? 1 : closestMatch.Length + 1));
 
             Directory.CreateDirectory(guidCacheFolder);
 

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-17 09:02:24>
+// Time-stamp: <2011-July-06 11:06:59>
 //
 // ------------------------------------------------------------------
 //
@@ -245,7 +245,11 @@ namespace Ionic.Zip
         {
             if (_innerStream != null)
             {
+#if NETCF
+                _innerStream.Close();
+#else
                 _innerStream.Dispose();
+#endif
             }
 
             if (CurrentSegment + 1 == _maxDiskNumber)
@@ -304,7 +308,11 @@ namespace Ionic.Zip
         {
             if (_innerStream != null)
             {
+#if NETCF
+                _innerStream.Close();
+#else
                 _innerStream.Dispose();
+#endif
                 if (File.Exists(CurrentName))
                     File.Delete(CurrentName);
                 File.Move(_currentTempName, CurrentName);
@@ -393,7 +401,11 @@ namespace Ionic.Zip
             // First, close the current segment, and then remove it.
             if (_innerStream != null)
             {
+#if NETCF
+                _innerStream.Close();
+#else
                 _innerStream.Dispose();
+#endif
                 if (File.Exists(_currentTempName))
                     File.Delete(_currentTempName);
             }
@@ -519,7 +531,11 @@ namespace Ionic.Zip
             {
                 if (_innerStream != null)
                 {
+#if NETCF
+                    _innerStream.Close();
+#else
                     _innerStream.Dispose();
+#endif
                     //_innerStream = null;
                     if (rwMode == RwMode.Write)
                     {
