@@ -8,8 +8,12 @@ namespace wyUpdate.Common
 {
     public static class SystemFolders
     {
+        [DllImport("shell32.dll")]
+        static extern Int32 SHGetFolderPath(IntPtr hwndOwner, Int32 nFolder, IntPtr hToken, UInt32 dwFlags, StringBuilder pszPath);
+
         static string m_CommonAppData;
         static string m_CurrentAppData;
+        static string m_CurrentLocalAppData;
         static string m_CommonDesktop;
         static string m_CurrentDesktop;
         static string m_CommonDocuments;
@@ -30,10 +34,12 @@ namespace wyUpdate.Common
         {
             if (m_CommonAppData == null)
             {
-                //read the value from registry
-                m_CommonAppData = (string)Registry.GetValue(
-                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
-                    "Common AppData", null);
+                StringBuilder path = new StringBuilder(256);
+
+                //CSIDL_COMMON_APPDATA = 0x0023
+                SHGetFolderPath(IntPtr.Zero, 0x23, IntPtr.Zero, 0, path);
+
+                m_CommonAppData = path.ToString();
             }
 
             return m_CommonAppData;
@@ -45,14 +51,22 @@ namespace wyUpdate.Common
                    (m_CurrentAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
         }
 
+        public static string GetCurrentUserLocalAppData()
+        {
+            return m_CurrentLocalAppData ??
+                   (m_CurrentLocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+        }
+
         public static string GetCommonDesktop()
         {
             if (m_CommonDesktop == null)
             {
-                //read the value from registry
-                m_CommonDesktop = (string)Registry.GetValue(
-                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
-                    "Common Desktop", null);
+                StringBuilder path = new StringBuilder(256);
+
+                //CSIDL_COMMON_DESKTOPDIRECTORY = 0x0019
+                SHGetFolderPath(IntPtr.Zero, 0x19, IntPtr.Zero, 0, path);
+
+                m_CommonDesktop = path.ToString();
             }
 
             return m_CommonDesktop;
@@ -83,10 +97,12 @@ namespace wyUpdate.Common
         {
             if (m_CommonProgramsStartMenu == null)
             {
-                //read the value from registry
-                m_CommonProgramsStartMenu = (string)Registry.GetValue(
-                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
-                    "Common Programs", null);
+                StringBuilder path = new StringBuilder(256);
+
+                //CSIDL_COMMON_STARTMENU = 0x0016
+                SHGetFolderPath(IntPtr.Zero, 0x16, IntPtr.Zero, 0, path);
+
+                m_CommonProgramsStartMenu = path.ToString();
             }
 
             return m_CommonProgramsStartMenu;
@@ -142,10 +158,12 @@ namespace wyUpdate.Common
         {
             if (m_CommonStartup == null)
             {
-                //read the value from registry
-                m_CommonStartup = (string)Registry.GetValue(
-                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\explorer\Shell Folders",
-                    "Common Startup", null);
+                StringBuilder path = new StringBuilder(256);
+
+                //CSIDL_COMMON_STARTUP = 0x0018
+                SHGetFolderPath(IntPtr.Zero, 0x18, IntPtr.Zero, 0, path);
+
+                m_CommonStartup = path.ToString();
             }
 
             return m_CommonStartup;
@@ -176,9 +194,6 @@ namespace wyUpdate.Common
 
             return m_UserProfile;
         }
-
-        [DllImport("shell32.dll")]
-        static extern Int32 SHGetFolderPath(IntPtr hwndOwner, Int32 nFolder, IntPtr hToken, UInt32 dwFlags, StringBuilder pszPath);
 
         public static string GetSystem32x86()
         {
