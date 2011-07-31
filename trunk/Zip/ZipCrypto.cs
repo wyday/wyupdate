@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-16 19:56:17>
+// Time-stamp: <2011-July-28 06:30:59>
 //
 // ------------------------------------------------------------------
 //
@@ -334,10 +334,9 @@ namespace Ionic.Zip
         //    }
         //}
 
-
         // private fields for the crypto stuff:
         private UInt32[] _Keys = { 0x12345678, 0x23456789, 0x34567890 };
-        private Ionic.Zlib.CRC32 crc32 = new Ionic.Zlib.CRC32();
+        private Ionic.Crc.CRC32 crc32 = new Ionic.Crc.CRC32();
 
     }
 

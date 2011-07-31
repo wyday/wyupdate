@@ -68,10 +68,11 @@ namespace Ionic.Zip
     /// </para>
     ///
     /// <para>
-    ///   Both the <c>ZipOutputStream</c> class and the <c>ZipFile</c> class can be used
-    ///   to create zip files. Both of them support many of the common zip features,
-    ///   including Unicode, different compression levels, and ZIP64. They provide
-    ///   very similar performance when creating zip files.
+    ///   Both the <c>ZipOutputStream</c> class and the <c>ZipFile</c> class can
+    ///   be used to create zip files. Both of them support many of the common zip
+    ///   features, including Unicode, different compression methods and levels,
+    ///   and ZIP64. They provide very similar performance when creating zip
+    ///   files.
     /// </para>
     ///
     /// <para>
@@ -326,12 +327,25 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        ///   Setting this affects the performance and memory efficiency of compression
-        ///   and decompression.  For larger files, setting this to a larger size may
-        ///   improve performance, but the exact numbers vary depending on available
-        ///   memory, and a bunch of other variables. I don't have good firm
-        ///   recommendations on how to set it.  You'll have to test it yourself. Or
-        ///   just leave it alone and accept the default.
+        ///   <para>
+        ///     When doing ZLIB or Deflate compression, the library fills a buffer,
+        ///     then passes it to the compressor for compression. Then the library
+        ///     reads out the compressed bytes. This happens repeatedly until there
+        ///     is no more uncompressed data to compress. This property sets the
+        ///     size of the buffer that will be used for chunk-wise compression. In
+        ///     order for the setting to take effect, your application needs to set
+        ///     this property before calling one of the <c>ZipFile.Save()</c>
+        ///     overloads.
+        ///   </para>
+        ///   <para>
+        ///     Setting this affects the performance and memory efficiency of
+        ///     compression and decompression. For larger files, setting this to a
+        ///     larger size may improve compression performance, but the exact
+        ///     numbers vary depending on available memory, the size of the streams
+        ///     you are compressing, and a bunch of other variables. I don't have
+        ///     good firm recommendations on how to set it.  You'll have to test it
+        ///     yourself. Or just leave it alone and accept the default.
+        ///   </para>
         /// </remarks>
         public int CodecBufferSize
         {
@@ -378,11 +392,12 @@ namespace Ionic.Zip
         /// </summary>
         ///
         /// <remarks>
-        ///   Set the Strategy used by the ZLIB-compatible compressor, when compressing
-        ///   entries. Different compression strategies work better on different sorts
-        ///   of data. The strategy parameter can affect the compression ratio and the
-        ///   speed of compression but not the correctness of the compresssion.  For
-        ///   more information see <see
+        ///   Set the Strategy used by the ZLIB-compatible compressor, when
+        ///   compressing entries using the DEFLATE method. Different compression
+        ///   strategies work better on different sorts of data. The strategy
+        ///   parameter can affect the compression ratio and the speed of
+        ///   compression but not the correctness of the compresssion.  For more
+        ///   information see <see
         ///   cref="Ionic.Zlib.CompressionStrategy">Ionic.Zlib.CompressionStrategy</see>.
         /// </remarks>
         public Ionic.Zlib.CompressionStrategy Strategy
@@ -461,6 +476,28 @@ namespace Ionic.Zip
             get;
             set;
         }
+
+        /// <summary>
+        ///   The compression method for the zipfile.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     By default, the compression method is <c>CompressionMethod.Deflate.</c>
+        ///   </para>
+        /// </remarks>
+        /// <seealso cref="Ionic.Zip.CompressionMethod" />
+        public Ionic.Zip.CompressionMethod CompressionMethod
+        {
+            get
+            {
+                return _compressionMethod;
+            }
+            set
+            {
+                _compressionMethod = value;
+            }
+        }
+
 
 
         /// <summary>
@@ -2296,12 +2333,13 @@ namespace Ionic.Zip
 
         internal Stream StreamForDiskNumber(uint diskNumber)
         {
-            if (diskNumber + 1 == this._diskNumberWithCd || (diskNumber == 0 && this._diskNumberWithCd == 0))
+            if (diskNumber + 1 == this._diskNumberWithCd ||
+                (diskNumber == 0 && this._diskNumberWithCd == 0))
             {
                 //return (this.ReadStream as FileStream);
                 return this.ReadStream;
             }
-            return ZipSegmentedStream.ForReading(this._name, diskNumber, _diskNumberWithCd);
+            return ZipSegmentedStream.ForReading(this._readName, diskNumber, _diskNumberWithCd);
         }
 
 
@@ -3562,11 +3600,13 @@ namespace Ionic.Zip
         private System.Collections.Generic.Dictionary<String, ZipEntry> _entries;
         private List<ZipEntry> _zipEntriesAsList;
         private string _name;
+        private string _readName;
         private string _Comment;
         internal string _Password;
         private bool _emitNtfsTimes = true;
         private bool _emitUnixTimes;
         private Ionic.Zlib.CompressionStrategy _Strategy = Ionic.Zlib.CompressionStrategy.Default;
+        private Ionic.Zip.CompressionMethod _compressionMethod = Ionic.Zip.CompressionMethod.Deflate;
         private bool _fileAlreadyExists;
         private string _temporaryFileName;
         private bool _contentsChanged;

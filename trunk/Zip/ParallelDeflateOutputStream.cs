@@ -7,12 +7,20 @@
 // divide-and-conquer approach with multiple threads to exploit multiple
 // CPUs for the DEFLATE computation.
 //
-// last saved:
-// Time-stamp: <2011-July-11 21:51:32>
+// last saved: <2011-July-28 06:29:49>
+//
 // ------------------------------------------------------------------
 //
 // Copyright (c) 2009-2011 by Dino Chiesa
 // All rights reserved!
+//
+// This code module is part of DotNetZip, a zipfile class library.
+//
+// ------------------------------------------------------------------
+//
+// This code is licensed under the Microsoft Public License.
+// See the file License.txt for the license details.
+// More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 
@@ -54,28 +62,25 @@ namespace Ionic.Zlib
     }
 
     /// <summary>
-    ///   A class for compressing and decompressing streams using the
+    ///   A class for compressing streams using the
     ///   Deflate algorithm with multiple threads.
     /// </summary>
     ///
     /// <remarks>
     /// <para>
-    ///   This class is for compression only, and that can be only
-    ///   through writing.
-    /// </para>
-    ///
-    /// <para>
-    ///   For more information on the Deflate algorithm, see IETF RFC 1951, "DEFLATE
-    ///   Compressed Data Format Specification version 1.3."
+    ///   This class performs DEFLATE compression through writing.  For
+    ///   more information on the Deflate algorithm, see IETF RFC 1951,
+    ///   "DEFLATE Compressed Data Format Specification version 1.3."
     /// </para>
     ///
     /// <para>
     ///   This class is similar to <see cref="Ionic.Zlib.DeflateStream"/>, except
-    ///   that this implementation uses an approach that employs multiple worker
-    ///   threads to perform the DEFLATE.  On a multi-cpu or multi-core computer,
-    ///   the performance of this class can be significantly higher than the
-    ///   single-threaded DeflateStream, particularly for larger streams.  How
-    ///   large?  Anything over 10mb is a good candidate for parallel compression.
+    ///   that this class is for compression only, and this implementation uses an
+    ///   approach that employs multiple worker threads to perform the DEFLATE.  On
+    ///   a multi-cpu or multi-core computer, the performance of this class can be
+    ///   significantly higher than the single-threaded DeflateStream, particularly
+    ///   for larger streams.  How large?  Anything over 10mb is a good candidate
+    ///   for parallel compression.
     /// </para>
     ///
     /// <para>
@@ -84,10 +89,11 @@ namespace Ionic.Zlib
     ///   large files the size of the compressed data stream can be less than 1%
     ///   larger than the size of a compressed data stream from the vanialla
     ///   DeflateStream.  For smaller files the difference can be larger.  The
-    ///   difference will also be larger if you set the BufferSize to be lower
-    ///   than the default value.  Your mileage may vary. Finally, for small
-    ///   files, the ParallelDeflateOutputStream can be much slower than the vanilla
-    ///   DeflateStream, because of the overhead of using the thread pool.
+    ///   difference will also be larger if you set the BufferSize to be lower than
+    ///   the default value.  Your mileage may vary. Finally, for small files, the
+    ///   ParallelDeflateOutputStream can be much slower than the vanilla
+    ///   DeflateStream, because of the overhead associated to using the thread
+    ///   pool.
     /// </para>
     ///
     /// </remarks>
@@ -115,7 +121,7 @@ namespace Ionic.Zlib
         private int                         _lastWritten;
         private int                         _latestCompressed;
         private int                         _Crc32;
-        private Ionic.Zlib.CRC32            _runningCrc;
+        private Ionic.Crc.CRC32             _runningCrc;
         private object                      _latestLock = new object();
         private System.Collections.Generic.Queue<int>     _toWrite;
         private System.Collections.Generic.Queue<int>     _toFill;
@@ -298,7 +304,7 @@ namespace Ionic.Zlib
             _compressLevel= level;
             Strategy = strategy;
             _leaveOpen = leaveOpen;
-            MaxBufferPairs = 16; // default
+            this.MaxBufferPairs = 16; // default
         }
 
 
@@ -474,6 +480,7 @@ namespace Ionic.Zlib
             _toFill = new Queue<int>();
             _pool = new System.Collections.Generic.List<WorkItem>();
             int nTasks = BufferPairsPerCore * Environment.ProcessorCount;
+            nTasks = Math.Min(nTasks, _maxBufferPairs);
             for(int i=0; i < nTasks; i++)
             {
                 _pool.Add(new WorkItem(_bufferSize, _compressLevel, Strategy, i));
@@ -481,7 +488,7 @@ namespace Ionic.Zlib
             }
 
             _newlyCompressedBlob = new AutoResetEvent(false);
-            _runningCrc = new Ionic.Zlib.CRC32();
+            _runningCrc = new Ionic.Crc.CRC32();
             _currentlyFilling = -1;
             _lastFilled = -1;
             _lastWritten = -1;
@@ -541,7 +548,7 @@ namespace Ionic.Zlib
             if (!_firstWriteDone)
             {
                 // Want to do this on first Write, first session, and not in the
-                // constructor.  We want to allow the BufferSize and BuffersPerCore to
+                // constructor.  We want to allow MaxBufferPairs to
                 // change after construction, but before first Write.
                 _InitializePoolOfWorkItems();
                 _firstWriteDone = true;
@@ -600,11 +607,11 @@ namespace Ionic.Zlib
 
                 // copy from the provided buffer to our workitem, starting at
                 // the tail end of whatever data we might have in there currently.
-                Array.Copy(buffer,
-                           offset,
-                           workitem.buffer,
-                           workitem.inputBytesAvailable,
-                           limit);
+                Buffer.BlockCopy(buffer,
+                                 offset,
+                                 workitem.buffer,
+                                 workitem.inputBytesAvailable,
+                                 limit);
 
                 count -= limit;
                 offset += limit;
@@ -849,7 +856,7 @@ namespace Ionic.Zlib
 
             _firstWriteDone = false;
             _totalBytesProcessed = 0L;
-            _runningCrc = new Ionic.Zlib.CRC32();
+            _runningCrc = new Ionic.Crc.CRC32();
             _isClosed= false;
             _currentlyFilling = -1;
             _lastFilled = -1;
@@ -1148,7 +1155,7 @@ namespace Ionic.Zlib
             try
             {
                 int myItem = workitem.index;
-                Ionic.Zlib.CRC32 crc = new CRC32();
+                Ionic.Crc.CRC32 crc = new Ionic.Crc.CRC32();
 
                 // calc CRC on the buffer
                 crc.SlurpBlock(workitem.buffer, 0, workitem.inputBytesAvailable);

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-21 17:59:54>
+// Time-stamp: <2011-July-30 14:33:22>
 //
 // ------------------------------------------------------------------
 //
@@ -1296,6 +1296,7 @@ namespace Ionic
         }
     }
 
+#if !SILVERLIGHT
     internal partial class AttributesCriterion : SelectionCriterion
     {
         internal override bool Evaluate(Ionic.Zip.ZipEntry entry)
@@ -1304,7 +1305,7 @@ namespace Ionic
             return _Evaluate(fileAttrs);
         }
     }
-
+#endif
 
     internal partial class CompoundCriterion : SelectionCriterion
     {

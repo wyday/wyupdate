@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-11 14:13:14>
+// Time-stamp: <2011-July-28 06:34:30>
 //
 // ------------------------------------------------------------------
 //
@@ -30,6 +30,7 @@
 //  - Password
 //  - CodecBufferSize
 //  - CompressionLevel
+//  - CompressionMethod
 //  - EnableZip64 (UseZip64WhenSaving)
 //  - IgnoreCase (!CaseSensitiveRetrieval)
 //
@@ -345,6 +346,7 @@ namespace Ionic.Zip
             // workitem 9307
             _outputStream = stream.CanRead ? stream : new CountingStream(stream);
             CompressionLevel = Ionic.Zlib.CompressionLevel.Default;
+            CompressionMethod = Ionic.Zip.CompressionMethod.Deflate;
             _encryption = EncryptionAlgorithm.None;
             _entriesWritten = new Dictionary<String, ZipEntry>(StringComparer.Ordinal);
             _zip64 = Zip64Option.Never;
@@ -579,6 +581,15 @@ namespace Ionic.Zip
         ///  </para>
         /// </remarks>
         public Ionic.Zlib.CompressionLevel CompressionLevel
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        ///   The compression method used on each entry added to the ZipOutputStream.
+        /// </summary>
+        public Ionic.Zip.CompressionMethod CompressionMethod
         {
             get;
             set;
@@ -1023,10 +1034,10 @@ namespace Ionic.Zip
         /// <remarks>
         ///
         ///   <para>
-        ///     DotNetZip will use multiple threads to compress any ZipEntry,
-        ///     if the entry is larger than the given size.  Zero means "always
-        ///     use parallel deflate", while -1 means "never use parallel
-        ///     deflate".
+        ///     DotNetZip will use multiple threads to compress any ZipEntry, when
+        ///     the <c>CompressionMethod</c> is Deflate, and if the entry is
+        ///     larger than the given size.  Zero means "always use parallel
+        ///     deflate", while -1 means "never use parallel deflate".
         ///   </para>
         ///
         ///   <para>
@@ -1373,6 +1384,7 @@ namespace Ionic.Zip
             _currentEntry._BitField |= 0x0008;  // workitem 8932
             _currentEntry.SetEntryTimes(DateTime.Now, DateTime.Now, DateTime.Now);
             _currentEntry.CompressionLevel = this.CompressionLevel;
+            _currentEntry.CompressionMethod = this.CompressionMethod;
             _currentEntry.Password = _password; // workitem 13909
             _currentEntry.Encryption = this.Encryption;
             // workitem 12634
@@ -1612,7 +1624,7 @@ namespace Ionic.Zip
         private CountingStream _outputCounter;
         private Stream _encryptor;
         private Stream _deflater;
-        private Ionic.Zlib.CrcCalculatorStream _entryOutputStream;
+        private Ionic.Crc.CrcCalculatorStream _entryOutputStream;
         private bool _needToWriteEntryHeader;
         private string _name;
         private bool _DontIgnoreCase;

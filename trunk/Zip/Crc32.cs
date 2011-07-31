@@ -1,7 +1,7 @@
-// Crc32.cs
+// BCRC32.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2006-2009 Dino Chiesa and Microsoft Corporation.
+// Copyright (c) 2011 Dino Chiesa.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
@@ -14,32 +14,28 @@
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs):
-// Time-stamp: <2011-June-13 17:24:52>
+// Last Saved: <2011-July-28 06:37:37>
 //
 // ------------------------------------------------------------------
 //
-// Implements the CRC algorithm, which is used in zip files.  The zip format calls for
-// the zipfile to contain a CRC for the unencrypted byte stream of each file.
-//
-// It is based on example source code published at
-//    http://www.vbaccelerator.com/home/net/code/libraries/CRC32/Crc32_zip_CRC32_CRC32_cs.asp
-//
-// This implementation adds a tweak of that code for use within zip creation.  While
-// computing the CRC we also compress the byte stream, in the same read loop. This
-// avoids the need to read through the uncompressed stream twice - once to compute CRC
-// and another time to compress.
+// This module defines the BCRC32 class, which is a CRC-32 class that
+// can do the BZip2 CRC32 algorithm, including bit reversal. The bit
+// reversal is what distinguishes this CRC-32 from the CRC-32 that is
+// used in PKZIP files, or GZIP files.
 //
 // ------------------------------------------------------------------
-
 
 
 using System;
-using Interop=System.Runtime.InteropServices;
+using Interop = System.Runtime.InteropServices;
 
-
-namespace Ionic.Zlib
+namespace Ionic.Crc
 {
+    /// <summary>
+    ///   Computes a CRC-32. The CRC-32 algorithm is parameterized - you
+    ///   can set the polynomial and enable or disable bit
+    ///   reversal. This can be used for GZIP, BZip2, or ZIP.
+    /// </summary>
     /// <summary>
     /// Calculates a 32bit Cyclic Redundancy Checksum (CRC) using the same polynomial
     /// used by Zip. This type is used internally by DotNetZip; it is generally not used
@@ -55,8 +51,7 @@ namespace Ionic.Zlib
     public class CRC32
     {
         /// <summary>
-        /// indicates the total number of bytes read on the CRC stream.
-        /// This is used when writing the ZipDirEntry when compressing files.
+        ///   Indicates the total number of bytes applied to the CRC.
         /// </summary>
         public Int64 TotalBytesRead
         {
@@ -73,8 +68,7 @@ namespace Ionic.Zlib
         {
             get
             {
-                // return one's complement of the running result
-                return unchecked((Int32)(~_RunningCrc32Result));
+                return unchecked((Int32)(~_register));
             }
         }
 
@@ -98,12 +92,10 @@ namespace Ionic.Zlib
         public Int32 GetCrc32AndCopy(System.IO.Stream input, System.IO.Stream output)
         {
             if (input == null)
-                throw new ZlibException("The input stream must not be null.");
+                throw new Exception("The input stream must not be null.");
 
             unchecked
             {
-                //UInt32 crc32Result;
-                //crc32Result = 0xFFFFFFFF;
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int readSize = BUFFER_SIZE;
 
@@ -119,14 +111,14 @@ namespace Ionic.Zlib
                     _TotalBytesRead += count;
                 }
 
-                return (Int32)(~_RunningCrc32Result);
+                return (Int32)(~_register);
             }
         }
 
 
         /// <summary>
-        /// Get the CRC32 for the given (word,byte) combo.  This is a computation
-        /// defined by PKzip.
+        ///   Get the CRC32 for the given (word,byte) combo.  This is a
+        ///   computation defined by PKzip for PKZIP 2.0 (weak) encryption.
         /// </summary>
         /// <param name="W">The word to start with.</param>
         /// <param name="B">The byte to combine it with.</param>
@@ -141,6 +133,7 @@ namespace Ionic.Zlib
             return (Int32)(crc32Table[(W ^ B) & 0xFF] ^ (W >> 8));
         }
 
+
         /// <summary>
         /// Update the value for the running CRC32 using the given block of bytes.
         /// This is useful when using the CRC32() class in a Stream.
@@ -151,37 +144,122 @@ namespace Ionic.Zlib
         public void SlurpBlock(byte[] block, int offset, int count)
         {
             if (block == null)
-                throw new ZlibException("The data buffer must not be null.");
+                throw new Exception("The data buffer must not be null.");
 
+            // bzip algorithm
             for (int i = 0; i < count; i++)
             {
                 int x = offset + i;
-                _RunningCrc32Result = ((_RunningCrc32Result) >> 8) ^ crc32Table[(block[x]) ^ ((_RunningCrc32Result) & 0x000000FF)];
+                byte b = block[x];
+                if (this.reverseBits)
+                {
+                    UInt32 temp = (_register >> 24) ^ b;
+                    _register = (_register << 8) ^ crc32Table[temp];
+                }
+                else
+                {
+                    UInt32 temp = (_register & 0x000000FF) ^ b;
+                    _register = (_register >> 8) ^ crc32Table[temp];
+                }
             }
             _TotalBytesRead += count;
         }
 
 
-        // pre-initialize the crc table for speed of lookup.
-        static CRC32()
+        /// <summary>
+        ///   Process one byte in the CRC.
+        /// </summary>
+        /// <param name = "b">the byte to include into the CRC .  </param>
+        public void UpdateCRC(byte b)
+        {
+            if (this.reverseBits)
+            {
+                UInt32 temp = (_register >> 24) ^ b;
+                _register = (_register << 8) ^ crc32Table[temp];
+            }
+            else
+            {
+                UInt32 temp = (_register & 0x000000FF) ^ b;
+                _register = (_register >> 8) ^ crc32Table[temp];
+            }
+        }
+
+        /// <summary>
+        ///   Process a run of N identical bytes into the CRC.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     This method serves as an optimization for updating the CRC when a
+        ///     run of identical bytes is found. Rather than passing in a buffer of
+        ///     length n, containing all identical bytes b, this method accepts the
+        ///     byte value and the length of the (virtual) buffer - the length of
+        ///     the run.
+        ///   </para>
+        /// </remarks>
+        /// <param name = "b">the byte to include into the CRC.  </param>
+        /// <param name = "n">the number of times that byte should be repeated. </param>
+        public void UpdateCRC(byte b, int n)
+        {
+            while (n-- > 0)
+            {
+                if (this.reverseBits)
+                {
+                    uint temp = (_register >> 24) ^ b;
+                    _register = (_register << 8) ^ crc32Table[(temp >= 0)
+                                                              ? temp
+                                                              : (temp + 256)];
+                }
+                else
+                {
+                    UInt32 temp = (_register & 0x000000FF) ^ b;
+                    _register = (_register >> 8) ^ crc32Table[(temp >= 0)
+                                                              ? temp
+                                                              : (temp + 256)];
+
+                }
+            }
+        }
+
+
+
+        private static uint ReverseBits(uint data)
         {
             unchecked
             {
-                // PKZip specifies CRC32 with a polynomial of 0xEDB88320;
-                // This is also the CRC-32 polynomial used bby Ethernet, FDDI,
-                // bzip2, gzip, and others.
-                // Often the polynomial is shown reversed as 0x04C11DB7.
-                // For more details, see http://en.wikipedia.org/wiki/Cyclic_redundancy_check
-                UInt32 dwPolynomial = 0xEDB88320;
-                UInt32 i, j;
+                uint ret = data;
+                ret = (ret & 0x55555555) << 1 | (ret >> 1) & 0x55555555;
+                ret = (ret & 0x33333333) << 2 | (ret >> 2) & 0x33333333;
+                ret = (ret & 0x0F0F0F0F) << 4 | (ret >> 4) & 0x0F0F0F0F;
+                ret = (ret << 24) | ((ret & 0xFF00) << 8) | ((ret >> 8) & 0xFF00) | (ret >> 24);
+                return ret;
+            }
+        }
 
-                crc32Table = new UInt32[256];
+        private static byte ReverseBits(byte data)
+        {
+            unchecked
+            {
+                uint u = (uint)data * 0x00020202;
+                uint m = 0x01044010;
+                uint s = u & m;
+                uint t = (u << 2) & (m << 1);
+                return (byte)((0x01001001 * (s + t)) >> 24);
+            }
+        }
 
+
+
+        private void GenerateLookupTable()
+        {
+            crc32Table = new UInt32[256];
+            unchecked
+            {
                 UInt32 dwCrc;
-                for (i = 0; i < 256; i++)
+                byte i = 0;
+                do
                 {
                     dwCrc = i;
-                    for (j = 8; j > 0; j--)
+                    for (byte j = 8; j > 0; j--)
                     {
                         if ((dwCrc & 1) == 1)
                         {
@@ -192,12 +270,34 @@ namespace Ionic.Zlib
                             dwCrc >>= 1;
                         }
                     }
-                    crc32Table[i] = dwCrc;
-                }
+                    if (reverseBits)
+                    {
+                        crc32Table[ReverseBits(i)] = ReverseBits(dwCrc);
+                    }
+                    else
+                    {
+                        crc32Table[i] = dwCrc;
+                    }
+                    i++;
+                } while (i!=0);
             }
+
+#if VERBOSE
+            Console.WriteLine();
+            Console.WriteLine("private static readonly UInt32[] crc32Table = {");
+            for (int i = 0; i < crc32Table.Length; i+=4)
+            {
+                Console.Write("   ");
+                for (int j=0; j < 4; j++)
+                {
+                    Console.Write(" 0x{0:X8}U,", crc32Table[i+j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("};");
+            Console.WriteLine();
+#endif
         }
-
-
 
 
         private uint gf2_matrix_times(uint[] matrix, uint vec)
@@ -240,7 +340,7 @@ namespace Ionic.Zlib
             if (length == 0)
                 return;
 
-            uint crc1= ~_RunningCrc32Result;
+            uint crc1= ~_register;
             uint crc2= (uint) crc;
 
             // put operator for one zero bit in odd
@@ -284,23 +384,80 @@ namespace Ionic.Zlib
 
             crc1 ^= crc2;
 
-            _RunningCrc32Result= ~crc1;
+            _register= ~crc1;
 
             //return (int) crc1;
             return;
         }
 
 
+        /// <summary>
+        ///   Create an instance of the CRC32 class using the default settings: no
+        ///   bit reversal, and a polynomial of 0xEDB88320.
+        /// </summary>
+        public CRC32() : this(false)
+        {
+        }
+
+        /// <summary>
+        ///   Create an instance of the CRC32 class, specifying whether to reverse
+        ///   data bits or not.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     In the CRC-32 used by BZip2, the bits are reversed (so you should
+        ///     pass true here).  In the CRC-32 used by GZIP and PKZIP, the bits
+        ///     are not reversed - so you should pass false.
+        ///   </para>
+        /// </remarks>
+        public CRC32(bool reverseBits) :
+            this( unchecked((int)0xEDB88320), reverseBits)
+        {
+        }
+
+        /// <summary>
+        ///   Create an instance of the CRC32 class, specifying the polynomial and
+        ///   whether to reverse data bits or not.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     In the CRC-32 used by BZip2, the bits are reversed (so you should
+        ///     pass true here).  In the CRC-32 used by GZIP and PKZIP, the bits
+        ///     are not reversed - so you should pass false.
+        ///   </para>
+        ///   <para>
+        ///     The usual polynomial is 0xEDB88320.
+        ///   </para>
+        /// </remarks>
+        public CRC32(int polynomial, bool reverseBits)
+        {
+            this.reverseBits = reverseBits;
+            this.dwPolynomial = (uint) polynomial;
+            this.GenerateLookupTable();
+        }
+
+        /// <summary>
+        ///   Reset the CRC-32 class - clear the CRC register.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     Use this when employing a single CRC32 instance to compute
+        ///     multiple, distinct CRCs on multiple, distinct data blocks.
+        ///   </para>
+        /// </remarks>
+        public void Reset()
+        {
+            _register = 0xFFFFFFFFU;
+        }
 
         // private member vars
+        private UInt32 dwPolynomial;
         private Int64 _TotalBytesRead;
-        private static readonly UInt32[] crc32Table;
+        private bool reverseBits;
+        private UInt32[] crc32Table;
         private const int BUFFER_SIZE = 8192;
-        private UInt32 _RunningCrc32Result = 0xFFFFFFFF;
-
+        private UInt32 _register = 0xFFFFFFFFU;
     }
-
-
 
 
     /// <summary>
@@ -578,4 +735,5 @@ namespace Ionic.Zlib
         }
 
     }
+
 }

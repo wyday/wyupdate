@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-06 21:29:58>
+// Time-stamp: <2011-July-30 15:00:11>
 //
 // ------------------------------------------------------------------
 //
@@ -1088,7 +1088,7 @@ namespace Ionic.Zip
         ///   directory path within the archive.  There is no need for a file by the
         ///   given name to exist in the filesystem; the name is used within the zip
         ///   archive only. The content for the entry is encoded using the default text
-        ///   encoding (<see cref="System.Text.Encoding.Default"/>).
+        ///   encoding for the machine, or on Silverlight, using UTF-8.
         /// </remarks>
         ///
         /// <param name="content">
@@ -1131,7 +1131,11 @@ namespace Ionic.Zip
         /// </example>
         public ZipEntry AddEntry(string entryName, string content)
         {
-            return AddEntry(entryName, content, _alternateEncoding);
+#if SILVERLIGHT
+            return AddEntry(entryName, content, System.Text.Encoding.UTF8);
+#else
+            return AddEntry(entryName, content, System.Text.Encoding.Default);
+#endif
         }
 
 
@@ -1586,16 +1590,17 @@ namespace Ionic.Zip
         {
             // stamp all the props onto the entry
             ze._container = new ZipContainer(this);
-            ze.CompressionLevel = CompressionLevel;
-            ze.ExtractExistingFile = ExtractExistingFile;
+            ze.CompressionMethod = this.CompressionMethod;
+            ze.CompressionLevel = this.CompressionLevel;
+            ze.ExtractExistingFile = this.ExtractExistingFile;
             ze.ZipErrorAction = this.ZipErrorAction;
-            ze.SetCompression = SetCompression;
-            ze.AlternateEncoding = AlternateEncoding;
-            ze.AlternateEncodingUsage = AlternateEncodingUsage;
-            ze.Password = _Password;
-            ze.Encryption = Encryption;
-            ze.EmitTimesInWindowsFormatWhenSaving = _emitNtfsTimes;
-            ze.EmitTimesInUnixFormatWhenSaving = _emitUnixTimes;
+            ze.SetCompression = this.SetCompression;
+            ze.AlternateEncoding = this.AlternateEncoding;
+            ze.AlternateEncodingUsage = this.AlternateEncodingUsage;
+            ze.Password = this._Password;
+            ze.Encryption = this.Encryption;
+            ze.EmitTimesInWindowsFormatWhenSaving = this._emitNtfsTimes;
+            ze.EmitTimesInUnixFormatWhenSaving = this._emitUnixTimes;
             //string key = DictionaryKeyForEntry(ze);
             InternalAddEntry(ze.FileName,ze);
             AfterAddEntry(ze);
@@ -1615,9 +1620,10 @@ namespace Ionic.Zip
         /// <para>
         ///   Calling this method is equivalent to removing the <c>ZipEntry</c> for
         ///   the given file name and directory path, if it exists, and then calling
-        ///   <see cref="AddEntry(String,String)" />.  See the documentation for that
-        ///   method for further explanation. The string content is encoded using
-        ///   IBM437. This encoding is distinct from the encoding used for the
+        ///   <see cref="AddEntry(String,String)" />.  See the documentation for
+        ///   that method for further explanation. The string content is encoded
+        ///   using the default encoding for the machine, or on Silverlight, using
+        ///   UTF-8. This encoding is distinct from the encoding used for the
         ///   filename itself.  See <see cref="AlternateEncoding"/>.
         /// </para>
         ///
@@ -1635,7 +1641,11 @@ namespace Ionic.Zip
         ///
         public ZipEntry UpdateEntry(string entryName, string content)
         {
+#if SILVERLIGHT
+            return UpdateEntry(entryName, content, System.Text.Encoding.UTF8);
+#else
             return UpdateEntry(entryName, content, System.Text.Encoding.Default);
+#endif
         }
 
 
@@ -2122,13 +2132,17 @@ namespace Ionic.Zip
                         foreach (String dir in dirnames)
                         {
                             // workitem 8617: Optionally traverse reparse points
-#if NETCF
+#if SILVERLIGHT
+#elif NETCF
                             FileAttributes fileAttrs = (FileAttributes) NetCfFile.GetAttributes(dir);
 #else
                             FileAttributes fileAttrs = System.IO.File.GetAttributes(dir);
 #endif
-                            if (this.AddDirectoryWillTraverseReparsePoints ||
-                                ((fileAttrs & FileAttributes.ReparsePoint) == 0))
+                            if (this.AddDirectoryWillTraverseReparsePoints
+#if !SILVERLIGHT
+                                || ((fileAttrs & FileAttributes.ReparsePoint) == 0)
+#endif
+                                )
                                 AddOrUpdateDirectoryImpl(dir, rootDirectoryPathInArchive, action, recurse, level + 1);
 
                         }

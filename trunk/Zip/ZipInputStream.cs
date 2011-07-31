@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-18 02:53:50>
+// Time-stamp: <2011-July-28 06:34:23>
 //
 // ------------------------------------------------------------------
 //
@@ -795,7 +795,7 @@ namespace  Ionic.Zip
         private bool _firstEntry;
         private bool _needSetup;
         private ZipContainer _container;
-        private Ionic.Zlib.CrcCalculatorStream _crcStream;
+        private Ionic.Crc.CrcCalculatorStream _crcStream;
         private Int64 _LeftToRead;
         internal String _Password;
         private Int64 _endOfEntry;
