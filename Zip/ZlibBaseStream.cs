@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-21 21:01:32>
+// Time-stamp: <2011-July-28 06:28:33>
 //
 // ------------------------------------------------------------------
 //
@@ -50,7 +50,7 @@ namespace Ionic.Zlib
         protected internal CompressionStrategy Strategy = CompressionStrategy.Default;
 
         // workitem 7159
-        Ionic.Zlib.CRC32 crc;
+        Ionic.Crc.CRC32 crc;
         protected internal string _GzipFileName;
         protected internal string _GzipComment;
         protected internal DateTime _GzipMtime;
@@ -75,7 +75,7 @@ namespace Ionic.Zlib
             // workitem 7159
             if (flavor == ZlibStreamFlavor.GZIP)
             {
-                crc = new CRC32();
+                this.crc = new Ionic.Crc.CRC32();
             }
         }
 

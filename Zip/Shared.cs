@@ -14,7 +14,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Last Saved: <2011-July-11 20:34:54>
+// Last Saved: <2011-July-30 14:41:11>
 //
 // ------------------------------------------------------------------
 //
@@ -544,7 +544,7 @@ namespace Ionic.Zip
             throw new IOException();
         }
 
-#if NETCF
+#if NETCF || SILVERLIGHT
         public static string InternalGetTempFileName()
         {
             return "DotNetZip-" + GenerateRandomStringImpl(8,0) + ".tmp";
@@ -590,7 +590,9 @@ namespace Ionic.Zip
         {
             int n = 0;
             bool done = false;
+#if !NETCF && !SILVERLIGHT
             int retries = 0;
+#endif
             do
             {
                 try
@@ -598,16 +600,19 @@ namespace Ionic.Zip
                     n = s.Read(buffer, offset, count);
                     done = true;
                 }
+#if NETCF || SILVERLIGHT
+                catch (System.IO.IOException)
+                {
+                    throw;
+                }
+#else
                 catch (System.IO.IOException ioexc1)
                 {
-
-#if !NETCF
                     // Check if we can call GetHRForException,
                     // which makes unmanaged code calls.
                     var p = new SecurityPermission(SecurityPermissionFlag.UnmanagedCode);
                     if (p.IsUnrestricted())
                     {
-#endif
                         uint hresult = _HRForException(ioexc1);
                         if (hresult != 0x80070021)  // ERROR_LOCK_VIOLATION
                             throw new System.IO.IOException(String.Format("Cannot read file {0}", FileName), ioexc1);
@@ -618,8 +623,6 @@ namespace Ionic.Zip
                         // max time waited on last retry = 250 + 10*550 = 5.75s
                         // aggregate time waited after 10 retries: 250 + 55*550 = 30.5s
                         System.Threading.Thread.Sleep(250 + retries * 550);
-
-#if !NETCF
                     }
                     else
                     {
@@ -628,9 +631,8 @@ namespace Ionic.Zip
                         // ERROR_LOCK_VIOLATION.  Just bail.
                         throw;
                     }
-#endif
-
                 }
+#endif
             }
             while (!done);
 

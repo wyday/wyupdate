@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-11 12:04:09>
+// Time-stamp: <2011-July-13 16:12:13>
 //
 // ------------------------------------------------------------------
 //
@@ -551,6 +551,7 @@ namespace Ionic.Zip
             Stream s = zf.ReadStream;
             try
             {
+                zf._readName = zf._name; // workitem 13915
                 if (!s.CanSeek)
                 {
                     ReadIntoInstance_Orig(zf);

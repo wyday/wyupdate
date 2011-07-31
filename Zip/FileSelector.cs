@@ -16,7 +16,7 @@
 //
 // ------------------------------------------------------------------
 //
-// last saved: <2011-June-21 16:43:06>
+// last saved: <2011-July-30 14:38:17>
 //
 // ------------------------------------------------------------------
 //
@@ -53,6 +53,9 @@ using System.Text;
 using System.Reflection;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+#if SILVERLIGHT
+using System.Linq;
+#endif
 
 namespace Ionic
 {
@@ -176,13 +179,13 @@ namespace Ionic
             switch (Which)
             {
                 case WhichTime.atime:
-                    x = System.IO.File.GetLastAccessTimeUtc(filename);
+                    x = System.IO.File.GetLastAccessTime(filename).ToUniversalTime();
                     break;
                 case WhichTime.mtime:
-                    x = System.IO.File.GetLastWriteTimeUtc(filename);
+                    x = System.IO.File.GetLastWriteTime(filename).ToUniversalTime();
                     break;
                 case WhichTime.ctime:
-                    x = System.IO.File.GetCreationTimeUtc(filename);
+                    x = System.IO.File.GetCreationTime(filename).ToUniversalTime();
                     break;
                 default:
                     throw new ArgumentException("Operator");
@@ -332,6 +335,7 @@ namespace Ionic
     }
 
 
+#if !SILVERLIGHT
     internal partial class AttributesCriterion : SelectionCriterion
     {
         private FileAttributes _Attributes;
@@ -467,7 +471,7 @@ namespace Ionic
             return result;
         }
     }
-
+#endif
 
 
     internal partial class CompoundCriterion : SelectionCriterion
@@ -997,7 +1001,7 @@ namespace Ionic
                         if (tokens.Length <= i + 3)
                             throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
 
-                        pendingConjunction = (LogicalConjunction)Enum.Parse(typeof(LogicalConjunction), tokens[i].ToUpper());
+                        pendingConjunction = (LogicalConjunction)Enum.Parse(typeof(LogicalConjunction), tokens[i].ToUpper(), true);
                         current = new CompoundCriterion { Left = current, Right = null, Conjunction = pendingConjunction };
                         stateStack.Push(state);
                         stateStack.Push(ParseState.ConjunctionPending);
@@ -1063,7 +1067,7 @@ namespace Ionic
                         t= DateTime.SpecifyKind(t, DateTimeKind.Local).ToUniversalTime();
                         current = new TimeCriterion
                         {
-                            Which = (WhichTime)Enum.Parse(typeof(WhichTime), tokens[i]),
+                            Which = (WhichTime)Enum.Parse(typeof(WhichTime), tokens[i], true),
                             Operator = (ComparisonOperator)EnumUtil.Parse(typeof(ComparisonOperator), tokens[i + 1]),
                             Time = t
                         };
@@ -1131,8 +1135,10 @@ namespace Ionic
                         }
                         break;
 
+#if !SILVERLIGHT
                     case "attrs":
                     case "attributes":
+#endif
                     case "type":
                         {
                             if (tokens.Length <= i + 2)
@@ -1144,6 +1150,13 @@ namespace Ionic
                             if (c != ComparisonOperator.NotEqualTo && c != ComparisonOperator.EqualTo)
                                 throw new ArgumentException(String.Join(" ", tokens, i, tokens.Length - i));
 
+#if SILVERLIGHT
+                            current = (SelectionCriterion) new TypeCriterion
+                                    {
+                                        AttributeString = tokens[i + 2],
+                                        Operator = c
+                                    };
+#else
                             current = (tok1 == "type")
                                 ? (SelectionCriterion) new TypeCriterion
                                     {
@@ -1155,7 +1168,7 @@ namespace Ionic
                                         AttributeString = tokens[i + 2],
                                         Operator = c
                                     };
-
+#endif
                             i += 2;
                             stateStack.Push(ParseState.CriterionDone);
                         }
@@ -1291,8 +1304,11 @@ namespace Ionic
                         String[] dirnames = System.IO.Directory.GetDirectories(directory);
                         foreach (String dir in dirnames)
                         {
-                            if (this.TraverseReparsePoints ||
-                                ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0))
+                            if (this.TraverseReparsePoints
+#if !SILVERLIGHT
+                                || ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0)
+#endif
+                                )
                             {
                                 // workitem 10191
                                 if (Evaluate(dir)) list.Add(dir);
@@ -1354,6 +1370,34 @@ namespace Ionic
             return Parse(enumType, stringRepresentation, false);
         }
 
+
+#if SILVERLIGHT
+       public static System.Enum[] GetEnumValues(Type type)
+        {
+            if (!type.IsEnum)
+                throw new ArgumentException("not an enum");
+
+            return (
+              from field in type.GetFields(BindingFlags.Public | BindingFlags.Static)
+              where field.IsLiteral
+              select (System.Enum)field.GetValue(null)
+            ).ToArray();
+        }
+
+        public static string[] GetEnumStrings<T>()
+        {
+            var type = typeof(T);
+            if (!type.IsEnum)
+                throw new ArgumentException("not an enum");
+
+            return (
+              from field in type.GetFields(BindingFlags.Public | BindingFlags.Static)
+              where field.IsLiteral
+              select field.Name
+            ).ToArray();
+        }
+#endif
+
         /// <summary>
         ///   Converts the string representation of the name or numeric value of one
         ///   or more enumerated constants to an equivalent enumerated object.  A
@@ -1372,7 +1416,11 @@ namespace Ionic
             if (ignoreCase)
                 stringRepresentation = stringRepresentation.ToLower();
 
+#if SILVERLIGHT
+            foreach (System.Enum enumVal in GetEnumValues(enumType))
+#else
             foreach (System.Enum enumVal in System.Enum.GetValues(enumType))
+#endif
             {
                 string description = GetDescription(enumVal);
                 if (ignoreCase)

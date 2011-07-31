@@ -1,21 +1,21 @@
 // Exceptions.cs
 // ------------------------------------------------------------------
 //
-// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.  
+// Copyright (c) 2008, 2009 Dino Chiesa and Microsoft Corporation.
 // All rights reserved.
 //
 // This code module is part of DotNetZip, a zipfile class library.
 //
 // ------------------------------------------------------------------
 //
-// This code is licensed under the Microsoft Public License. 
+// This code is licensed under the Microsoft Public License.
 // See the file License.txt for the license details.
 // More info on: http://dotnetzip.codeplex.com
 //
 // ------------------------------------------------------------------
 //
-// last saved (in emacs): 
-// Time-stamp: <2009-August-14 00:52:07>
+// last saved (in emacs):
+// Time-stamp: <2011-July-12 12:19:10>
 //
 // ------------------------------------------------------------------
 //
@@ -45,7 +45,9 @@ namespace Ionic.Zip
     /// Issued when an <c>ZipEntry.ExtractWithPassword()</c> method is invoked
     /// with an incorrect password.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000B")]
     public class BadPasswordException : ZipException
     {
@@ -70,10 +72,10 @@ namespace Ionic.Zip
         public BadPasswordException(String message, Exception innerException)
             : base(message, innerException)
         {
-        } 
+        }
 
-        
-#if !NETCF
+
+#if ! (NETCF || SILVERLIGHT)
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -88,9 +90,11 @@ namespace Ionic.Zip
 
     /// <summary>
     /// Indicates that a read was attempted on a stream, and bad or incomplete data was
-    /// received.  
+    /// received.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d0000A")]
     public class BadReadException : ZipException
     {
@@ -117,7 +121,7 @@ namespace Ionic.Zip
         {
         }
 
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -125,7 +129,7 @@ namespace Ionic.Zip
         /// <param name="context">The streaming context from which to deserialize.</param>
         protected BadReadException(SerializationInfo info, StreamingContext context)
             : base(info, context)
-          {  }        
+          {  }
 #endif
 
     }
@@ -135,7 +139,9 @@ namespace Ionic.Zip
     /// <summary>
     /// Issued when an CRC check fails upon extracting an entry from a zip archive.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00009")]
     public class BadCrcException : ZipException
     {
@@ -152,19 +158,8 @@ namespace Ionic.Zip
             : base(message)
         { }
 
-#if NOTUSED
-        /// <summary>
-        /// Come on, you know how exceptions work. Why are you looking at this documentation?
-        /// </summary>
-        /// <param name="message">The message in the exception.</param>
-        /// <param name="innerException">The innerException for this exception.</param>
-        public BadCrcException(String message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-#endif
 
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -181,7 +176,9 @@ namespace Ionic.Zip
     /// <summary>
     /// Issued when errors occur saving a self-extracting archive.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00008")]
     public class SfxGenerationException : ZipException
     {
@@ -198,18 +195,7 @@ namespace Ionic.Zip
             : base(message)
         { }
 
-#if NOTUSED
-        /// <summary>
-        /// Come on, you know how exceptions work. Why are you looking at this documentation?
-        /// </summary>
-        /// <param name="message">The message in the exception.</param>
-        /// <param name="innerException">The innerException for this exception.</param>
-        public SfxGenerationException(String message, Exception innerException)
-            : base(message, innerException)
-        { }
-#endif
-        
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -225,10 +211,12 @@ namespace Ionic.Zip
 
     /// <summary>
     /// Indicates that an operation was attempted on a ZipFile which was not possible
-    /// given the state of the instance. For example, if you call <c>Save()</c> on a ZipFile 
-    /// which has no filename set, you can get this exception. 
+    /// given the state of the instance. For example, if you call <c>Save()</c> on a ZipFile
+    /// which has no filename set, you can get this exception.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00007")]
     public class BadStateException : ZipException
     {
@@ -254,7 +242,7 @@ namespace Ionic.Zip
             : base(message, innerException)
         {}
 
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>
@@ -270,7 +258,9 @@ namespace Ionic.Zip
     /// <summary>
     /// Base class for all exceptions defined by and throw by the Zip library.
     /// </summary>
+#if !SILVERLIGHT
     [Serializable]
+#endif
     [System.Runtime.InteropServices.GuidAttribute("ebc25cf6-9120-4283-b972-0e5520d00006")]
     public class ZipException : Exception
     {
@@ -294,7 +284,7 @@ namespace Ionic.Zip
             : base(message, innerException)
         { }
 
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
         /// <summary>
         /// Come on, you know how exceptions work. Why are you looking at this documentation?
         /// </summary>

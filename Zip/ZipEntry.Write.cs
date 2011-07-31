@@ -16,7 +16,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Last Saved: <2011-July-09 21:35:45>
+// Last Saved: <2011-July-30 14:55:47>
 //
 // ------------------------------------------------------------------
 //
@@ -82,6 +82,10 @@ namespace Ionic.Zip
             }
 
             Int16 versionNeededToExtract = (Int16)(_OutputUsesZip64.Value ? 45 : vNeeded);
+#if BZIP
+            if (this.CompressionMethod == Ionic.Zip.CompressionMethod.BZip2)
+                versionNeededToExtract = 46;
+#endif
 
             bytes[i++] = (byte)(versionNeededToExtract & 0x00FF);
             bytes[i++] = (byte)((versionNeededToExtract & 0xFF00) >> 8);
@@ -185,8 +189,22 @@ namespace Ionic.Zip
             bytes[i++] = (byte)((commentLength & 0xFF00) >> 8);
 
             // Disk number start
-            bytes[i++] = (byte)(_diskNumber & 0x00FF);
-            bytes[i++] = (byte)((_diskNumber & 0xFF00) >> 8);
+            bool segmented = (this._container.ZipFile != null) &&
+                (this._container.ZipFile.MaxOutputSegmentSize != 0);
+            if (segmented) // workitem 13915
+            {
+                // Emit nonzero disknumber only if saving segmented archive.
+                bytes[i++] = (byte)(_diskNumber & 0x00FF);
+                bytes[i++] = (byte)((_diskNumber & 0xFF00) >> 8);
+            }
+            else
+            {
+                // If reading a segmneted archive and saving to a regular archive,
+                // ZipEntry._diskNumber will be non-zero but it should be saved as
+                // zero.
+                bytes[i++] = 0;
+                bytes[i++] = 0;
+            }
 
             // internal file attrs
             // workitem 7801
@@ -680,7 +698,7 @@ namespace Ionic.Zip
 
 
 
-        private void FigureCompressionMethodForWriting(int cycle)
+        private void MaybeUnsetCompressionMethodForWriting(int cycle)
         {
             // if we've already tried with compression... turn it off this time
             if (cycle > 1)
@@ -697,7 +715,7 @@ namespace Ionic.Zip
 
             if (this._Source == ZipEntrySource.ZipFile)
             {
-                return;
+                return; // do nothing
             }
 
             // If __FileDataPosition is zero, then that means we will get the data
@@ -734,11 +752,12 @@ namespace Ionic.Zip
             if (SetCompression != null)
                 CompressionLevel = SetCompression(LocalFileName, _FileNameInArchive);
 
-            _CompressionMethod = (short)((CompressionLevel == Ionic.Zlib.CompressionLevel.None)
-                                          ? 0x00
-                                          : 0x08);
-            return;
+            // finally, set CompressionMethod to None if CompressionLevel is None
+            if (CompressionLevel == (short)Ionic.Zlib.CompressionLevel.None &&
+                CompressionMethod == Ionic.Zip.CompressionMethod.Deflate)
+                _CompressionMethod = 0x00;
 
+            return;
         }
 
 
@@ -861,8 +880,13 @@ namespace Ionic.Zip
             // for PK encryption, 4.5 for zip64.  We may reset this later, as
             // necessary or zip64.
 
-            _presumeZip64 = (_container.Zip64 == Zip64Option.Always || (_container.Zip64 == Zip64Option.AsNecessary && !s.CanSeek));
+            _presumeZip64 = (_container.Zip64 == Zip64Option.Always ||
+                             (_container.Zip64 == Zip64Option.AsNecessary && !s.CanSeek));
             Int16 VersionNeededToExtract = (Int16)(_presumeZip64 ? 45 : 20);
+#if BZIP
+            if (this.CompressionMethod == Ionic.Zip.CompressionMethod.BZip2)
+                VersionNeededToExtract = 46;
+#endif
 
             // (i==4)
             block[i++] = (byte)(VersionNeededToExtract & 0x00FF);
@@ -897,7 +921,12 @@ namespace Ionic.Zip
             //                 _BitField |= 0x0020;
 
             // set the UTF8 bit if necessary
-            if (_actualEncoding.CodePage == System.Text.Encoding.UTF8.CodePage) _BitField |= 0x0800;
+#if SILVERLIGHT
+            if (_actualEncoding.WebName == "utf-8")
+#else
+            if (_actualEncoding.CodePage == System.Text.Encoding.UTF8.CodePage)
+#endif
+                _BitField |= 0x0800;
 
             // The PKZIP spec says that if bit 3 is set (0x0008) in the General
             // Purpose BitField, then the CRC, Compressed size, and uncompressed
@@ -991,7 +1020,7 @@ namespace Ionic.Zip
             }
 
             // set compression method here
-            FigureCompressionMethodForWriting(cycle);
+            MaybeUnsetCompressionMethodForWriting(cycle);
 
             // (i==8) compression method
             block[i++] = (byte)(_CompressionMethod & 0x00FF);
@@ -1134,7 +1163,7 @@ namespace Ionic.Zip
                 // get the original stream:
                 if (this._Source == ZipEntrySource.WriteDelegate)
                 {
-                    var output = new Ionic.Zlib.CrcCalculatorStream(Stream.Null);
+                    var output = new Ionic.Crc.CrcCalculatorStream(Stream.Null);
                     // allow the application to write the data
                     this._WriteDelegate(this.FileName, output);
                     _Crc32 = output.Crc;
@@ -1167,7 +1196,7 @@ namespace Ionic.Zip
                         input = File.Open(LocalFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                     }
 
-                    var crc32 = new Ionic.Zlib.CRC32();
+                    var crc32 = new Ionic.Crc.CRC32();
                     _Crc32 = crc32.GetCrc32(input);
 
                     if (_sourceStream == null)
@@ -1296,7 +1325,7 @@ namespace Ionic.Zip
         {
             // Read in the data from the input stream (often a file in the filesystem),
             // and write it to the output stream, calculating a CRC on it as we go.
-            // We will also deflate and encrypt as necessary.
+            // We will also compress and encrypt as necessary.
 
             Stream input = null;
             long fdp = -1L;
@@ -1317,12 +1346,12 @@ namespace Ionic.Zip
                 // (maybe) restreamed.
                 fdp = s.Position;
             }
-            catch (System.IO.IOException) { }
+            catch (Exception) { }
 
             try
             {
                 // Use fileLength for progress updates, and to decide whether we can
-                // skip encryption and deflation altogether (in case of length==zero)
+                // skip encryption and compression altogether (in case of length==zero)
                 long fileLength = SetInputAndFigureFileLength(ref input);
 
                 // Wrap a counting stream around the raw output stream:
@@ -1335,30 +1364,30 @@ namespace Ionic.Zip
                 CountingStream entryCounter = new CountingStream(s);
 
                 Stream encryptor;
-                Stream deflater;
+                Stream compressor;
 
                 if (fileLength != 0L)
                 {
                     // Maybe wrap an encrypting stream around the counter: This will
-                    // happen BEFORE output counting, and AFTER deflation, if encryption
+                    // happen BEFORE output counting, and AFTER compression, if encryption
                     // is used.
                     encryptor = MaybeApplyEncryption(entryCounter);
 
-                    // Maybe wrap a DeflateStream around that.
+                    // Maybe wrap a compressing Stream around that.
                     // This will happen BEFORE encryption (if any) as we write data out.
-                    deflater = MaybeApplyDeflation(encryptor, fileLength);
+                    compressor = MaybeApplyCompression(encryptor, fileLength);
                 }
                 else
                 {
-                    encryptor = deflater = entryCounter;
+                    encryptor = compressor = entryCounter;
                 }
 
                 // Wrap a CrcCalculatorStream around that.
-                // This will happen BEFORE deflation (if any) as we write data out.
-                var output = new Ionic.Zlib.CrcCalculatorStream(deflater, true);
+                // This will happen BEFORE compression (if any) as we write data out.
+                var output = new Ionic.Crc.CrcCalculatorStream(compressor, true);
 
                 // output.Write() causes this flow:
-                // calc-crc -> deflate -> encrypt -> count -> actually write
+                // calc-crc -> compress -> encrypt -> count -> actually write
 
                 if (this._Source == ZipEntrySource.WriteDelegate)
                 {
@@ -1379,7 +1408,7 @@ namespace Ionic.Zip
                     }
                 }
 
-                FinishOutputStream(s, entryCounter, encryptor, deflater, output);
+                FinishOutputStream(s, entryCounter, encryptor, compressor, output);
             }
             finally
             {
@@ -1409,10 +1438,10 @@ namespace Ionic.Zip
 
 
         /// <summary>
-        /// Set the input stream and get its length, if possible.  The
-        /// length is used for progress updates, AND, to allow an
-        /// optimization in case of a stream/file of zero length. In
-        /// that case we skip the Encrypt and DeflateStream.
+        ///   Set the input stream and get its length, if possible.  The length is
+        ///   used for progress updates, AND, to allow an optimization in case of
+        ///   a stream/file of zero length. In that case we skip the Encrypt and
+        ///   compression Stream. (like DeflateStream or BZip2OutputStream)
         /// </summary>
         private long SetInputAndFigureFileLength(ref Stream input)
         {
@@ -1466,19 +1495,28 @@ namespace Ionic.Zip
         internal void FinishOutputStream(Stream s,
                                          CountingStream entryCounter,
                                          Stream encryptor,
-                                         Stream deflater,
-                                         Ionic.Zlib.CrcCalculatorStream output)
+                                         Stream compressor,
+                                         Ionic.Crc.CrcCalculatorStream output)
         {
             if (output == null) return;
 
             output.Close();
 
             // by calling Close() on the deflate stream, we write the footer bytes, as necessary.
-            if ((deflater as Ionic.Zlib.DeflateStream) != null)
-                deflater.Close();
+            if ((compressor as Ionic.Zlib.DeflateStream) != null)
+                compressor.Close();
+#if BZIP
+            else if ((compressor as Ionic.BZip2.BZip2OutputStream) != null)
+                compressor.Close();
 #if !NETCF
-            else if ((deflater as Ionic.Zlib.ParallelDeflateOutputStream) != null)
-                deflater.Close();
+            else if ((compressor as Ionic.BZip2.ParallelBZip2OutputStream) != null)
+                compressor.Close();
+#endif
+#endif
+
+#if !NETCF
+            else if ((compressor as Ionic.Zlib.ParallelDeflateOutputStream) != null)
+                compressor.Close();
 #endif
 
             encryptor.Flush();
@@ -1855,8 +1893,8 @@ namespace Ionic.Zip
                                        long streamLength,
                                        out CountingStream outputCounter,
                                        out Stream encryptor,
-                                       out Stream deflater,
-                                       out Ionic.Zlib.CrcCalculatorStream output)
+                                       out Stream compressor,
+                                       out Ionic.Crc.CrcCalculatorStream output)
         {
             TraceWriteLine("PrepOutputStream: e({0}) comp({1}) crypto({2}) zf({3})",
                            FileName,
@@ -1880,29 +1918,29 @@ namespace Ionic.Zip
                 // is used.
                 encryptor = MaybeApplyEncryption(outputCounter);
 
-                // Maybe wrap a DeflateStream around that.
+                // Maybe wrap a compressing Stream around that.
                 // This will happen BEFORE encryption (if any) as we write data out.
-                deflater = MaybeApplyDeflation(encryptor, streamLength);
+                compressor = MaybeApplyCompression(encryptor, streamLength);
             }
             else
             {
-                encryptor = deflater = outputCounter;
+                encryptor = compressor = outputCounter;
             }
             // Wrap a CrcCalculatorStream around that.
-            // This will happen BEFORE deflation (if any) as we write data out.
-            output = new Ionic.Zlib.CrcCalculatorStream(deflater, true);
+            // This will happen BEFORE compression (if any) as we write data out.
+            output = new Ionic.Crc.CrcCalculatorStream(compressor, true);
         }
 
 
 
-        private Stream MaybeApplyDeflation(Stream s, long streamLength)
+        private Stream MaybeApplyCompression(Stream s, long streamLength)
         {
             if (_CompressionMethod == 0x08 && CompressionLevel != Ionic.Zlib.CompressionLevel.None)
             {
 #if !NETCF
                 // ParallelDeflateThreshold == 0    means ALWAYS use parallel deflate
                 // ParallelDeflateThreshold == -1L  means NEVER use parallel deflate
-                // Other values specify the
+                // Other values specify the actual threshold.
                 if (_container.ParallelDeflateThreshold == 0L ||
                     (streamLength > _container.ParallelDeflateThreshold &&
                      _container.ParallelDeflateThreshold > 0L))
@@ -1955,6 +1993,25 @@ namespace Ionic.Zip
                 return o;
             }
 
+
+#if BZIP
+            if (_CompressionMethod == 0x0c)
+            {
+#if !NETCF
+                if (_container.ParallelDeflateThreshold == 0L ||
+                    (streamLength > _container.ParallelDeflateThreshold &&
+                     _container.ParallelDeflateThreshold > 0L))
+                {
+
+                    var o1 = new Ionic.BZip2.ParallelBZip2OutputStream(s, true);
+                    return o1;
+                }
+#endif
+                var o = new Ionic.BZip2.BZip2OutputStream(s, true);
+                return o;
+            }
+#endif
+
             return s;
         }
 
@@ -2002,19 +2059,27 @@ namespace Ionic.Zip
             {
                 try
                 {
-                    // In some cases the source for the zip entry data is a zip file
-                    // (the app is updating a zip file).  In some of those cases, some
-                    // of the zip entries may be modified.  Changes to the FileName,
-                    // CompressionMethod CompressionLevel, and so on.  Some of these
-                    // changes require a "re-stream" - the old entry data must be
-                    // maybe decrypted, maybe decompressed, then maybe re-compressed
-                    // and maybe re-encrypted. This is true for changes in
-                    // CompressionMethod or CompressionLevel. Some changes though,
-                    // require an update only to metadata.  A change in the entry
-                    // name, or a new comment are examples of the latter.  In some
-                    // cases, the entry hasn't changed at all and can be simply copied
-                    // as a block.
-
+                    // When the app is updating a zip file, it may be possible to
+                    // just copy data for a ZipEntry from the source zipfile to the
+                    // destination, as a block, without decompressing and
+                    // recompressing, etc.  But, in some cases the app modifies the
+                    // properties on a ZipEntry prior to calling Save(). A change to
+                    // any of the metadata - the FileName, CompressioLeve and so on,
+                    // means DotNetZip cannot simply copy through the existing
+                    // ZipEntry data unchanged.
+                    //
+                    // There are two cases:
+                    //
+                    //  1. Changes to only metadata, which means the header and
+                    //     central directory must be changed.
+                    //
+                    //  2. Changes to the properties that affect the compressed
+                    //     stream, such as CompressionMethod, CompressionLevel, or
+                    //     EncryptionAlgorithm. In this case, DotNetZip must
+                    //     "re-stream" the data: the old entry data must be maybe
+                    //     decrypted, maybe decompressed, then maybe re-compressed
+                    //     and maybe re-encrypted.
+                    //
                     // This test checks if the source for the entry data is a zip file, and
                     // if a restream is necessary.  If NOT, then it just copies through
                     // one entry, potentially changing the metadata.
@@ -2300,7 +2365,7 @@ namespace Ionic.Zip
 
 
 
-        private void CopyThroughOneEntry(Stream outstream)
+        private void CopyThroughOneEntry(Stream outStream)
         {
             // Just read the entry from the existing input zipfile and write to the output.
             // But, if metadata has changed (like file times or attributes), or if the ZIP64
@@ -2309,15 +2374,17 @@ namespace Ionic.Zip
             if (this.LengthOfHeader == 0)
                 throw new BadStateException("Bad header length.");
 
-            // is it necessaty to re-constitute new metadata for this entry?
+            // is it necessary to re-constitute new metadata for this entry?
             bool needRecompute = _metadataChanged ||
+                (this.ArchiveStream is ZipSegmentedStream) ||
+                (outStream is ZipSegmentedStream) ||
                 (_InputUsesZip64 && _container.UseZip64WhenSaving == Zip64Option.Never) ||
                 (!_InputUsesZip64 && _container.UseZip64WhenSaving == Zip64Option.Always);
 
             if (needRecompute)
-                CopyThroughWithRecompute(outstream);
+                CopyThroughWithRecompute(outStream);
             else
-                CopyThroughWithNoChange(outstream);
+                CopyThroughWithNoChange(outStream);
 
             // zip64 housekeeping
             _entryRequiresZip64 = new Nullable<bool>
@@ -2499,12 +2566,12 @@ namespace Ionic.Zip
             lock (_outputLock)
             {
                 int tid = System.Threading.Thread.CurrentThread.GetHashCode();
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
                 Console.ForegroundColor = (ConsoleColor)(tid % 8 + 8);
 #endif
                 Console.Write("{0:000} ZipEntry.Write ", tid);
                 Console.WriteLine(format, varParams);
-#if !NETCF
+#if ! (NETCF || SILVERLIGHT)
                 Console.ResetColor();
 #endif
             }
