@@ -6,8 +6,11 @@ namespace wyUpdate
 {
     static class CmdLineToArgvW
     {
-        // The previous examples on this page used incorrect
-        // pointer logic and were removed.
+        [DllImport("shell32.dll", SetLastError = true)]
+        static extern IntPtr CommandLineToArgvW([MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine, out int pNumArgs);
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr LocalFree(IntPtr hMem);
 
         public static string[] SplitArgs(string unsplitArgumentLine)
         {
@@ -37,11 +40,5 @@ namespace wyUpdate
                 LocalFree(ptrToSplitArgs);
             }
         }
-
-        [DllImport("shell32.dll", SetLastError = true)]
-        static extern IntPtr CommandLineToArgvW([MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine, out int pNumArgs);
-
-        [DllImport("kernel32.dll")]
-        static extern IntPtr LocalFree(IntPtr hMem);
     }
 }
