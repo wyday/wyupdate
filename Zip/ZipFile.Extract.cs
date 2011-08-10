@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-June-16 10:59:34>
+// Time-stamp: <2011-July-31 14:45:18>
 //
 // ------------------------------------------------------------------
 //
@@ -42,30 +42,34 @@ namespace Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        /// This method will extract all entries in the <c>ZipFile</c> to the specified path.
+        ///   This method will extract all entries in the <c>ZipFile</c> to the
+        ///   specified path.
         /// </para>
         ///
         /// <para>
-        /// If an extraction of a file from the zip archive would overwrite an existing
-        /// file in the filesystem, the action taken is dictated by the
-        /// ExtractExistingFile property, which overrides any setting you may have made
-        /// on individual ZipEntry instances.  By default, if you have not set that
-        /// property on the <c>ZipFile</c> instance, the entry will not be extracted,
-        /// the existing file will not be overwritten and an exception will be
-        /// thrown. To change this, set the property, or use the <see
-        /// cref="ZipFile.ExtractAll(string, Ionic.Zip.ExtractExistingFileAction)" />
-        /// overload that allows you to specify an ExtractExistingFileAction parameter.
+        ///   If an extraction of a file from the zip archive would overwrite an
+        ///   existing file in the filesystem, the action taken is dictated by the
+        ///   ExtractExistingFile property, which overrides any setting you may have
+        ///   made on individual ZipEntry instances.  By default, if you have not
+        ///   set that property on the <c>ZipFile</c> instance, the entry will not
+        ///   be extracted, the existing file will not be overwritten and an
+        ///   exception will be thrown. To change this, set the property, or use the
+        ///   <see cref="ZipFile.ExtractAll(string,
+        ///   Ionic.Zip.ExtractExistingFileAction)" /> overload that allows you to
+        ///   specify an ExtractExistingFileAction parameter.
         /// </para>
         ///
         /// <para>
-        /// The action to take when an extract would overwrite an existing file applies
-        /// to all entries.  If you want to set this on a per-entry basis, then you must
-        /// use one of the <see cref="M:ZipEntry.Extract">ZipEntry.Extract</see> methods.
+        ///   The action to take when an extract would overwrite an existing file
+        ///   applies to all entries.  If you want to set this on a per-entry basis,
+        ///   then you must use one of the <see
+        ///   cref="ZipEntry.Extract()">ZipEntry.Extract</see> methods.
         /// </para>
         ///
         /// <para>
-        /// This method will send verbose output messages to the
-        /// <see cref="StatusMessageTextWriter"/>, if it is set on the <c>ZipFile</c> instance.
+        ///   This method will send verbose output messages to the <see
+        ///   cref="StatusMessageTextWriter"/>, if it is set on the <c>ZipFile</c>
+        ///   instance.
         /// </para>
         ///
         /// <para>
@@ -73,46 +77,50 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        /// About Timestamps: When extracting a file entry from a zip archive, the
-        /// extracted file gets the last modified time of the entry as stored in the
-        /// archive. The archive may also store extended file timestamp information,
-        /// including last accessed and created times. If these are present in the
-        /// <c>ZipEntry</c>, then the extracted file will also get these times.
+        ///   About timestamps: When extracting a file entry from a zip archive, the
+        ///   extracted file gets the last modified time of the entry as stored in
+        ///   the archive. The archive may also store extended file timestamp
+        ///   information, including last accessed and created times. If these are
+        ///   present in the <c>ZipEntry</c>, then the extracted file will also get
+        ///   these times.
         /// </para>
         ///
         /// <para>
-        /// A Directory entry is somewhat different. It will get the times as described
-        /// for a file entry, but, if there are file entries in the zip archive that,
-        /// when extracted, appear in the just-created directory, then when those file
-        /// entries are extracted, the last modified and last accessed times of the
-        /// directory will change, as a side effect.  The result is that after an
-        /// extraction of a directory and a number of files within the directory, the
-        /// last modified and last accessed timestamps on the directory will reflect the
-        /// time that the last file was extracted into the directory, rather than the
-        /// time stored in the zip archive for the directory.
+        ///   A Directory entry is somewhat different. It will get the times as
+        ///   described for a file entry, but, if there are file entries in the zip
+        ///   archive that, when extracted, appear in the just-created directory,
+        ///   then when those file entries are extracted, the last modified and last
+        ///   accessed times of the directory will change, as a side effect.  The
+        ///   result is that after an extraction of a directory and a number of
+        ///   files within the directory, the last modified and last accessed
+        ///   timestamps on the directory will reflect the time that the last file
+        ///   was extracted into the directory, rather than the time stored in the
+        ///   zip archive for the directory.
         /// </para>
         ///
         /// <para>
-        /// To compensate, when extracting an archive with <c>ExtractAll</c>, DotNetZip
-        /// will extract all the file and directory entries as described above, but it
-        /// will then make a second pass on the directories, and reset the times on the
-        /// directories to reflect what is stored in the zip archive.
+        ///   To compensate, when extracting an archive with <c>ExtractAll</c>,
+        ///   DotNetZip will extract all the file and directory entries as described
+        ///   above, but it will then make a second pass on the directories, and
+        ///   reset the times on the directories to reflect what is stored in the
+        ///   zip archive.
         /// </para>
         ///
         /// <para>
-        /// This compensation is performed only within the context of an
-        /// <c>ExtractAll</c>. If you call <c>ZipEntry.Extract</c> on a directory entry,
-        /// the timestamps on directory in the filesystem will reflect the times stored
-        /// in the zip.  If you then call <c>ZipEntry.Extract</c> on a file entry, which
-        /// is extracted into the directory, the timestamps on the directory will be
-        /// updated to the current time.
+        ///   This compensation is performed only within the context of an
+        ///   <c>ExtractAll</c>. If you call <c>ZipEntry.Extract</c> on a directory
+        ///   entry, the timestamps on directory in the filesystem will reflect the
+        ///   times stored in the zip.  If you then call <c>ZipEntry.Extract</c> on
+        ///   a file entry, which is extracted into the directory, the timestamps on
+        ///   the directory will be updated to the current time.
         /// </para>
         /// </remarks>
         ///
         /// <example>
-        /// This example extracts all the entries in a zip archive file, to the
-        /// specified target directory.  The extraction will overwrite any existing
-        /// files silently.
+        ///   This example extracts all the entries in a zip archive file, to the
+        ///   specified target directory.  The extraction will overwrite any
+        ///   existing files silently.
+        ///
         /// <code>
         /// String TargetDirectory= "unpack";
         /// using(ZipFile zip= ZipFile.Read(ZipFileToExtract))
@@ -135,8 +143,8 @@ namespace Ionic.Zip
         /// <seealso cref="Ionic.Zip.ZipFile.ExtractExistingFile"/>
         ///
         /// <param name="path">
-        /// The path to which the contents of the zipfile will be extracted.
-        /// The path can be relative or fully-qualified.
+        ///   The path to which the contents of the zipfile will be extracted.
+        ///   The path can be relative or fully-qualified.
         /// </param>
         ///
         public void ExtractAll(string path)

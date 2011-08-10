@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-11 10:03:12>
+// Time-stamp: <2011-August-06 12:26:24>
 //
 // ------------------------------------------------------------------
 //
@@ -251,13 +251,17 @@ namespace Ionic.Zip
         Extracting_AfterExtractEntry,
 
         /// <summary>
-        /// Indicates that extraction of an entry would overwrite an existing filesystem file.
+        ///   Indicates that extraction of an entry would overwrite an existing
+        ///   filesystem file. You must use
+        ///   <see cref="ExtractExistingFileAction.InvokeExtractProgressEvent">
+        ///   ExtractExistingFileAction.InvokeExtractProgressEvent</see> in the call
+        ///   to <c>ZipEntry.Extract()</c> in order to receive this event.
         /// </summary>
         Extracting_ExtractEntryWouldOverwrite,
 
         /// <summary>
-        /// The given event is reporting the number of bytes written so far for the current entry
-        /// during an Extract() operation.
+        ///   The given event is reporting the number of bytes written so far for
+        ///   the current entry during an Extract() operation.
         /// </summary>
         Extracting_EntryBytesWritten,
 

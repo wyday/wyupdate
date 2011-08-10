@@ -218,7 +218,6 @@
     <Compile Include="Zip\ParallelDeflateOutputStream.cs" />
     <Compile Include="Zip\Shared.cs" />
     <Compile Include="Zip\Tree.cs" />
-    <Compile Include="Zip\WinZipAes.cs" />
     <Compile Include="Zip\ZipConstants.cs" />
     <Compile Include="Zip\ZipCrypto.cs" />
     <Compile Include="Zip\ZipDirEntry.cs" />

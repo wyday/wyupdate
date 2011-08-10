@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-11 21:41:56>
+// Time-stamp: <2011-July-31 14:48:11>
 //
 // ------------------------------------------------------------------
 //
@@ -413,18 +413,19 @@ namespace Ionic.Zlib
         ///     for more information.
         ///   </para>
         ///   <para>
-        ///     This method may be invoked in two distinct scenarios.  If disposing
-        ///     == true, the method has been called directly or indirectly by a
-        ///     user's code, for example via the public Dispose() method. In this
-        ///     case, both managed and unmanaged resources can be referenced and
-        ///     disposed.  If disposing == false, the method has been called by the
-        ///     runtime from inside the object finalizer and this method should not
-        ///     reference other objects; in that case only unmanaged resources must
-        ///     be referenced or disposed.
+        ///     Application code won't call this code directly.  This method may be
+        ///     invoked in two distinct scenarios.  If disposing == true, the method
+        ///     has been called directly or indirectly by a user's code, for example
+        ///     via the public Dispose() method. In this case, both managed and
+        ///     unmanaged resources can be referenced and disposed.  If disposing ==
+        ///     false, the method has been called by the runtime from inside the
+        ///     object finalizer and this method should not reference other objects;
+        ///     in that case only unmanaged resources must be referenced or
+        ///     disposed.
         ///   </para>
         /// </remarks>
         /// <param name="disposing">
-        ///   indicates whether the Dispose method was invoked by user code.
+        ///   true if the Dispose method was invoked by user code.
         /// </param>
         protected override void Dispose(bool disposing)
         {

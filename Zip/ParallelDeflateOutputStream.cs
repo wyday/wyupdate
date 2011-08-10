@@ -7,7 +7,7 @@
 // divide-and-conquer approach with multiple threads to exploit multiple
 // CPUs for the DEFLATE computation.
 //
-// last saved: <2011-July-28 06:29:49>
+// last saved: <2011-July-31 14:49:40>
 //
 // ------------------------------------------------------------------
 //
@@ -1361,6 +1361,7 @@ namespace Ionic.Zlib
         ///   The reference specifying how to apply the offset....  IF
         ///   THIS METHOD ACTUALLY DID ANYTHING.
         /// </param>
+        /// <returns>nothing. It always throws.</returns>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
             throw new NotSupportedException();

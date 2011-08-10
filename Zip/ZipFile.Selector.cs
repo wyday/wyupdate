@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-30 14:33:22>
+// Time-stamp: <2011-August-06 09:35:58>
 //
 // ------------------------------------------------------------------
 //
@@ -413,6 +413,18 @@ namespace Ionic.Zip
         ///     ' Use a compound expression in the selectionCriteria string.
         ///     zip.AddSelectedFiles("name = *.csv  and  mtime > 2009-02-14", "files", true)
         ///     zip.Save(PathToZipArchive)
+        /// End Using
+        /// </code>
+        /// </example>
+        ///
+        /// <example>
+        ///   This example zips up all files in the current working
+        ///   directory, and all its child directories, except those in
+        ///   the <c>excludethis</c> subdirectory.
+        /// <code lang="VB">
+        /// Using Zip As ZipFile = New ZipFile(zipfile)
+        ///   Zip.AddSelectedFfiles("name != 'excludethis\*.*'", datapath, True)
+        ///   Zip.Save()
         /// End Using
         /// </code>
         /// </example>

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-13 16:12:13>
+// Time-stamp: <2011-August-05 11:38:59>
 //
 // ------------------------------------------------------------------
 //
@@ -948,15 +948,15 @@ namespace Ionic.Zip
         }
 
 
-        private static bool BlocksAreEqual(byte[] a, byte[] b)
-        {
-            if (a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++)
-            {
-                if (a[i] != b[i]) return false;
-            }
-            return true;
-        }
+        // private static bool BlocksAreEqual(byte[] a, byte[] b)
+        // {
+        //     if (a.Length != b.Length) return false;
+        //     for (int i = 0; i < a.Length; i++)
+        //     {
+        //         if (a[i] != b[i]) return false;
+        //     }
+        //     return true;
+        // }
 
 
 

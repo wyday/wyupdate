@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-13 22:36:20>
+// Time-stamp: <2011-August-05 13:31:23>
 //
 // ------------------------------------------------------------------
 //
@@ -34,6 +34,40 @@ namespace Ionic.Zip
 
     public partial class ZipFile
     {
+
+        /// <summary>
+        ///   Delete file with retry on UnauthorizedAccessException.
+        /// </summary>
+        ///
+        /// <remarks>
+        ///   <para>
+        ///     When calling File.Delete() on a file that has been "recently"
+        ///     created, the call sometimes fails with
+        ///     UnauthorizedAccessException. This method simply retries the Delete 3
+        ///     times with a sleep between tries.
+        ///   </para>
+        /// </remarks>
+        ///
+        /// <param name='filename'>the name of the file to be deleted</param>
+        private void DeleteFileWithRetry(string filename)
+        {
+            bool done = false;
+            int nRetries = 3;
+            for (int i=0; i < nRetries && !done; i++)
+            {
+                try
+                {
+                    File.Delete(filename);
+                    done = true;
+                }
+                catch (System.UnauthorizedAccessException)
+                {
+                    Console.WriteLine("************************************************** Retry delete.");
+                    System.Threading.Thread.Sleep(200+i*200);
+                }
+            }
+        }
+
 
         /// <summary>
         ///   Saves the Zip archive to a file, specified by the Name property of the
@@ -115,7 +149,7 @@ namespace Ionic.Zip
                     return;
                 }
 
-                Reset();
+                Reset(true);
 
                 if (Verbose) StatusMessageTextWriter.WriteLine("saving....");
 
@@ -209,30 +243,74 @@ namespace Ionic.Zip
                         }
                     }
 
+                    string tmpName = null;
                     if (File.Exists(_name))
                     {
-                        // We do not just call File.Replace() here because
+                        // the steps:
+                        //
+                        // 1. Delete tmpName
+                        // 2. move existing zip to tmpName
+                        // 3. rename (File.Move) working file to name of existing zip
+                        // 4. delete tmpName
+                        //
+                        // This series of steps avoids the exception,
+                        // System.IO.IOException:
+                        //   "Cannot create a file when that file already exists."
+                        //
+                        // Cannot just call File.Replace() here because
                         // there is a possibility that the TEMP volume is different
                         // that the volume for the final file (c:\ vs d:\).
                         // So we need to do a Delete+Move pair.
                         //
-                        // Ideally this would be transactional.
+                        // But, when doing the delete, Windows allows a process to
+                        // delete the file, even though it is held open by, say, a
+                        // virus scanner. It gets internally marked as "delete
+                        // pending". The file does not actually get removed from the
+                        // file system, it is still there after the File.Delete
+                        // call.
                         //
-                        // It's possible that the delete succeeds and the move fails.
-                        // in that case, we're hosed, and we'll throw.
+                        // Therefore, we need to move the existing zip, which may be
+                        // held open, to some other name. Then rename our working
+                        // file to the desired name, then delete (possibly delete
+                        // pending) the "other name".
                         //
-                        // Could make this more complicated by moving (renaming) the first file, then
-                        // moving the second, then deleting the first file. But the
-                        // error handling and unwrap logic just gets more complicated.
+                        // Ideally this would be transactional. It's possible that the
+                        // delete succeeds and the move fails. Lacking transactions, if
+                        // this kind of failure happens, we're hosed, and this logic will
+                        // throw on the next File.Move().
                         //
-                        // Better to just keep it simple.
-                        File.Delete(_name);
+                        //File.Delete(_name);
+                        // workitem 10447
+#if NETCF || SILVERLIGHT
+                        tmpName = _name + "." + SharedUtilities.GenerateRandomStringImpl(8,0) + ".tmp";
+#else
+                        tmpName = _name + "." + Path.GetRandomFileName();
+#endif
+                        if (File.Exists(tmpName))
+                            DeleteFileWithRetry(tmpName);
+                        File.Move(_name, tmpName);
                     }
 
                     OnSaveEvent(ZipProgressEventType.Saving_BeforeRenameTempArchive);
-                    File.Move((zss != null) ? zss.CurrentTempName : _temporaryFileName, _name);
+                    File.Move((zss != null) ? zss.CurrentTempName : _temporaryFileName,
+                              _name);
+
                     OnSaveEvent(ZipProgressEventType.Saving_AfterRenameTempArchive);
 
+                    if (tmpName != null)
+                    {
+                        try
+                        {
+                            // not critical
+                            if (File.Exists(tmpName))
+                                File.Delete(tmpName);
+                        }
+                        catch
+                        {
+                            // don't care about exceptions here.
+                        }
+
+                    }
                     _fileAlreadyExists = true;
                 }
 

@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-11 21:51:30>
+// Time-stamp: <2011-July-31 14:53:33>
 //
 // ------------------------------------------------------------------
 //
@@ -79,16 +79,16 @@ namespace Ionic.Zlib
         /// <remarks>
         ///
         /// <para>
-        ///   When mode is <c>CompressionMode.Compress</c>, the <c>ZlibStream</c> will use the
-        ///   default compression level. The "captive" stream will be closed when the
-        ///   <c>ZlibStream</c> is closed.
+        ///   When mode is <c>CompressionMode.Compress</c>, the <c>ZlibStream</c>
+        ///   will use the default compression level. The "captive" stream will be
+        ///   closed when the <c>ZlibStream</c> is closed.
         /// </para>
         ///
         /// </remarks>
         ///
         /// <example>
-        /// This example uses a <c>ZlibStream</c> to compress a file, and writes the compressed
-        /// data to another file.
+        /// This example uses a <c>ZlibStream</c> to compress a file, and writes the
+        /// compressed data to another file.
         /// <code>
         /// using (System.IO.Stream input = System.IO.File.OpenRead(fileToCompress))
         /// {
@@ -235,32 +235,36 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        ///   Create a <c>ZlibStream</c> using the specified <c>CompressionMode</c> and
-        ///   the specified <c>CompressionLevel</c>, and explicitly specify whether the
-        ///   stream should be left open after Deflation or Inflation.
+        ///   Create a <c>ZlibStream</c> using the specified <c>CompressionMode</c>
+        ///   and the specified <c>CompressionLevel</c>, and explicitly specify
+        ///   whether the stream should be left open after Deflation or Inflation.
         /// </summary>
         ///
         /// <remarks>
         ///
         /// <para>
-        ///   This constructor allows the application to request that the captive stream
-        ///   remain open after the deflation or inflation occurs.  By default, after
-        ///   <c>Close()</c> is called on the stream, the captive stream is also closed. In
-        ///   some cases this is not desired, for example if the stream is a <see
-        ///   cref="System.IO.MemoryStream"/> that will be re-read after compression.
-        ///   Specify true for the <paramref name="leaveOpen"/> parameter to leave the stream open.
+        ///   This constructor allows the application to request that the captive
+        ///   stream remain open after the deflation or inflation occurs.  By
+        ///   default, after <c>Close()</c> is called on the stream, the captive
+        ///   stream is also closed. In some cases this is not desired, for example
+        ///   if the stream is a <see cref="System.IO.MemoryStream"/> that will be
+        ///   re-read after compression.  Specify true for the <paramref
+        ///   name="leaveOpen"/> parameter to leave the stream open.
         /// </para>
         ///
         /// <para>
-        ///   When mode is <c>CompressionMode.Decompress</c>, the level parameter is ignored.
+        ///   When mode is <c>CompressionMode.Decompress</c>, the level parameter is
+        ///   ignored.
         /// </para>
         ///
         /// </remarks>
         ///
         /// <example>
+        ///
         /// This example shows how to use a ZlibStream to compress the data from a file,
         /// and store the result into another file. The filestream remains open to allow
         /// additional data to be written to it.
+        ///
         /// <code>
         /// using (var output = System.IO.File.Create(fileToCompress + ".zlib"))
         /// {
@@ -303,12 +307,13 @@ namespace Ionic.Zlib
         /// <param name="mode">Indicates whether the ZlibStream will compress or decompress.</param>
         ///
         /// <param name="leaveOpen">
-        /// true if the application would like the stream to remain open after inflation/deflation.
+        /// true if the application would like the stream to remain open after
+        /// inflation/deflation.
         /// </param>
         ///
         /// <param name="level">
-        /// A tuning knob to trade speed for effectiveness. This parameter is effective only when
-        /// mode is <c>CompressionMode.Compress</c>.
+        /// A tuning knob to trade speed for effectiveness. This parameter is
+        /// effective only when mode is <c>CompressionMode.Compress</c>.
         /// </param>
         public ZlibStream(System.IO.Stream stream, CompressionMode mode, CompressionLevel level, bool leaveOpen)
         {
@@ -473,11 +478,11 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Reading this property always throws a <see cref="NotImplementedException"/>.
+        /// Reading this property always throws a <see cref="NotSupportedException"/>.
         /// </summary>
         public override long Length
         {
-            get { throw new NotImplementedException(); }
+            get { throw new NotSupportedException(); }
         }
 
         /// <summary>
@@ -486,7 +491,7 @@ namespace Ionic.Zlib
         ///
         /// <remarks>
         ///   Setting this property always throws a <see
-        ///   cref="NotImplementedException"/>. Reading will return the total bytes
+        ///   cref="NotSupportedException"/>. Reading will return the total bytes
         ///   written out, if used in writing, or the total bytes read in, if used in
         ///   reading.  The count may refer to compressed bytes or uncompressed bytes,
         ///   depending on how you've used the stream.
@@ -502,7 +507,7 @@ namespace Ionic.Zlib
                 return 0;
             }
 
-            set { throw new NotImplementedException(); }
+            set { throw new NotSupportedException(); }
         }
 
         /// <summary>
@@ -528,9 +533,16 @@ namespace Ionic.Zlib
         /// </para>
         ///
         /// </remarks>
-        /// <param name="buffer">The buffer into which the read data should be placed.</param>
-        /// <param name="offset">the offset within that data array to put the first byte read.</param>
+        ///
+        /// <param name="buffer">
+        /// The buffer into which the read data should be placed.</param>
+        ///
+        /// <param name="offset">
+        /// the offset within that data array to put the first byte read.</param>
+        ///
         /// <param name="count">the number of bytes to read.</param>
+        ///
+        /// <returns>the number of bytes read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
                 if (_disposed) throw new ObjectDisposedException("ZlibStream");
@@ -538,7 +550,7 @@ namespace Ionic.Zlib
         }
 
         /// <summary>
-        /// Calling this method always throws a <see cref="NotImplementedException"/>.
+        /// Calling this method always throws a <see cref="NotSupportedException"/>.
         /// </summary>
         /// <param name="offset">
         ///   The offset to seek to....
@@ -548,13 +560,15 @@ namespace Ionic.Zlib
         ///   The reference specifying how to apply the offset....  IF
         ///   THIS METHOD ACTUALLY DID ANYTHING.
         /// </param>
+        ///
+        /// <returns>nothing. This method always throws.</returns>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
-        /// Calling this method always throws a <see cref="NotImplementedException"/>.
+        /// Calling this method always throws a <see cref="NotSupportedException"/>.
         /// </summary>
         /// <param name="value">
         ///   The new value for the stream length....  IF
@@ -562,7 +576,7 @@ namespace Ionic.Zlib
         /// </param>
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
