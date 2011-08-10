@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-28 06:28:33>
+// Time-stamp: <2011-August-06 21:22:38>
 //
 // ------------------------------------------------------------------
 //
@@ -239,10 +239,10 @@ namespace Ionic.Zlib
                             return;
 
                         // Read and potentially verify the GZIP trailer:
-                        // CRC32 and  size mod 2^32
+                        // CRC32 and size mod 2^32
                         byte[] trailer = new byte[8];
 
-                        // workitems 8679 & 12544
+                        // workitems 8679 & 12554
                         if (_z.AvailableBytesIn < 8)
                         {
                             // Make sure we have read to the end of the stream
@@ -253,7 +253,7 @@ namespace Ionic.Zlib
                                                          bytesNeeded);
                             if (bytesNeeded != bytesRead)
                             {
-                                throw new ZlibException(String.Format("Protocol error. AvailableBytesIn={0}, expected 8",
+                                throw new ZlibException(String.Format("Missing or incomplete GZIP trailer. Expected 8 bytes, got {0}.",
                                                                       _z.AvailableBytesIn + bytesRead));
                             }
                         }
@@ -262,17 +262,16 @@ namespace Ionic.Zlib
                             Array.Copy(_z.InputBuffer, _z.NextIn, trailer, 0, trailer.Length);
                         }
 
-
                         Int32 crc32_expected = BitConverter.ToInt32(trailer, 0);
                         Int32 crc32_actual = crc.Crc32Result;
                         Int32 isize_expected = BitConverter.ToInt32(trailer, 4);
                         Int32 isize_actual = (Int32)(_z.TotalBytesOut & 0x00000000FFFFFFFF);
 
                         if (crc32_actual != crc32_expected)
-                            throw new ZlibException(String.Format("Bad CRC32 in GZIP stream. (actual({0:X8})!=expected({1:X8}))", crc32_actual, crc32_expected));
+                            throw new ZlibException(String.Format("Bad CRC32 in GZIP trailer. (actual({0:X8})!=expected({1:X8}))", crc32_actual, crc32_expected));
 
                         if (isize_actual != isize_expected)
-                            throw new ZlibException(String.Format("Bad size in GZIP stream. (actual({0})!=expected({1}))", isize_actual, isize_expected));
+                            throw new ZlibException(String.Format("Bad size in GZIP trailer. (actual({0})!=expected({1}))", isize_actual, isize_expected));
 
                     }
                     else

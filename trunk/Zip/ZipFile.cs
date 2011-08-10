@@ -792,10 +792,13 @@ namespace Ionic.Zip
         }
 
 
-
         /// <summary>
-        /// Returns true if an entry by the given name exists in the ZipFile.
+        ///   Returns true if an entry by the given name exists in the ZipFile.
         /// </summary>
+        ///
+        /// <param name='name'>the name of the entry to find</param>
+        /// <returns>true if an entry with the given name exists; otherwise false.
+        /// </returns>
         public bool ContainsEntry(string name)
         {
             // workitem 12534
@@ -1968,9 +1971,10 @@ namespace Ionic.Zip
         ///
         /// <para>
         ///   With this callback, the DotNetZip library allows the application to
-        ///   determine whether compression will be used, at the time of the <c>Save</c>. This
-        ///   may be useful if the application wants to favor speed over size, and wants
-        ///   to defer the decision until the time of <c>Save</c>.
+        ///   determine whether compression will be used, at the time of the
+        ///   <c>Save</c>. This may be useful if the application wants to favor
+        ///   speed over size, and wants to defer the decision until the time of
+        ///   <c>Save</c>.
         /// </para>
         ///
         /// <para>
@@ -2339,21 +2343,25 @@ namespace Ionic.Zip
                 //return (this.ReadStream as FileStream);
                 return this.ReadStream;
             }
-            return ZipSegmentedStream.ForReading(this._readName, diskNumber, _diskNumberWithCd);
+            return ZipSegmentedStream.ForReading(this._readName ?? this._name,
+                                                 diskNumber, _diskNumberWithCd);
         }
 
 
 
         // called by ZipEntry in ZipEntry.Extract(), when there is no stream set for the
         // ZipEntry.
-        internal void Reset()
+        internal void Reset(bool whileSaving)
         {
             if (_JustSaved)
             {
                 // read in the just-saved zip archive
                 using (ZipFile x = new ZipFile())
                 {
-                    x._name = this._name;
+                    // workitem 10735
+                    x._readName = x._name = whileSaving
+                        ? (this._readName ?? this._name)
+                        : this._name;
                     x.AlternateEncoding = this.AlternateEncoding;
                     x.AlternateEncodingUsage = this.AlternateEncodingUsage;
                     ReadIntoInstance(x);
@@ -3542,11 +3550,12 @@ namespace Ionic.Zip
             {
                 if (_readstream == null)
                 {
-                    if (_name != null)
+                    if (_readName != null || _name !=null)
                     {
-                        _readstream = File.Open(_name, FileMode.Open, FileAccess.Read,
+                        _readstream = File.Open(_readName ?? _name,
+                                                FileMode.Open,
+                                                FileAccess.Read,
                                                 FileShare.Read | FileShare.Write);
-                        //_readstream = File.OpenRead(_name);
                         _ReadStreamIsOurs = true;
                     }
                 }

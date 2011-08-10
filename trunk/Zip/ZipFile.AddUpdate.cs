@@ -15,7 +15,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-30 15:00:11>
+// Time-stamp: <2011-August-01 16:42:07>
 //
 // ------------------------------------------------------------------
 //
@@ -1219,9 +1219,10 @@ namespace Ionic.Zip
         /// </para>
         ///
         /// <para>
-        ///   The passed stream will be read from its current position.
-        ///   Callers should set the position in the stream before calling
-        ///   AddEntry().
+        ///   The passed stream will be read from its current position. If
+        ///   necessary, callers should set the position in the stream before
+        ///   calling AddEntry(). This might be appropriate when using this method
+        ///   with a MemoryStream, for example.
         /// </para>
         ///
         /// <para>

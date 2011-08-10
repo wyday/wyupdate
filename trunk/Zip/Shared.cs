@@ -14,7 +14,7 @@
 //
 // ------------------------------------------------------------------
 //
-// Last Saved: <2011-July-30 14:41:11>
+// Last Saved: <2011-August-02 19:41:01>
 //
 // ------------------------------------------------------------------
 //
@@ -550,7 +550,7 @@ namespace Ionic.Zip
             return "DotNetZip-" + GenerateRandomStringImpl(8,0) + ".tmp";
         }
 
-        private static string GenerateRandomStringImpl(int length, int delta)
+        internal static string GenerateRandomStringImpl(int length, int delta)
         {
             bool WantMixedCase = (delta == 0);
             System.Random rnd = new System.Random();
@@ -761,10 +761,20 @@ namespace Ionic.Zip
         }
 
         /// <summary>
-        ///    Subtract delta from the count of bytes written to the stream.
-        ///    This is necessary when seeking back, and writing additional data,
-        ///    as happens in some cases when saving Zip files.
+        ///    Adjust the byte count on the stream.
         /// </summary>
+        ///
+        /// <param name='delta'>
+        ///   the number of bytes to subtract from the count.
+        /// </param>
+        ///
+        /// <remarks>
+        ///   <para>
+        ///     Subtract delta from the count of bytes written to the stream.
+        ///     This is necessary when seeking back, and writing additional data,
+        ///     as happens in some cases when saving Zip files.
+        ///   </para>
+        /// </remarks>
         public void Adjust(Int64 delta)
         {
             _bytesWritten -= delta;
@@ -879,6 +889,8 @@ namespace Ionic.Zip
         /// <summary>
         ///   Set the length of the underlying stream.  Be careful with this!
         /// </summary>
+        ///
+        /// <param name='value'>the length to set on the underlying stream.</param>
         public override void SetLength(long value)
         {
             _s.SetLength(value);

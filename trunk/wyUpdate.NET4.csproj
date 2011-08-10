@@ -165,7 +165,7 @@
     <Compile Include="ClientFile.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.cs" />
     <Compile Include="Util\Arguments.cs" />
-	<Compile Include="Util\Logger.cs" />
+    <Compile Include="Util\Logger.cs" />
     <Compile Include="VCDiff\AddressCache.cs" />
     <Compile Include="VCDiff\CodeTable.cs" />
     <Compile Include="VCDiff\Instruction.cs" />
@@ -190,7 +190,6 @@
     <Compile Include="Zip\ParallelDeflateOutputStream.cs" />
     <Compile Include="Zip\Shared.cs" />
     <Compile Include="Zip\Tree.cs" />
-    <Compile Include="Zip\WinZipAes.cs" />
     <Compile Include="Zip\ZipConstants.cs" />
     <Compile Include="Zip\ZipCrypto.cs" />
     <Compile Include="Zip\ZipDirEntry.cs" />

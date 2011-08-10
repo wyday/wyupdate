@@ -16,7 +16,7 @@
 // ------------------------------------------------------------------
 //
 // last saved (in emacs):
-// Time-stamp: <2011-July-28 06:34:23>
+// Time-stamp: <2011-July-31 14:48:30>
 //
 // ------------------------------------------------------------------
 //
@@ -660,26 +660,41 @@ namespace  Ionic.Zip
         ///
         /// <remarks>
         /// <para>
-        ///   This method disposes the ZipInputStream.  It may also close the underlying
-        ///   stream, depending on which constructor was used.
+        ///   This method disposes the ZipInputStream.  It may also close the
+        ///   underlying stream, depending on which constructor was used.
         /// </para>
         ///
         /// <para>
-        ///   Typically the application will call <c>Dispose()</c> implicitly, via a <c>using</c>
-        ///   statement in C#, or a <c>Using</c> statement in VB.
+        ///   Typically the application will call <c>Dispose()</c> implicitly, via
+        ///   a <c>using</c> statement in C#, or a <c>Using</c> statement in VB.
         /// </para>
         ///
+        ///   <para>
+        ///     Application code won't call this code directly.  This method may
+        ///     be invoked in two distinct scenarios.  If disposing == true, the
+        ///     method has been called directly or indirectly by a user's code,
+        ///     for example via the public Dispose() method. In this case, both
+        ///     managed and unmanaged resources can be referenced and disposed.
+        ///     If disposing == false, the method has been called by the runtime
+        ///     from inside the object finalizer and this method should not
+        ///     reference other objects; in that case only unmanaged resources
+        ///     must be referenced or disposed.
+        ///   </para>
         /// </remarks>
         ///
+        /// <param name="disposing">
+        ///   true if the Dispose method was invoked by user code.
+        /// </param>
         protected override void Dispose(bool disposing)
         {
             if (_closed) return;
 
             if (disposing) // not called from finalizer
             {
-                // When ZipInputStream is used within a using clause, and an exception is thrown,
-                // Close() is invoked.  But we don't want to try to write anything in that case.
-                // Eventually the exception will be propagated to the application.
+                // When ZipInputStream is used within a using clause, and an
+                // exception is thrown, Close() is invoked.  But we don't want to
+                // try to write anything in that case.  Eventually the exception
+                // will be propagated to the application.
                 if (_exceptionPending) return;
 
                 if (!_leaveUnderlyingStreamOpen)
