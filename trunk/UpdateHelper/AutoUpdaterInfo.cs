@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
 using wyUpdate.Common;
 
 #if WPF
@@ -60,32 +62,65 @@ namespace wyDay.Controls
             }
 #endif
 
-            bool failedToLoad = false;
+            bool failedToLoad;
 
-            try
+            bool firstFailed = false;
+            int retriedTimes = 0;
+
+            while (true)
             {
-                // try to load the AutoUpdatefile for limited user
-                if (filenames[1] != null)
-                    Load(filenames[1]);
-                else // load the admin user
-                    Load(filenames[0]);
-            }
-            catch
-            {
-                if (filenames[1] != null)
+                try
                 {
-                    try
-                    {
-                        // try to load the AutoUpdateFile for the admin user
+                    // try to load the AutoUpdatefile for limited user
+                    if (filenames[1] != null && !firstFailed)
+                        Load(filenames[1]);
+                    else // load the admin user
                         Load(filenames[0]);
-                    }
-                    catch
-                    {
-                        failedToLoad = true;
-                    }
+
+                    failedToLoad = false;
                 }
-                else
+                catch (IOException IOEx)
+                {
+                    int HResult = Marshal.GetHRForException(IOEx);
+
+                    // if sharing violation
+                    if ((HResult & 0xFFFF) == 32)
+                    {
+                        // sleep for 1/2 second
+                        Thread.Sleep(500);
+
+                        // if we're skipping UI and we've already waited 20 seconds for a file to be released
+                        // then throw the exception, rollback updates, etc
+                        if (retriedTimes != 20)
+                        {
+                            // otherwise, retry file copy
+                            ++retriedTimes;
+                            continue;
+                        }
+                    }
+
                     failedToLoad = true;
+
+                    // the first has already failed (the second just failed)
+                    if (firstFailed)
+                        break;
+
+                    firstFailed = true;
+                    continue;
+                }
+                catch
+                {
+                    failedToLoad = true;
+
+                    // the first has already failed (the second just failed)
+                    if (firstFailed)
+                        break;
+
+                    firstFailed = true;
+                    continue;
+                }
+
+                break;
             }
 
             if (failedToLoad)
@@ -133,11 +168,43 @@ namespace wyDay.Controls
         // not using registry because .NET 2.0 has bad support for x64/x86 access
         public void Save()
         {
-            // save for each filename
-            Save(filenames[0]);
+            int retriedTimes = 0;
 
-            if (filenames[1] != null)
-                Save(filenames[1]);
+            while (true)
+            {
+                try
+                {
+                    // save for each filename
+                    Save(filenames[0]);
+
+                    if (filenames[1] != null)
+                        Save(filenames[1]);
+                }
+                catch (IOException IOEx)
+                {
+                    int HResult = Marshal.GetHRForException(IOEx);
+
+                    // if sharing violation
+                    if ((HResult & 0xFFFF) == 32)
+                    {
+                        // sleep for 1/2 second
+                        Thread.Sleep(500);
+
+                        // if we're skipping UI and we've already waited 20 seconds for a file to be released
+                        // then throw the exception, rollback updates, etc
+                        if (retriedTimes == 20)
+                            throw;
+
+                        // otherwise, retry file copy
+                        ++retriedTimes;
+                        continue;
+                    }
+
+                    throw;
+                }
+
+                break;
+            }
         }
 
         void Save(string filename)
