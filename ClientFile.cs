@@ -24,7 +24,13 @@ namespace wyUpdate.Common
 
     public class ClientFile
     {
+#if CLIENT_READER
+        public List<string> Languages = new List<string>();
+        public bool ContainsUninstallFile;
+#else
         public Hashtable Languages = new Hashtable();
+#endif
+
         string m_GUID;
 
         #region Properties
@@ -41,6 +47,7 @@ namespace wyUpdate.Common
         {
             get
             {
+#if !CLIENT_READER
                 if (string.IsNullOrEmpty(m_GUID))
                 {
                     // generate a GUID from the product name
@@ -66,7 +73,7 @@ namespace wyUpdate.Common
 
                     return ProductName;
                 }
-
+#endif
                 return m_GUID;
             }
             set
@@ -106,6 +113,7 @@ namespace wyUpdate.Common
 
 #if CLIENT
 
+#if !CLIENT_READER
         //Open Pre-RC2  client files
         public void OpenObsoleteClientFile(string fileName)
         {
@@ -138,38 +146,38 @@ namespace wyUpdate.Common
             {
                 switch (bType)
                 {
-                    case 0x01://Read Company Name
+                    case 0x01: // Read Company Name
                         CompanyName = ReadFiles.ReadDeprecatedString(fs);
                         break;
-                    case 0x02://Product Name
+                    case 0x02: // Product Name
                         ProductName = ReadFiles.ReadDeprecatedString(fs);
                         break;
-                    case 0x03://Read Installed Version
+                    case 0x03: // Read Installed Version
                         InstalledVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
-                    case 0x04://Add server file site
+                    case 0x04: // Add server file site
                         AddUniqueString(ReadFiles.ReadDeprecatedString(fs), ServerFileSites);
                         break;
-                    case 0x09://Add client server file site
+                    case 0x09: // Add client server file site
                         AddUniqueString(ReadFiles.ReadDeprecatedString(fs), ClientServerSites);
                         break;
-                    case 0x11://Header image alignment
+                    case 0x11: // Header image alignment
                         try
                         {
                             HeaderImageAlign = (ImageAlign)Enum.Parse(typeof(ImageAlign), ReadFiles.ReadDeprecatedString(fs));
                         }
                         catch { }
                         break;
-                    case 0x12://Header text indent
+                    case 0x12: // Header text indent
                         HeaderTextIndent = ReadFiles.ReadInt(fs);
                         break;
-                    case 0x13://Header text color
+                    case 0x13: // Header text color
                         HeaderTextColorName = ReadFiles.ReadDeprecatedString(fs);
                         break;
-                    case 0x06://top Image
+                    case 0x06: // top Image
                         TopImage = ReadFiles.ReadImage(fs);
                         break;
-                    case 0x07://side Image
+                    case 0x07: // side Image
                         SideImage = ReadFiles.ReadImage(fs);
                         break;
                     default:
@@ -182,9 +190,9 @@ namespace wyUpdate.Common
 
             fs.Close();
         }
+#endif
 
-
-        void LoadClientData(Stream ms)
+        void LoadClientData(Stream ms, string updatePathVar, string customUrlArgs)
         {
             ms.Position = 0;
 
@@ -197,8 +205,10 @@ namespace wyUpdate.Common
                 throw new Exception("The client file does not have the correct identifier - this is usually caused by file corruption.");
             }
 
+#if !CLIENT_READER
             LanguageCulture lastLanguage = null;
-
+#endif
+            string serverSite;
             byte bType = (byte)ms.ReadByte();
             while (!ReadFiles.ReachedEndByte(ms, bType, 0xFF))
             {
@@ -217,10 +227,30 @@ namespace wyUpdate.Common
                         InstalledVersion = ReadFiles.ReadDeprecatedString(ms);
                         break;
                     case 0x04://Add server file site
-                        AddUniqueString(ReadFiles.ReadDeprecatedString(ms), ServerFileSites);
+
+                        serverSite = ReadFiles.ReadDeprecatedString(ms);
+
+                        if (updatePathVar != null)
+                            serverSite = serverSite.Replace("%updatepath%", updatePathVar);
+
+                        if (customUrlArgs != null)
+                            serverSite = serverSite.Replace("%urlargs%", customUrlArgs);
+
+                        AddUniqueString(serverSite, ServerFileSites);
+
+
                         break;
                     case 0x09://Add client server file site
-                        AddUniqueString(ReadFiles.ReadDeprecatedString(ms), ClientServerSites);
+
+                        serverSite = ReadFiles.ReadDeprecatedString(ms);
+
+                        if (updatePathVar != null)
+                            serverSite = serverSite.Replace("%updatepath%", updatePathVar);
+
+                        if (customUrlArgs != null)
+                            serverSite = serverSite.Replace("%urlargs%", customUrlArgs);
+
+                        AddUniqueString(serverSite, ClientServerSites);
                         break;
                     case 0x11://Header image alignment
                         try
@@ -241,6 +271,11 @@ namespace wyUpdate.Common
                     case 0x15: //side image filename
                         SideImageFilename = ReadFiles.ReadDeprecatedString(ms);
                         break;
+#if CLIENT_READER
+                    case 0x18: // language culture
+                        Languages.Add(ReadFiles.ReadDeprecatedString(ms));
+                        break;
+#else
                     case 0x18: // language culture
 
                         lastLanguage = new LanguageCulture(ReadFiles.ReadDeprecatedString(ms));
@@ -255,6 +290,7 @@ namespace wyUpdate.Common
                             Languages.Add(string.Empty, new LanguageCulture(null) { Filename = ReadFiles.ReadDeprecatedString(ms) });
 
                         break;
+#endif
                     case 0x17: //hide the header divider
                         HideHeaderDivider = ReadFiles.ReadBool(ms);
                         break;
@@ -280,23 +316,18 @@ namespace wyUpdate.Common
 
         public void LoadClientData(string filename)
         {
-            Stream fs = null;
-
             try
             {
-                fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
-
-                LoadClientData(fs);
+                using (Stream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+                {
+                    LoadClientData(fs, null, null);
+                }
             }
-            finally
-            {
-                if (fs != null)
-                    fs.Close();
-            }
+            catch { }
         }
 
-
-        public void OpenClientFile(string m_Filename, ClientLanguage lang, string forcedCulture)
+#if CLIENT_READER
+        public void OpenClientFile(string m_Filename)
         {
             using (ZipFile zip = ZipFile.Read(m_Filename))
             {
@@ -307,6 +338,47 @@ namespace wyUpdate.Common
 
                     //read in the client data
                     LoadClientData(ms);
+                }
+
+                ContainsUninstallFile = zip["uninstall.dat"] != null;
+
+                // load the top image
+                if (!string.IsNullOrEmpty(TopImageFilename))
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        zip[TopImageFilename].Extract(ms);
+
+                        // convert the bytes to an images
+                        TopImage = Image.FromStream(ms, true);
+                    }
+                }
+
+                // load the side image
+                if (!string.IsNullOrEmpty(SideImageFilename))
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        zip[SideImageFilename].Extract(ms);
+
+                        // convert the bytes to an images
+                        SideImage = Image.FromStream(ms, true);
+                    }
+                }
+            }
+        }
+#else
+        public void OpenClientFile(string m_Filename, ClientLanguage lang, string forcedCulture, string updatePathVar, string customUrlArgs)
+        {
+            using (ZipFile zip = ZipFile.Read(m_Filename))
+            {
+                // load the client details (image filenames, languages, etc.)
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    zip["iuclient.iuc"].Extract(ms);
+
+                    //read in the client data
+                    LoadClientData(ms, updatePathVar, customUrlArgs);
                 }
 
                 // load the top image
@@ -333,7 +405,7 @@ namespace wyUpdate.Common
                     }
                 }
 
-                
+
                 // Backwards compatability with pre-v1.3 of wyUpdate:
                 // if the languages has a culture with a null name, load that file
                 if (Languages.Count == 1 && Languages.Contains(string.Empty))
@@ -384,6 +456,9 @@ namespace wyUpdate.Common
         }
 #endif
 
+#endif
+
+#if !CLIENT_READER
         public void SaveClientFile(List<UpdateFile> files, string outputFilename)
         {
             try
@@ -391,7 +466,6 @@ namespace wyUpdate.Common
                 if (File.Exists(outputFilename))
                     File.Delete(outputFilename);
 
-                ZipEntry entry;
                 using (ZipFile zip = new ZipFile(outputFilename))
                 {
                     zip.AlternateEncoding = Encoding.UTF8;
@@ -400,6 +474,7 @@ namespace wyUpdate.Common
                     // 0 (store only) to 9 (best compression)
                     zip.CompressionLevel = Ionic.Zlib.CompressionLevel.Level7;
 
+                    ZipEntry entry;
                     for (int i = 0; i < files.Count; i++)
                     {
                         entry = zip.AddFile(files[i].Filename, "");
@@ -502,6 +577,7 @@ namespace wyUpdate.Common
             ms.Position = 0;
             return ms;
         }
+#endif
 
         public static void AddUniqueString(string newString, List<string> list)
         {
