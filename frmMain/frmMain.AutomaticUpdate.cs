@@ -123,14 +123,14 @@ namespace wyUpdate
             // tell all the clients that there's a new wyUpdate
             updateHelper.SendNewWyUpdate(UpdateHelperData.PipenameFromFilename(newSelfLocation), clientProcess.Id);
 
-            CancelUpdate(true);
+            CancelUpdate(true, false);
         }
 
         void UpdateHelper_RequestReceived(object sender, UpdateAction a, UpdateStep s)
         {
             if (a == UpdateAction.Cancel)
             {
-                CancelUpdate(true);
+                CancelUpdate(true, false);
                 return;
             }
 
@@ -227,7 +227,7 @@ namespace wyUpdate
                     UpdateHelper_RequestReceived(null, UpdateAction.UpdateStep, UpdateStep.Install);
                 }
                 else
-                    CancelUpdate(true);
+                    CancelUpdate(true, false);
             }
         }
 

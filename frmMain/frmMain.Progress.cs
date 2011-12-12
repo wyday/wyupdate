@@ -42,9 +42,9 @@ namespace wyUpdate
 
                     inuf.ShowDialog(this);
 
-                    //cancel the update process
+                    // cancel the update process
                     if (inuf.CancelUpdate)
-                        CancelUpdate(true);
+                        CancelUpdate(false, true);
                 }
 
                 return;
@@ -475,8 +475,8 @@ namespace wyUpdate
 
                         if (proc.ShowDialog() == DialogResult.Cancel)
                         {
-                            //cancel the update process
-                            CancelUpdate(true);
+                            // cancel the update process
+                            CancelUpdate(true, false);
                             return;
                         }
                     }
