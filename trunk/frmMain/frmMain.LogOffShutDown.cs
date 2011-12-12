@@ -14,25 +14,43 @@ namespace wyUpdate
 
         bool logOffBlocked;
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+
+        [FlagsAttribute]
+        public enum EXECUTION_STATE : uint
+        {
+            ES_AWAYMODE_REQUIRED = 0x00000040,
+            ES_CONTINUOUS = 0x80000000,
+            ES_DISPLAY_REQUIRED = 0x00000002,
+            ES_SYSTEM_REQUIRED = 0x00000001
+
+            // Legacy flag, should not be used.
+            // ES_USER_PRESENT = 0x00000004
+        }
+
         void BlockLogOff(bool block)
         {
             logOffBlocked = block;
 
-            // These API calls don't exist on pre-Vista Windows, but are
-            // *required* for Vista+ systems.
-            // Hence the try{}catch{} block. We could detect the version
-            // of Windows, but that can be spoofed by stupid users.
-
-            // Thus it's better to just try to blindly call the function
-            // and let it silently fail if it doesn't exist.
-            try
+            if (block)
             {
-                if (block)
+                // prevent shutdown
+                if (VistaTools.AtLeastVista())
                     ShutdownBlockReasonCreate(Handle, clientLang.LogOffError);
-                else
-                    ShutdownBlockReasonDestroy(Handle);
+
+                // prevent the computer from going to sleep
+                SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
             }
-            catch { }
+            else
+            {
+                // allow shutdown
+                if (VistaTools.AtLeastVista())
+                    ShutdownBlockReasonDestroy(Handle);
+
+                // allow the computer to go to sleep
+                SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+            }
         }
 
         protected override void WndProc(ref Message aMessage)
