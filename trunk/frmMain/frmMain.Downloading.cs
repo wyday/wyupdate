@@ -67,7 +67,12 @@ namespace wyUpdate
                 downloader.ProgressChanged -= SelfUpdateProgress;
             }
 
-            downloader = new FileDownloader(sites, tempDirectory)
+            string suFolder = Path.Combine(tempDirectory, "su");
+
+            if (!Directory.Exists(suFolder))
+                Directory.CreateDirectory(suFolder);
+
+            downloader = new FileDownloader(sites, suFolder)
                              {
                                  Adler32 = adler32
                              };
