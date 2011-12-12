@@ -19,19 +19,15 @@ namespace wyUpdate
         static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
         public static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "loading-blue.png");
 
+        public AnimationControl Animation = new AnimationControl(null, 1);
         public Label Label = new Label { AutoSize = true };
+
+        public int AnimationWidth { get; set; }
 
         UpdateItemStatus m_Status;
 
         //Position
         int m_Left, m_Top;
-
-        //Animation width
-
-        public int AnimationWidth { get; set; }
-
-        public AnimationControl Animation = new AnimationControl(null, 1);
-
 
         public int Left
         {
