@@ -176,7 +176,7 @@ namespace wyUpdate
                     //TODO: wyUp 3.0: stop supporting old client files (barely anyone uses RC2).
                     update.OpenObsoleteClientFile(clientFileLoc);
                 else
-                    update.OpenClientFile(clientFileLoc, clientLang, forcedLanguageCulture);
+                    update.OpenClientFile(clientFileLoc, clientLang, forcedLanguageCulture, updatePathVar, customUrlArgs);
 
                 clientLang.SetVariables(update.ProductName, update.InstalledVersion);
             }
@@ -445,11 +445,7 @@ namespace wyUpdate
                         if (commands["justcheck"] != null)
                             QuickCheckJustCheck = true;
                     }
-
-                    if (commands["skipinfo"] != null)
-                        SkipUpdateInfo = true;
-
-                    if (commands["fromservice"] != null)
+                    else if (commands["fromservice"] != null)
                     {
                         SkipUpdateInfo = true;
                         UpdatingFromService = true;
@@ -457,6 +453,9 @@ namespace wyUpdate
                         if (!string.IsNullOrEmpty(commands["logfile"]))
                             log = new Logger(commands["logfile"]);
                     }
+
+                    if (commands["skipinfo"] != null)
+                        SkipUpdateInfo = true;
                 }
 
                 // client data file
