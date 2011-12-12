@@ -36,6 +36,10 @@ namespace wyUpdate
                                MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
                                                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation,
                                                MessageBoxDefaultButton.Button2);
+
+            // prevent closing this window if the user isn't canceling
+            if (!CancelUpdate)
+                DialogResult = DialogResult.None;
         }
 
         Rectangle m_DescripRect;

@@ -27,7 +27,7 @@ namespace wyUpdate
         }
 
 
-        void CancelUpdate(bool ForceClose)
+        void CancelUpdate(bool ForceClose, bool skipConfirmDialog)
         {
             if ((frameOn == Frame.Checking || frameOn == Frame.InstallUpdates) && !ForceClose) //if downloading or updating
             {
@@ -38,7 +38,7 @@ namespace wyUpdate
                     panelDisplaying.PauseProgressBar();
                 }
 
-                DialogResult dResult = MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
+                DialogResult dResult = skipConfirmDialog ? DialogResult.Yes : MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
                     MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button2);
 
                 // unpause the progress bar whether we're cancelling or resuming
@@ -92,7 +92,7 @@ namespace wyUpdate
 
         void CancelUpdate()
         {
-            CancelUpdate(false);
+            CancelUpdate(false, false);
         }
 
         void DisableCancel()
