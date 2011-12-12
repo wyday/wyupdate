@@ -17,7 +17,7 @@ namespace wyUpdate
     {
         static readonly Image ErrorImage = new Bitmap(typeof(UpdateItem), "cross.png");
         static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
-        static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "process-working.png");
+        public static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "loading-blue.png");
 
         public Label Label = new Label { AutoSize = true };
 
@@ -118,9 +118,9 @@ namespace wyUpdate
                         case UpdateItemStatus.Working:
                             Animation.StopAnimation();
                             Animation.StaticImage = false;
-                            Animation.Rows = 5;
-                            Animation.Columns = 10;
-                            Animation.AnimationInterval = 25;
+                            Animation.Rows = 1;
+                            Animation.Columns = 18;
+                            Animation.AnimationInterval = 46;
                             Animation.BaseImage = ProgressImage;
                             Animation.StartAnimation();
                             Label.Font = new Font(Label.Font, FontStyle.Bold);
@@ -390,7 +390,7 @@ namespace wyUpdate
             }
 
             //the single centered animation
-            aniWorking = new AnimationControl(new Bitmap(typeof(PanelDisplay), "process-working.png"), 10, 5, 25)
+            aniWorking = new AnimationControl(UpdateItem.ProgressImage, 18, 1, 46)
                              {
                                  Visible = false,
                                  Location = new Point((Width/2) - 25, (Height/2))
