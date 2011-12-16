@@ -20,7 +20,7 @@ namespace wyUpdate
                 using (StreamWriter outfile = new StreamWriter(Filename, true))
                 {
                     // write the current date/time
-                    outfile.Write(DateTime.Now.ToString("M/d/yyyy HH:mm:ss tt") + ": ");
+                    outfile.Write(DateTime.Now.ToString("M/d/yyyy HH:mm:ss:fff tt") + ": ");
 
                     // write the message
                     outfile.WriteLine(message);
