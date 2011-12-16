@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -21,6 +22,51 @@ namespace wyDay.Controls
 
     internal class AutoUpdaterInfo
     {
+#if !CLIENT
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool lpSystemInfo);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
+        static extern UIntPtr GetProcAddress(IntPtr hModule, string procName);
+
+        [DllImport("Kernel32.Dll", EntryPoint = "Wow64EnableWow64FsRedirection")]
+        public static extern bool EnableWow64FSRedirection(bool enable);
+
+        static bool? is32on64;
+
+        static bool Is32BitProcessOn64BitProcessor()
+        {
+            if (is32on64 == null)
+            {
+                // if we're 64-bit process then just bail out
+                if (IntPtr.Size == 8)
+                {
+                    is32on64 = false;
+                    return false;
+                }
+
+                UIntPtr proc = GetProcAddress(GetModuleHandle("kernel32.dll"), "IsWow64Process");
+
+                if (proc == UIntPtr.Zero)
+                    is32on64 = false;
+                else
+                {
+                    bool retVal;
+
+                    IsWow64Process(Process.GetCurrentProcess().Handle, out retVal);
+
+                    is32on64 = retVal;
+                }
+            }
+
+            return is32on64.Value;
+        }
+#endif
+
         public DateTime LastCheckedForUpdate;
         public UpdateStepOn UpdateStepOn;
 
@@ -168,43 +214,62 @@ namespace wyDay.Controls
         // not using registry because .NET 2.0 has bad support for x64/x86 access
         public void Save()
         {
-            int retriedTimes = 0;
+#if !CLIENT
+            // Disable filesystem redirection on x64 (mostly for Windows Services)
+            if (Is32BitProcessOn64BitProcessor())
+                EnableWow64FSRedirection(false);
 
-            while (true)
+            try
             {
-                try
-                {
-                    // save for each filename
-                    Save(filenames[0]);
+#endif
+                int retriedTimes = 0;
 
-                    if (filenames[1] != null)
-                        Save(filenames[1]);
-                }
-                catch (IOException IOEx)
+                while (true)
                 {
-                    int HResult = Marshal.GetHRForException(IOEx);
-
-                    // if sharing violation
-                    if ((HResult & 0xFFFF) == 32)
+                    try
                     {
-                        // sleep for 1/2 second
-                        Thread.Sleep(500);
+                        // save for each filename
+                        Save(filenames[0]);
 
-                        // if we're skipping UI and we've already waited 20 seconds for a file to be released
-                        // then throw the exception, rollback updates, etc
-                        if (retriedTimes == 20)
-                            throw;
+                        if (filenames[1] != null)
+                            Save(filenames[1]);
+                    }
+                    catch (IOException IOEx)
+                    {
+                        int HResult = Marshal.GetHRForException(IOEx);
 
-                        // otherwise, retry file copy
-                        ++retriedTimes;
-                        continue;
+                        // if sharing violation
+                        if ((HResult & 0xFFFF) == 32)
+                        {
+                            // sleep for 1/2 second
+                            Thread.Sleep(500);
+
+                            // if we're skipping UI and we've already waited 20 seconds for a file to be released
+                            // then throw the exception, rollback updates, etc
+                            if (retriedTimes == 20)
+                                throw;
+
+                            // otherwise, retry file copy
+                            ++retriedTimes;
+                            continue;
+                        }
+
+                        throw;
                     }
 
-                    throw;
+                    break;
                 }
-
-                break;
+#if !CLIENT
             }
+            finally
+            {
+
+                // Re-enable filesystem redirection on x64
+                if (Is32BitProcessOn64BitProcessor())
+                    EnableWow64FSRedirection(true);
+
+            }
+#endif
         }
 
         void Save(string filename)
@@ -254,60 +319,77 @@ namespace wyDay.Controls
 
         void Load(string filename)
         {
-            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+#if !CLIENT
+            // Disable filesystem redirection on x64 (mostly for Windows Services)
+            if (Is32BitProcessOn64BitProcessor())
+                EnableWow64FSRedirection(false);
+
+            try
             {
-                if (!ReadFiles.IsHeaderValid(fs, "AUIF"))
+#endif
+                using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
                 {
-                    //free up the file so it can be deleted
-                    fs.Close();
-                    throw new Exception("Auto update state file ID is wrong.");
-                }
-
-                byte bType = (byte)fs.ReadByte();
-                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-                {
-                    switch (bType)
+                    if (!ReadFiles.IsHeaderValid(fs, "AUIF"))
                     {
-                        case 0x01: // Date last checked for update
-                            LastCheckedForUpdate = ReadFiles.ReadDateTime(fs);
-                            break;
-
-                        case 0x02: // update step on
-                            UpdateStepOn = (UpdateStepOn) ReadFiles.ReadInt(fs);
-                            break;
-
-                        case 0x03:
-                            AutoUpdaterStatus = (AutoUpdaterStatus) ReadFiles.ReadInt(fs);
-                            break;
-
-                        case 0x04: // update succeeded
-                            UpdateVersion = ReadFiles.ReadString(fs);
-                            break;
-
-                        case 0x05:
-                            ChangesInLatestVersion = ReadFiles.ReadString(fs);
-                            break;
-
-                        case 0x06:
-                            ChangesIsRTF = ReadFiles.ReadBool(fs);
-                            break;
-
-                        case 0x07: // update failed
-                            ErrorTitle = ReadFiles.ReadString(fs);
-                            break;
-
-                        case 0x08:
-                            ErrorMessage = ReadFiles.ReadString(fs);
-                            break;
-
-                        default:
-                            ReadFiles.SkipField(fs, bType);
-                            break;
+                        //free up the file so it can be deleted
+                        fs.Close();
+                        throw new Exception("Auto update state file ID is wrong.");
                     }
 
-                    bType = (byte)fs.ReadByte();
-                } 
+                    byte bType = (byte)fs.ReadByte();
+                    while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+                    {
+                        switch (bType)
+                        {
+                            case 0x01: // Date last checked for update
+                                LastCheckedForUpdate = ReadFiles.ReadDateTime(fs);
+                                break;
+
+                            case 0x02: // update step on
+                                UpdateStepOn = (UpdateStepOn) ReadFiles.ReadInt(fs);
+                                break;
+
+                            case 0x03:
+                                AutoUpdaterStatus = (AutoUpdaterStatus) ReadFiles.ReadInt(fs);
+                                break;
+
+                            case 0x04: // update succeeded
+                                UpdateVersion = ReadFiles.ReadString(fs);
+                                break;
+
+                            case 0x05:
+                                ChangesInLatestVersion = ReadFiles.ReadString(fs);
+                                break;
+
+                            case 0x06:
+                                ChangesIsRTF = ReadFiles.ReadBool(fs);
+                                break;
+
+                            case 0x07: // update failed
+                                ErrorTitle = ReadFiles.ReadString(fs);
+                                break;
+
+                            case 0x08:
+                                ErrorMessage = ReadFiles.ReadString(fs);
+                                break;
+
+                            default:
+                                ReadFiles.SkipField(fs, bType);
+                                break;
+                        }
+
+                        bType = (byte)fs.ReadByte();
+                    }
+                }
+#if !CLIENT
             }
+            finally
+            {
+                // Re-enable filesystem redirection on x64
+                if (Is32BitProcessOn64BitProcessor())
+                    EnableWow64FSRedirection(true);
+            }
+#endif
         }
 
         public void ClearSuccessError()
