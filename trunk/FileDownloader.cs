@@ -129,7 +129,7 @@ namespace wyUpdate.Downloader
 
 
             /*
-             If the all the sites failed before a response was recieved then either the 
+             If all the sites failed before a response was received then either the 
              internet connection is shot, or the Proxy is shot. Either way it can't 
              hurt to try downloading without the proxy:
             */
@@ -158,7 +158,7 @@ namespace wyUpdate.Downloader
                 }
             }
 
-            // Process complete (either sucessfully or failed), report back
+            // Process complete (either successfully or failed), report back
             if (bw.CancellationPending || ex != null)
                 bw.ReportProgress(0, new object[] { -1, -1, string.Empty, ProgressStatus.Failure, ex });
             else
@@ -531,7 +531,7 @@ namespace wyUpdate.Downloader
             {
                 if (req is FtpWebRequest)
                 {
-                    // get the filesize for FTP files
+                    // get the file size for FTP files
                     req.Method = WebRequestMethods.Ftp.GetFileSize;
                     downloadData.response = req.GetResponse();
                     downloadData.GetFileSize();
@@ -698,12 +698,20 @@ namespace wyUpdate.Downloader
 
         static WebRequest GetRequest(string url)
         {
+            UriBuilder uri = new UriBuilder(url);
+            bool hasCredentials = !string.IsNullOrEmpty(uri.UserName) && !string.IsNullOrEmpty(uri.Password);
+            if (hasCredentials && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                // get the URL without user/password
+                url = (new UriBuilder(uri.Scheme, uri.Host, uri.Port, uri.Path, uri.Fragment)).ToString();
+            }
+
             WebRequest request = WebRequest.Create(url);
             request.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
 
             if (request is HttpWebRequest)
             {
-                request.Credentials = CredentialCache.DefaultCredentials;
+                request.Credentials = hasCredentials ? new NetworkCredential(uri.UserName, uri.Password) : CredentialCache.DefaultCredentials;
 
                 // Some servers explode if the user agent is missing.
                 // Some servers explode if the user agent is "non-standard" (e.g. "wyUpdate / " + VersionTools.FromExecutingAssembly())
