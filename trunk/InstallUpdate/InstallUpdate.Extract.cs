@@ -96,11 +96,11 @@ namespace wyUpdate
                                         continue;
                                     }
 
-                                    throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\n" + IOEx.Message);
+                                    throw new PatchApplicationException("Patch failed to apply to this file: " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\nBecause that file failed to patch, and there's no \"catch-all\" update to download, the update failed to apply. The failure to patch usually happens because the file was modified from the original version. Reinstall the original version of this app.\r\n\r\n\r\nInternal error: " + IOEx.Message);
                                 }
                                 catch (Exception ex)
                                 {
-                                    throw new PatchApplicationException("Patch failed to apply to " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\n" + ex.Message);
+                                    throw new PatchApplicationException("Patch failed to apply to this file: " + FixUpdateDetailsPaths(file.RelativePath) + "\r\n\r\nBecause that file failed to patch, and there's no \"catch-all\" update to download, the update failed to apply. The failure to patch usually happens because the file was modified from the original version. Reinstall the original version of this app.\r\n\r\n\r\nInternal error: " + ex.Message);
                                 }
 
                                 // the 'last write time' of the patch file is really the 'lwt' of the dest. file
