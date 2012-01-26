@@ -25,9 +25,7 @@ namespace wyUpdate
                     btnNext.Enabled = false;
 
                     if (!isAutoUpdateMode)
-                    {
                         CheckForUpdate();
-                    }
 
                     break;
                 case Frame.UpdateInfo: //Update Info Screen
@@ -515,8 +513,6 @@ namespace wyUpdate
 
                     installUpdate.ProgressChanged += UninstallProgress;
                     installUpdate.RunUninstall();
-                    break;
-                default:
                     break;
             }
         }
