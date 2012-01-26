@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Globalization;
 
 namespace wyUpdate.Common
 {
@@ -294,7 +295,7 @@ namespace wyUpdate.Common
                 int read = stream.Read(data, offset, remaining);
                 if (read <= 0)
                     throw new EndOfStreamException
-                        (String.Format("End of stream reached with {0} bytes left to read", remaining));
+                        (String.Format(CultureInfo.CurrentCulture, "End of stream reached with {0} bytes left to read", remaining));
                 remaining -= read;
                 offset += read;
             }
