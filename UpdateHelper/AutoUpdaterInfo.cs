@@ -25,16 +25,17 @@ namespace wyDay.Controls
 #if !CLIENT
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool lpSystemInfo);
+        static extern bool IsWow64Process([In] IntPtr hProcess, [Out, MarshalAs(UnmanagedType.Bool)] out bool lpSystemInfo);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         static extern UIntPtr GetProcAddress(IntPtr hModule, string procName);
 
-        [DllImport("Kernel32.Dll", EntryPoint = "Wow64EnableWow64FsRedirection")]
-        public static extern bool EnableWow64FSRedirection(bool enable);
+        [DllImport("kernel32.dll", EntryPoint = "Wow64EnableWow64FsRedirection")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnableWow64FSRedirection([MarshalAs(UnmanagedType.Bool)] bool enable);
 
         static bool? is32on64;
 
@@ -195,21 +196,35 @@ namespace wyDay.Controls
 
         string GetFilename()
         {
-            string filename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                           "wyUpdate AU");
+            string filename = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "wyUpdate AU");
 
-            if (!Directory.Exists(filename))
+#if !CLIENT
+            // Disable filesystem redirection on x64 (mostly for Windows Services)
+            if (Is32BitProcessOn64BitProcessor())
+                EnableWow64FSRedirection(false);
+
+            try
             {
-                Directory.CreateDirectory(filename);
-
-                File.SetAttributes(filename, FileAttributes.System | FileAttributes.Hidden);
+#endif
+                if (!Directory.Exists(filename))
+                {
+                    Directory.CreateDirectory(filename);
+                    File.SetAttributes(filename, FileAttributes.System | FileAttributes.Hidden);
+                }
+#if !CLIENT
             }
+            finally
+            {
+                // Re-enable filesystem redirection on x64
+                if (Is32BitProcessOn64BitProcessor())
+                    EnableWow64FSRedirection(true);
+            }
+#endif
 
             filename = Path.Combine(filename, AutoUpdateID + ".autoupdate");
 
             return filename;
         }
-
 
         // not using registry because .NET 2.0 has bad support for x64/x86 access
         public void Save()
@@ -263,11 +278,9 @@ namespace wyDay.Controls
             }
             finally
             {
-
                 // Re-enable filesystem redirection on x64
                 if (Is32BitProcessOn64BitProcessor())
                     EnableWow64FSRedirection(true);
-
             }
 #endif
         }
