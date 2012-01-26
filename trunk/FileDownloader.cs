@@ -12,9 +12,7 @@ using wyUpdate.Common;
 
 namespace wyUpdate.Downloader
 {
-    /// <summary>
-    /// Downloads and resumes files from HTTP, FTP, and File (file://) URLS
-    /// </summary>
+    /// <summary>Downloads and resumes files from HTTP, HTTPS, FTP, and File (file://) URLS</summary>
     public class FileDownloader
     {
         // Block size to download is by default 4K.
