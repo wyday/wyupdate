@@ -83,39 +83,49 @@ namespace wyUpdate
                 // execute files
                 for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
                 {
-                    if (UpdtDetails.UpdateFiles[i].Execute && !UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
+                    // skip non-executing files, skip execute "before" updates
+                    if (!UpdtDetails.UpdateFiles[i].Execute || UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
+                        continue;
+
+                    // form the absolute path of the file to execute
+                    string fileToExec = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
+
+                    if (string.IsNullOrEmpty(fileToExec))
+                        continue;
+
+                    try
                     {
                         ProcessStartInfo psi = new ProcessStartInfo
+                                                   {
+                                                       FileName = fileToExec,
+                                                       WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle
+                                                   };
+
+                        // command line arguments
+                        if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
+                            psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
+
+                        // start the process
+                        Process p = Process.Start(psi);
+
+                        if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
                         {
-                            // use the absolute path
-                            FileName =
-                                FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                        };
+                            p.WaitForExit();
 
-                        if (!string.IsNullOrEmpty(psi.FileName))
-                        {
-                            // command line arguments
-                            if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
-                                psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
-
-                            psi.WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle;
-
-                            // start the process
-                            Process p = Process.Start(psi);
-
-                            if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
+                            // if we're rolling back on non-zero return codes, the return code is non-zero, and it's not in the exception list
+                            if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
+                                || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
                             {
-                                p.WaitForExit();
-
-                                // if we're rolling back on non-zero return codes, the return code is non-zero, and it's not in the exception list
-                                if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
-                                    || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
-                                {
-                                    except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode + ".");
-                                    break;
-                                }
+                                except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode + ".");
+                                break;
                             }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        // failure when executing the file
+                        except = new Exception("Failed to execute the file \"" + fileToExec + "\": " + ex.Message, ex);
+                        break;
                     }
                 }
             }
