@@ -11,7 +11,7 @@ namespace wyDay.Controls
 	internal class RichTextBoxEx : RichTextBox
 	{
 		#region Interop-Defines
-		[ StructLayout( LayoutKind.Sequential )]
+		[StructLayout(LayoutKind.Sequential)]
 		struct CHARFORMAT2_STRUCT
 		{
 			public UInt32	cbSize; 
@@ -38,7 +38,7 @@ namespace wyDay.Controls
 		}
 
 		[DllImport("user32.dll", CharSet=CharSet.Auto)]
-		static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+		static extern IntPtr SendMessage(IntPtr hWnd, UInt32 msg, IntPtr wParam, IntPtr lParam);
 
 		const int WM_USER			 = 0x0400;
 		const int EM_GETCHARFORMAT	 = WM_USER+58;
@@ -116,8 +116,6 @@ namespace wyDay.Controls
             int indexOn = startIndex;
             int numOpenBraces = 0;
 
-
-
             do
             {
                 if (defaultRTFHeader[indexOn] == '{')
@@ -131,8 +129,6 @@ namespace wyDay.Controls
 
 
             string defaultFontTable = defaultRTFHeader.Substring(startIndex, indexOn - startIndex);
-
-
 
             // find the font table of the input text
             indexOn = startIndex = text.IndexOf("\\fonttbl") + 8;
