@@ -63,13 +63,14 @@ namespace wyUpdate
         {
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
-            string[] backupFolders = new string[10];
-            string[] origFolders = { "base", "system", "64system", "root", "appdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
+            string[] backupFolders = new string[11];
+            string[] origFolders = { "base", "system", "64system", "root", "appdata", "lappdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
             string[] destFolders = { ProgramDirectory, 
                 SystemFolders.GetSystem32x86(),
                 SystemFolders.GetSystem32x64(),
                 SystemFolders.GetRootDrive(),
                 SystemFolders.GetCurrentUserAppData(),
+                SystemFolders.GetCurrentUserLocalAppData(),
                 SystemFolders.GetCommonAppData(), 
                 SystemFolders.GetCommonDesktop(), 
                 SystemFolders.GetCommonProgramsStartMenu(),
@@ -680,12 +681,13 @@ namespace wyUpdate
             {
                 if (UpdtDetails.UpdateFiles[i].Execute && UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
                 {
+                    //TODO: use the correct execution level
+
                     ProcessStartInfo psi = new ProcessStartInfo
-                    {
-                        // use the absolute path
-                        FileName =
-                            FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                    };
+                                               {
+                                                   // use the absolute path
+                                                   FileName = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
+                                               };
 
                     if (!string.IsNullOrEmpty(psi.FileName))
                     {
@@ -795,6 +797,8 @@ namespace wyUpdate
                     return Path.Combine(TempDirectory, relPath);
                 case "appd": //appdata
                     return Path.Combine(SystemFolders.GetCurrentUserAppData(), relPath.Substring(8));
+                case "lapp": //lappdata
+                    return Path.Combine(SystemFolders.GetCurrentUserLocalAppData(), relPath.Substring(9));
                 case "coma": //comappdata
                     return Path.Combine(SystemFolders.GetCommonAppData(), relPath.Substring(11));
                 case "comd": //comdesktop
