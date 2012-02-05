@@ -62,7 +62,7 @@ namespace wyUpdate
         // for self update
         public SelfUpdateState SelfUpdateState;
 
-        //does the client need elevation?
+        /// <summary>Does the client need elevation?</summary>
         bool needElevation;
 
         //--Uninstalling
@@ -84,12 +84,21 @@ namespace wyUpdate
         bool QuickCheckJustCheck;
         bool SkipUpdateInfo;
 
-        // this is only set for standalone service updating (not updating a service via the AutomaticUpdater)
+        /// <summary>This is only set for standalone service updating (not updating a service via the AutomaticUpdater)</summary>
         bool UpdatingFromService;
 
         Logger log;
 
         string forcedLanguageCulture;
+
+        /// <summary>Custom proxy URL. Command line switch -proxy.</summary>
+        string customProxyUrl;
+        /// <summary>Custom proxy user name. Command line switch -proxyu.</summary>
+        string customProxyUser;
+        /// <summary>Custom proxy password. Command line switch -proxyp.</summary>
+        string customProxyPassword;
+        /// <summary>Custom proxy domain. Command line switch -proxyd. </summary>
+        string customProxyDomain;
 
         #endregion Private variables
 
@@ -123,12 +132,12 @@ namespace wyUpdate
                 Arguments commands = new Arguments(args);
                 ProcessArguments(commands);
 
-
                 // load the self update information
                 if (!string.IsNullOrEmpty(selfUpdateFileLoc))
                 {
                     //Note: always load the selfupdate data before the automatic update data
                     LoadSelfUpdateData(selfUpdateFileLoc);
+                    ConfigureProxySettings();
 
                     //TODO: wyUp 3.0: excise this hack
                     //if the loaded file is from RC1, then update self and bail out
@@ -169,6 +178,10 @@ namespace wyUpdate
                         //bail out
                         return;
                     }
+                }
+                else // not self-updating
+                {
+                    ConfigureProxySettings();
                 }
 
                 //Load the client information
@@ -238,6 +251,7 @@ namespace wyUpdate
                 {
                     // load the previous auto update state from "autoupdate"
                     LoadAutoUpdateData();
+                    ConfigureProxySettings();
                 }
                 catch
                 {
@@ -602,6 +616,29 @@ namespace wyUpdate
                 Directory.Delete(tempDirectory, true);
             }
             catch { }
+        }
+
+        /// <summary>Configures the network access using the saved proxy settings.</summary>
+        void ConfigureProxySettings()
+        {
+            if (!string.IsNullOrEmpty(customProxyUrl))
+            {
+                FileDownloader.CustomProxy = new WebProxy(customProxyUrl);
+
+                if (!string.IsNullOrEmpty(customProxyUser) && !string.IsNullOrEmpty(customProxyPassword))
+                {
+                    FileDownloader.CustomProxy.Credentials = new NetworkCredential(
+                        customProxyUser,
+                        customProxyPassword,
+                        // if the domain is null, use an empty string
+                        customProxyDomain ?? string.Empty
+                        );
+                }
+                else
+                {
+                    FileDownloader.CustomProxy.Credentials = CredentialCache.DefaultNetworkCredentials;
+                }
+            }
         }
     }
 }
