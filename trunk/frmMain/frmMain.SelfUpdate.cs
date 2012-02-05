@@ -70,11 +70,21 @@ namespace wyUpdate
                         fs.WriteByte(0x81);
                 }
 
+                // we're updating from a service (i.e. skip ui mode)
                 if (UpdatingFromService)
-                {
-                    // we're updating from a service (i.e. skip ui mode)
                     fs.WriteByte(0x82);
-                }
+
+                if (!string.IsNullOrEmpty(customProxyUrl))
+                    WriteFiles.WriteString(fs, 0x0F, customProxyUrl);
+
+                if (!string.IsNullOrEmpty(customProxyUser))
+                    WriteFiles.WriteString(fs, 0x10, customProxyUser);
+
+                if (!string.IsNullOrEmpty(customProxyPassword))
+                    WriteFiles.WriteString(fs, 0x11, customProxyPassword);
+
+                if (!string.IsNullOrEmpty(customProxyDomain))
+                    WriteFiles.WriteString(fs, 0x12, customProxyDomain);
 
                 fs.WriteByte(0xFF);
             }
@@ -168,6 +178,18 @@ namespace wyUpdate
                             break;
                         case 0x82:
                             UpdatingFromService = true;
+                            break;
+                        case 0x0F:
+                            customProxyUrl = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x10:
+                            customProxyUser = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x11:
+                            customProxyPassword = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x12:
+                            customProxyDomain = ReadFiles.ReadString(fs);
                             break;
                         default:
                             ReadFiles.SkipField(fs, bType);
