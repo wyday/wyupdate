@@ -269,7 +269,6 @@ namespace wyUpdate
                     //the user "elevated" as a non-admin user
                     //warn the user of their idiocy
                     error = clientLang.AdminError;
-
                     ShowFrame(Frame.Error);
                 }
                 else
@@ -319,16 +318,16 @@ namespace wyUpdate
 
         protected override void SetVisibleCore(bool value)
         {
-            if (_isApplicationRun)
+            base.SetVisibleCore(value);
+
+            if (!_isApplicationRun)
+                return;
+
+            _isApplicationRun = false;
+
+            if (isAutoUpdateMode)
             {
-                _isApplicationRun = false;
-
-                base.SetVisibleCore(value);
-
-
-                if (isAutoUpdateMode)
-                {
-                    /* SetupAutoupdateMode must happen after the handle is created
+                /* SetupAutoupdateMode must happen after the handle is created
                      * (aka. in OnHandleCreated, or after base.SetVisibleCore() is called)
                      * because Control.Invoke() used in UpdateHelper
                      * requires the handle to be created.
@@ -340,67 +339,72 @@ namespace wyUpdate
                      * and there's a stalemate: wyUpdate is waiting for its first message, AutomaticUpdater
                      * is waiting for a progress report.
                      */
-                    SetupAutoupdateMode();
-                }
+                SetupAutoupdateMode();
+            }
 
 
-                // run the OnLoad code
+            // run the OnLoad code
 
-                if (uninstalling)
+            if (uninstalling)
+            {
+                ShowFrame(Frame.Uninstall);
+            }
+            else if (selfUpdateFromRC1)
+            {
+                //if the loaded file is from RC1, then update self and bail out
+
+                //Relaunch self
+                StartSelfElevated();
+            }
+            else if (startStep != UpdateStepOn.Nothing)
+            {
+                // either begin checking or load the step from the autoupdate file
+                try
                 {
-                    ShowFrame(Frame.Uninstall);
-                }
-                else if (selfUpdateFromRC1)
-                {
-                    //if the loaded file is from RC1, then update self and bail out
+                    PrepareStepOn(startStep);
 
-                    //Relaunch self
-                    StartSelfElevated();
+                    // selfupdate & post-selfupdate installation
+                    if (beginAutoUpdateInstallation)
+                    {
+                        if (needElevation && NeedElevationToUpdate())
+                        {
+                            //the user "elevated" as a non-admin user
+                            //warn the user of their idiocy
+                            error = clientLang.AdminError;
+                            ShowFrame(Frame.Error);
+                        }
+                        else
+                            UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
+                    }
                 }
-                else if (startStep != UpdateStepOn.Nothing)
+                catch (Exception ex)
                 {
-                    // either begin checking or load the step from the autoupdate file
+                    if (startStep != UpdateStepOn.Checking)
+                        startStep = UpdateStepOn.Checking;
+                    else
+                    {
+                        // show the error screen
+                        error = "Automatic update state failed to load.";
+                        errorDetails = ex.Message;
+
+                        ShowFrame(Frame.Error);
+                        return;
+                    }
+
                     try
                     {
                         PrepareStepOn(startStep);
-
-                        // selfupdate & post-selfupdate installation
-                        if (beginAutoUpdateInstallation)
-                            UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
                     }
-                    catch (Exception ex)
+                    catch (Exception ex2)
                     {
-                        if (startStep != UpdateStepOn.Checking)
-                            startStep = UpdateStepOn.Checking;
-                        else
-                        {
-                            // show the error screen
-                            error = "Automatic update state failed to load.";
-                            errorDetails = ex.Message;
+                        // show the error screen
+                        error = "Automatic update state failed to load.";
+                        errorDetails = ex2.Message;
 
-                            ShowFrame(Frame.Error);
-                            return;
-                        }
-
-                        try
-                        {
-                            PrepareStepOn(startStep);
-                        }
-                        catch (Exception ex2)
-                        {
-                            // show the error screen
-                            error = "Automatic update state failed to load.";
-                            errorDetails = ex2.Message;
-
-                            ShowFrame(Frame.Error);
-                        }
+                        ShowFrame(Frame.Error);
                     }
                 }
-
-                return;
             }
-
-            base.SetVisibleCore(value);
         }
 
 
