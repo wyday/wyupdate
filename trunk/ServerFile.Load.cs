@@ -74,9 +74,6 @@ namespace wyUpdate.Common
                     case 0x01://Read New Version
                         serv.NewVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
-                    case 0x02://Add server file site
-                        ClientFile.AddUniqueString(ReadFiles.ReadDeprecatedString(fs), serv.ServerFileSites);
-                        break;
                     case 0x07: //Min Client version
                         serv.MinClientVersion = ReadFiles.ReadDeprecatedString(fs);
                         break;
@@ -145,6 +142,7 @@ namespace wyUpdate.Common
             return serv;
         }
 
+#if !SERVER_READER
         public VersionChoice GetVersionChoice(string installedVersion)
         {
             VersionChoice updateFrom = null;
@@ -184,5 +182,6 @@ namespace wyUpdate.Common
                 return catchAllExists.Value;
             }
         }
+#endif
     }
 }
