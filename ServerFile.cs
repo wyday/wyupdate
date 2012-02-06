@@ -42,14 +42,9 @@ namespace wyUpdate.Common
     public partial class ServerFile
     {
         public string NewVersion;
-
-        //Server Side Information
         public List<VersionChoice> VersionChoices = new List<VersionChoice>();
-
         public string MinClientVersion;
-
         public string NoUpdateToLatestLinkText;
-
         public string NoUpdateToLatestLinkURL;
     }
 }
