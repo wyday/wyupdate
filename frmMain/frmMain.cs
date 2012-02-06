@@ -536,25 +536,10 @@ namespace wyUpdate
                 // custom url arguments
                 customUrlArgs = commands["urlargs"];
 
-                if (commands["proxy"] != null)
-                {
-                    FileDownloader.CustomProxy = new WebProxy(commands["proxy"]);
-                    
-                    if (commands["proxyu"] != null)
-                    {
-                        FileDownloader.CustomProxy.Credentials = new NetworkCredential(
-                            commands["proxyu"],
-                            commands["proxyp"],
-
-                            // if the domain is null, use an empty string
-                            commands["proxyd"] ?? string.Empty
-                            );
-                    }
-                    else
-                    {
-                        FileDownloader.CustomProxy.Credentials = CredentialCache.DefaultNetworkCredentials;
-                    }
-                }
+                customProxyUrl = commands["proxy"];
+                customProxyUser = commands["proxyu"];
+                customProxyPassword = commands["proxyp"];
+                customProxyDomain = commands["proxyd"];
 
                 // only allow silent uninstalls 
                 if (uninstalling && commands["s"] != null)
