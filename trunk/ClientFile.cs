@@ -337,7 +337,7 @@ namespace wyUpdate.Common
                     zip["iuclient.iuc"].Extract(ms);
 
                     //read in the client data
-                    LoadClientData(ms);
+                    LoadClientData(ms, null, null);
                 }
 
                 ContainsUninstallFile = zip["uninstall.dat"] != null;
