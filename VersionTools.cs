@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -20,20 +21,19 @@ namespace wyUpdate.Common
                 {"rc", 24} // RC = release candidate
 	        };
 
-        /// <summary>
-        /// Compares two specified string versions and returns an integer that indicates their relationship in the sort order.
-        /// </summary>
-        /// <param name="versionA">The first verison to compare</param>
-        /// <param name="versionB">The second version to compare</param>
-        /// <returns>-1 if versionA is less than versionB, 0 if they're equal, 1 if versionA is greater than versionB</returns>
+        /// <summary>Compares two versions and returns an integer that indicates their relationship in the sort order.</summary>
+        /// <param name="versionA">The first verison to compare.</param>
+        /// <param name="versionB">The second version to compare.</param>
+        /// <returns>Return -1 if versionA is less than versionB, 0 if they're equal, 1 if versionA is greater than versionB.</returns>
         public static int Compare(string versionA, string versionB)
         {
             if (versionA == null) return -1;
             if (versionB == null) return 1;
 
-            // convert version to lower, and replace all instances of "release candidate" with "rc"
-            versionA = Regex.Replace(versionA.ToLower(), @"release[\s]+candidate", "rc");
-            versionB = Regex.Replace(versionB.ToLower(), @"release[\s]+candidate", "rc");
+            // Convert version to lowercase, and
+            // replace all instances of "release candidate" with "rc"
+            versionA = Regex.Replace(versionA.ToLowerInvariant(), @"release[\s]+candidate", "rc");
+            versionB = Regex.Replace(versionB.ToLowerInvariant(), @"release[\s]+candidate", "rc");
 
             //compare indices
             int iVerA = 0, iVerB = 0;
@@ -107,7 +107,7 @@ namespace wyUpdate.Common
                         if (greekIndA == -1 && greekIndB == -1)
                         {
                             //compare non-greek strings
-                            strComp = string.Compare(objA, objB);
+                            strComp = string.Compare(objA, objB, StringComparison.Ordinal);
 
                             if (strComp != 0)
                                 return strComp;
@@ -170,10 +170,10 @@ namespace wyUpdate.Common
                 index++;
             }
 
-            //set the last "type" retrieved
+            // set the last "type" retrieved
             lastWasLetter = StringOrInt == 1;
 
-            //return the retitrved sub-string
+            // return the retitrved sub-string
             if (StringOrInt == 1 || StringOrInt == 2)
                 return version.Substring(startIndex, index - startIndex);
 
@@ -196,7 +196,7 @@ namespace wyUpdate.Common
         {
             int lastZero = -1;
 
-            //Clear any preceding zeros
+            // Clear any preceding zeros
 
             for (int i = 0; i < a.Length; i++)
             {
@@ -229,14 +229,12 @@ namespace wyUpdate.Common
             if (a.Length < b.Length)
                 return -1;
 
-            return string.Compare(a, b);
+            return string.Compare(a, b, StringComparison.Ordinal);
         }
 
 #if DESIGNER
 
-        /// <summary>
-        /// Increments the version number.
-        /// </summary>
+        /// <summary>Increments the version number.</summary>
         /// <param name="version">The version to increment.</param>
         /// <returns>Returns the next logical verison (e.g. 1.0.2 -> 1.0.3, or 1.1 beta -> 1.1 beta 2)</returns>
         public static string VerisonPlusPlus(string version)
@@ -274,8 +272,7 @@ namespace wyUpdate.Common
             int i = number.Length - 1;
             int tempInt = 1;
 
-
-            //process the number
+            // process the number
             for (; i >= 0; i--)
             {
                 tempInt += number[i] - '0';
@@ -294,11 +291,11 @@ namespace wyUpdate.Common
             }
 
             if (tempInt != 0)
-                //e.g. 99 + 1
+                // e.g. 99 + 1
                 sb.Insert(0, '1');
             else if (i > 0)
-                //insert the higher digits that didn't need process
-                //e.g. 573 + 1 = 574, the leading '57' is copied over
+                // insert the higher digits that didn't need process
+                // e.g. 573 + 1 = 574, the leading '57' is copied over
                 sb.Insert(0, number.Substring(0, i));
 
             return sb.ToString();
@@ -307,9 +304,8 @@ namespace wyUpdate.Common
 #endif
 
         static string thisVersion;
-        /// <summary>
-        /// Gets the file version of the currently executing assembly.
-        /// </summary>
+
+        /// <summary>Gets the file version of the currently executing assembly.</summary>
         /// <returns>The version of the currently executing assembly.</returns>
         public static string FromExecutingAssembly()
         {
