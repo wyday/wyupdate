@@ -207,8 +207,7 @@ public static class LimitedProcess
                                 errorDetails = "CreateProcessWithTokenW() failed with the error code " + errorCode + ".";
                             }
 
-                            if (hPrimaryToken != IntPtr.Zero)
-                                CloseHandle(hPrimaryToken);
+                            CloseHandle(hPrimaryToken);
                         }
                         else if (!fallback)
                         {
@@ -216,8 +215,7 @@ public static class LimitedProcess
                             errorDetails = "DuplicateTokenEx() on the desktop shell process failed with the error code " + errorCode + ".";
                         }
 
-                        if (hShellProcessToken != IntPtr.Zero)
-                            CloseHandle(hShellProcessToken);
+                        CloseHandle(hShellProcessToken);
                     }
                     else if (!fallback)
                     {
