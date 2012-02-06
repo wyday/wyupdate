@@ -97,7 +97,9 @@ public static class LimitedProcess
     {
         bool processCreated = false;
         uint exitCode = 0;
+
         string errorDetails = null;
+        int errorCode = 0;
 
         if (VistaTools.AtLeastVista() && VistaTools.IsUserAnAdmin())
         {
@@ -176,28 +178,24 @@ public static class LimitedProcess
                             if (processCreated)
                             {
                                 // wait for the process to finish executing
+                                // then get the exit code
                                 if (waitForExit)
                                 {
                                     if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED)
                                     {
                                         // handle wait failure
-                                        int error = Marshal.GetLastWin32Error();
-                                        throw new ExternalException("Failed to wait for the executed process \"" + filename +
-                                                            "\". WaitForSingleObject() failed with the error code " + error +
-                                                            ".", error);
+                                        errorCode = Marshal.GetLastWin32Error();
+                                        errorDetails = "WaitForSingleObject() failed with the error code " + errorCode + ".";
                                     }
-
-                                    // get the exit code
-                                    if (!GetExitCodeProcess(pi.hProcess, out exitCode))
+                                    else if (!GetExitCodeProcess(pi.hProcess, out exitCode))
                                     {
-                                        int error = Marshal.GetLastWin32Error();
-                                        throw new ExternalException(
-                                            "Failed to get the exit code fo the executed process \"" + filename +
-                                            "\". GetExitCodeProcess() failed with the error code " + error + ".", error);
+                                        // getting the exit code failed
+                                        errorCode = Marshal.GetLastWin32Error();
+                                        errorDetails = "GetExitCodeProcess() failed with the error code " + errorCode + ".";
                                     }
                                 }
 
-                                //return Process.GetProcessById(pi.dwProcessId);
+                                // cleanup the process handles
                                 CloseHandle(pi.hProcess);
                                 CloseHandle(pi.hThread);
                             }
@@ -205,10 +203,8 @@ public static class LimitedProcess
                             {
                                 // if we're not falling back to regular old "Process.Start()",
                                 // then throw an error with enough info that the user can do something about it.
-                                int error = Marshal.GetLastWin32Error();
-                                throw new ExternalException("Failed to execute file \"" + filename +
-                                                    "\" as a limited process. CreateProcessWithTokenW() failed with the error code " +
-                                                    error + ".", error);
+                                errorCode = Marshal.GetLastWin32Error();
+                                errorDetails = "CreateProcessWithTokenW() failed with the error code " + errorCode + ".";
                             }
 
                             if (hPrimaryToken != IntPtr.Zero)
@@ -216,8 +212,8 @@ public static class LimitedProcess
                         }
                         else if (!fallback)
                         {
-                            int error = Marshal.GetLastWin32Error();
-                            errorDetails = "DuplicateTokenEx() on the desktop shell process failed with the error code " + error + ".";
+                            errorCode = Marshal.GetLastWin32Error();
+                            errorDetails = "DuplicateTokenEx() on the desktop shell process failed with the error code " + errorCode + ".";
                         }
 
                         if (hShellProcessToken != IntPtr.Zero)
@@ -225,16 +221,16 @@ public static class LimitedProcess
                     }
                     else if (!fallback)
                     {
-                        int error = Marshal.GetLastWin32Error();
-                        errorDetails = "OpenProcessToken() on the desktop shell process failed with the error code " + error + ".";
+                        errorCode = Marshal.GetLastWin32Error();
+                        errorDetails = "OpenProcessToken() on the desktop shell process failed with the error code " + errorCode + ".";
                     }
 
                     CloseHandle(hShellProcess);
                 }
                 else if (!fallback)
                 {
-                    int error = Marshal.GetLastWin32Error();
-                    errorDetails = "OpenProcess() on the desktop shell process failed with the error code " + error + ".";
+                    errorCode = Marshal.GetLastWin32Error();
+                    errorDetails = "OpenProcess() on the desktop shell process failed with the error code " + errorCode + ".";
                 }
             }
             else if (!fallback)
@@ -250,7 +246,7 @@ public static class LimitedProcess
             if (fallback)
                 Process.Start(filename, arguments);
             else // not falling back and the process failed to execute
-                throw new Exception("Failed to execute file \"" + filename + "\" as a limited process. " + errorDetails);
+                throw new ExternalException("Failed to execute file \"" + filename + "\" as a limited process. " + errorDetails, errorCode);
         }
 
         return exitCode;
