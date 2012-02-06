@@ -175,8 +175,6 @@ public static class LimitedProcess
 
                             if (processCreated)
                             {
-                                //TODO: get the exit code
-
                                 // wait for the process to finish executing
                                 if (waitForExit)
                                 {
@@ -245,15 +243,13 @@ public static class LimitedProcess
             }
         }
 
-        //TODO: throw an exception if 
-
         // the process failed to be created for any number of reasons
         // just create it using the regular method
         if (!processCreated)
         {
             if (fallback)
                 Process.Start(filename, arguments);
-            else
+            else // not falling back and the process failed to execute
                 throw new Exception("Failed to execute file \"" + filename + "\" as a limited process. " + errorDetails);
         }
 
