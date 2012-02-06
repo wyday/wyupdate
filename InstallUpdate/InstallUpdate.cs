@@ -703,12 +703,20 @@ namespace wyUpdate
                             && IsAdmin
                             && VistaTools.AtLeastVista())
                         {
-                            LimitedProcess.Start(fullFile,
+                            int exitCode = (int)LimitedProcess.Start(fullFile,
                                                  string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs)
                                                      ? null
                                                      : ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs), false,
                                                      UpdtDetails.UpdateFiles[i].WaitForExecution,
                                                      UpdtDetails.UpdateFiles[i].ProcessWindowStyle);
+
+                            // if we're rolling back on non-zero return codes, the return code is non-zero, and it's not in the exception list
+                            if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && exitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
+                                || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(exitCode)))
+                            {
+                                except = new Exception("\"" + fullFile + "\" returned " + exitCode + ".");
+                                break;
+                            }
                         }
                         else // Same as wyUpdate or elevated
                         {
