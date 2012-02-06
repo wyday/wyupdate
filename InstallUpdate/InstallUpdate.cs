@@ -679,23 +679,34 @@ namespace wyUpdate
 
             for (int i = 0; i < UpdtDetails.UpdateFiles.Count; i++)
             {
-                if (UpdtDetails.UpdateFiles[i].Execute && UpdtDetails.UpdateFiles[i].ExBeforeUpdate)
+                bool unregister = (UpdtDetails.UpdateFiles[i].RegisterCOMDll &
+                                   (COMRegistration.UnRegister | COMRegistration.PreviouslyRegistered)) != 0;
+
+                // skip non-executing files, skip execute "after" updates
+                if ((!UpdtDetails.UpdateFiles[i].Execute || !UpdtDetails.UpdateFiles[i].ExBeforeUpdate) && !unregister)
+                    continue;
+
+                // form the absolute path of the file to execute or unregister
+                string fullFile = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
+
+                if (string.IsNullOrEmpty(fullFile))
+                    continue;
+
+                if (!unregister)
                 {
                     //TODO: use the correct execution level
 
-                    ProcessStartInfo psi = new ProcessStartInfo
-                                               {
-                                                   // use the absolute path
-                                                   FileName = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath)
-                                               };
-
-                    if (!string.IsNullOrEmpty(psi.FileName))
+                    try
                     {
+                        ProcessStartInfo psi = new ProcessStartInfo
+                                                   {
+                                                       FileName = fullFile,
+                                                       WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle
+                                                   };
+
                         //command line arguments
                         if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
                             psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
-
-                        psi.WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle;
 
                         //start the process
                         Process p = Process.Start(psi);
@@ -713,12 +724,17 @@ namespace wyUpdate
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        // failure when executing the file
+                        except = new Exception("Failed to execute the file \"" + fullFile + "\": " + ex.Message, ex);
+                        break;
+                    }
                 }
-                else if ((UpdtDetails.UpdateFiles[i].RegisterCOMDll & (COMRegistration.UnRegister | COMRegistration.PreviouslyRegistered)) != 0)
+                else // unregistering DLL
                 {
                     try
                     {
-                        string fullFile = FixUpdateDetailsPaths(UpdtDetails.UpdateFiles[i].RelativePath);
                         RegisterDllServer(fullFile, true);
 
                         // add to the rollback list
