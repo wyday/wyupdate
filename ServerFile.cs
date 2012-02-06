@@ -51,7 +51,5 @@ namespace wyUpdate.Common
         public string NoUpdateToLatestLinkText;
 
         public string NoUpdateToLatestLinkURL;
-
-        public List<string> ServerFileSites = new List<string>(1);
     }
 }
