@@ -35,6 +35,7 @@ namespace wyUpdate
 
         // only used in UpdateFiles()
         public bool IsAdmin;
+        public IntPtr MainWindowHandle;
 
         //Modify registry, executing/optimizing files
         public UpdateDetails UpdtDetails;
@@ -694,33 +695,55 @@ namespace wyUpdate
 
                 if (!unregister)
                 {
-                    //TODO: use the correct execution level
-
                     try
                     {
-                        ProcessStartInfo psi = new ProcessStartInfo
-                                                   {
-                                                       FileName = fullFile,
-                                                       WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle
-                                                   };
-
-                        //command line arguments
-                        if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
-                            psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
-
-                        //start the process
-                        Process p = Process.Start(psi);
-
-                        if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
+                        // we only support starting non-elevated on Vista+
+                        // And the user must be an admin (otherwise starting as the same elevation as wyUpdate is ample)
+                        if (UpdtDetails.UpdateFiles[i].ElevationType == ElevationType.NotElevated
+                            && IsAdmin
+                            && VistaTools.AtLeastVista())
                         {
-                            p.WaitForExit();
+                            LimitedProcess.Start(fullFile,
+                                                 string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs)
+                                                     ? null
+                                                     : ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs), false,
+                                                     UpdtDetails.UpdateFiles[i].WaitForExecution,
+                                                     UpdtDetails.UpdateFiles[i].ProcessWindowStyle);
+                        }
+                        else // Same as wyUpdate or elevated
+                        {
+                            ProcessStartInfo psi = new ProcessStartInfo
+                                                       {
+                                                           FileName = fullFile,
+                                                           WindowStyle = UpdtDetails.UpdateFiles[i].ProcessWindowStyle
+                                                       };
 
-                            // if we're rolling back on non-zero return codes, the return code is non-zero, and it's not in the exception list
-                            if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
-                                || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
+                            // command line arguments
+                            if (!string.IsNullOrEmpty(UpdtDetails.UpdateFiles[i].CommandLineArgs))
+                                psi.Arguments = ParseText(UpdtDetails.UpdateFiles[i].CommandLineArgs);
+
+                            // only elevate if the current process isn't already elevated
+                            if (!IsAdmin && UpdtDetails.UpdateFiles[i].ElevationType == ElevationType.Elevated)
                             {
-                                except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode + ".");
-                                break;
+                                psi.Verb = "runas";
+                                psi.ErrorDialog = true;
+                                psi.ErrorDialogParentHandle = MainWindowHandle;
+                            }
+
+                            //start the process
+                            Process p = Process.Start(psi);
+
+                            if (UpdtDetails.UpdateFiles[i].WaitForExecution && p != null)
+                            {
+                                p.WaitForExit();
+
+                                // if we're rolling back on non-zero return codes, the return code is non-zero, and it's not in the exception list
+                                if (UpdtDetails.UpdateFiles[i].RollbackOnNonZeroRet && p.ExitCode != 0 && (UpdtDetails.UpdateFiles[i].RetExceptions == null
+                                    || !UpdtDetails.UpdateFiles[i].RetExceptions.Contains(p.ExitCode)))
+                                {
+                                    except = new Exception("\"" + psi.FileName + "\" returned " + p.ExitCode + ".");
+                                    break;
+                                }
                             }
                         }
                     }

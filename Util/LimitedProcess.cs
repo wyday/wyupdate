@@ -35,6 +35,25 @@ public static class LimitedProcess
         int TokenType,
         out IntPtr phNewToken);
 
+    const UInt32 INFINITE = 0xFFFFFFFF;
+    const UInt32 WAIT_ABANDONED = 0x00000080;
+    const UInt32 WAIT_OBJECT_0 = 0x00000000;
+    const UInt32 WAIT_TIMEOUT = 0x00000102;
+    const UInt32 WAIT_FAILED = 0xFFFFFFFF;
+
+    const short SW_HIDE = 0;
+    const short SW_MAXIMIZE = 3;
+    const short SW_MINIMIZE = 6;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern UInt32 WaitForSingleObject(IntPtr hHandle, UInt32 dwMilliseconds);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool GetExitCodeProcess(IntPtr hProcess, out uint lpExitCode);
+
+    const uint STARTF_USESHOWWINDOW = 0x00000001;
+
     [StructLayout(LayoutKind.Sequential)]
     struct STARTUPINFO
     {
@@ -67,14 +86,18 @@ public static class LimitedProcess
         public uint dwThreadId;
     }
 
-    public static void Start(string filename)
-    {
-        Start(filename, null);
-    }
-
-    public static void Start(string filename, string arguments)
+    /// <summary>Starts the limited process.</summary>
+    /// <param name="filename">The file to start as a limited process.</param>
+    /// <param name="arguments">The arguments to pass to the process.</param>
+    /// <param name="fallback">Fallback on Process.Start() if this method fails (for whatever reason). We use a simple Process.Start(filename, arguments) call -- we don't pass in all the details.</param>
+    /// <param name="waitForExit"></param>
+    /// <param name="windowStyle"></param>
+    /// <returns>The exit code if waitForExit = true, otherwise it returns 0.</returns>
+    public static uint Start(string filename, string arguments = null, bool fallback = true, bool waitForExit = false, ProcessWindowStyle windowStyle = ProcessWindowStyle.Normal)
     {
         bool processCreated = false;
+        uint exitCode = 0;
+        string errorDetails = null;
 
         if (VistaTools.AtLeastVista() && VistaTools.IsUserAnAdmin())
         {
@@ -119,6 +142,26 @@ public static class LimitedProcess
                             PROCESS_INFORMATION pi;
 
                             STARTUPINFO si = new STARTUPINFO();
+
+                            if (windowStyle != ProcessWindowStyle.Normal)
+                            {
+                                // set how we'll be starting the process
+                                si.dwFlags = STARTF_USESHOWWINDOW;
+
+                                switch (windowStyle)
+                                {
+                                    case ProcessWindowStyle.Hidden:
+                                        si.wShowWindow = SW_HIDE;
+                                        break;
+                                    case ProcessWindowStyle.Maximized:
+                                        si.wShowWindow = SW_MAXIMIZE;
+                                        break;
+                                    case ProcessWindowStyle.Minimized:
+                                        si.wShowWindow = SW_MINIMIZE;
+                                        break;
+                                }
+                            }
+
                             si.cb = Marshal.SizeOf(si);
 
                             // build the arguments string
@@ -132,28 +175,88 @@ public static class LimitedProcess
 
                             if (processCreated)
                             {
+                                //TODO: get the exit code
+
+                                // wait for the process to finish executing
+                                if (waitForExit)
+                                {
+                                    if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED)
+                                    {
+                                        // handle wait failure
+                                        int error = Marshal.GetLastWin32Error();
+                                        throw new ExternalException("Failed to wait for the executed process \"" + filename +
+                                                            "\". WaitForSingleObject() failed with the error code " + error +
+                                                            ".", error);
+                                    }
+
+                                    // get the exit code
+                                    if (!GetExitCodeProcess(pi.hProcess, out exitCode))
+                                    {
+                                        int error = Marshal.GetLastWin32Error();
+                                        throw new ExternalException(
+                                            "Failed to get the exit code fo the executed process \"" + filename +
+                                            "\". GetExitCodeProcess() failed with the error code " + error + ".", error);
+                                    }
+                                }
+
                                 //return Process.GetProcessById(pi.dwProcessId);
                                 CloseHandle(pi.hProcess);
                                 CloseHandle(pi.hThread);
+                            }
+                            else if (!fallback)
+                            {
+                                // if we're not falling back to regular old "Process.Start()",
+                                // then throw an error with enough info that the user can do something about it.
+                                int error = Marshal.GetLastWin32Error();
+                                throw new ExternalException("Failed to execute file \"" + filename +
+                                                    "\" as a limited process. CreateProcessWithTokenW() failed with the error code " +
+                                                    error + ".", error);
                             }
 
                             if (hPrimaryToken != IntPtr.Zero)
                                 CloseHandle(hPrimaryToken);
                         }
+                        else if (!fallback)
+                        {
+                            int error = Marshal.GetLastWin32Error();
+                            errorDetails = "DuplicateTokenEx() on the desktop shell process failed with the error code " + error + ".";
+                        }
 
                         if (hShellProcessToken != IntPtr.Zero)
                             CloseHandle(hShellProcessToken);
                     }
+                    else if (!fallback)
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        errorDetails = "OpenProcessToken() on the desktop shell process failed with the error code " + error + ".";
+                    }
 
-                    if (hShellProcess != IntPtr.Zero)
-                        CloseHandle(hShellProcess);
+                    CloseHandle(hShellProcess);
+                }
+                else if (!fallback)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    errorDetails = "OpenProcess() on the desktop shell process failed with the error code " + error + ".";
                 }
             }
+            else if (!fallback)
+            {
+                errorDetails = "Unable to get the window thread process ID of the desktop shell process.";
+            }
         }
+
+        //TODO: throw an exception if 
 
         // the process failed to be created for any number of reasons
         // just create it using the regular method
         if (!processCreated)
-            Process.Start(filename, arguments);
+        {
+            if (fallback)
+                Process.Start(filename, arguments);
+            else
+                throw new Exception("Failed to execute file \"" + filename + "\" as a limited process. " + errorDetails);
+        }
+
+        return exitCode;
     }
 }
