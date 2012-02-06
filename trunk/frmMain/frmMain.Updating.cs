@@ -418,7 +418,9 @@ namespace wyUpdate
                                         {
                                             UpdtDetails = updtDetails,
                                             TempDirectory = tempDirectory,
-                                            ProgramDirectory = baseDirectory
+                                            ProgramDirectory = baseDirectory,
+                                            IsAdmin = IsAdmin,
+                                            MainWindowHandle = Handle
                                         };
 
                     installUpdate.Rollback += ChangeRollback;
@@ -465,7 +467,9 @@ namespace wyUpdate
                                             UpdtDetails = updtDetails,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory,
-                                            SkipStartService = updateHelper.IsAService ? updateHelper.FileOrServiceToExecuteAfterUpdate : null
+                                            SkipStartService = updateHelper.IsAService ? updateHelper.FileOrServiceToExecuteAfterUpdate : null,
+                                            IsAdmin = IsAdmin,
+                                            MainWindowHandle = Handle
                                         };
 
                     installUpdate.Rollback += ChangeRollback;

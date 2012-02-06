@@ -7,6 +7,7 @@ namespace wyUpdate.Common
 {
     [Flags]
     public enum COMRegistration { None = 0, IsNETAssembly = 1, Register = 2, UnRegister = 4, PreviouslyRegistered = 8 }
+    public enum ElevationType { SameAswyUpdate = 0, Elevated = 1, NotElevated = 2 }
 
     public class UpdateFile
     {
@@ -45,6 +46,8 @@ namespace wyUpdate.Common
         public long NewFileAdler32;
 
         public ProcessWindowStyle ProcessWindowStyle;
+
+        public ElevationType ElevationType;
 
         public COMRegistration RegisterCOMDll;
 

@@ -8,19 +8,12 @@ namespace wyUpdate.Common
     public class UpdateDetails
     {
         public List<RegChange> RegistryModifications = new List<RegChange>();
-
         public List<UpdateFile> UpdateFiles = new List<UpdateFile>();
-
         public List<ShortcutInfo> ShortcutInfos = new List<ShortcutInfo>();
-
         public List<string> PreviousDesktopShortcuts = new List<string>();
-
         public List<string> PreviousSMenuShortcuts = new List<string>();
-
         public List<string> FoldersToDelete = new List<string>();
-
         public List<string> ServicesToStop = new List<string>();
-
         public List<StartService> ServicesToStart = new List<StartService>();
 
 #if CLIENT
@@ -131,6 +124,9 @@ namespace wyUpdate.Common
                         break;
                     case 0x4A:
                         tempUpdateFile.ProcessWindowStyle = (System.Diagnostics.ProcessWindowStyle)ReadFiles.ReadInt(fs);
+                        break;
+                    case 0x4E:
+                        tempUpdateFile.ElevationType = (ElevationType)ReadFiles.ReadInt(fs);
                         break;
                     case 0x4B:
                         tempUpdateFile.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
@@ -249,6 +245,9 @@ namespace wyUpdate.Common
 
                         if (file.ProcessWindowStyle != System.Diagnostics.ProcessWindowStyle.Normal)
                             WriteFiles.WriteInt(ms, 0x4A, (int)file.ProcessWindowStyle);
+
+                        if (file.ElevationType != ElevationType.SameAswyUpdate)
+                            WriteFiles.WriteInt(ms, 0x4E, (int)file.ElevationType);
                     }
 
                     //is it a .NET assembly?
