@@ -34,24 +34,19 @@ namespace wyUpdate.Common
             UpdateStep = step;
         }
 
-        public UpdateHelperData(UpdateStep step, string extraData)
-            : this(step)
-        {
-            ExtraData.Add(extraData);
-            ExtraDataIsRTF.Add(false);
-        }
-
         public UpdateHelperData(Response responseType, UpdateStep step)
             : this(step)
         {
             ResponseType = responseType;
         }
 
+#if CLIENT
         public UpdateHelperData(Response responseType, UpdateStep step, int progress)
             : this(responseType, step)
         {
             Progress = progress;
         }
+#endif
 
         public UpdateHelperData(Response responseType, UpdateStep step, string messageTitle, string messageBody)
             : this(responseType, step)
