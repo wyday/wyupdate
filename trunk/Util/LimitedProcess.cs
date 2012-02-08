@@ -103,6 +103,10 @@ public static class LimitedProcess
 
         if (VistaTools.AtLeastVista() && VistaTools.IsUserAnAdmin())
         {
+            // early exit for files that don't exist
+            if (!File.Exists(filename))
+                throw new Exception("The system cannot find the file specified");
+
             //Get window handle representing the desktop shell.  This might not work if there is no shell window, or when
             //using a custom shell.  Also note that we're assuming that the shell is not running elevated.
             IntPtr hShellWnd = GetShellWindow();
@@ -244,7 +248,7 @@ public static class LimitedProcess
             if (fallback)
                 Process.Start(filename, arguments);
             else // not falling back and the process failed to execute
-                throw new ExternalException("Failed to execute file \"" + filename + "\" as a limited process. " + errorDetails, errorCode);
+                throw new ExternalException("Failed to start as a limited process. " + errorDetails, errorCode);
         }
 
         return exitCode;
