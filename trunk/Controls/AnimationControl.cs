@@ -114,33 +114,6 @@ namespace wyDay.Controls
         //Constructor
         public AnimationControl()
         {
-            SetupObjects();
-        }
-
-        public AnimationControl(Image newBaseImage, int newColumns, int newRows, int newInterval)
-        {
-            staticImage = false;
-            m_Columns = newColumns;
-            m_Rows = newRows;
-            BaseImage = newBaseImage;
-            AnimationInterval = newInterval;
-
-            SetupObjects();
-        }
-
-        public AnimationControl(Image newBaseImage, int newInterval)
-        {
-            staticImage = true;
-            m_Columns = 1;
-            m_Rows = 1;
-            BaseImage = newBaseImage;
-            AnimationInterval = newInterval;
-
-            SetupObjects();
-        }
-
-        void SetupObjects()
-        {
             //Set Defaults
             aniTimer.Enabled = false;
             aniTimer.Tick += aniTimer_Tick;
@@ -194,20 +167,17 @@ namespace wyDay.Controls
         public void StartAnimation()
         {
             //if the timer isn't already running
-            if (aniTimer.Enabled == false)
-            {
-                aniTimer.Start();
-                if (staticImage)
-                {
-                    ptsArray[3][3] = .05f;
-                }
-                else
-                {
-                    columnOn++;
-                }
+            if (aniTimer.Enabled)
+                return;
 
-                Refresh();
-            }
+            aniTimer.Start();
+
+            if (staticImage)
+                ptsArray[3][3] = .05f;
+            else
+                columnOn++;
+
+            Refresh();
         }
 
         public void StopAnimation()

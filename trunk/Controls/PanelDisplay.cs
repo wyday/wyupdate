@@ -19,7 +19,7 @@ namespace wyUpdate
         static readonly Image SuccessImage = new Bitmap(typeof(UpdateItem), "tick.png");
         public static readonly Image ProgressImage = new Bitmap(typeof(UpdateItem), "loading-blue.png");
 
-        public AnimationControl Animation = new AnimationControl(null, 1);
+        public AnimationControl Animation = new AnimationControl();
         public Label Label = new Label { AutoSize = true };
 
         public int AnimationWidth { get; set; }
@@ -91,49 +91,48 @@ namespace wyUpdate
             get { return m_Status; }
             set
             {
-                if (m_Status != value)//only set m_Status if it's a different status
-                {
-                    m_Status = value;
+                // only set m_Status if it's a different status
+                if (m_Status == value)
+                    return;
 
-                    switch (m_Status)
-                    {
-                        case UpdateItemStatus.Error:
-                            Animation.StopAnimation();
-                            Animation.StaticImage = true;
-                            Animation.Rows = 4;
-                            Animation.Columns = 8;
-                            Animation.AnimationInterval = 25;
-                            Animation.BaseImage = ErrorImage;
-                            Animation.StartAnimation();
-                            Label.Font = new Font(Label.Font, FontStyle.Regular);
-                            break;
-                        case UpdateItemStatus.Nothing:
-                            Animation.BaseImage = null;
-                            Animation.StartAnimation();
-                            break;
-                        case UpdateItemStatus.Working:
-                            Animation.StopAnimation();
-                            Animation.StaticImage = false;
-                            Animation.Rows = 1;
-                            Animation.Columns = 18;
-                            Animation.AnimationInterval = 46;
-                            Animation.BaseImage = ProgressImage;
-                            Animation.StartAnimation();
-                            Label.Font = new Font(Label.Font, FontStyle.Bold);
-                            break;
-                        case UpdateItemStatus.Success:
-                            Animation.StopAnimation();
-                            Animation.StaticImage = true;
-                            Animation.Rows = 4;
-                            Animation.Columns = 8;
-                            Animation.AnimationInterval = 25;
-                            Animation.BaseImage = SuccessImage;
-                            Animation.StartAnimation();
-                            Label.Font = new Font(Label.Font, FontStyle.Regular);
-                            break;
-                        default:
-                            break;
-                    }
+                m_Status = value;
+
+                switch (m_Status)
+                {
+                    case UpdateItemStatus.Error:
+                        Animation.StopAnimation();
+                        Animation.StaticImage = true;
+                        Animation.Rows = 4;
+                        Animation.Columns = 8;
+                        Animation.AnimationInterval = 25;
+                        Animation.BaseImage = ErrorImage;
+                        Animation.StartAnimation();
+                        Label.Font = new Font(Label.Font, FontStyle.Regular);
+                        break;
+                    case UpdateItemStatus.Nothing:
+                        Animation.BaseImage = null;
+                        Animation.StartAnimation();
+                        break;
+                    case UpdateItemStatus.Working:
+                        Animation.StopAnimation();
+                        Animation.StaticImage = false;
+                        Animation.Rows = 1;
+                        Animation.Columns = 18;
+                        Animation.AnimationInterval = 46;
+                        Animation.BaseImage = ProgressImage;
+                        Animation.StartAnimation();
+                        Label.Font = new Font(Label.Font, FontStyle.Bold);
+                        break;
+                    case UpdateItemStatus.Success:
+                        Animation.StopAnimation();
+                        Animation.StaticImage = true;
+                        Animation.Rows = 4;
+                        Animation.Columns = 8;
+                        Animation.AnimationInterval = 25;
+                        Animation.BaseImage = SuccessImage;
+                        Animation.StartAnimation();
+                        Label.Font = new Font(Label.Font, FontStyle.Regular);
+                        break;
                 }
             }
         }
@@ -385,9 +384,13 @@ namespace wyUpdate
                 Controls.Add(UpdateItems[i].Label);
             }
 
-            //the single centered animation
-            aniWorking = new AnimationControl(UpdateItem.ProgressImage, 18, 1, 46)
+            // the single centered animation
+            aniWorking = new AnimationControl
                              {
+                                 BaseImage = UpdateItem.ProgressImage,
+                                 Columns = 18,
+                                 Rows = 1,
+                                 AnimationInterval = 46,
                                  Visible = false,
                                  Location = new Point((Width/2) - 25, (Height/2))
                              };

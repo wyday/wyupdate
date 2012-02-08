@@ -1,6 +1,4 @@
-using System;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -10,64 +8,10 @@ namespace wyDay.Controls
 
 	internal class RichTextBoxEx : RichTextBox
 	{
-		#region Interop-Defines
-		[StructLayout(LayoutKind.Sequential)]
-		struct CHARFORMAT2_STRUCT
-		{
-			public UInt32	cbSize; 
-			public UInt32   dwMask; 
-			public UInt32   dwEffects; 
-			public Int32    yHeight; 
-			public Int32    yOffset; 
-			public Int32	crTextColor; 
-			public byte     bCharSet; 
-			public byte     bPitchAndFamily; 
-			[MarshalAs(UnmanagedType.ByValArray, SizeConst=32)]
-			public char[]   szFaceName; 
-			public UInt16	wWeight;
-			public UInt16	sSpacing;
-			public int		crBackColor; // Color.ToArgb() -> int
-			public int		lcid;
-			public int		dwReserved;
-			public Int16	sStyle;
-			public Int16	wKerning;
-			public byte		bUnderlineType;
-			public byte		bAnimation;
-			public byte		bRevAuthor;
-			public byte		bReserved1;
-		}
-
-		[DllImport("user32.dll", CharSet=CharSet.Auto)]
-		static extern IntPtr SendMessage(IntPtr hWnd, UInt32 msg, IntPtr wParam, IntPtr lParam);
-
-		const int WM_USER			 = 0x0400;
-		const int EM_GETCHARFORMAT	 = WM_USER+58;
-		const int EM_SETCHARFORMAT	 = WM_USER+68;
-
-		const int SCF_SELECTION	= 0x0001;
-
-		#region CHARFORMAT2 Flags
-
-		const UInt32 CFE_LINK		= 0x0020;
-        const UInt32 CFM_LINK		= 0x00000020;
-
-		#endregion
-
-		#endregion
-
 		public RichTextBoxEx()
 		{
-			// Otherwise, non-standard links get lost when user starts typing
-			// next to a non-standard link
-			DetectUrls = false;
+            DetectUrls = false;
             BorderStyle = BorderStyle.None;
-		}
-
-		[DefaultValue(false)]
-		public new bool DetectUrls
-		{
-			get { return base.DetectUrls; }
-			set { base.DetectUrls = value; }
 		}
 
         //create the RichTextBox with a thin border
@@ -87,21 +31,8 @@ namespace wyDay.Controls
             }
         }
 
-        // 
-        string defaultRTFHeader;
-
-        public void LoadAndSterilizeRTF(string filename)
-        {
-            System.IO.StreamReader file = new System.IO.StreamReader(filename);
-
-            // load the file into a string
-            string loadedText = file.ReadToEnd();
-
-            Rtf = SterilizeRTF(loadedText);
-
-            file.Close();
-        }
-
+#if CLIENT
+	    private string defaultRTFHeader;
         public string SterilizeRTF(string text)
         {
             // if defaultRTF header = null, load it
@@ -224,68 +155,6 @@ namespace wyDay.Controls
             // set the RTF text
             return sb.ToString();
         }
-
-		/// <summary>
-		/// Set the current selection's link style
-		/// </summary>
-		/// <param name="link">true: set link style, false: clear link style</param>
-		public void SetSelectionLink(bool link)
-		{
-			SetSelectionStyle(CFM_LINK, link ? CFE_LINK : 0);
-		}
-
-		/// <summary>
-		/// Get the link style for the current selection
-		/// </summary>
-		/// <returns>0: link style not set, 1: link style set, -1: mixed</returns>
-		public int GetSelectionLink()
-		{
-			return GetSelectionStyle(CFM_LINK, CFE_LINK);
-		}
-
-		void SetSelectionStyle(UInt32 mask, UInt32 effect)
-		{
-			CHARFORMAT2_STRUCT cf = new CHARFORMAT2_STRUCT();
-			cf.cbSize = (UInt32)Marshal.SizeOf(cf);
-			cf.dwMask = mask;
-			cf.dwEffects = effect;
-
-			IntPtr wpar = new IntPtr(SCF_SELECTION);
-			IntPtr lpar = Marshal.AllocCoTaskMem( Marshal.SizeOf( cf ) ); 
-			Marshal.StructureToPtr(cf, lpar, false);
-
-			IntPtr res = SendMessage(Handle, EM_SETCHARFORMAT, wpar, lpar);
-
-			Marshal.FreeCoTaskMem(lpar);
-		}
-
-		int GetSelectionStyle(UInt32 mask, UInt32 effect)
-		{
-			CHARFORMAT2_STRUCT cf = new CHARFORMAT2_STRUCT();
-			cf.cbSize = (UInt32)Marshal.SizeOf(cf);
-			cf.szFaceName = new char[32];
-
-			IntPtr wpar = new IntPtr(SCF_SELECTION);
-			IntPtr lpar = 	Marshal.AllocCoTaskMem( Marshal.SizeOf( cf ) ); 
-			Marshal.StructureToPtr(cf, lpar, false);
-
-			IntPtr res = SendMessage(Handle, EM_GETCHARFORMAT, wpar, lpar);
-
-			cf = (CHARFORMAT2_STRUCT)Marshal.PtrToStructure(lpar, typeof(CHARFORMAT2_STRUCT));
-
-			int state;
-			// dwMask holds the information which properties are consistent throughout the selection:
-			if ((cf.dwMask & mask) == mask) 
-			{
-			    state = (cf.dwEffects & effect) == effect ? 1 : 0;
-			}
-			else
-			{
-				state = -1;
-			}
-			
-			Marshal.FreeCoTaskMem(lpar);
-			return state;
-		}
+#endif
 	}
 }
