@@ -176,135 +176,145 @@ namespace wyUpdate.Common
         {
             MemoryStream ms = new MemoryStream();
 
-            // Write any file-identification data you want to here
-            WriteFiles.WriteHeader(ms, "IUUDFV2");
-
-            //number of registry changes
-            WriteFiles.WriteInt(ms, 0x20, RegistryModifications.Count);
-
-            for (int i = 0; i < RegistryModifications.Count; i++)
+            try
             {
-                RegistryModifications[i].WriteToStream(ms, true);
-            }
+                // Write any file-identification data you want to here
+                WriteFiles.WriteHeader(ms, "IUUDFV2");
 
-            //Shortcut information
-            foreach (ShortcutInfo si in ShortcutInfos)
-                si.SaveToStream(ms, true);
+                //number of registry changes
+                WriteFiles.WriteInt(ms, 0x20, RegistryModifications.Count);
 
-
-            //Previous shortcuts that needs to be installed in order to install new shortcuts
-            foreach (string shortcut in PreviousDesktopShortcuts)
-                WriteFiles.WriteDeprecatedString(ms, 0x30, shortcut);
-
-            foreach (string shortcut in PreviousSMenuShortcuts)
-                WriteFiles.WriteDeprecatedString(ms, 0x31, shortcut);
-
-            //number of file infos
-            WriteFiles.WriteInt(ms, 0x21, CountFileInfos());
-
-            // write file info for ngening .NET, execution of files, etc.
-            foreach (UpdateFile file in UpdateFiles)
-            {
-                if (file.Execute || file.IsNETAssembly || file.DeleteFile || file.DeltaPatchRelativePath != null || file.RegisterCOMDll != COMRegistration.None)
+                for (int i = 0; i < RegistryModifications.Count; i++)
                 {
-                    ms.WriteByte(0x8B);//Beginning of the file information
+                    RegistryModifications[i].WriteToStream(ms, true);
+                }
 
-                    //relative path to file
-                    WriteFiles.WriteDeprecatedString(ms, 0x40, file.RelativePath);
+                //Shortcut information
+                foreach (ShortcutInfo si in ShortcutInfos)
+                    si.SaveToStream(ms, true);
 
-                    //execution of files
-                    if (file.Execute)
+
+                //Previous shortcuts that needs to be installed in order to install new shortcuts
+                foreach (string shortcut in PreviousDesktopShortcuts)
+                    WriteFiles.WriteDeprecatedString(ms, 0x30, shortcut);
+
+                foreach (string shortcut in PreviousSMenuShortcuts)
+                    WriteFiles.WriteDeprecatedString(ms, 0x31, shortcut);
+
+                //number of file infos
+                WriteFiles.WriteInt(ms, 0x21, CountFileInfos());
+
+                // write file info for ngening .NET, execution of files, etc.
+                foreach (UpdateFile file in UpdateFiles)
+                {
+                    if (file.Execute || file.IsNETAssembly || file.DeleteFile || file.DeltaPatchRelativePath != null || file.RegisterCOMDll != COMRegistration.None)
                     {
-                        // execute?
-                        WriteFiles.WriteBool(ms, 0x41, true);
+                        ms.WriteByte(0x8B);//Beginning of the file information
 
-                        // execute before update?
-                        WriteFiles.WriteBool(ms, 0x42, file.ExBeforeUpdate);
+                        //relative path to file
+                        WriteFiles.WriteDeprecatedString(ms, 0x40, file.RelativePath);
 
-                        if (file.WaitForExecution)
+                        //execution of files
+                        if (file.Execute)
                         {
-                            WriteFiles.WriteBool(ms, 0x45, file.WaitForExecution);
+                            // execute?
+                            WriteFiles.WriteBool(ms, 0x41, true);
 
-                            if (file.RollbackOnNonZeroRet)
+                            // execute before update?
+                            WriteFiles.WriteBool(ms, 0x42, file.ExBeforeUpdate);
+
+                            if (file.WaitForExecution)
                             {
-                                // we are rolling back on non-zero return code
-                                ms.WriteByte(0x8F);
+                                WriteFiles.WriteBool(ms, 0x45, file.WaitForExecution);
 
-                                // write all the exceptions we're making for rollback codes
-                                if (file.RetExceptions != null)
+                                if (file.RollbackOnNonZeroRet)
                                 {
-                                    foreach (int except in file.RetExceptions)
-                                        WriteFiles.WriteInt(ms, 0x4D, except);
+                                    // we are rolling back on non-zero return code
+                                    ms.WriteByte(0x8F);
+
+                                    // write all the exceptions we're making for rollback codes
+                                    if (file.RetExceptions != null)
+                                    {
+                                        foreach (int except in file.RetExceptions)
+                                            WriteFiles.WriteInt(ms, 0x4D, except);
+                                    }
                                 }
                             }
+
+                            //commandline arguments
+                            if (!string.IsNullOrEmpty(file.CommandLineArgs))
+                                WriteFiles.WriteDeprecatedString(ms, 0x43, file.CommandLineArgs);
+
+                            if (file.ProcessWindowStyle != System.Diagnostics.ProcessWindowStyle.Normal)
+                                WriteFiles.WriteInt(ms, 0x4A, (int)file.ProcessWindowStyle);
+
+                            if (file.ElevationType != ElevationType.SameAswyUpdate)
+                                WriteFiles.WriteInt(ms, 0x4E, (int)file.ElevationType);
                         }
 
-                        //commandline arguments
-                        if (!string.IsNullOrEmpty(file.CommandLineArgs))
-                            WriteFiles.WriteDeprecatedString(ms, 0x43, file.CommandLineArgs);
+                        //is it a .NET assembly?
+                        if (file.IsNETAssembly)
+                        {
+                            WriteFiles.WriteBool(ms, 0x44, true);
 
-                        if (file.ProcessWindowStyle != System.Diagnostics.ProcessWindowStyle.Normal)
-                            WriteFiles.WriteInt(ms, 0x4A, (int)file.ProcessWindowStyle);
+                            // save whether the files is AnyCPU, x86, or x64
+                            WriteFiles.WriteInt(ms, 0x49, (int)file.CPUVersion);
 
-                        if (file.ElevationType != ElevationType.SameAswyUpdate)
-                            WriteFiles.WriteInt(ms, 0x4E, (int)file.ElevationType);
+                            // .NET framework is by default 2.0 - only save the framework version if it's .NET 4.0 or unknown
+                            if (file.FrameworkVersion != FrameworkVersion.Net2_0)
+                                WriteFiles.WriteInt(ms, 0x4B, (int)file.FrameworkVersion);
+                        }
+
+                        if (file.RegisterCOMDll != COMRegistration.None)
+                            WriteFiles.WriteInt(ms, 0x4C, (int)file.RegisterCOMDll);
+
+                        //Delta update particulars:
+
+                        if (file.DeleteFile)
+                            WriteFiles.WriteBool(ms, 0x46, true);
+                        else if (file.DeltaPatchRelativePath != null)
+                        {
+                            WriteFiles.WriteDeprecatedString(ms, 0x47, file.DeltaPatchRelativePath);
+
+                            if (file.NewFileAdler32 != 0)
+                                WriteFiles.WriteLong(ms, 0x48, file.NewFileAdler32);
+                        }
+
+                        ms.WriteByte(0x9B);//End of the file information
                     }
-
-                    //is it a .NET assembly?
-                    if (file.IsNETAssembly)
-                    {
-                        WriteFiles.WriteBool(ms, 0x44, true);
-
-                        // save whether the files is AnyCPU, x86, or x64
-                        WriteFiles.WriteInt(ms, 0x49, (int)file.CPUVersion);
-
-                        // .NET framework is by default 2.0 - only save the framework version if it's .NET 4.0 or unknown
-                        if (file.FrameworkVersion != FrameworkVersion.Net2_0)
-                            WriteFiles.WriteInt(ms, 0x4B, (int) file.FrameworkVersion);
-                    }
-
-                    if (file.RegisterCOMDll != COMRegistration.None)
-                        WriteFiles.WriteInt(ms, 0x4C, (int) file.RegisterCOMDll);
-
-                    //Delta update particulars:
-
-                    if (file.DeleteFile)
-                        WriteFiles.WriteBool(ms, 0x46, true);
-                    else if (file.DeltaPatchRelativePath != null)
-                    {
-                        WriteFiles.WriteDeprecatedString(ms, 0x47, file.DeltaPatchRelativePath);
-
-                        if (file.NewFileAdler32 != 0)
-                            WriteFiles.WriteLong(ms, 0x48, file.NewFileAdler32);
-                    }
-
-                    ms.WriteByte(0x9B);//End of the file information
                 }
-            }
 
-            foreach (string folder in FoldersToDelete)
-                WriteFiles.WriteDeprecatedString(ms, 0x60, folder);
+                foreach (string folder in FoldersToDelete)
+                    WriteFiles.WriteDeprecatedString(ms, 0x60, folder);
 
-            foreach (string service in ServicesToStop)
-                WriteFiles.WriteString(ms, 0x32, service);
+                foreach (string service in ServicesToStop)
+                    WriteFiles.WriteString(ms, 0x32, service);
 
-            foreach (StartService service in ServicesToStart)
-            {
-                WriteFiles.WriteString(ms, 0x33, service.Name);
-
-                if (service.Arguments != null)
+                foreach (StartService service in ServicesToStart)
                 {
-                    WriteFiles.WriteInt(ms, 0x34, service.Arguments.Length);
+                    WriteFiles.WriteString(ms, 0x33, service.Name);
 
-                    foreach (string arg in service.Arguments)
-                        WriteFiles.WriteString(ms, 0x35, arg);
+                    if (service.Arguments != null)
+                    {
+                        WriteFiles.WriteInt(ms, 0x34, service.Arguments.Length);
+
+                        foreach (string arg in service.Arguments)
+                            WriteFiles.WriteString(ms, 0x35, arg);
+                    }
                 }
+
+                // end of file
+                ms.WriteByte(0xFF);
+
+                // set the pointer to the top of the file
+                ms.Position = 0;
+            }
+            catch (Exception)
+            {
+                ms.Dispose();  
+                throw;
             }
 
-            //end of file
-            ms.WriteByte(0xFF);
-
-            ms.Position = 0;
             return ms;
         }
 #endif
