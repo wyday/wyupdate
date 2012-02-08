@@ -232,7 +232,7 @@ namespace wyUpdate.Common
             return string.Compare(a, b, StringComparison.Ordinal);
         }
 
-#if DESIGNER
+#if DESIGNER && !WBCMD
 
         /// <summary>Increments the version number.</summary>
         /// <param name="version">The version to increment.</param>
