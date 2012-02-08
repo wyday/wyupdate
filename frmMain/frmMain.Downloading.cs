@@ -90,7 +90,7 @@ namespace wyUpdate
             ServerFile clientSF = ServerFile.Load(clientSFLoc, null, null);
 
             // check if the wyUpdate is new enough.
-            if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) == -1)
+            if (VersionTools.Compare(VersionTools.FromExecutingAssembly(), clientSF.NewVersion) < 0)
             {
                 SelfUpdateState = SelfUpdateState.WillUpdate;
 
@@ -154,7 +154,7 @@ namespace wyUpdate
             clientLang.NewVersion = ServerFile.NewVersion;
 
             // if no update is needed...
-            if (VersionTools.Compare(update.InstalledVersion, ServerFile.NewVersion) > -1)
+            if (VersionTools.Compare(update.InstalledVersion, ServerFile.NewVersion) >= 0)
             {
                 if (isAutoUpdateMode)
                 {

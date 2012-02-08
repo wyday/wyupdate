@@ -281,7 +281,7 @@ namespace wyUpdate
             if (status == ProgressStatus.Failure)
             {
                 bool selfUpdateRequired =
-                    VersionTools.Compare(VersionTools.FromExecutingAssembly(), ServerFile.MinClientVersion) == -1;
+                    VersionTools.Compare(VersionTools.FromExecutingAssembly(), ServerFile.MinClientVersion) < 0;
 
                 bool canTryCatchAllUpdate = frameOn != Frame.Checking
 
