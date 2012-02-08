@@ -8,6 +8,7 @@ namespace wyUpdate.Common
 {
     public static class VersionTools
     {
+        /// <summary>Hashtable of the greek letters for quick lookup.</summary>
         static readonly Hashtable greek_ltrs = new Hashtable
 	        {
 		        {"alpha", 0}, {"beta", 1}, {"gamma", 2},
@@ -181,9 +182,12 @@ namespace wyUpdate.Common
             return null;
         }
 
-        static int GetGreekIndex(object version)
+        /// <summary>Checks if the string chunk is a greek letter (e.g. "beta") and if so, return the relative index used for comparison.</summary>
+        /// <param name="str">The string chunk to check.</param>
+        /// <returns>Returns -1 if it's not a greek letter. Otherwise the relative index is returned.</returns>
+        static int GetGreekIndex(object str)
         {
-            object val = greek_ltrs[version];
+            object val = greek_ltrs[str];
 
             if (val == null)
                 return -1;
@@ -191,7 +195,10 @@ namespace wyUpdate.Common
             return (int)val;
         }
 
-
+        /// <summary>Compare integers of "infinite" length without converting to an integer type.</summary>
+        /// <param name="a">The first integer to compare.</param>
+        /// <param name="b">The second integer to compare.</param>
+        /// <returns>Returns less than 0 if "a" is less than "b", zero if "a" == "b", greater than zero if "a" is greater than "b".</returns>
         static int IntCompare(string a, string b)
         {
             int lastZero = -1;
