@@ -24,7 +24,7 @@ namespace wyUpdate.Common
         /// <summary>Compares two versions and returns an integer that indicates their relationship in the sort order.</summary>
         /// <param name="versionA">The first verison to compare.</param>
         /// <param name="versionB">The second version to compare.</param>
-        /// <returns>Return -1 if versionA is less than versionB, 0 if they're equal, 1 if versionA is greater than versionB.</returns>
+        /// <returns>Return a negative number if versionA is less than versionB, 0 if they're equal, a positive number if versionA is greater than versionB.</returns>
         public static int Compare(string versionA, string versionB)
         {
             if (versionA == null) return -1;

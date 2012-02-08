@@ -28,7 +28,7 @@ namespace wyUpdate
 
             try
             {
-                //extract downloaded self update
+                // extract downloaded self update
                 ExtractUpdateFile();
 
                 try

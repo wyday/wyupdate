@@ -203,7 +203,7 @@ namespace wyUpdate
                         filesDone++;
                     }
 
-                    e.Extract(OutputDirectory, ExtractExistingFileAction.OverwriteSilently);  // overwrite == true
+                    e.Extract(OutputDirectory, ExtractExistingFileAction.OverwriteSilently);
                 }
             }
         }

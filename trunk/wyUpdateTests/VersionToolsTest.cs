@@ -59,15 +59,15 @@ namespace wyUpdateTests
         #endregion
 
 
-        /// <summary>
-        ///A test for Compare
-        ///</summary>
+        /// <summary>A test for version comparison.</summary>
         [TestMethod]
         public void CompareTest()
         {
             string[] versionA = { "1.0",     "1.0 beta 1",     "1 a",      "1.0 Beta .5", ".9",  "1.1.0", "1.0rc2", "1.0beta1", "1.2.03", "1.2rc" };
             string[] versionB = { "1.0.0.0", "1.0.0.0 beta 1", "1.0 beta", "1.0 Beta 4",  "1.0", "2.1.0", "1.0rc3", "1.0rc2",   "1 2 3",  "1.2 release candidate" };
             int[] expected = { 0, 0, 1, -1, -1, -1, -1, -1, 0, 0 };
+
+            //TODO: update this test to use the actual proper return codes from version compare
 
             for (int i=0; i<versionA.Length; i++)
             {
