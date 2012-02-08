@@ -283,6 +283,7 @@ namespace wyUpdate
                             }
                         }
                         catch { }
+                        //TODO: if the service fails to start then log the error -- if the app fails to start, no big deal
                     }
 
                     // we're no longer in autoupdate mode - cleanup temp files on close
