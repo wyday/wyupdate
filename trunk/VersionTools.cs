@@ -240,7 +240,7 @@ namespace wyUpdate.Common
         public static string VerisonPlusPlus(string version)
         {
             int previ, i = 0;
-            object prevObj, obj = null;
+            string prevObj, obj = null;
 
             bool junkBool = false;
 
@@ -255,8 +255,8 @@ namespace wyUpdate.Common
             if (prevObj != null)
             {
                 // try to increment the final digit (e.g. 1.0.2 -> 1.0.3)
-                if (char.IsDigit(((string)prevObj)[0]))
-                    return version.Substring(0, previ - ((string)prevObj).Length) + NumberPlusOne((string)prevObj);
+                if (char.IsDigit(prevObj[0]))
+                    return version.Substring(0, previ - prevObj.Length) + NumberPlusOne(prevObj);
 
                 // otherwise just tack on a 2 (e.g. 1.0 beta -> 1.0 beta 2)
                 return version + " 2";
