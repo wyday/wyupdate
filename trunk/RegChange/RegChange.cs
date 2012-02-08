@@ -85,8 +85,6 @@ namespace wyUpdate.Common
                 case RegOperations.RemoveKey:
                     retStr.Append("Removing subkey ");
                     break;
-                default:
-                    break;
             }
 
             if (RegOperation == RegOperations.CreateValue || RegOperation == RegOperations.RemoveValue)
