@@ -38,12 +38,10 @@ namespace wyUpdate
                 {
                     inUseForm = new frmFilesInUse(clientLang, (string)payload);
 
-                    frmFilesInUse inuf = inUseForm;
-
-                    inuf.ShowDialog(this);
+                    inUseForm.ShowDialog(this);
 
                     // cancel the update process
-                    if (inuf.CancelUpdate)
+                    if (inUseForm.CancelUpdate)
                         CancelUpdate(false, true);
                 }
 
@@ -443,10 +441,11 @@ namespace wyUpdate
                 List<FileInfo> files = null;
                 List<Process> rProcesses = null;
 
-                if (payload is object[])
+                var objects = payload as object[];
+                if (objects != null)
                 {
-                    files = (List<FileInfo>)((object[])payload)[0];
-                    rProcesses = (List<Process>)((object[])payload)[1];
+                    files = (List<FileInfo>)(objects)[0];
+                    rProcesses = (List<Process>)(objects)[1];
                 }
 
                 if (rProcesses != null) //if there are some processes need closing
@@ -471,13 +470,14 @@ namespace wyUpdate
                         TopMost = false;
 
                         // start the close processes form
-                        Form proc = new frmProcesses(files, rProcesses, clientLang);
-
-                        if (proc.ShowDialog() == DialogResult.Cancel)
+                        using (Form proc = new frmProcesses(files, rProcesses, clientLang))
                         {
-                            // cancel the update process
-                            CancelUpdate(true, false);
-                            return;
+                            if (proc.ShowDialog() == DialogResult.Cancel)
+                            {
+                                // cancel the update process
+                                CancelUpdate(true, false);
+                                return;
+                            }
                         }
                     }
                 }
