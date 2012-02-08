@@ -482,11 +482,13 @@ namespace wyUpdate.Common
                         entry.LastModified = File.GetLastWriteTime(files[i].Filename);
                     }
 
-                    //add the client file
-                    entry = zip.AddEntry("iuclient.iuc", SaveClientFile());
-                    entry.LastModified = DateTime.Now;
-
-                    zip.Save();
+                    using (Stream clientDets = SaveClientFile())
+                    {
+                        //add the client file
+                        entry = zip.AddEntry("iuclient.iuc", clientDets);
+                        entry.LastModified = DateTime.Now;
+                        zip.Save();
+                    }
                 }
             }
             catch (Exception ex)
@@ -500,85 +502,95 @@ namespace wyUpdate.Common
         {
             MemoryStream ms = new MemoryStream();
 
-            // file-identification data
-            WriteFiles.WriteHeader(ms, "IUCDFV2");
-
-            //Company Name
-            WriteFiles.WriteDeprecatedString(ms, 0x01, CompanyName);
-
-            //Product Name
-            WriteFiles.WriteDeprecatedString(ms, 0x02, ProductName);
-
-            // GUID
-            if (m_GUID != null)
-                WriteFiles.WriteString(ms, 0x0A, m_GUID);
-
-            //Installed Version
-            WriteFiles.WriteDeprecatedString(ms, 0x03, InstalledVersion);
-
-            foreach (string site in ServerFileSites)
+            try
             {
-                //Server File Site
-                WriteFiles.WriteDeprecatedString(ms, 0x04, site);
+                // file-identification data
+                WriteFiles.WriteHeader(ms, "IUCDFV2");
+
+                //Company Name
+                WriteFiles.WriteDeprecatedString(ms, 0x01, CompanyName);
+
+                //Product Name
+                WriteFiles.WriteDeprecatedString(ms, 0x02, ProductName);
+
+                // GUID
+                if (m_GUID != null)
+                    WriteFiles.WriteString(ms, 0x0A, m_GUID);
+
+                //Installed Version
+                WriteFiles.WriteDeprecatedString(ms, 0x03, InstalledVersion);
+
+                foreach (string site in ServerFileSites)
+                {
+                    //Server File Site
+                    WriteFiles.WriteDeprecatedString(ms, 0x04, site);
+                }
+
+                foreach (string site in ClientServerSites)
+                {
+                    //Client Server File Site
+                    WriteFiles.WriteDeprecatedString(ms, 0x09, site);
+                }
+
+                //Header image alignment
+                WriteFiles.WriteDeprecatedString(ms, 0x11, HeaderImageAlign.ToString());
+
+                //Header text indent
+                WriteFiles.WriteInt(ms, 0x12, HeaderTextIndent);
+
+                //Header text color
+                if (!string.IsNullOrEmpty(HeaderTextColorName))
+                    WriteFiles.WriteDeprecatedString(ms, 0x13, HeaderTextColorName);
+
+                //Top image filename
+                if (!string.IsNullOrEmpty(TopImageFilename))
+                    WriteFiles.WriteDeprecatedString(ms, 0x14, TopImageFilename);
+
+                //Side image filename
+                if (!string.IsNullOrEmpty(SideImageFilename))
+                    WriteFiles.WriteDeprecatedString(ms, 0x15, SideImageFilename);
+
+                foreach (DictionaryEntry dLang in Languages)
+                {
+                    LanguageCulture lang = (LanguageCulture)dLang.Value;
+
+                    //Language culture
+                    WriteFiles.WriteDeprecatedString(ms, 0x18, lang.Culture);
+
+                    //Language filename
+                    if (!string.IsNullOrEmpty(lang.Filename))
+                        WriteFiles.WriteDeprecatedString(ms, 0x16, lang.Filename);
+                }
+
+
+                //Hide the header divider
+                if (HideHeaderDivider)
+                    WriteFiles.WriteBool(ms, 0x17, true);
+
+                if (CloseOnSuccess)
+                    WriteFiles.WriteBool(ms, 0x19, true);
+
+                if (!string.IsNullOrEmpty(CustomWyUpdateTitle))
+                    WriteFiles.WriteString(ms, 0x1A, CustomWyUpdateTitle);
+
+                if (!string.IsNullOrEmpty(PublicSignKey))
+                    WriteFiles.WriteString(ms, 0x1B, PublicSignKey);
+
+                ms.WriteByte(0xFF);
+
+                ms.Position = 0;
+            }
+            catch (Exception)
+            {
+                ms.Dispose();
+                throw;
             }
 
-            foreach (string site in ClientServerSites)
-            {
-                //Client Server File Site
-                WriteFiles.WriteDeprecatedString(ms, 0x09, site);
-            }
-
-            //Header image alignment
-            WriteFiles.WriteDeprecatedString(ms, 0x11, HeaderImageAlign.ToString());
-
-            //Header text indent
-            WriteFiles.WriteInt(ms, 0x12, HeaderTextIndent);
-
-            //Header text color
-            if (!string.IsNullOrEmpty(HeaderTextColorName))
-                WriteFiles.WriteDeprecatedString(ms, 0x13, HeaderTextColorName);
-
-            //Top image filename
-            if (!string.IsNullOrEmpty(TopImageFilename))
-                WriteFiles.WriteDeprecatedString(ms, 0x14, TopImageFilename);
-
-            //Side image filename
-            if (!string.IsNullOrEmpty(SideImageFilename))
-                WriteFiles.WriteDeprecatedString(ms, 0x15, SideImageFilename);
-
-            foreach (DictionaryEntry dLang in Languages)
-            {
-                LanguageCulture lang = (LanguageCulture)dLang.Value;
-
-                //Language culture
-                WriteFiles.WriteDeprecatedString(ms, 0x18, lang.Culture);
-                
-                //Language filename
-                if (!string.IsNullOrEmpty(lang.Filename))
-                    WriteFiles.WriteDeprecatedString(ms, 0x16, lang.Filename);
-            }
-
-
-            //Hide the header divider
-            if (HideHeaderDivider)
-                WriteFiles.WriteBool(ms, 0x17, true);
-
-            if (CloseOnSuccess)
-                WriteFiles.WriteBool(ms, 0x19, true);
-
-            if (!string.IsNullOrEmpty(CustomWyUpdateTitle))
-                WriteFiles.WriteString(ms, 0x1A, CustomWyUpdateTitle);
-
-            if (!string.IsNullOrEmpty(PublicSignKey))
-                WriteFiles.WriteString(ms, 0x1B, PublicSignKey);
-
-            ms.WriteByte(0xFF);
-
-            ms.Position = 0;
             return ms;
         }
 #endif
 
+#if CLIENT
         public static void AddUniqueString(string newString, List<string> list)
         {
             // if the string already exists, bail out
@@ -589,5 +601,6 @@ namespace wyUpdate.Common
             // add the string
             list.Add(newString);
         }
+#endif
     }
 }
