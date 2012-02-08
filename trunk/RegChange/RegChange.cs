@@ -182,8 +182,8 @@ namespace wyUpdate.Common
 
         static void WriteOutFile(Stream fs, byte flag, string filename)
         {
-            //Note: I'm casting 'long' as an 'int'. But if someone is trying to save a 
-            //file larger than 4 Gb to the registry then they have some serious problems.
+            // Note: I'm casting 'long' as an 'int'. But if someone is trying to save a 
+            // file larger than 4 Gb to the registry then they have some serious problems.
             int fileNumBytes = (int)new FileInfo(filename).Length;
 
             //file buffer
@@ -195,13 +195,10 @@ namespace wyUpdate.Common
             //write the length of the byte data
             fs.Write(BitConverter.GetBytes(fileNumBytes), 0, 4);
 
-
-            // load the binary data from file and immediately write it to 'fs'
-            FileStream binfs = null;
-
             try
             {
-                using (binfs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+                // load the binary data from file and immediately write it to 'fs'
+                using (FileStream binfs = new FileStream(filename, FileMode.Open, FileAccess.Read))
                 {
                     int sourceBytes;
 
@@ -216,9 +213,6 @@ namespace wyUpdate.Common
             }
             catch (Exception ex)
             {
-                if (binfs != null)
-                    binfs.Close();
-
                 throw new Exception("The binary data failed to load from file " + filename, ex);
             }
         }
