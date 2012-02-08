@@ -90,8 +90,8 @@ public static class LimitedProcess
     /// <param name="filename">The file to start as a limited process.</param>
     /// <param name="arguments">The arguments to pass to the process.</param>
     /// <param name="fallback">Fallback on Process.Start() if this method fails (for whatever reason). We use a simple Process.Start(filename, arguments) call -- we don't pass in all the details.</param>
-    /// <param name="waitForExit"></param>
-    /// <param name="windowStyle"></param>
+    /// <param name="waitForExit">Whether to wait for the execution of the file to finish before continuing.</param>
+    /// <param name="windowStyle">How to show the started process.</param>
     /// <returns>The exit code if waitForExit = true, otherwise it returns 0.</returns>
     public static uint Start(string filename, string arguments = null, bool fallback = true, bool waitForExit = false, ProcessWindowStyle windowStyle = ProcessWindowStyle.Normal)
     {
