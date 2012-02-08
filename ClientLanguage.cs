@@ -6,6 +6,19 @@ using System.Xml;
 
 namespace wyUpdate
 {
+    public class LanguageCulture
+    {
+        public string Culture;
+        public string Filename;
+
+        public LanguageCulture (string culture)
+        {
+            Culture = culture;
+        }
+    }
+
+#if !WBCMD
+
     public class ScreenDialog
     {
         public string Title;
@@ -14,12 +27,12 @@ namespace wyUpdate
 
         public bool IsEmpty
         {
-            get 
+            get
             {
                 //if all the fields are empty then the screenDialog is empty
-                return (string.IsNullOrEmpty(Title) 
-                    && string.IsNullOrEmpty(SubTitle) 
-                    && string.IsNullOrEmpty(Content)); 
+                return (string.IsNullOrEmpty(Title)
+                    && string.IsNullOrEmpty(SubTitle)
+                    && string.IsNullOrEmpty(Content));
             }
         }
 
@@ -33,17 +46,6 @@ namespace wyUpdate
         public void Clear()
         {
             Title = SubTitle = Content = null;
-        }
-    }
-
-    public class LanguageCulture
-    {
-        public string Culture;
-        public string Filename;
-
-        public LanguageCulture (string culture)
-        {
-            Culture = culture;
         }
     }
 
@@ -742,18 +744,9 @@ namespace wyUpdate
 
         public void Open(string filename)
         {
-            XmlTextReader reader = null;
-
-            try
+            using (XmlTextReader reader = new XmlTextReader(filename))
             {
-                reader = new XmlTextReader(filename);
-
                 ReadLanguageFile(reader);
-            }
-            catch (Exception)
-            {
-                if (reader != null)
-                    reader.Close();
             }
         }
 
@@ -998,20 +991,13 @@ namespace wyUpdate
 
         #region Saving XML language file
 
+#if !CLIENT
         public void Save(string filename)
         {
-            XmlTextWriter writer = null;
-            //save user templates
-            try
+            // save the language file
+            using (XmlTextWriter writer = new XmlTextWriter(filename, Encoding.UTF8))
             {
-                writer = new XmlTextWriter(filename, Encoding.UTF8);
-
                 WriteLanguageFile(writer);
-            }
-            catch (Exception)
-            {
-                if (writer != null)
-                    writer.Close();
             }
         }
 
@@ -1131,7 +1117,10 @@ namespace wyUpdate
                 writer.WriteEndElement(); // </name>
             }
         }
+#endif
 
         #endregion Saving XML language file
     }
+
+#endif
 }
