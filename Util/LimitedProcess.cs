@@ -107,15 +107,24 @@ public static class LimitedProcess
             if (!File.Exists(filename))
                 throw new Exception("The system cannot find the file specified");
 
-            //Get window handle representing the desktop shell.  This might not work if there is no shell window, or when
-            //using a custom shell.  Also note that we're assuming that the shell is not running elevated.
+            // Get window handle representing the desktop shell.  This might not work if there is no shell window, or when
+            // using a custom shell.  Also note that we're assuming that the shell is not running elevated.
             IntPtr hShellWnd = GetShellWindow();
-            if (hShellWnd == IntPtr.Zero)
-                throw new Exception("Unable to locate shell window; you might be using a custom shell");
+            int dwShellPID = 0;
 
-            //Get the ID of the desktop shell process.
-            int dwShellPID;
-            GetWindowThreadProcessId(hShellWnd, out dwShellPID);
+            // If we're falling back then don't throw an error -- 
+            // just fall through to the end of function where Process.Start() is called.
+            if (hShellWnd == IntPtr.Zero)
+            {
+                if (!fallback)
+                    throw new Exception("Unable to locate shell window; you might be using a custom shell");
+            }
+            else
+            {
+                // Get the ID of the desktop shell process.
+                GetWindowThreadProcessId(hShellWnd, out dwShellPID);
+            }
+
             if (dwShellPID != 0)
             {
                 //Open the desktop shell process in order to get the process token.
