@@ -51,585 +51,500 @@ namespace wyUpdate
 
     public class ClientLanguage
     {
-        //Return parsed strings?
-        bool m_ReturnParsedStrings = true;
-
-        //Language Name
-        string m_EnglishName, m_Name = "English", m_Culture = "en-US";
-
-        //Buttons
-        string m_NextButton = "Next",
-                       m_UpdateButton = "Update",
-                       m_FinishButton = "Finish",
-                       m_CancelButton = "Cancel",
-                       m_ShowDetails = "Show details";
-
-        //Dialogs
-        ScreenDialog 
-            m_ProcessDialog = new ScreenDialog("Close processes...",
-                null,
-                "The following processes need to be closed before updating can continue. Select a process and click Close Process."),
-            m_FilesInUseDialog = new ScreenDialog("Files in use...",
-                null,
-                "The following files are in use. These files must be closed before the update can continue."),
-            m_CancelDialog = new ScreenDialog("Cancel update?",
-                null,
-                "Are you sure you want to exit before the update is complete?");
-
-        string m_ClosePrc = "Close Process",
-            m_CloseAllPrc = "Close All Processes", 
-            m_CancelUpdate = "Cancel Update";
-
-        //Errors
-        string m_ServerError = "Unable to check for updates, the server file failed to load.",
-            m_AdminError = "wyUpdate needs administrative privileges to update %product%. You can do this one of two ways:\r\n\r\n" +
-                "1. When prompted, enter an administrator's username and password.\r\n\r\n" +
-                "2. In Windows Explorer right click wyUpdate.exe and click \"Run as Administrator\"",
-            m_DownloadError = "The update failed to download.",
-            m_GeneralUpdateError = "The update failed to install.",
-            m_SelfUpdateInstallError = "The updated version of wyUpdate required to update %product% failed to install.",
-            m_LogOffError = "Updating %product%. You must cancel wyUpdate before you can log off.";
-
-        //Update Screens
-        ScreenDialog
-            m_Checking = new ScreenDialog("Searching for updates",
-                "wyUpdate is searching for updates.",
-                "wyUpdate is searching for updates to %product%. This process could take a few minutes."),
-            m_UpdateInfo = new ScreenDialog("Update Information",
-                "Changes in the latest version of %product%.",
-                "The version of %product% installed on this computer is %old_version%. The latest version is %new_version%. Listed below are the changes and improvements:"),
-            m_DownInstall = new ScreenDialog("Downloading & Installing updates",
-                "Updating %product% to the latest version.",
-                "wyUpdate is downloading and installing updates for %product%. This process could take a few minutes."),
-            m_Uninstall = new ScreenDialog("Uninstalling files, folders, and registry",
-                "Uninstalling files and registry for %product%.",
-                "wyUpdate is uninstalling files and registry created when updates were applied to %product%."),
-            m_SuccessUpdate = new ScreenDialog("Update successful!",
-                null,
-                "%product% has been successfully updated to version %new_version%"),
-            m_AlreadyLatest = new ScreenDialog("Latest version already installed",
-                null,
-                "%product% is currently up-to-date. Remember to check for new updates frequently."),
-            m_NoUpdateToLatest = new ScreenDialog("No update to the latest version",
-                null,
-                "There is a newer version of %product% (version %new_version%), but no update available from the version you currently have installed (version %old_version%)."),
-            m_UpdateError = new ScreenDialog("An error occurred",
-                null,
-                null);
-
-        //Bottoms
-        string m_UpdateBottom = "Click Update to begin.", 
-            m_FinishBottom = "Click Finish to exit.";
-
-        //Status
-        string m_Download = "Downloading update",
-            m_DownloadingSelfUpdate = "Downloading new wyUpdate",
-            m_SelfUpdate = "Updating wyUpdate",
-            m_Extract = "Extracting files",
-            m_Processes = "Closing processes",
-            m_PreExec = "Executing files",
-            m_Files = "Backing up and updating files",
-            m_Registry = "Backing up and updating registry",
-            m_Optimize = "Optimizing and executing files",
-            m_TempFiles = "Removing temporary files",
-            m_UninstallFiles = "Uninstalling files & folders",
-            m_UninstallRegistry = "Uninstalling registry",
-            m_RollingBackFiles = "Rolling back files",
-            m_RollingBackRegistry = "Rolling back registry";
-
-        //Variables
-        string m_ProductName, m_OldVersion, m_NewVersion;
-        
-        #region Properties
-
-        public bool ReturnParsedStrings
-        {
-            get { return m_ReturnParsedStrings; }
-            set { m_ReturnParsedStrings = value; }
-        }
-
-        //Name of the Language
-        public string EnglishName
-        {
-            get { return m_EnglishName; }
-            set { m_EnglishName = value; }
-        }
-
-        public string Name
-        {
-            get { return m_Name; }
-            set { m_Name = value; }
-        }
-
-        public string Culture
-        {
-            get { return m_Culture; }
-            set { m_Culture = value; }
-        }
-
-        //Buttons
+#if CLIENT
+        // Buttons
+        string m_NextButton = "Next";
         public string NextButton
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_NextButton) : m_NextButton;
-            }
+            get { return ParseText(m_NextButton); }
             set { m_NextButton = value; }
         }
 
+        string m_UpdateButton = "Update";
         public string UpdateButton
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_UpdateButton) : m_UpdateButton;
-            }
+            get { return ParseText(m_UpdateButton); }
             set { m_UpdateButton = value; }
         }
 
+        string m_FinishButton = "Finish";
         public string FinishButton
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_FinishButton) : m_FinishButton;
-            }
+            get { return ParseText(m_FinishButton); }
             set { m_FinishButton = value; }
         }
 
+        string m_CancelButton = "Cancel";
         public string CancelButton
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_CancelButton) : m_CancelButton;
-            }
+            get { return ParseText(m_CancelButton); }
             set { m_CancelButton = value; }
         }
 
+        string m_ShowDetails = "Show details";
         public string ShowDetails
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_ShowDetails) : m_ShowDetails;
-            }
+            get { return ParseText(m_ShowDetails); }
             set { m_ShowDetails = value; }
         }
 
-        //Dialogs
+        // Dialogs
+        ScreenDialog m_ProcessDialog = new ScreenDialog("Close processes...",
+                                               null,
+                                               "The following processes need to be closed before updating can continue. Select a process and click Close Process.");
+
         public ScreenDialog ProcessDialog
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_ProcessDialog) : m_ProcessDialog;
-            }
+            get { return ParseScreenDialog(m_ProcessDialog); }
             set { m_ProcessDialog = value; }
         }
 
+
+        ScreenDialog m_FilesInUseDialog = new ScreenDialog("Files in use...",
+                                                                   null,
+                                                                   "The following files are in use. These files must be closed before the update can continue.");
         public ScreenDialog FilesInUseDialog
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_FilesInUseDialog) : m_FilesInUseDialog;
-            }
+            get { return ParseScreenDialog(m_FilesInUseDialog); }
             set { m_FilesInUseDialog = value; }
         }
 
+        ScreenDialog m_CancelDialog = new ScreenDialog("Cancel update?",
+                                                               null,
+                                                               "Are you sure you want to exit before the update is complete?");
+
         public ScreenDialog CancelDialog
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_CancelDialog) : m_CancelDialog;
-            }
+            get { return ParseScreenDialog(m_CancelDialog); }
             set { m_CancelDialog = value; }
         }
 
+        string m_ClosePrc = "Close Process";
         public string ClosePrc
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_ClosePrc) : m_ClosePrc;
-            }
+            get { return ParseText(m_ClosePrc); }
             set { m_ClosePrc = value; }
         }
 
+        string m_CloseAllPrc = "Close All Processes";
         public string CloseAllPrc
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_CloseAllPrc) : m_CloseAllPrc;
-            }
+            get { return ParseText(m_CloseAllPrc); }
             set { m_CloseAllPrc = value; }
         }
 
+        string m_CancelUpdate = "Cancel Update";
         public string CancelUpdate
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_CancelUpdate) : m_CancelUpdate;
-            }
+            get { return ParseText(m_CancelUpdate); }
             set { m_CancelUpdate = value; }
         }
 
-        //Errors
+
+        // Errors
+
+        string m_ServerError = "Unable to check for updates, the server file failed to load.";
         public string ServerError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_ServerError) : m_ServerError;
-            }
+            get { return ParseText(m_ServerError); }
             set { m_ServerError = value; }
         }
 
+        string m_AdminError =
+            "wyUpdate needs administrative privileges to update %product%. You can do this one of two ways:\r\n\r\n" +
+            "1. When prompted, enter an administrator's username and password.\r\n\r\n" +
+            "2. In Windows Explorer right click wyUpdate.exe and click \"Run as Administrator\"";
         public string AdminError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_AdminError) : m_AdminError;
-            }
+            get { return ParseText(m_AdminError); }
             set { m_AdminError = value; }
         }
 
+        string m_DownloadError = "The update failed to download.";
         public string DownloadError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_DownloadError) : m_DownloadError;
-            }
+            get { return ParseText(m_DownloadError); }
             set { m_DownloadError = value; }
         }
 
+        string m_GeneralUpdateError = "The update failed to install.";
         public string GeneralUpdateError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_GeneralUpdateError) : m_GeneralUpdateError;
-            }
+            get { return ParseText(m_GeneralUpdateError); }
             set { m_GeneralUpdateError = value; }
         }
 
+        string m_SelfUpdateInstallError =
+            "The updated version of wyUpdate required to update %product% failed to install.";
         public string SelfUpdateInstallError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_SelfUpdateInstallError) : m_SelfUpdateInstallError;
-            }
+            get { return ParseText(m_SelfUpdateInstallError); }
             set { m_SelfUpdateInstallError = value; }
         }
 
+        string m_LogOffError = "Updating %product%. You must cancel wyUpdate before you can log off.";
         public string LogOffError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_LogOffError) : m_LogOffError;
-            }
+            get { return ParseText(m_LogOffError); }
             set { m_LogOffError = value; }
         }
 
-        //Update Screens
+
+                // Update Screens
+
+        ScreenDialog m_Checking = new ScreenDialog("Searching for updates",
+                                                   "wyUpdate is searching for updates.",
+                                                   "wyUpdate is searching for updates to %product%. This process could take a few minutes.");
         public ScreenDialog Checking
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_Checking) : m_Checking;
-            }
+            get { return ParseScreenDialog(m_Checking); }
             set { m_Checking = value; }
         }
 
+        ScreenDialog m_UpdateInfo = new ScreenDialog("Update Information",
+                                                     "Changes in the latest version of %product%.",
+                                                     "The version of %product% installed on this computer is %old_version%. The latest version is %new_version%. Listed below are the changes and improvements:");
         public ScreenDialog UpdateInfo
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_UpdateInfo) : m_UpdateInfo;
-            }
+            get { return ParseScreenDialog(m_UpdateInfo); }
             set { m_UpdateInfo = value; }
         }
 
+        ScreenDialog m_DownInstall = new ScreenDialog("Downloading & Installing updates",
+                                                      "Updating %product% to the latest version.",
+                                                      "wyUpdate is downloading and installing updates for %product%. This process could take a few minutes.");
         public ScreenDialog DownInstall
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_DownInstall) : m_DownInstall;
-            }
+            get { return ParseScreenDialog(m_DownInstall); }
             set { m_DownInstall = value; }
         }
 
+        ScreenDialog m_Uninstall = new ScreenDialog("Uninstalling files, folders, and registry",
+                                                    "Uninstalling files and registry for %product%.",
+                                                    "wyUpdate is uninstalling files and registry created when updates were applied to %product%.");
         public ScreenDialog Uninstall
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_Uninstall) : m_Uninstall;
-            }
+            get { return ParseScreenDialog(m_Uninstall); }
             set { m_Uninstall = value; }
         }
 
+        ScreenDialog m_SuccessUpdate = new ScreenDialog("Update successful!",
+                                                        null,
+                                                        "%product% has been successfully updated to version %new_version%");
         public ScreenDialog SuccessUpdate
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_SuccessUpdate) : m_SuccessUpdate;
-            }
+            get { return ParseScreenDialog(m_SuccessUpdate); }
             set { m_SuccessUpdate = value; }
         }
 
+        ScreenDialog m_AlreadyLatest = new ScreenDialog("Latest version already installed",
+                                                        null,
+                                                        "%product% is currently up-to-date. Remember to check for new updates frequently.");
         public ScreenDialog AlreadyLatest
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_AlreadyLatest) : m_AlreadyLatest;
-            }
+            get { return ParseScreenDialog(m_AlreadyLatest); }
             set { m_AlreadyLatest = value; }
         }
 
+
+        ScreenDialog m_NoUpdateToLatest = new ScreenDialog("No update to the latest version",
+                                                           null,
+                                                           "There is a newer version of %product% (version %new_version%), but no update available from the version you currently have installed (version %old_version%).");
         public ScreenDialog NoUpdateToLatest
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_NoUpdateToLatest) : m_NoUpdateToLatest;
-            }
+            get { return ParseScreenDialog(m_NoUpdateToLatest); }
             set { m_NoUpdateToLatest = value; }
         }
 
+
+        ScreenDialog m_UpdateError = new ScreenDialog("An error occurred",
+                                                      null,
+                                                      null);
         public ScreenDialog UpdateError
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseScreenDialog(m_UpdateError) : m_UpdateError;
-            }
+            get { return ParseScreenDialog(m_UpdateError); }
             set { m_UpdateError = value; }
         }
 
-        //Bottom instructions
+
+        // Bottom instructions
+        private string m_UpdateBottom = "Click Update to begin.";
         public string UpdateBottom
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_UpdateBottom) : m_UpdateBottom;
-            }
+            get { return ParseText(m_UpdateBottom); }
             set { m_UpdateBottom = value; }
         }
 
+        private string m_FinishBottom = "Click Finish to exit.";
         public string FinishBottom
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_FinishBottom) : m_FinishBottom;
-            }
+            get { return ParseText(m_FinishBottom); }
             set { m_FinishBottom = value; }
         }
 
-        //Status
+                // Status
+
+        string m_Download = "Downloading update";
         public string Download
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_Download) : m_Download;
-            }
+            get { return ParseText(m_Download); }
             set { m_Download = value; }
         }
 
+        string m_DownloadingSelfUpdate = "Downloading new wyUpdate";
         public string DownloadingSelfUpdate
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_DownloadingSelfUpdate) : m_DownloadingSelfUpdate;
-            }
+            get { return ParseText(m_DownloadingSelfUpdate); }
             set { m_DownloadingSelfUpdate = value; }
         }
 
+        string m_SelfUpdate = "Updating wyUpdate";
         public string SelfUpdate
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_SelfUpdate) : m_SelfUpdate;
-            }
+            get { return ParseText(m_SelfUpdate); }
             set { m_SelfUpdate = value; }
         }
 
+        string m_Extract = "Extracting files";
         public string Extract
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_Extract) : m_Extract;
-            }
+            get { return ParseText(m_Extract); }
             set { m_Extract = value; }
         }
 
+        string m_Processes = "Closing processes";
         public string Processes
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_Processes) : m_Processes;
-            }
+            get { return ParseText(m_Processes); }
             set { m_Processes = value; }
         }
 
+        string m_PreExec = "Executing files";
         public string PreExec
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_PreExec) : m_PreExec;
-            }
+            get { return ParseText(m_PreExec); }
             set { m_PreExec = value; }
         }
 
+        string m_Files = "Backing up and updating files";
         public string Files
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_Files) : m_Files;
-            }
+            get { return ParseText(m_Files); }
             set { m_Files = value; }
         }
 
+        string m_Registry = "Backing up and updating registry";
         public string Registry
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_Registry) : m_Registry;
-            }
+            get { return ParseText(m_Registry); }
             set { m_Registry = value; }
         }
 
+        string m_Optimize = "Optimizing and executing files";
         public string Optimize
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_Optimize) : m_Optimize;
-            }
+            get { return ParseText(m_Optimize); }
             set { m_Optimize = value; }
         }
 
+        string m_TempFiles = "Removing temporary files";
         public string TempFiles
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_TempFiles) : m_TempFiles;
-            }
+            get { return ParseText(m_TempFiles); }
             set { m_TempFiles = value; }
         }
 
+        string m_UninstallRegistry = "Uninstalling registry";
         public string UninstallRegistry
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_UninstallRegistry) : m_UninstallRegistry;
-            }
+            get { return ParseText(m_UninstallRegistry); }
             set { m_UninstallRegistry = value; }
         }
 
+        string m_UninstallFiles = "Uninstalling files & folders";
         public string UninstallFiles
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_UninstallFiles) : m_UninstallFiles;
-            }
+            get { return ParseText(m_UninstallFiles); }
             set { m_UninstallFiles = value; }
         }
 
+        string m_RollingBackFiles = "Rolling back files";
         public string RollingBackFiles
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_RollingBackFiles) : m_RollingBackFiles;
-            }
+            get { return ParseText(m_RollingBackFiles); }
             set { m_RollingBackFiles = value; }
         }
 
+        string m_RollingBackRegistry = "Rolling back registry";
         public string RollingBackRegistry
         {
-            get
-            {
-                return m_ReturnParsedStrings ? ParseText(m_RollingBackRegistry) : m_RollingBackRegistry;
-            }
+            get { return ParseText(m_RollingBackRegistry); }
             set { m_RollingBackRegistry = value; }
         }
+#else
+        // Language Name
+        public string EnglishName, Name = "English", Culture = "en-US";
 
-        #endregion Properties
+        // Buttons
+        public string NextButton = "Next";
+        public string UpdateButton = "Update";
+        public string FinishButton = "Finish";
+        public string CancelButton = "Cancel";
+        public string ShowDetails = "Show details";
 
-        #region Variable Properties (Product, Version, etc.)
+        // Dialogs
+        public ScreenDialog ProcessDialog = new ScreenDialog("Close processes...",
+                                               null,
+                                               "The following processes need to be closed before updating can continue. Select a process and click Close Process.");
 
-        public string ProductName
+        public ScreenDialog FilesInUseDialog = new ScreenDialog("Files in use...",
+                                                                   null,
+                                                                   "The following files are in use. These files must be closed before the update can continue.");
+
+        public ScreenDialog CancelDialog = new ScreenDialog("Cancel update?",
+                                                       null,
+                                                       "Are you sure you want to exit before the update is complete?");
+
+
+        public string ClosePrc = "Close Process";
+        public string CloseAllPrc = "Close All Processes";
+        public string CancelUpdate = "Cancel Update";
+
+        // Errors
+        public string ServerError = "Unable to check for updates, the server file failed to load.";
+        public string AdminError =
+            "wyUpdate needs administrative privileges to update %product%. You can do this one of two ways:\r\n\r\n" +
+            "1. When prompted, enter an administrator's username and password.\r\n\r\n" +
+            "2. In Windows Explorer right click wyUpdate.exe and click \"Run as Administrator\"";
+        public string DownloadError = "The update failed to download.";
+        public string GeneralUpdateError = "The update failed to install.";
+        public string SelfUpdateInstallError =
+            "The updated version of wyUpdate required to update %product% failed to install.";
+        public string LogOffError = "Updating %product%. You must cancel wyUpdate before you can log off.";
+
+
+        // Update Screens
+        public ScreenDialog
+            Checking = new ScreenDialog("Searching for updates",
+                                          "wyUpdate is searching for updates.",
+                                          "wyUpdate is searching for updates to %product%. This process could take a few minutes.");
+
+        public ScreenDialog UpdateInfo = new ScreenDialog("Update Information",
+                                                             "Changes in the latest version of %product%.",
+                                                             "The version of %product% installed on this computer is %old_version%. The latest version is %new_version%. Listed below are the changes and improvements:");
+
+        public ScreenDialog DownInstall = new ScreenDialog("Downloading & Installing updates",
+                                                              "Updating %product% to the latest version.",
+                                                              "wyUpdate is downloading and installing updates for %product%. This process could take a few minutes.");
+
+        public ScreenDialog Uninstall = new ScreenDialog("Uninstalling files, folders, and registry",
+                                                            "Uninstalling files and registry for %product%.",
+                                                            "wyUpdate is uninstalling files and registry created when updates were applied to %product%.");
+
+        public ScreenDialog SuccessUpdate = new ScreenDialog("Update successful!",
+                                                                null,
+                                                                "%product% has been successfully updated to version %new_version%");
+
+        public ScreenDialog AlreadyLatest = new ScreenDialog("Latest version already installed",
+                                                                null,
+                                                                "%product% is currently up-to-date. Remember to check for new updates frequently.");
+
+        public ScreenDialog NoUpdateToLatest = new ScreenDialog("No update to the latest version",
+                                                                   null,
+                                                                   "There is a newer version of %product% (version %new_version%), but no update available from the version you currently have installed (version %old_version%).");
+
+        public ScreenDialog UpdateError = new ScreenDialog("An error occurred",
+                                                              null,
+                                                              null);
+
+
+        // Bottom instructions
+        public string UpdateBottom = "Click Update to begin.";
+        public string FinishBottom = "Click Finish to exit.";
+
+        // Status
+        public string Download = "Downloading update";
+        public string DownloadingSelfUpdate = "Downloading new wyUpdate";
+        public string SelfUpdate = "Updating wyUpdate";
+        public string Extract = "Extracting files";
+        public string Processes = "Closing processes";
+        public string PreExec = "Executing files";
+        public string Files = "Backing up and updating files";
+        public string Registry = "Backing up and updating registry";
+        public string Optimize = "Optimizing and executing files";
+        public string TempFiles = "Removing temporary files";
+        public string UninstallFiles = "Uninstalling files & folders";
+        public string UninstallRegistry = "Uninstalling registry";
+        public string RollingBackFiles = "Rolling back files";
+        public string RollingBackRegistry = "Rolling back registry";
+
+
+        public void ResetLanguage()
         {
-            get { return m_ProductName; }
-            set { m_ProductName = value; }
-        }
+            Name = null;
+            EnglishName = null;
+            NextButton = null;
+            UpdateButton = null;
+            FinishButton = null;
+            CancelButton = null;
+            ShowDetails = null;
+            ClosePrc = null;
+            CloseAllPrc = null;
+            CancelUpdate = null;
+            Culture = null;
 
-        public string OldVersion
-        {
-            get { return m_OldVersion; }
-            set { m_OldVersion = value; }
-        }
+            ProcessDialog.Clear();
+            CancelDialog.Clear();
+            FilesInUseDialog.Clear();
 
-        public string NewVersion
-        {
-            get { return m_NewVersion; }
-            set { m_NewVersion = value; }
-        }
+            //Errors
+            ServerError = null;
+            AdminError = null;
+            GeneralUpdateError = null;
+            DownloadError = null;
+            SelfUpdateInstallError = null;
+            LogOffError = null;
 
-        #endregion
+            //Update Screens
+            Checking.Clear();
+            UpdateInfo.Clear();
+            DownInstall.Clear();
+            Uninstall.Clear();
+            SuccessUpdate.Clear();
+            AlreadyLatest.Clear();
+            NoUpdateToLatest.Clear();
+            UpdateError.Clear();
+
+            //bottoms
+            FinishBottom = null;
+            UpdateBottom = null;
+
+            //Status
+            Download = null;
+            DownloadingSelfUpdate = null;
+            SelfUpdate = null;
+            Extract = null;
+            Processes = null;
+            PreExec = null;
+            Files = null;
+            Registry = null;
+            Optimize = null;
+            TempFiles = null;
+            UninstallFiles = null;
+            UninstallRegistry = null;
+            RollingBackFiles = null;
+            RollingBackRegistry = null;
+        }
+#endif
+#if CLIENT
+        string m_ProductName, m_OldVersion, m_NewVersion;
+        public string NewVersion { set { m_NewVersion = value; } }
 
         public void SetVariables(string product, string oldversion)
         {
             m_ProductName = product;
             m_OldVersion = oldversion;
         }
-
-        public void ResetLanguage()
-        {
-            m_Name = null;
-            m_EnglishName = null;
-            m_NextButton = null;
-            m_UpdateButton = null;
-            m_FinishButton = null;
-            m_CancelButton = null;
-            m_ShowDetails = null;
-            m_ClosePrc = null;
-            m_CloseAllPrc = null;
-            m_CancelUpdate = null;
-            m_Culture = null;
-
-            m_ProcessDialog.Clear();
-            m_CancelDialog.Clear();
-            m_FilesInUseDialog.Clear();
-
-            //Errors
-            m_ServerError = null;
-            m_AdminError = null;
-            m_GeneralUpdateError = null;
-            m_DownloadError = null;
-            m_SelfUpdateInstallError = null;
-            m_LogOffError = null;
-
-            //Update Screens
-            m_Checking.Clear();
-            m_UpdateInfo.Clear();
-            m_DownInstall.Clear();
-            m_Uninstall.Clear();
-            m_SuccessUpdate.Clear();
-            m_AlreadyLatest.Clear();
-            m_NoUpdateToLatest.Clear();
-            m_UpdateError.Clear();
-
-            //bottoms
-            m_FinishBottom = null;
-            m_UpdateBottom = null;
-
-            //Status
-            m_Download = null;
-            m_DownloadingSelfUpdate = null;
-            m_SelfUpdate = null;
-            m_Extract = null;
-            m_Processes = null;
-            m_PreExec = null;
-            m_Files = null;
-            m_Registry = null;
-            m_Optimize = null;
-            m_TempFiles = null;
-            m_UninstallFiles = null;
-            m_UninstallRegistry = null;
-            m_RollingBackFiles = null;
-            m_RollingBackRegistry = null;
-        }
-
-        #region Parsing language strings
 
         string ParseText(string text)
         {
@@ -737,19 +652,12 @@ namespace wyUpdate
                 ParseText(dialog.Content));
         }
 
-        #endregion Parsing language strings
+#endif
 
         #region Reading XML language file
 
 
-        public void Open(string filename)
-        {
-            using (XmlTextReader reader = new XmlTextReader(filename))
-            {
-                ReadLanguageFile(reader);
-            }
-        }
-
+#if CLIENT
         public void Open(MemoryStream ms)
         {
             XmlTextReader reader = null;
@@ -768,6 +676,15 @@ namespace wyUpdate
                     reader.Close();
             }
         }
+#else
+        public void Open(string filename)
+        {
+            using (XmlTextReader reader = new XmlTextReader(filename))
+            {
+                ReadLanguageFile(reader);
+            }
+        }
+#endif
 
         void ReadLanguageFile(XmlReader reader)
         {
@@ -775,13 +692,16 @@ namespace wyUpdate
             {
                 if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
                 {
+#if !CLIENT
                     if (reader.LocalName.Equals("Lang"))
-                        m_Name = reader.ReadString();
+                        Name = reader.ReadString();
                     else if (reader.LocalName.Equals("LangEn"))
-                        m_EnglishName = reader.ReadString();
+                        EnglishName = reader.ReadString();
                     else if (reader.LocalName.Equals("Culture"))
-                        m_Culture = reader.ReadString();
-                    else if (reader.LocalName.Equals("Buttons"))
+                        Culture = reader.ReadString();
+                    else
+#endif
+                    if (reader.LocalName.Equals("Buttons"))
                         ReadButtons(reader);
                     else if (reader.LocalName.Equals("Screens"))
                         ReadScreens(reader);
@@ -810,21 +730,21 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Next"))
-                        m_NextButton = reader.ReadString();
+                        NextButton = reader.ReadString();
                     else if (reader.LocalName.Equals("Update"))
-                        m_UpdateButton = reader.ReadString();
+                        UpdateButton = reader.ReadString();
                     else if (reader.LocalName.Equals("Finish"))
-                        m_FinishButton = reader.ReadString();
+                        FinishButton = reader.ReadString();
                     else if (reader.LocalName.Equals("Cancel"))
-                        m_CancelButton = reader.ReadString();
+                        CancelButton = reader.ReadString();
                     else if (reader.LocalName.Equals("ShowDetails"))
-                        m_ShowDetails = reader.ReadString();
+                        ShowDetails = reader.ReadString();
                     else if (reader.LocalName.Equals("Close"))
-                        m_ClosePrc = reader.ReadString();
+                        ClosePrc = reader.ReadString();
                     else if (reader.LocalName.Equals("CloseAll"))
-                        m_CloseAllPrc = reader.ReadString();
+                        CloseAllPrc = reader.ReadString();
                     else if (reader.LocalName.Equals("CancelUpdate"))
-                        m_CancelUpdate = reader.ReadString();
+                        CancelUpdate = reader.ReadString();
                 }
             }
         }
@@ -840,21 +760,21 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
                 {
                     if (reader.LocalName.Equals("Checking"))
-                        ReadScreenDialog(reader, m_Checking);
+                        ReadScreenDialog(reader, Checking);
                     else if (reader.LocalName.Equals("UpdateInfo"))
-                        ReadScreenDialog(reader, m_UpdateInfo);
+                        ReadScreenDialog(reader, UpdateInfo);
                     else if (reader.LocalName.Equals("DownInstall"))
-                        ReadScreenDialog(reader, m_DownInstall);
+                        ReadScreenDialog(reader, DownInstall);
                     else if (reader.LocalName.Equals("Uninstall"))
-                        ReadScreenDialog(reader, m_Uninstall);
+                        ReadScreenDialog(reader, Uninstall);
                     else if (reader.LocalName.Equals("SuccessUpdate"))
-                        ReadScreenDialog(reader, m_SuccessUpdate);
+                        ReadScreenDialog(reader, SuccessUpdate);
                     else if (reader.LocalName.Equals("AlreadyLatest"))
-                        ReadScreenDialog(reader, m_AlreadyLatest);
+                        ReadScreenDialog(reader, AlreadyLatest);
                     else if (reader.LocalName.Equals("NoUpdateToLatest"))
-                        ReadScreenDialog(reader, m_NoUpdateToLatest);
+                        ReadScreenDialog(reader, NoUpdateToLatest);
                     else if (reader.LocalName.Equals("UpdateError"))
-                        ReadScreenDialog(reader, m_UpdateError);
+                        ReadScreenDialog(reader, UpdateError);
                 }
             }
         }
@@ -870,11 +790,11 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Cancel"))
-                        ReadScreenDialog(reader, m_CancelDialog);
+                        ReadScreenDialog(reader, CancelDialog);
                     else if (reader.LocalName.Equals("Processes"))
-                        ReadScreenDialog(reader, m_ProcessDialog);
+                        ReadScreenDialog(reader, ProcessDialog);
                     else if (reader.LocalName.Equals("FilesInUse"))
-                        ReadScreenDialog(reader, m_FilesInUseDialog);
+                        ReadScreenDialog(reader, FilesInUseDialog);
                 }
             }
         }
@@ -912,33 +832,33 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Download"))
-                        m_Download = reader.ReadString();
+                        Download = reader.ReadString();
                     else if (reader.LocalName.Equals("DownloadSelfUpdate"))
-                        m_DownloadingSelfUpdate = reader.ReadString();
+                        DownloadingSelfUpdate = reader.ReadString();
                     else if (reader.LocalName.Equals("SelfUpdate"))
-                        m_SelfUpdate = reader.ReadString();
+                        SelfUpdate = reader.ReadString();
                     else if (reader.LocalName.Equals("Extract"))
-                        m_Extract = reader.ReadString();
+                        Extract = reader.ReadString();
                     else if (reader.LocalName.Equals("Processes"))
-                        m_Processes = reader.ReadString();
+                        Processes = reader.ReadString();
                     else if (reader.LocalName.Equals("PreExec"))
-                        m_PreExec = reader.ReadString();
+                        PreExec = reader.ReadString();
                     else if (reader.LocalName.Equals("Files"))
-                        m_Files = reader.ReadString();
+                        Files = reader.ReadString();
                     else if (reader.LocalName.Equals("Registry"))
-                        m_Registry = reader.ReadString();
+                        Registry = reader.ReadString();
                     else if (reader.LocalName.Equals("Optimize"))
-                        m_Optimize = reader.ReadString();
+                        Optimize = reader.ReadString();
                     else if (reader.LocalName.Equals("TempFiles"))
-                        m_TempFiles = reader.ReadString();
+                        TempFiles = reader.ReadString();
                     else if (reader.LocalName.Equals("UninstallFiles"))
-                        m_UninstallFiles = reader.ReadString();
+                        UninstallFiles = reader.ReadString();
                     else if (reader.LocalName.Equals("UninstallReg"))
-                        m_UninstallRegistry = reader.ReadString();
+                        UninstallRegistry = reader.ReadString();
                     else if (reader.LocalName.Equals("RollingBackFiles"))
-                        m_RollingBackFiles = reader.ReadString();
+                        RollingBackFiles = reader.ReadString();
                     else if (reader.LocalName.Equals("RollingBackRegistry"))
-                        m_RollingBackRegistry = reader.ReadString();
+                        RollingBackRegistry = reader.ReadString();
                 }
             }
         }
@@ -954,17 +874,17 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("ServFile"))
-                        m_ServerError = reader.ReadString();
+                        ServerError = reader.ReadString();
                     else if (reader.LocalName.Equals("Admin"))
-                        m_AdminError = reader.ReadString();
+                        AdminError = reader.ReadString();
                     else if (reader.LocalName.Equals("Update"))
-                        m_GeneralUpdateError = reader.ReadString();
+                        GeneralUpdateError = reader.ReadString();
                     else if (reader.LocalName.Equals("Download"))
-                        m_DownloadError = reader.ReadString();
+                        DownloadError = reader.ReadString();
                     else if (reader.LocalName.Equals("SelfUpdate"))
-                        m_SelfUpdateInstallError = reader.ReadString();
+                        SelfUpdateInstallError = reader.ReadString();
                     else if (reader.LocalName.Equals("LogOff"))
-                        m_LogOffError = reader.ReadString();
+                        LogOffError = reader.ReadString();
                 }
             }
         }
@@ -980,9 +900,9 @@ namespace wyUpdate
                 if (reader.NodeType == XmlNodeType.Element)
                 {
                     if (reader.LocalName.Equals("Update"))
-                        m_UpdateBottom = reader.ReadString();
+                        UpdateBottom = reader.ReadString();
                     else if (reader.LocalName.Equals("Finish"))
-                        m_FinishBottom = reader.ReadString();
+                        FinishBottom = reader.ReadString();
                 }
             }
         }
@@ -1012,83 +932,83 @@ namespace wyUpdate
 
             writer.WriteStartElement("Translation"); //<Translation>
             {
-                if (!string.IsNullOrEmpty(m_EnglishName))
-                    writer.WriteElementString("LangEn", m_EnglishName);
+                if (!string.IsNullOrEmpty(EnglishName))
+                    writer.WriteElementString("LangEn", EnglishName);
 
-                if (!string.IsNullOrEmpty(m_Name))
-                    writer.WriteElementString("Lang", m_Name);
+                if (!string.IsNullOrEmpty(Name))
+                    writer.WriteElementString("Lang", Name);
 
-                if (!string.IsNullOrEmpty(m_Culture))
-                    writer.WriteElementString("Culture", m_Culture);
+                if (!string.IsNullOrEmpty(Culture))
+                    writer.WriteElementString("Culture", Culture);
 
                 writer.WriteStartElement("Buttons"); //<Buttons>
                 {
-                    WriteString(writer, "Next", m_NextButton);
-                    WriteString(writer, "Update", m_UpdateButton);
-                    WriteString(writer, "Finish", m_FinishButton);
-                    WriteString(writer, "Cancel", m_CancelButton);
-                    WriteString(writer, "ShowDetails", m_ShowDetails);
-                    WriteString(writer, "Close", m_ClosePrc);
-                    WriteString(writer, "CloseAll", m_CloseAllPrc);
-                    WriteString(writer, "CancelUpdate", m_CancelUpdate);
+                    WriteString(writer, "Next", NextButton);
+                    WriteString(writer, "Update", UpdateButton);
+                    WriteString(writer, "Finish", FinishButton);
+                    WriteString(writer, "Cancel", CancelButton);
+                    WriteString(writer, "ShowDetails", ShowDetails);
+                    WriteString(writer, "Close", ClosePrc);
+                    WriteString(writer, "CloseAll", CloseAllPrc);
+                    WriteString(writer, "CancelUpdate", CancelUpdate);
                 }
                 writer.WriteEndElement(); //</Buttons>
 
                 writer.WriteStartElement("Dialogs"); //<Dialogs>
                 {
-                    WriteScreenDialog(writer, "Cancel", m_CancelDialog);
-                    WriteScreenDialog(writer, "Processes", m_ProcessDialog);
-                    WriteScreenDialog(writer, "FilesInUse", m_FilesInUseDialog);
+                    WriteScreenDialog(writer, "Cancel", CancelDialog);
+                    WriteScreenDialog(writer, "Processes", ProcessDialog);
+                    WriteScreenDialog(writer, "FilesInUse", FilesInUseDialog);
                 }
                 writer.WriteEndElement(); //</Dialogs>
 
                 writer.WriteStartElement("Errors"); //<Errors>
                 {
-                    WriteString(writer, "Admin", m_AdminError);
-                    WriteString(writer, "Download", m_DownloadError);
-                    WriteString(writer, "LogOff", m_LogOffError);
-                    WriteString(writer, "SelfUpdate", m_SelfUpdateInstallError);
-                    WriteString(writer, "ServFile", m_ServerError);
-                    WriteString(writer, "Update", m_GeneralUpdateError);
+                    WriteString(writer, "Admin", AdminError);
+                    WriteString(writer, "Download", DownloadError);
+                    WriteString(writer, "LogOff", LogOffError);
+                    WriteString(writer, "SelfUpdate", SelfUpdateInstallError);
+                    WriteString(writer, "ServFile", ServerError);
+                    WriteString(writer, "Update", GeneralUpdateError);
                 }
                 writer.WriteEndElement(); //</Errors>
 
                 writer.WriteStartElement("Screens"); //<Screens>
                 {
-                    WriteScreenDialog(writer, "Checking", m_Checking);
-                    WriteScreenDialog(writer, "UpdateInfo", m_UpdateInfo);
-                    WriteScreenDialog(writer, "DownInstall", m_DownInstall);
-                    WriteScreenDialog(writer, "Uninstall", m_Uninstall);
-                    WriteScreenDialog(writer, "SuccessUpdate", m_SuccessUpdate);
-                    WriteScreenDialog(writer, "AlreadyLatest", m_AlreadyLatest);
-                    WriteScreenDialog(writer, "NoUpdateToLatest", m_NoUpdateToLatest);
-                    WriteScreenDialog(writer, "UpdateError", m_UpdateError);
+                    WriteScreenDialog(writer, "Checking", Checking);
+                    WriteScreenDialog(writer, "UpdateInfo", UpdateInfo);
+                    WriteScreenDialog(writer, "DownInstall", DownInstall);
+                    WriteScreenDialog(writer, "Uninstall", Uninstall);
+                    WriteScreenDialog(writer, "SuccessUpdate", SuccessUpdate);
+                    WriteScreenDialog(writer, "AlreadyLatest", AlreadyLatest);
+                    WriteScreenDialog(writer, "NoUpdateToLatest", NoUpdateToLatest);
+                    WriteScreenDialog(writer, "UpdateError", UpdateError);
                 }
                 writer.WriteEndElement(); //</Screens>
 
                 writer.WriteStartElement("Status"); //<Status>
                 {
-                    WriteString(writer, "Download", m_Download);
-                    WriteString(writer, "DownloadSelfUpdate", m_DownloadingSelfUpdate);
-                    WriteString(writer, "SelfUpdate", m_SelfUpdate);
-                    WriteString(writer, "Extract", m_Extract);
-                    WriteString(writer, "Processes", m_Processes);
-                    WriteString(writer, "PreExec", m_PreExec);
-                    WriteString(writer, "Files", m_Files);
-                    WriteString(writer, "Registry", m_Registry);
-                    WriteString(writer, "Optimize", m_Optimize);
-                    WriteString(writer, "TempFiles", m_TempFiles);
-                    WriteString(writer, "UninstallFiles", m_UninstallFiles);
-                    WriteString(writer, "UninstallReg", m_UninstallRegistry);
-                    WriteString(writer, "RollingBackFiles", m_RollingBackFiles);
-                    WriteString(writer, "RollingBackRegistry", m_RollingBackRegistry);
+                    WriteString(writer, "Download", Download);
+                    WriteString(writer, "DownloadSelfUpdate", DownloadingSelfUpdate);
+                    WriteString(writer, "SelfUpdate", SelfUpdate);
+                    WriteString(writer, "Extract", Extract);
+                    WriteString(writer, "Processes", Processes);
+                    WriteString(writer, "PreExec", PreExec);
+                    WriteString(writer, "Files", Files);
+                    WriteString(writer, "Registry", Registry);
+                    WriteString(writer, "Optimize", Optimize);
+                    WriteString(writer, "TempFiles", TempFiles);
+                    WriteString(writer, "UninstallFiles", UninstallFiles);
+                    WriteString(writer, "UninstallReg", UninstallRegistry);
+                    WriteString(writer, "RollingBackFiles", RollingBackFiles);
+                    WriteString(writer, "RollingBackRegistry", RollingBackRegistry);
                 }
                 writer.WriteEndElement(); //</Status>
 
                 writer.WriteStartElement("Bottoms"); //<Bottoms>
                 {
-                    WriteString(writer, "Update", m_UpdateBottom);
-                    WriteString(writer, "Finish", m_FinishBottom);
+                    WriteString(writer, "Update", UpdateBottom);
+                    WriteString(writer, "Finish", FinishBottom);
                 }
                 writer.WriteEndElement(); //</Bottoms>
             }
