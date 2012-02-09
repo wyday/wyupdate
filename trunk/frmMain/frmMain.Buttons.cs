@@ -27,7 +27,7 @@ namespace wyUpdate
         }
 
 
-        void CancelUpdate(bool ForceClose, bool skipConfirmDialog)
+        void CancelUpdate(bool ForceClose = false, bool skipConfirmDialog = false)
         {
             if ((frameOn == Frame.Checking || frameOn == Frame.InstallUpdates) && !ForceClose) //if downloading or updating
             {
@@ -87,12 +87,6 @@ namespace wyUpdate
             //if downloading in anything, return true
             return frameOn == Frame.Checking || frameOn == Frame.InstallUpdates && downloader != null &&
                 (update.CurrentlyUpdating == UpdateOn.DownloadingUpdate || update.CurrentlyUpdating == UpdateOn.DownloadingSelfUpdate);
-        }
-
-
-        void CancelUpdate()
-        {
-            CancelUpdate(false, false);
         }
 
         void DisableCancel()

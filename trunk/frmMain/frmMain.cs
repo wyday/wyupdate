@@ -554,8 +554,7 @@ namespace wyUpdate
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            //only warn if after the welcome page
-            //and not self updating/elevating
+            // only warn if after the welcome page and not self updating/elevating
             if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate || isSilent || isAutoUpdateMode ||
                 isCancelled || panelDisplaying.TypeofFrame == FrameType.WelcomeFinish || panelDisplaying.TypeofFrame == FrameType.TextInfo)
             {
@@ -564,10 +563,10 @@ namespace wyUpdate
             }
             else //currently updating
             {
-                //stop closing
+                // stop closing
                 e.Cancel = true;
 
-                //prompt the user if they really want to cancel
+                // prompt the user if they really want to cancel
                 CancelUpdate();
             }
 
