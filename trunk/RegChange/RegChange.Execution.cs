@@ -184,7 +184,7 @@ namespace wyUpdate.Common
             }
         }
 
-        RegistryKey ReturnOpenKey(string subkey)
+        RegistryKey ReturnOpenKey(string skey)
         {
             bool use32bit = Is32BitKey && IntPtr.Size == 8;
 
@@ -197,65 +197,65 @@ namespace wyUpdate.Common
                     if (use32bit)
                     {
 #if NET4
-                        return RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry32).OpenSubKey(SubKey);
+                        return RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryView.Registry32).OpenSubKey(skey);
 #else
-                        return OpenSubKey32(Registry.ClassesRoot, SubKey);
+                        return OpenSubKey32(Registry.ClassesRoot, skey);
 #endif
                     }
 
-                    return Registry.ClassesRoot.OpenSubKey(SubKey);
+                    return Registry.ClassesRoot.OpenSubKey(skey);
 
                 case RegBasekeys.HKEY_CURRENT_CONFIG:
 
                     if (use32bit)
                     {
 #if NET4
-                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, RegistryView.Registry32).OpenSubKey(SubKey);
+                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, RegistryView.Registry32).OpenSubKey(skey);
 #else
-                        return OpenSubKey32(Registry.CurrentConfig, SubKey);
+                        return OpenSubKey32(Registry.CurrentConfig, skey);
 #endif
                     }
 
-                    return Registry.CurrentConfig.OpenSubKey(SubKey);
+                    return Registry.CurrentConfig.OpenSubKey(skey);
 
                 case RegBasekeys.HKEY_LOCAL_MACHINE:
 
                     if (use32bit)
                     {
 #if NET4
-                        return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).OpenSubKey(SubKey);
+                        return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).OpenSubKey(skey);
 #else
-                        return OpenSubKey32(Registry.LocalMachine, SubKey);
+                        return OpenSubKey32(Registry.LocalMachine, skey);
 #endif
                     }
 
-                    return Registry.LocalMachine.OpenSubKey(SubKey);
+                    return Registry.LocalMachine.OpenSubKey(skey);
 
                 case RegBasekeys.HKEY_USERS:
 
                     if (use32bit)
                     {
 #if NET4
-                        return RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32).OpenSubKey(SubKey);
+                        return RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32).OpenSubKey(skey);
 #else
-                        return OpenSubKey32(Registry.Users, SubKey);
+                        return OpenSubKey32(Registry.Users, skey);
 #endif
                     }
 
-                    return Registry.Users.OpenSubKey(SubKey);
+                    return Registry.Users.OpenSubKey(skey);
 
                 default: //HKEY_CURRENT_USER
 
                     if (use32bit)
                     {
 #if NET4
-                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32).OpenSubKey(SubKey);
+                        return RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32).OpenSubKey(skey);
 #else
-                        return OpenSubKey32(Registry.CurrentUser, SubKey);
+                        return OpenSubKey32(Registry.CurrentUser, skey);
 #endif
                     }
 
-                    return Registry.CurrentUser.OpenSubKey(SubKey);
+                    return Registry.CurrentUser.OpenSubKey(skey);
             }
         }
 

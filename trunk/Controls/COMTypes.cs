@@ -33,7 +33,7 @@ namespace wyDay.Controls
     }
 
     //Based on Rob Jarett's wrappers for the desktop integration PDC demos.
-    [ComImportAttribute()]
+    [ComImportAttribute]
     [GuidAttribute("ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf")]
     [InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
     internal interface ITaskbarList3
@@ -65,6 +65,6 @@ namespace wyDay.Controls
 
     [GuidAttribute("56FDF344-FD6D-11d0-958A-006097C9A090")]
     [ClassInterfaceAttribute(ClassInterfaceType.None)]
-    [ComImportAttribute()]
+    [ComImportAttribute]
     internal class CTaskbarList { }
 }

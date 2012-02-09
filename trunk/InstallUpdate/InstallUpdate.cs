@@ -810,14 +810,12 @@ namespace wyUpdate
 
         void FixUpdateFilesPaths(List<UpdateFile> updateFiles)
         {
-            UpdateFile tempUFile;
-
             //replace every relative path with an absolute path
             for (int i = 0; i < updateFiles.Count; i++)
             {
                 if (updateFiles[i].IsNETAssembly)
                 {
-                    tempUFile = updateFiles[i];
+                    UpdateFile tempUFile = updateFiles[i];
 
                     tempUFile.Filename = FixUpdateDetailsPaths(tempUFile.RelativePath);
 

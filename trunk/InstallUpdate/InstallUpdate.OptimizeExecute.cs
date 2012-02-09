@@ -462,6 +462,8 @@ namespace wyUpdate
             }
         }
 
+#if !CLIENT
+        //TODO: re-enable this code (RegAsm support)
         static void RegAsm(string filename, bool Uninstall, CPUVersion cpu, FrameworkVersion frameworkVersion)
         {
             switch (frameworkVersion)
@@ -530,5 +532,6 @@ namespace wyUpdate
                 }
             }
         }
+#endif
     }
 }

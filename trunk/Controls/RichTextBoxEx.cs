@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Text;
 using System.Windows.Forms;
 
@@ -91,7 +90,6 @@ namespace wyDay.Controls
 
             // ----- Remove other font sizes
 
-            string defaultFontSize;
             bool atLeaseOneDigit = false;
 
             startIndex = 0;
@@ -108,7 +106,7 @@ namespace wyDay.Controls
 
             } while (!atLeaseOneDigit);
 
-            defaultFontSize = defaultRTFHeader.Substring(startIndex, indexOn - startIndex);
+            string defaultFontSize = defaultRTFHeader.Substring(startIndex, indexOn - startIndex);
 
 
             indexOn = 0;
