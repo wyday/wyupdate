@@ -46,6 +46,25 @@ namespace wyUpdate
                         // return 2 if we're just checking
                         if (QuickCheckJustCheck)
                         {
+                            if (OutputInfo == string.Empty)
+                            {
+                                // output the changelog
+                                Console.WriteLine(ServerFile.NewVersion);
+                                Console.WriteLine(panelDisplaying.GetChanges(false));
+                            }
+                            else if (OutputInfo != null)
+                            {
+                                try
+                                {
+                                    using (StreamWriter outfile = new StreamWriter(OutputInfo))
+                                    {
+                                        outfile.WriteLine(ServerFile.NewVersion);
+                                        outfile.WriteLine(panelDisplaying.GetChanges(false));
+                                    }
+                                }
+                                catch { }
+                            }
+
                             ReturnCode = 2;
                             Close();
                             return;
@@ -64,7 +83,7 @@ namespace wyUpdate
                         // save the automatic updater file
                         SaveAutoUpdateData(UpdateStepOn.UpdateAvailable);
 
-                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true);
+                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChanges(true), true);
                     }
 
                     break;
@@ -209,6 +228,28 @@ namespace wyUpdate
                     }
                     else
                     {
+                        if (frameNum == Frame.Error)
+                        {
+                            if (OutputInfo == string.Empty)
+                            {
+                                // output the error
+                                Console.WriteLine(error + "\r\n");
+                                Console.WriteLine(errorDetails);
+                            }
+                            else if (OutputInfo != null)
+                            {
+                                try
+                                {
+                                    using (StreamWriter outfile = new StreamWriter(OutputInfo))
+                                    {
+                                        outfile.WriteLine(error);
+                                        outfile.WriteLine(errorDetails);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+
                         WindowState = FormWindowState.Minimized;
                         ShowInTaskbar = false;
                         Visible = true;
@@ -251,7 +292,7 @@ namespace wyUpdate
                                          {
                                              AutoUpdaterStatus = AutoUpdaterStatus.UpdateSucceeded,
                                              UpdateVersion = ServerFile.NewVersion,
-                                             ChangesInLatestVersion = panelDisplaying.GetChangesRTF(),
+                                             ChangesInLatestVersion = panelDisplaying.GetChanges(true),
                                              ChangesIsRTF = true
                                          };
                         }
