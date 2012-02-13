@@ -104,7 +104,10 @@ namespace wyUpdate
             {
                 ReadRollbackFiles(Path.Combine(backupFolder, "fileList.bak"), fileList, foldersToDelete, foldersToCreate);
             }
-            catch { }
+            catch
+            {
+                return;
+            }
 
             //delete the files
             foreach (string file in fileList)
@@ -172,7 +175,7 @@ namespace wyUpdate
         {
             DirectoryInfo backupDirInf = new DirectoryInfo(backupDir);
 
-            //get all the files in the backup directory
+            // get all the files in the backup directory
             FileInfo[] backupFiles = backupDirInf.GetFiles("*");
 
             foreach (FileInfo file in backupFiles)
@@ -214,7 +217,10 @@ namespace wyUpdate
             {
                 ReadRollbackRegistry(Path.Combine(m_TempDirectory, "backup\\regList.bak"), rollbackRegistry);
             }
-            catch { }
+            catch
+            {
+                return;
+            }
 
             // roll the registry back
             foreach (RegChange regCh in rollbackRegistry)
@@ -235,7 +241,10 @@ namespace wyUpdate
             {
                 ReadRollbackCOM(Path.Combine(tempDir, "backup\\unreggedComList.bak"), rollbackList);
             }
-            catch { }
+            catch
+            {
+                return;
+            }
 
             // re-reg COM dlls
             foreach (UninstallFileInfo fileinfo in rollbackList)
@@ -256,9 +265,12 @@ namespace wyUpdate
             {
                 ReadRollbackCOM(Path.Combine(tempDir, "backup\\reggedComList.bak"), rollbackList);
             }
-            catch { }
+            catch
+            {
+                return;
+            }
 
-            // re-reg COM dlls
+            // un-reg COM dlls
             foreach (UninstallFileInfo fileinfo in rollbackList)
             {
                 try
@@ -278,7 +290,10 @@ namespace wyUpdate
             {
                 ReadRollbackServices(Path.Combine(tempDir, "backup\\stoppedServices.bak"), rollbackList, false);
             }
-            catch { }
+            catch
+            {
+                return;
+            }
 
             // restart the services
             foreach (string service in rollbackList)
@@ -311,9 +326,12 @@ namespace wyUpdate
             {
                 ReadRollbackServices(Path.Combine(tempDir, "backup\\startedServices.bak"), rollbackList, false);
             }
-            catch { }
+            catch
+            {
+                return;
+            }
 
-            // re-reg COM dlls
+            // stop the started services
             foreach (string service in rollbackList)
             {
                 try
@@ -486,7 +504,7 @@ namespace wyUpdate
                         if (fileFolder.deleteFolder)
                             WriteFiles.WriteString(fs, 0x04, fileFolder.Path);
                         else
-                            //folder to create on rollback
+                            // folder to create on rollback
                             WriteFiles.WriteString(fs, 0x06, fileFolder.Path);
                     }
                     else
