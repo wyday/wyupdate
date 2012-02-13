@@ -276,9 +276,9 @@ namespace wyUpdate
             messageBox.Clear();
         }
 
-        public string GetChangesRTF()
+        public string GetChanges(bool rtf)
         {
-            return messageBox.Rtf;
+            return rtf ? messageBox.Rtf : messageBox.Text;
         }
 
         /// <summary>

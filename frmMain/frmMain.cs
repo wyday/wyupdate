@@ -83,6 +83,7 @@ namespace wyUpdate
         bool QuickCheckNoErr;
         bool QuickCheckJustCheck;
         bool SkipUpdateInfo;
+        string OutputInfo;
 
         /// <summary>This is only set for standalone service updating (not updating a service via the AutomaticUpdater)</summary>
         bool UpdatingFromService;
@@ -462,6 +463,11 @@ namespace wyUpdate
 
                         if (commands["justcheck"] != null)
                             QuickCheckJustCheck = true;
+
+                        // for outputting errors & update information to
+                        // STDOUT or to a file
+                        if (QuickCheckNoErr || QuickCheckJustCheck)
+                            OutputInfo = commands["outputinfo"];
                     }
                     else if (commands["fromservice"] != null)
                     {
