@@ -62,7 +62,7 @@ namespace Ionic.Zip
                 }
                 catch (System.UnauthorizedAccessException)
                 {
-                    Console.WriteLine("************************************************** Retry delete.");
+                    //Console.WriteLine("************************************************** Retry delete.");
                     System.Threading.Thread.Sleep(200+i*200);
                 }
             }
