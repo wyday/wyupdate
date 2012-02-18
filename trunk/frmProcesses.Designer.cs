@@ -40,26 +40,22 @@ namespace wyUpdate
             // 
             this.btnCloseProc.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloseProc.AutoSize = true;
-            this.btnCloseProc.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnCloseProc.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.btnCloseProc.Location = new System.Drawing.Point(12, 214);
             this.btnCloseProc.Name = "btnCloseProc";
             this.btnCloseProc.Size = new System.Drawing.Size(88, 22);
             this.btnCloseProc.TabIndex = 0;
-            this.btnCloseProc.Text = "Close Process";
             this.btnCloseProc.Click += new System.EventHandler(this.closeProc_Click);
             // 
             // btnCloseAll
             // 
             this.btnCloseAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloseAll.AutoSize = true;
-            this.btnCloseAll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnCloseAll.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.btnCloseAll.Location = new System.Drawing.Point(106, 214);
             this.btnCloseAll.Name = "btnCloseAll";
             this.btnCloseAll.Size = new System.Drawing.Size(113, 22);
             this.btnCloseAll.TabIndex = 1;
-            this.btnCloseAll.Text = "Close All Processes";
             this.btnCloseAll.Click += new System.EventHandler(this.closeAll_Click);
             // 
             // listProc
@@ -75,14 +71,12 @@ namespace wyUpdate
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.AutoSize = true;
-            this.btnCancel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.btnCancel.Location = new System.Drawing.Point(279, 214);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(92, 22);
             this.btnCancel.TabIndex = 2;
-            this.btnCancel.Text = "Cancel Update";
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // chkProc
