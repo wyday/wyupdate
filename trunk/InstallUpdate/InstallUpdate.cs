@@ -391,8 +391,6 @@ namespace wyUpdate
         {
             string tempPath;
 
-            string wyUpdateLoc = Assembly.GetExecutingAssembly().Location;
-
             // delete the marked files
             foreach (UpdateFile file in UpdtDetails.UpdateFiles)
             {
@@ -407,7 +405,7 @@ namespace wyUpdate
                     string tempFile = FixUpdateDetailsPaths(file.RelativePath);
 
                     // if the user is trying to delete this file, then skip it
-                    if (string.Compare(wyUpdateLoc, tempFile, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Equals(VersionTools.SelfLocation, tempFile, StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     if (File.Exists(tempFile))
@@ -448,7 +446,7 @@ namespace wyUpdate
         {
             bool installDesktopShortcut = true, installStartMenuShortcut = true;
 
-            //see if at least one previous shortcut on the desktop exists
+            // see if at least one previous shortcut on the desktop exists
             foreach (string shortcut in UpdtDetails.PreviousDesktopShortcuts)
             {
                 if (File.Exists(Path.Combine(destFolders[6], shortcut.Substring(11))))
@@ -921,7 +919,7 @@ namespace wyUpdate
         {
             //relative path from origFolder to client location
             StringBuilder strBuild = new StringBuilder(SystemFolders.MAX_PATH);
-            string tempStr = Assembly.GetExecutingAssembly().Location;
+            string tempStr = VersionTools.SelfLocation;
 
             //find the relativity of the actualBase and this running client
             bool bRet = SystemFolders.PathRelativePathTo(
