@@ -385,7 +385,7 @@ namespace wyUpdate
                 // permissions for Vista / 7, etc.) wyUpdate will be detected despite the try/catch block.
                 try
                 {
-                    if (proc.MainModule.FileName.ToLower() == filename.ToLower())
+                    if (string.Equals(proc.MainModule.FileName, filename, StringComparison.OrdinalIgnoreCase))
                     {
                         proc.Kill();
                     }
