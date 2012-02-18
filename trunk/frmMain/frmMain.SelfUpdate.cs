@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Windows.Forms;
 using wyUpdate.Common;
 
 namespace wyUpdate
@@ -40,7 +39,7 @@ namespace wyUpdate
                 WriteFiles.WriteDeprecatedString(fs, 0x05, tempDirectory);
 
                 //Old client file location (self)
-                WriteFiles.WriteDeprecatedString(fs, 0x06, Application.ExecutablePath);
+                WriteFiles.WriteDeprecatedString(fs, 0x06, VersionTools.SelfLocation);
 
                 //self update needed
                 WriteFiles.WriteBool(fs, 0x07, SelfUpdateState == SelfUpdateState.WillUpdate);
