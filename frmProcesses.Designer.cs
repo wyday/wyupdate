@@ -61,6 +61,7 @@ namespace wyUpdate
             // listProc
             // 
             this.listProc.FormattingEnabled = true;
+            this.listProc.HorizontalScrollbar = true;
             this.listProc.IntegralHeight = false;
             this.listProc.Location = new System.Drawing.Point(3, 60);
             this.listProc.Name = "listProc";
