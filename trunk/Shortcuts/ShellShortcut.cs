@@ -29,14 +29,15 @@ namespace wyUpdate
         ///
         public ShellShortcut(string linkPath)
         {
-            if (!File.Exists(linkPath))
-                return;
-
+            IPersistFile pf;
             m_sPath = linkPath;
-            m_Link = (IShellLinkW)new ShellLink();
+            m_Link = (IShellLinkW) new ShellLink();
 
-            IPersistFile pf = (IPersistFile)m_Link;
-            pf.Load(linkPath, 0);
+            if (File.Exists(linkPath))
+            {
+                pf = (IPersistFile)m_Link;
+                pf.Load(linkPath, 0);
+            }
         }
 
         //
