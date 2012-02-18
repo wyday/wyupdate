@@ -43,7 +43,8 @@ namespace wyUpdate
                     // the inUseForm can be null when closed from another thread
                     // see the inUseForm.Close();, inUseForm = null; statements below
                     if (inUseForm != null
-                        // cancel the update process
+
+                        // cancel the update if the user can't/won't close the necessary files
                         && inUseForm.CancelUpdate)
                     {
                         CancelUpdate(false, true);
