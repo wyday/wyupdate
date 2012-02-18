@@ -113,7 +113,6 @@ namespace wyUpdate
             {
                 //update the running processes array
                 runningProcesses = rProcs;
-
                 UpdateList();
             }
         }
