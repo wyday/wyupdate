@@ -101,8 +101,8 @@ namespace wyUpdate
 
 
         ScreenDialog m_FilesInUseDialog = new ScreenDialog("Files in use...",
-                                                                   null,
-                                                                   "The following files are in use. These files must be closed before the update can continue.");
+                                                           "These files are used by the following processes:",
+                                                           "The following files are in use. These files must be closed before the update can continue.");
         public ScreenDialog FilesInUseDialog
         {
             get { return ParseScreenDialog(m_FilesInUseDialog); }
@@ -110,8 +110,8 @@ namespace wyUpdate
         }
 
         ScreenDialog m_CancelDialog = new ScreenDialog("Cancel update?",
-                                                               null,
-                                                               "Are you sure you want to exit before the update is complete?");
+                                                       null,
+                                                       "Are you sure you want to exit before the update is complete?");
 
         public ScreenDialog CancelDialog
         {
@@ -398,8 +398,8 @@ namespace wyUpdate
                                                "The following processes need to be closed before updating can continue. Select a process and click Close Process.");
 
         public ScreenDialog FilesInUseDialog = new ScreenDialog("Files in use...",
-                                                                   null,
-                                                                   "The following files are in use. These files must be closed before the update can continue.");
+                                                                "These files are used by the following processes:",
+                                                                "The following files are in use. These files must be closed before the update can continue.");
 
         public ScreenDialog CancelDialog = new ScreenDialog("Cancel update?",
                                                        null,
