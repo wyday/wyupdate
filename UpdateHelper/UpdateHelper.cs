@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
-using wyDay.Controls;
 
 namespace wyUpdate.Common
 {
@@ -51,7 +49,7 @@ namespace wyUpdate.Common
             pipeServer.MessageReceived += pipeServer_MessageReceived;
             pipeServer.ClientDisconnected += pipeServer_ClientDisconnected;
 
-            pipeServer.Start(UpdateHelperData.PipenameFromFilename(Application.ExecutablePath));
+            pipeServer.Start(UpdateHelperData.PipenameFromFilename(VersionTools.SelfLocation));
         }
 
         void pipeServer_ClientDisconnected()
