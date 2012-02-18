@@ -19,10 +19,10 @@ namespace wyUpdate
             if (SelfUpdateState == SelfUpdateState.WillUpdate)
             {
                 //create the filename for the newly copied client
-                psi.FileName = Path.Combine(tempDirectory, Path.GetFileName(Application.ExecutablePath));
+                psi.FileName = Path.Combine(tempDirectory, Path.GetFileName(VersionTools.SelfLocation));
 
                 //copy self to the temp folder
-                File.Copy(Application.ExecutablePath, psi.FileName, true);
+                File.Copy(VersionTools.SelfLocation, psi.FileName, true);
             }
             else if (SelfUpdateState == SelfUpdateState.FullUpdate)
             {
@@ -35,10 +35,10 @@ namespace wyUpdate
 
                 // oldSelfLocation is null when elevation is needed, but no self update is taking place
                 if (string.IsNullOrEmpty(psi.FileName))
-                    psi.FileName = Application.ExecutablePath;
+                    psi.FileName = VersionTools.SelfLocation;
             }
             else
-                psi.FileName = Application.ExecutablePath;
+                psi.FileName = VersionTools.SelfLocation;
 
             if (needElevation)
                 psi.Verb = "runas"; //elevate to administrator
@@ -110,7 +110,7 @@ namespace wyUpdate
             if ((SelfUpdateState == SelfUpdateState.WillUpdate
                 || SelfUpdateState == SelfUpdateState.FullUpdate
                 || SelfUpdateState == SelfUpdateState.Extracted)
-                && !SystemFolders.IsFileInDirectory(userProfileFolder, Application.ExecutablePath))
+                && !SystemFolders.IsFileInDirectory(userProfileFolder, VersionTools.SelfLocation))
             {
                 return false;
             }
