@@ -40,9 +40,14 @@ namespace wyUpdate
 
                     inUseForm.ShowDialog(this);
 
-                    // cancel the update process
-                    if (inUseForm.CancelUpdate)
+                    // the inUseForm can be null when closed from another thread
+                    // see the inUseForm.Close();, inUseForm = null; statements below
+                    if (inUseForm != null
+                        // cancel the update process
+                        && inUseForm.CancelUpdate)
+                    {
                         CancelUpdate(false, true);
+                    }
                 }
 
                 return;
@@ -50,9 +55,9 @@ namespace wyUpdate
 
             if (inUseForm != null)
             {
-                // close the InUse form
+                // get rid of the in-use form
                 inUseForm.Close();
-                inUseForm.Visible = false;
+                inUseForm.Dispose();
                 inUseForm = null;
             }
 
