@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
+using wyUpdate.Common;
 
 namespace wyUpdate
 {
@@ -175,19 +175,15 @@ namespace wyUpdate
 
         public static bool ProcessIsSelf(string processPath)
         {
-            string self = Assembly.GetExecutingAssembly().Location;
+            string self = VersionTools.SelfLocation;
 
 #if DEBUG
-            string vhostFile = self.Substring(0, self.Length - 3) + "vshost.exe"; //for debugging
-
-            if (processPath.ToLower() == vhostFile.ToLower())
+            // exclude the vshost file when debugging
+            if (string.Equals(processPath, self.Substring(0, self.Length - 3) + "vshost.exe", StringComparison.OrdinalIgnoreCase))
                 return true;
 #endif
 
-            if (processPath.ToLower() == self.ToLower())
-                return true;
-
-            return false;
+            return string.Equals(processPath, self, StringComparison.OrdinalIgnoreCase);
         }
 
         static List<Process> ProcessesNeedClosing(List<FileInfo> baseFiles)
