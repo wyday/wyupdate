@@ -26,7 +26,6 @@ namespace wyUpdate
             CancelUpdate();
         }
 
-
         void CancelUpdate(bool ForceClose = false, bool skipConfirmDialog = false)
         {
             if ((frameOn == Frame.Checking || frameOn == Frame.InstallUpdates) && !ForceClose) //if downloading or updating
