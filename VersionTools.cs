@@ -318,7 +318,20 @@ namespace wyUpdate.Common
         {
             return thisVersion ??
                    (thisVersion =
-                    FileVersionInfo.GetVersionInfo(System.Windows.Forms.Application.ExecutablePath).FileVersion);
+                    FileVersionInfo.GetVersionInfo(SelfLocation).FileVersion);
+        }
+
+        // cache the location of the running executable
+        // this is used often and has a pretty heavy overhead.
+        static string selfLocation;
+        public static string SelfLocation
+        {
+            get
+            {
+                return selfLocation ??
+                       (selfLocation =
+                        System.Windows.Forms.Application.ExecutablePath);
+            }
         }
     }
 }
