@@ -217,14 +217,16 @@ namespace wyUpdate.Common
 
         static string MultiStringToString(object strs)
         {
-            if (strs is string)
+            string[] strArr = strs as string[];
+
+            if (strArr == null)
                 return (string)strs;
 
             StringBuilder stb = new StringBuilder();
 
-            for (int i = 0; i < ((string[])strs).Length; i++)
+            for (int i = 0; i < strArr.Length; i++)
             {
-                stb.Append(((string[])strs)[i]);
+                stb.Append(strArr[i]);
 
                 if (i != stb.Length - 1)
                     stb.Append("\r\n");
