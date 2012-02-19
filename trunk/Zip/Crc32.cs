@@ -481,7 +481,7 @@ namespace Ionic.Crc
     /// </remarks>
     public class CrcCalculatorStream : System.IO.Stream, System.IDisposable
     {
-        private static readonly Int64 UnsetLengthLimit = -99;
+        private const Int64 UnsetLengthLimit = -99;
 
         internal System.IO.Stream _innerStream;
         private CRC32 _Crc32;
