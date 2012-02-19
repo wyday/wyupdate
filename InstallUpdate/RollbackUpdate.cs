@@ -373,48 +373,31 @@ namespace wyUpdate
 
         public static void ReadRollbackRegistry(string fileName, List<RegChange> rollbackRegistry)
         {
-            FileStream fs = null;
-
-            try
+            using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
-                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-            }
-            catch (Exception)
-            {
-                if (fs != null)
-                    fs.Close();
+                // Read back the file identification data, if any
+                if (!ReadFiles.IsHeaderValid(fs, "IURURV1"))
+                    throw new Exception("Identifier incorrect");
 
-                throw;
-            }
-
-            // Read back the file identification data, if any
-            if (!ReadFiles.IsHeaderValid(fs, "IURURV1"))
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("Identifier incorrect");
-            }
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
+                byte bType = (byte)fs.ReadByte();
+                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
                 {
-                    case 0x01: //num of registry changes
-                        rollbackRegistry.Capacity = ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x8E: //add RegChange
-                        rollbackRegistry.Add(RegChange.ReadFromStream(fs));
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
+                    switch (bType)
+                    {
+                        case 0x01: //num of registry changes
+                            rollbackRegistry.Capacity = ReadFiles.ReadInt(fs);
+                            break;
+                        case 0x8E: //add RegChange
+                            rollbackRegistry.Add(RegChange.ReadFromStream(fs));
+                            break;
+                        default:
+                            ReadFiles.SkipField(fs, bType);
+                            break;
+                    }
+
+                    bType = (byte)fs.ReadByte();
                 }
-
-                bType = (byte)fs.ReadByte();
             }
-
-            fs.Close();
         }
 
         #endregion Write/Read RollbackRegistry
@@ -439,48 +422,31 @@ namespace wyUpdate
 
         public static void ReadRollbackServices(string fileName, List<string> rollbackList, bool addUnique)
         {
-            FileStream fs = null;
-
-            try
+            using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
-                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-            }
-            catch (Exception)
-            {
-                if (fs != null)
-                    fs.Close();
+                // Read back the file identification data, if any
+                if (!ReadFiles.IsHeaderValid(fs, "IURUSV1"))
+                    throw new Exception("Identifier incorrect");
 
-                throw;
-            }
-
-            // Read back the file identification data, if any
-            if (!ReadFiles.IsHeaderValid(fs, "IURUSV1"))
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("Identifier incorrect");
-            }
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
+                byte bType = (byte)fs.ReadByte();
+                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
                 {
-                    case 0x01: // service to start again
-                        if (addUnique)
-                            ClientFile.AddUniqueString(ReadFiles.ReadString(fs), rollbackList);
-                        else
-                            rollbackList.Add(ReadFiles.ReadString(fs));
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
+                    switch (bType)
+                    {
+                        case 0x01: // service to start again
+                            if (addUnique)
+                                ClientFile.AddUniqueString(ReadFiles.ReadString(fs), rollbackList);
+                            else
+                                rollbackList.Add(ReadFiles.ReadString(fs));
+                            break;
+                        default:
+                            ReadFiles.SkipField(fs, bType);
+                            break;
+                    }
+
+                    bType = (byte)fs.ReadByte();
                 }
-
-                bType = (byte)fs.ReadByte();
             }
-
-            fs.Close();
         }
 
         #region Write/Read RollbackFiles
@@ -519,54 +485,37 @@ namespace wyUpdate
 
         public static void ReadRollbackFiles(string fileName, List<string> rollbackFiles, List<string> rollbackFolders, List<string> createFolders)
         {
-            FileStream fs = null;
-
-            try
+            using (FileStream fs =  new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
-                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-            }
-            catch (Exception)
-            {
-                if (fs != null)
-                    fs.Close();
+                // Read back the file identification data, if any
+                if (!ReadFiles.IsHeaderValid(fs, "IURUFV1"))
+                    throw new Exception("Identifier incorrect");
 
-                throw;
-            }
-
-            // Read back the file identification data, if any
-            if (!ReadFiles.IsHeaderValid(fs, "IURUFV1"))
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("Identifier incorrect");
-            }
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
+                byte bType = (byte)fs.ReadByte();
+                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
                 {
-                    case 0x02: // file to delete
-                        rollbackFiles.Add(ReadFiles.ReadString(fs));
-                        break;
-                    case 0x04: // folder to delete
-                        rollbackFolders.Add(ReadFiles.ReadString(fs));
-                        break;
-                    case 0x06: //folder to create
-                        if (createFolders != null)
-                            createFolders.Add(ReadFiles.ReadString(fs));
-                        else
+                    switch (bType)
+                    {
+                        case 0x02: // file to delete
+                            rollbackFiles.Add(ReadFiles.ReadString(fs));
+                            break;
+                        case 0x04: // folder to delete
+                            rollbackFolders.Add(ReadFiles.ReadString(fs));
+                            break;
+                        case 0x06: //folder to create
+                            if (createFolders != null)
+                                createFolders.Add(ReadFiles.ReadString(fs));
+                            else
+                                ReadFiles.SkipField(fs, bType);
+                            break;
+                        default:
                             ReadFiles.SkipField(fs, bType);
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
+                            break;
+                    }
+
+                    bType = (byte)fs.ReadByte();
                 }
-
-                bType = (byte)fs.ReadByte();
             }
-
-            fs.Close();
         }
 
         #endregion Write/Read RollbackFiles
@@ -603,54 +552,37 @@ namespace wyUpdate
 
         public static void ReadRollbackCOM(string fileName, List<UninstallFileInfo> rollbackList)
         {
-            FileStream fs = null;
-
-            try
+            using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
-                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-            }
-            catch (Exception)
-            {
-                if (fs != null)
-                    fs.Close();
+                // Read back the file identification data, if any
+                if (!ReadFiles.IsHeaderValid(fs, "IURUCV1"))
+                    throw new Exception("Identifier incorrect");
 
-                throw;
-            }
+                UninstallFileInfo tempUpdateFile = new UninstallFileInfo();
 
-            // Read back the file identification data, if any
-            if (!ReadFiles.IsHeaderValid(fs, "IURUCV1"))
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-                throw new Exception("Identifier incorrect");
-            }
-
-            UninstallFileInfo tempUpdateFile = new UninstallFileInfo();
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
+                byte bType = (byte)fs.ReadByte();
+                while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
                 {
-                    case 0x01:
-                        tempUpdateFile.Path = ReadFiles.ReadString(fs);
-                        break;
-                    case 0x02:
-                        tempUpdateFile.RegisterCOMDll = (COMRegistration)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x9B://end of file
-                        rollbackList.Add(tempUpdateFile);
-                        tempUpdateFile = new UninstallFileInfo();
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
+                    switch (bType)
+                    {
+                        case 0x01:
+                            tempUpdateFile.Path = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x02:
+                            tempUpdateFile.RegisterCOMDll = (COMRegistration)ReadFiles.ReadInt(fs);
+                            break;
+                        case 0x9B://end of file
+                            rollbackList.Add(tempUpdateFile);
+                            tempUpdateFile = new UninstallFileInfo();
+                            break;
+                        default:
+                            ReadFiles.SkipField(fs, bType);
+                            break;
+                    }
+
+                    bType = (byte)fs.ReadByte();
                 }
-
-                bType = (byte)fs.ReadByte();
             }
-
-            fs.Close();
         }
 
 
