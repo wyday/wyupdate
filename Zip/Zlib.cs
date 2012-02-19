@@ -468,9 +468,9 @@ namespace Ionic.Zlib
     public sealed class Adler
     {
         // largest prime smaller than 65536
-        private static readonly uint BASE = 65521;
+        private const uint BASE = 65521;
         // NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
-        private static readonly int NMAX = 5552;
+        private const int NMAX = 5552;
 
 
 #pragma warning disable 3001
