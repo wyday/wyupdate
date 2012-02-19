@@ -212,7 +212,6 @@ namespace wyUpdate
         /// </summary>
         public int Progress
         {
-            get { return m_Progress; }
             set
             {
                 m_Progress = value;
@@ -299,46 +298,6 @@ namespace wyUpdate
                     //Invalidate the appropriate region
                     Invalidate(new Rectangle(m_LeftPad, progressBar.Bottom, Width - m_LeftPad - m_RightPad, Height - progressBar.Bottom));
                 }
-            }
-        }
-
-        public string Title
-        {
-            get { return m_Title; }
-            set
-            {
-                m_Title = value;
-                Invalidate();
-            }
-        }
-
-        public string Description
-        {
-            get { return m_Description; }
-            set
-            {
-                m_Description = value;
-                Invalidate();
-            }
-        }
-
-        public string Body
-        {
-            get { return m_Body; }
-            set
-            {
-                m_Body = value;
-                Invalidate();
-            }
-        }
-
-        public string BottomText
-        {
-            get { return m_BottomText; }
-            set
-            {
-                m_BottomText = value;
-                Invalidate();
             }
         }
 
