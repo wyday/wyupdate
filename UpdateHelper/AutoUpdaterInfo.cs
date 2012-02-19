@@ -7,7 +7,7 @@ using wyUpdate.Common;
 
 #if WPF
 using System.Reflection;
-#else
+#elif !CLIENT
 using System.Windows.Forms;
 #endif
 
@@ -185,6 +185,8 @@ namespace wyDay.Controls
                 {
 #if WPF
                     return Path.GetFileName(Assembly.GetEntryAssembly().Location);
+#elif CLIENT
+                    return Path.GetFileName(VersionTools.SelfLocation);
 #else
                     return Path.GetFileName(Application.ExecutablePath);
 #endif
