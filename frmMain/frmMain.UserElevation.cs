@@ -82,6 +82,10 @@ namespace wyUpdate
             return true;
         }
 
+        //TODO: perhaps use some more flexible method for detecting limited users
+        //      given permission to access certain folders they don't normally have access
+        //      to. See: http://stackoverflow.com/questions/1410127/c-sharp-test-if-user-has-write-access-to-a-folder
+        //      The same concept can be applied to the registry.
         bool OnlyUpdatingLocalUser()
         {
             // if installing
