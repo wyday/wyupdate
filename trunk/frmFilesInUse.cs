@@ -14,28 +14,12 @@ namespace wyUpdate
         struct RM_UNIQUE_PROCESS
         {
             public int dwProcessId;
-            public FILETIME ProcessStartTime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME ProcessStartTime;
         }
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        struct RM_PROCESS_INFO
-        {
-            public RM_UNIQUE_PROCESS Process;
-
-            [MarshalAs(UnmanagedType.ByValTStr,
-                SizeConst = CCH_RM_MAX_APP_NAME + 1)]
-            public string strAppName;
-
-            [MarshalAs(UnmanagedType.ByValTStr,
-                SizeConst = CCH_RM_MAX_SVC_NAME + 1)]
-            public string strServiceShortName;
-
-            public RM_APP_TYPE ApplicationType;
-            public uint AppStatus;
-            public uint TSSessionId;
-            [MarshalAs(UnmanagedType.Bool)]
-            public bool bRestartable;
-        }
+        const int RmRebootReasonNone = 0;
+        const int CCH_RM_MAX_APP_NAME = 255;
+        const int CCH_RM_MAX_SVC_NAME = 63;
 
         enum RM_APP_TYPE
         {
@@ -46,6 +30,24 @@ namespace wyUpdate
             RmExplorer = 4,
             RmConsole = 5,
             RmCritical = 1000
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        struct RM_PROCESS_INFO
+        {
+            public RM_UNIQUE_PROCESS Process;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCH_RM_MAX_APP_NAME + 1)]
+            public string strAppName;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCH_RM_MAX_SVC_NAME + 1)]
+            public string strServiceShortName;
+
+            public RM_APP_TYPE ApplicationType;
+            public uint AppStatus;
+            public uint TSSessionId;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool bRestartable;
         }
 
         [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)]
@@ -69,10 +71,6 @@ namespace wyUpdate
                                     ref uint pnProcInfo,
                                     [In, Out] RM_PROCESS_INFO[] rgAffectedApps,
                                     ref uint lpdwRebootReasons);
-
-        const int RmRebootReasonNone = 0;
-        const int CCH_RM_MAX_APP_NAME = 255;
-        const int CCH_RM_MAX_SVC_NAME = 63;
 
 
         private const int SidePadding = 12;
