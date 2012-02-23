@@ -11,43 +11,31 @@ namespace wyUpdate.Common
 
     public class UpdateFile
     {
-        //full path of file for creating zip file
+        // full path of file for creating zip file
         public string Filename;
-
         public string RelativePath;
-
-        //execute the file?
-        public bool Execute;
-
-        //if so, before or after update?
-        public bool ExBeforeUpdate;
-
-        //command line arguents
-        public string CommandLineArgs;
-
-        public bool WaitForExecution;
-
-        public bool RollbackOnNonZeroRet;
-
-        public List<int> RetExceptions;
-
-        //is it a .NET assembly?
-        public bool IsNETAssembly;
-
-        public CPUVersion CPUVersion;
-
-        public FrameworkVersion FrameworkVersion;
-
-        //Delta Patching Particulars:
         public string DeltaPatchRelativePath;
-
-        public bool DeleteFile;
 
         public long NewFileAdler32;
 
-        public ProcessWindowStyle ProcessWindowStyle;
 
+        // execute the file?
+        public bool Execute;
+        public string CommandLineArgs;
+        public bool ExBeforeUpdate;
+        public bool WaitForExecution;
+        public bool RollbackOnNonZeroRet;
+        public List<int> RetExceptions;
+        public ProcessWindowStyle ProcessWindowStyle;
         public ElevationType ElevationType;
+
+
+        // is it a .NET assembly?
+        public bool IsNETAssembly;
+        public CPUVersion CPUVersion;
+        public FrameworkVersion FrameworkVersion;
+
+        public bool DeleteFile;
 
         public COMRegistration RegisterCOMDll;
 
