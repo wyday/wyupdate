@@ -16,149 +16,143 @@ namespace wyUpdate.Common
         public List<string> ServicesToStop = new List<string>();
         public List<StartService> ServicesToStart = new List<StartService>();
 
-#if CLIENT
-        public static UpdateDetails Load(string fileName)
+#if CLIENT || UPDATE_READER
+
+#if UPDATE_READER
+        public static UpdateDetails Load(Stream fs)
+#else
+        public static UpdateDetails Load(string fileName)   
+#endif
         {
             UpdateDetails updtDetails = new UpdateDetails();
 
-            FileStream fs = null;
-
             try
             {
-                fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+#if CLIENT
+                using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+#endif
+                {
+                    // Read back the file identification data, if any
+                    if (!ReadFiles.IsHeaderValid(fs, "IUUDFV2"))
+                        throw new ArgumentException("Incorrect file identifier.");
+
+                    UpdateFile tempUpdateFile = new UpdateFile();
+                    int lastStartServiceArgOn = 0;
+
+                    byte bType = (byte)fs.ReadByte();
+                    while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
+                    {
+                        switch (bType)
+                        {
+                            case 0x20://num reg changes
+                                updtDetails.RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
+                                break;
+                            case 0x21://num file infos
+                                updtDetails.UpdateFiles = new List<UpdateFile>(ReadFiles.ReadInt(fs));
+                                break;
+                            case 0x8E:
+                                updtDetails.RegistryModifications.Add(RegChange.ReadFromStream(fs));
+                                break;
+                            case 0x30:
+                                updtDetails.PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                                break;
+                            case 0x31:
+                                updtDetails.PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                                break;
+                            case 0x32: //service to stop
+                                updtDetails.ServicesToStop.Add(ReadFiles.ReadString(fs));
+                                break;
+                            case 0x33: //service to start
+                                updtDetails.ServicesToStart.Add(new StartService(ReadFiles.ReadString(fs)));
+                                break;
+                            case 0x34: // number of start arguments for the last service
+                                updtDetails.ServicesToStart[updtDetails.ServicesToStart.Count - 1].Arguments =
+                                    new string[ReadFiles.ReadInt(fs)];
+                                lastStartServiceArgOn = 0;
+                                break;
+                            case 0x35:
+                                updtDetails.ServicesToStart[updtDetails.ServicesToStart.Count - 1].Arguments[
+                                    lastStartServiceArgOn] = ReadFiles.ReadString(fs);
+                                lastStartServiceArgOn++;
+                                break;
+                            case 0x40:
+                                tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
+                                break;
+                            case 0x41:
+                                tempUpdateFile.Execute = ReadFiles.ReadBool(fs);
+                                break;
+                            case 0x42:
+                                tempUpdateFile.ExBeforeUpdate = ReadFiles.ReadBool(fs);
+                                break;
+                            case 0x43:
+                                tempUpdateFile.CommandLineArgs = ReadFiles.ReadDeprecatedString(fs);
+                                break;
+                            case 0x44:
+                                tempUpdateFile.IsNETAssembly = ReadFiles.ReadBool(fs);
+                                break;
+                            case 0x45:
+                                tempUpdateFile.WaitForExecution = ReadFiles.ReadBool(fs);
+                                break;
+                            case 0x8F:
+                                tempUpdateFile.RollbackOnNonZeroRet = true;
+                                break;
+                            case 0x4D:
+                                if (tempUpdateFile.RetExceptions == null)
+                                    tempUpdateFile.RetExceptions = new List<int>();
+
+                                tempUpdateFile.RetExceptions.Add(ReadFiles.ReadInt(fs));
+                                break;
+                            case 0x46:
+                                tempUpdateFile.DeleteFile = ReadFiles.ReadBool(fs);
+                                break;
+                            case 0x47:
+                                tempUpdateFile.DeltaPatchRelativePath = ReadFiles.ReadDeprecatedString(fs);
+                                break;
+                            case 0x48:
+                                tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
+                                break;
+                            case 0x49:
+                                tempUpdateFile.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
+                                break;
+                            case 0x4A:
+                                tempUpdateFile.ProcessWindowStyle = (System.Diagnostics.ProcessWindowStyle)ReadFiles.ReadInt(fs);
+                                break;
+                            case 0x4E:
+                                tempUpdateFile.ElevationType = (ElevationType)ReadFiles.ReadInt(fs);
+                                break;
+                            case 0x4B:
+                                tempUpdateFile.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
+                                break;
+                            case 0x4C:
+                                tempUpdateFile.RegisterCOMDll = (COMRegistration)ReadFiles.ReadInt(fs);
+                                break;
+                            case 0x9B://end of file
+                                updtDetails.UpdateFiles.Add(tempUpdateFile);
+                                tempUpdateFile = new UpdateFile();
+                                break;
+                            case 0x8D:
+                                updtDetails.ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
+                                break;
+                            case 0x60:
+                                updtDetails.FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
+                                break;
+                            default:
+                                ReadFiles.SkipField(fs, bType);
+                                break;
+                        }
+
+                        bType = (byte)fs.ReadByte();
+                    }
+                }
             }
             catch (Exception ex)
             {
-                if (fs != null)
-                    fs.Close();
-
-                throw new ArgumentException("The update details file failed to open.\n\nFull details:\n\n" + ex.Message);
+                throw new Exception("The update details file failed to open.\n\nFull details: " + ex.Message);
             }
-
-            // Read back the file identification data, if any
-            if (!ReadFiles.IsHeaderValid(fs, "IUUDFV2"))
-            {
-                //free up the file so it can be deleted
-                fs.Close();
-
-                throw new ArgumentException("The update details file failed to open because it has an incorrect file identifier.");
-            }
-
-            UpdateFile tempUpdateFile = new UpdateFile();
-            int lastStartServiceArgOn = 0;
-
-            byte bType = (byte)fs.ReadByte();
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
-                {
-                    case 0x20://num reg changes
-                        updtDetails.RegistryModifications = new List<RegChange>(ReadFiles.ReadInt(fs));
-                        break;
-                    case 0x21://num file infos
-                        updtDetails.UpdateFiles = new List<UpdateFile>(ReadFiles.ReadInt(fs));
-                        break;
-                    case 0x8E:
-                        updtDetails.RegistryModifications.Add(RegChange.ReadFromStream(fs));
-                        break;
-                    case 0x30:
-                        updtDetails.PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
-                        break;
-                    case 0x31:
-                        updtDetails.PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
-                        break;
-                    case 0x32: //service to stop
-                        updtDetails.ServicesToStop.Add(ReadFiles.ReadString(fs));
-                        break;
-                    case 0x33: //service to start
-                        updtDetails.ServicesToStart.Add(new StartService(ReadFiles.ReadString(fs)));
-                        break;
-                    case 0x34: // number of start arguments for the last service
-                        updtDetails.ServicesToStart[updtDetails.ServicesToStart.Count - 1].Arguments =
-                            new string[ReadFiles.ReadInt(fs)];
-                        lastStartServiceArgOn = 0;
-                        break;
-                    case 0x35:
-                        updtDetails.ServicesToStart[updtDetails.ServicesToStart.Count - 1].Arguments[
-                            lastStartServiceArgOn] = ReadFiles.ReadString(fs);
-                        lastStartServiceArgOn++;
-                        break;
-                    case 0x40:
-                        tempUpdateFile.RelativePath = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x41:
-                        tempUpdateFile.Execute = ReadFiles.ReadBool(fs);
-                        break;
-                    case 0x42:
-                        tempUpdateFile.ExBeforeUpdate = ReadFiles.ReadBool(fs);
-                        break;
-                    case 0x43:
-                        tempUpdateFile.CommandLineArgs = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x44:
-                        tempUpdateFile.IsNETAssembly = ReadFiles.ReadBool(fs);
-                        break;
-                    case 0x45:
-                        tempUpdateFile.WaitForExecution = ReadFiles.ReadBool(fs);
-                        break;
-                    case 0x8F:
-                        tempUpdateFile.RollbackOnNonZeroRet = true;
-                        break;
-                    case 0x4D:
-                        if (tempUpdateFile.RetExceptions == null)
-                            tempUpdateFile.RetExceptions = new List<int>();
-
-                        tempUpdateFile.RetExceptions.Add(ReadFiles.ReadInt(fs));
-                        break;
-                    case 0x46:
-                        tempUpdateFile.DeleteFile = ReadFiles.ReadBool(fs);
-                        break;
-                    case 0x47:
-                        tempUpdateFile.DeltaPatchRelativePath = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x48:
-                        tempUpdateFile.NewFileAdler32 = ReadFiles.ReadLong(fs);
-                        break;
-                    case 0x49:
-                        tempUpdateFile.CPUVersion = (CPUVersion)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x4A:
-                        tempUpdateFile.ProcessWindowStyle = (System.Diagnostics.ProcessWindowStyle)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x4E:
-                        tempUpdateFile.ElevationType = (ElevationType)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x4B:
-                        tempUpdateFile.FrameworkVersion = (FrameworkVersion)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x4C:
-                        tempUpdateFile.RegisterCOMDll = (COMRegistration)ReadFiles.ReadInt(fs);
-                        break;
-                    case 0x9B://end of file
-                        updtDetails.UpdateFiles.Add(tempUpdateFile);
-                        tempUpdateFile = new UpdateFile();
-                        break;
-                    case 0x8D:
-                        updtDetails.ShortcutInfos.Add(ShortcutInfo.LoadFromStream(fs));
-                        break;
-                    case 0x60:
-                        updtDetails.FoldersToDelete.Add(ReadFiles.ReadDeprecatedString(fs));
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
-                }
-
-                bType = (byte)fs.ReadByte();
-            }
-
-            fs.Close();
 
             return updtDetails;
         }
-#endif
-
-#if DESIGNER
+#else
         // count # NGEN or execute files
         int CountFileInfos()
         {
