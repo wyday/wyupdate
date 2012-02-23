@@ -1,17 +1,12 @@
-﻿public enum CPUVersion
+﻿/// <summary>The platform target the .NET assembly was compiled as.</summary>
+public enum CPUVersion
 {
-    /// <summary>
-    /// A .NET assembly that is compiled with the AnyCPU flag
-    /// </summary>
+    /// <summary>A .NET assembly that is compiled with the AnyCPU flag</summary>
     AnyCPU = 0,
 
-    /// <summary>
-    /// A file that's built for x86 machines
-    /// </summary>
+    /// <summary>A file that's built for x86 machines</summary>
     x86 = 1,
 
-    /// <summary>
-    /// A file that's built for x64 machines
-    /// </summary>
+    /// <summary>A file that's built for x64 machines</summary>
     x64 = 2
 }
