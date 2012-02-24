@@ -354,9 +354,7 @@ namespace wyUpdate.Downloader
 
         static readonly string[] units = new[] { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 
-        /// <summary>
-        /// Constructs a download speed indicator string.
-        /// </summary>
+        /// <summary>Constructs a download speed indicator string.</summary>
         /// <param name="bytes">Bytes per second transfer rate.</param>
         /// <param name="time">Is a time value (e.g. bytes/second)</param>
         /// <returns>String represenation of the transfer rate in bytes/sec, KB/sec, MB/sec, etc.</returns>
