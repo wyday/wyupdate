@@ -402,8 +402,8 @@ namespace wyUpdate
                                                                 "The following files are in use. These files must be closed before the update can continue.");
 
         public ScreenDialog CancelDialog = new ScreenDialog("Cancel update?",
-                                                       null,
-                                                       "Are you sure you want to exit before the update is complete?");
+                                                            null,
+                                                            "Are you sure you want to exit before the update is complete?");
 
 
         public string ClosePrc = "Close Process";
@@ -424,38 +424,32 @@ namespace wyUpdate
 
 
         // Update Screens
-        public ScreenDialog
-            Checking = new ScreenDialog("Searching for updates",
+        public ScreenDialog Checking = new ScreenDialog("Searching for updates",
                                           "wyUpdate is searching for updates.",
                                           "wyUpdate is searching for updates to %product%. This process could take a few minutes.");
 
         public ScreenDialog UpdateInfo = new ScreenDialog("Update Information",
-                                                             "Changes in the latest version of %product%.",
-                                                             "The version of %product% installed on this computer is %old_version%. The latest version is %new_version%. Listed below are the changes and improvements:");
+                                                          "Changes in the latest version of %product%.",
+                                                          "The version of %product% installed on this computer is %old_version%. The latest version is %new_version%. Listed below are the changes and improvements:");
 
         public ScreenDialog DownInstall = new ScreenDialog("Downloading & Installing updates",
-                                                              "Updating %product% to the latest version.",
-                                                              "wyUpdate is downloading and installing updates for %product%. This process could take a few minutes.");
+                                                           "Updating %product% to the latest version.",
+                                                           "wyUpdate is downloading and installing updates for %product%. This process could take a few minutes.");
 
         public ScreenDialog Uninstall = new ScreenDialog("Uninstalling files, folders, and registry",
-                                                            "Uninstalling files and registry for %product%.",
-                                                            "wyUpdate is uninstalling files and registry created when updates were applied to %product%.");
+                                                         "Uninstalling files and registry for %product%.",
+                                                         "wyUpdate is uninstalling files and registry created when updates were applied to %product%.");
 
-        public ScreenDialog SuccessUpdate = new ScreenDialog("Update successful!",
-                                                                null,
-                                                                "%product% has been successfully updated to version %new_version%");
+        public ScreenDialog SuccessUpdate = new ScreenDialog("Update successful!", null,
+                                                             "%product% has been successfully updated to version %new_version%");
 
-        public ScreenDialog AlreadyLatest = new ScreenDialog("Latest version already installed",
-                                                                null,
-                                                                "%product% is currently up-to-date. Remember to check for new updates frequently.");
+        public ScreenDialog AlreadyLatest = new ScreenDialog("Latest version already installed", null,
+                                                             "%product% is currently up-to-date. Remember to check for new updates frequently.");
 
-        public ScreenDialog NoUpdateToLatest = new ScreenDialog("No update to the latest version",
-                                                                   null,
-                                                                   "There is a newer version of %product% (version %new_version%), but no update available from the version you currently have installed (version %old_version%).");
+        public ScreenDialog NoUpdateToLatest = new ScreenDialog("No update to the latest version", null,
+                                                                "There is a newer version of %product% (version %new_version%), but no update available from the version you currently have installed (version %old_version%).");
 
-        public ScreenDialog UpdateError = new ScreenDialog("An error occurred",
-                                                              null,
-                                                              null);
+        public ScreenDialog UpdateError = new ScreenDialog("An error occurred", null, null);
 
 
         // Bottom instructions
