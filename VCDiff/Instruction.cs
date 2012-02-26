@@ -1,8 +1,6 @@
 namespace wyUpdate.Compression.Vcdiff
 {
-	/// <summary>
-	/// Contains the information for a single instruction
-	/// </summary>
+	/// <summary>Contains the information for a single instruction.</summary>
 	internal struct Instruction
 	{
 		readonly InstructionType type;
@@ -29,8 +27,6 @@ namespace wyUpdate.Compression.Vcdiff
 			this.size = size;
 			this.mode = mode;
 		}
-
-
 	}
 }
 

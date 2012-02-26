@@ -3,9 +3,7 @@ using System.IO;
 
 namespace wyUpdate.Compression.Vcdiff
 {
-	/// <summary>
-	/// Cache used for encoding/decoding addresses.
-	/// </summary>
+	/// <summary>Cache used for encoding/decoding addresses.</summary>
 	internal sealed class AddressCache
 	{
 		const byte SelfMode = 0;
@@ -36,42 +34,36 @@ namespace wyUpdate.Compression.Vcdiff
 			addressStream = new MemoryStream(addresses, false);
 		}
 
-		internal int DecodeAddress (int here, byte mode)
+		internal int DecodeAddress(int here, byte mode)
 		{
 			int ret;
-			if (mode==SelfMode)
-			{
-				ret = IOHelper.ReadBigEndian7BitEncodedInt(addressStream);
-			}
-			else if (mode==HereMode)
-			{
-				ret = here - IOHelper.ReadBigEndian7BitEncodedInt(addressStream);
-			}
-			else if (mode-2 < nearSize) // Near cache
-			{
-				ret = near[mode-2] + IOHelper.ReadBigEndian7BitEncodedInt(addressStream);
-			}
-			else // Same cache
-			{
-				int m = mode-(2+nearSize);
-				ret = same[(m*256)+IOHelper.CheckedReadByte(addressStream)];
-			}
 
-			Update (ret);
+		    if (mode == SelfMode)
+		        ret = IOHelper.ReadBigEndian7BitEncodedInt(addressStream);
+		    else if (mode == HereMode)
+		        ret = here - IOHelper.ReadBigEndian7BitEncodedInt(addressStream);
+		    else if (mode - 2 < nearSize) // Near cache
+		        ret = near[mode - 2] + IOHelper.ReadBigEndian7BitEncodedInt(addressStream);
+		    else // Same cache
+		    {
+		        int m = mode - (2 + nearSize);
+		        ret = same[(m*256) + IOHelper.CheckedReadByte(addressStream)];
+		    }
+
+		    Update(ret);
 			return ret;
 		}
 
-		void Update (int address)
+		void Update(int address)
 		{
 			if (nearSize > 0)
 			{
 				near[nextNearSlot] = address;
 				nextNearSlot=(nextNearSlot+1)%nearSize;
 			}
-			if (sameSize > 0)
-			{
-				same[address%(sameSize*256)] = address;
-			}
+
+		    if (sameSize > 0)
+		        same[address%(sameSize*256)] = address;
 		}
 	}
 }

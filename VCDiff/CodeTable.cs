@@ -7,25 +7,15 @@ namespace wyUpdate.Compression.Vcdiff
 	/// </summary>
 	internal sealed class CodeTable
 	{
-		/// <summary>
-		/// Default code table specified in RFC 3284.
-		/// </summary>
+		/// <summary>Default code table specified in RFC 3284.</summary>
 		static internal CodeTable Default = BuildDefaultCodeTable();
 
-		/// <summary>
-		/// Array of entries in the code table
-		/// </summary>
-		Instruction[,] entries = new Instruction[256,2];
+		/// <summary>Array of entries in the code table</summary>
+		readonly Instruction[,] entries = new Instruction[256,2];
 
-		/// <summary>
-		/// 
-		/// </summary>
 		internal Instruction this[int i, int j]
 		{
-			get
-			{
-				return entries[i, j];
-			}
+			get { return entries[i, j]; }
 		}
 
 		internal CodeTable(byte[] bytes)
@@ -39,31 +29,23 @@ namespace wyUpdate.Compression.Vcdiff
 
 		internal CodeTable(Instruction[,] entries)
 		{
-			if (entries==null)
-			{
-				throw new ArgumentNullException("entries");
-			}
-			if (entries.Rank != 2)
-			{
-				throw new ArgumentException ("Array must be rectangular.", "entries");
-			}
-			if (entries.GetLength(0) != 256)
-			{
-				throw new ArgumentException ("Array must have outer length 256.", "entries");
-			}
-			if (entries.GetLength(1) != 2)
-			{
-				throw new ArgumentException ("Array must have inner length 256.", "entries");
-			}
-			Array.Copy (entries, 0, this.entries, 0, 512);
+		    if (entries == null)
+		        throw new ArgumentNullException("entries");
+
+		    if (entries.Rank != 2)
+		        throw new ArgumentException("Array must be rectangular.", "entries");
+
+		    if (entries.GetLength(0) != 256)
+		        throw new ArgumentException("Array must have outer length 256.", "entries");
+
+		    if (entries.GetLength(1) != 2)
+		        throw new ArgumentException("Array must have inner length 256.", "entries");
+
+		    Array.Copy(entries, 0, this.entries, 0, 512);
 		}
 
-		/// <summary>
-		/// Builds the default code table specified in RFC 3284
-		/// </summary>
-		/// <returns>
-		/// The default code table.
-		/// </returns>
+		/// <summary>Builds the default code table specified in RFC 3284</summary>
+		/// <returns>The default code table.</returns>
 		static CodeTable BuildDefaultCodeTable()
 		{
 			// Defaults are NoOps with size and mode 0.
