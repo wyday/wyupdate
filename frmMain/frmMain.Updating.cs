@@ -248,6 +248,10 @@ namespace wyUpdate
                                 }
                                 catch { }
                             }
+
+                            // If we're starting a process on error, then start it
+                            if (StartOnErr != null)
+                                LimitedProcess.Start(StartOnErr, StartOnErrArgs);
                         }
 
                         WindowState = FormWindowState.Minimized;
@@ -333,7 +337,9 @@ namespace wyUpdate
                     Close();
                     return;
                 }
-                else if (UpdatingFromService || update.CloseOnSuccess && frameNum == Frame.UpdatedSuccessfully)
+                else if (UpdatingFromService
+                        || (update.CloseOnSuccess && frameNum == Frame.UpdatedSuccessfully)
+                        || (StartOnErr != null && frameNum == Frame.Error))
                 {
                     // If we're updating from a service (i.e. no-ui), then close on *either* success or failure.
                     // If we're in normal mode but the user has specified they want "CloseOnSuccess", then do it.
@@ -345,6 +351,10 @@ namespace wyUpdate
                         else
                             log.Write(error + " - " + errorDetails);
                     }
+
+                    // If we're starting a process on error, then start it
+                    if (StartOnErr != null)
+                        LimitedProcess.Start(StartOnErr, StartOnErrArgs);
 
                     Close();
                     return;
@@ -386,7 +396,7 @@ namespace wyUpdate
                     break;
                 case UpdateOn.ExtractSelfUpdate:
 
-                    oldSelfLocation = Application.ExecutablePath;
+                    oldSelfLocation = VersionTools.SelfLocation;
 
                     installUpdate = new InstallUpdate
                                         {

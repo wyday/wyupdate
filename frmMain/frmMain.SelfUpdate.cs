@@ -85,6 +85,12 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(customProxyDomain))
                     WriteFiles.WriteString(fs, 0x12, customProxyDomain);
 
+                if (!string.IsNullOrEmpty(StartOnErr))
+                    WriteFiles.WriteString(fs, 0x13, StartOnErr);
+
+                if (!string.IsNullOrEmpty(StartOnErrArgs))
+                    WriteFiles.WriteString(fs, 0x14, StartOnErrArgs);
+
                 fs.WriteByte(0xFF);
             }
         }
@@ -189,6 +195,12 @@ namespace wyUpdate
                             break;
                         case 0x12:
                             customProxyDomain = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x13:
+                            StartOnErr = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x14:
+                            StartOnErrArgs = ReadFiles.ReadString(fs);
                             break;
                         default:
                             ReadFiles.SkipField(fs, bType);

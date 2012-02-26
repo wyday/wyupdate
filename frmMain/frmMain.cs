@@ -85,6 +85,9 @@ namespace wyUpdate
         bool SkipUpdateInfo;
         string OutputInfo;
 
+        string StartOnErr;
+        string StartOnErrArgs;
+
         /// <summary>This is only set for standalone service updating (not updating a service via the AutomaticUpdater)</summary>
         bool UpdatingFromService;
 
@@ -98,7 +101,7 @@ namespace wyUpdate
         string customProxyUser;
         /// <summary>Custom proxy password. Command line switch -proxyp.</summary>
         string customProxyPassword;
-        /// <summary>Custom proxy domain. Command line switch -proxyd. </summary>
+        /// <summary>Custom proxy domain. Command line switch -proxyd.</summary>
         string customProxyDomain;
 
         #endregion Private variables
@@ -480,6 +483,9 @@ namespace wyUpdate
 
                     if (commands["skipinfo"] != null)
                         SkipUpdateInfo = true;
+
+                    StartOnErr = commands["startonerr"];
+                    StartOnErrArgs = commands["startonerra"];
                 }
 
                 // client data file
