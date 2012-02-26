@@ -4,58 +4,35 @@ using wyUpdate.Common;
 
 namespace wyUpdate.Compression.Vcdiff
 {
-	/// <summary>
-	/// Decoder for VCDIFF (RFC 3284) streams.
-	/// </summary>
+	/// <summary>Decoder for VCDIFF (RFC 3284) streams.</summary>
 	public sealed class VcdiffDecoder
 	{
-		#region Fields
-		/// <summary>
-		/// Reader containing original data, if any. May be null.
-		/// If non-null, will be readable and seekable.
-		/// </summary>
+		/// <summary>Reader containing original data, if any. May be null. If non-null, will be readable and seekable.</summary>
 		Stream original;
 
-		/// <summary>
-		/// Stream containing delta data. Will be readable.
-		/// </summary>
+		/// <summary>Stream containing delta data. Will be readable.</summary>
 		Stream delta;
 		
-		/// <summary>
-		/// Stream containing target data. Will be readable,
-		/// writable and seekable.
-		/// </summary>
+		/// <summary>Stream containing target data. Will be readable, writable and seekable.</summary>
 		Stream output;
-
 
         Adler32 adler = new Adler32();
 
-		/// <summary>
-		/// Code table to use for decoding.
-		/// </summary>
+		/// <summary>Code table to use for decoding.</summary>
 		CodeTable codeTable = CodeTable.Default;
 
-		/// <summary>
-		/// Address cache to use when decoding; must be reset before decoding each window.
-		/// Default to the default size.
-		/// </summary>
+		/// <summary>Address cache to use when decoding; must be reset before decoding each window. Default to the default size.</summary>
 		AddressCache cache = new AddressCache(4, 3);
-		#endregion
 
-		#region Constructor
-		/// <summary>
-		/// Sole constructor; private to prevent instantiation from
-		/// outside the class.
-		/// </summary>
+
+		/// <summary>Sole constructor; private to prevent instantiation from outside the class.</summary>
 		VcdiffDecoder(Stream original, Stream delta, Stream output)
 		{
 			this.original = original;
 			this.delta = delta;
 			this.output = output;
 		}
-		#endregion
 
-		#region Public interface
 		/// <summary>
 		/// Decodes an original stream and a delta stream, writing to a target stream.
 		/// The original stream may be null, so long as the delta stream never
@@ -72,7 +49,7 @@ namespace wyUpdate.Compression.Vcdiff
 		/// <param name="delta">Stream containing delta data.</param>
 		/// <param name="output">Stream to write resulting data to.</param>
 		/// <param name="adler">The adler32 value of the output stream</param>
-		public static void Decode (Stream original, Stream delta, Stream output, long adler)
+		public static void Decode(Stream original, Stream delta, Stream output, long adler)
 		{
 			#region Simple argument checking
 			if (original != null && (!original.CanRead || !original.CanSeek))
@@ -105,12 +82,8 @@ namespace wyUpdate.Compression.Vcdiff
             if (adler != 0 && adler != instance.adler.Value)
                 throw new Exception();
 		}
-		#endregion
 
-		#region Private methods
-		/// <summary>
-		/// Top-level decoding method. When this method exits, all decoding has been performed.
-		/// </summary>
+		/// <summary>Top-level decoding method. When this method exits, all decoding has been performed.</summary>
 		void Decode()
 		{
 			ReadHeader();
@@ -118,10 +91,7 @@ namespace wyUpdate.Compression.Vcdiff
 			while (DecodeWindow());
 		}
 
-		/// <summary>
-		/// Read the header, including any custom code table. The delta stream is left
-		/// positioned at the start of the first window.
-		/// </summary>
+		/// <summary>Read the header, including any custom code table. The delta stream is left positioned at the start of the first window.</summary>
 		void ReadHeader()
 		{
 			byte[] header = IOHelper.CheckedReadBytes(delta, 4);
@@ -165,9 +135,7 @@ namespace wyUpdate.Compression.Vcdiff
 			}
 		}
 
-		/// <summary>
-		/// Reads the custom code table, if there is one
-		/// </summary>
+		/// <summary>Reads the custom code table, if there is one</summary>
 		void ReadCodeTable()
 		{
 			// The length given includes the nearSize and sameSize bytes
@@ -193,14 +161,9 @@ namespace wyUpdate.Compression.Vcdiff
 			cache = new AddressCache(nearSize, sameSize);
 		}
 
-		/// <summary>
-		/// Reads and decodes a window, returning whether or not there was
-		/// any more data to read.
-		/// </summary>
-		/// <returns>
-		/// Whether or not the delta stream had reached the end of its data.
-		/// </returns>
-		bool DecodeWindow ()
+		/// <summary>Reads and decodes a window, returning whether or not there was any more data to read.</summary>
+		/// <returns>Whether or not the delta stream had reached the end of its data.</returns>
+		bool DecodeWindow()
 		{
 			int windowIndicator = delta.ReadByte();
 			// Have we finished?
@@ -367,6 +330,5 @@ namespace wyUpdate.Compression.Vcdiff
             
 			return true;
 		}
-		#endregion
 	}
 }

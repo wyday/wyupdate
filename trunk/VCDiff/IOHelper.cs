@@ -29,14 +29,12 @@ namespace wyUpdate.Compression.Vcdiff
 			return ret;
 		}
 
-		internal static byte CheckedReadByte (Stream stream)
+		internal static byte CheckedReadByte(Stream stream)
 		{
 			int b = stream.ReadByte();
-			if (b==-1)
-			{
-				throw new IOException ("Expected to be able to read a byte.");
-			}
-			return (byte)b;
+		    if (b == -1)
+		        throw new IOException("Expected to be able to read a byte.");
+		    return (byte)b;
 		}
 
 		internal static int ReadBigEndian7BitEncodedInt(Stream stream)
@@ -45,16 +43,14 @@ namespace wyUpdate.Compression.Vcdiff
 			for (int i=0; i < 5; i++)
 			{
 				int b = stream.ReadByte();
-				if (b==-1)
-				{
-					throw new EndOfStreamException();
-				}
-				ret = (ret << 7) | (b&0x7f);
-				if ((b & 0x80) == 0)
-				{
-					return ret;
-				}
+			    if (b == -1)
+			        throw new EndOfStreamException();
+
+			    ret = (ret << 7) | (b & 0x7f);
+			    if ((b & 0x80) == 0)
+			        return ret;
 			}
+
 			// Still haven't seen a byte with the high bit unset? Dodgy data.
 			throw new IOException("Invalid 7-bit encoded integer in stream.");
 		}
