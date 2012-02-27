@@ -91,25 +91,25 @@ namespace wyUpdate
                 // count the files and create backup folders
                 for (int i = 0; i < origFolders.Length; i++)
                 {
-                    //does orig folder exist?
-                    if (Directory.Exists(Path.Combine(TempDirectory, origFolders[i])))
-                    {
-                        //orig folder exists, set backup & orig folder locations
-                        backupFolders[i] = Path.Combine(backupFolder, origFolders[i]);
-                        origFolders[i] = Path.Combine(TempDirectory, origFolders[i]);
-                        Directory.CreateDirectory(backupFolders[i]);
+                    // does orig folder exist?
+                    if (!Directory.Exists(Path.Combine(TempDirectory, origFolders[i])))
+                        continue;
 
-                        // set ACL on the folders so they'll have proper user access properties
-                        // there's no need to set ACL for local updates
-                        if (IsAdmin)
-                            SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
+                    //orig folder exists, set backup & orig folder locations
+                    backupFolders[i] = Path.Combine(backupFolder, origFolders[i]);
+                    origFolders[i] = Path.Combine(TempDirectory, origFolders[i]);
+                    Directory.CreateDirectory(backupFolders[i]);
 
-                        // delete "newer" client, if it will overwrite this client
-                        DeleteClientInPath(destFolders[i], origFolders[i]);
+                    // set ACL on the folders so they'll have proper user access properties
+                    // there's no need to set ACL for local updates
+                    if (IsAdmin)
+                        SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
 
-                        //count the total files
-                        totalFiles += CountFiles(origFolders[i]);
-                    }
+                    // delete "newer" client, if it will overwrite this client
+                    DeleteClientInPath(destFolders[i], origFolders[i]);
+
+                    // count the total files
+                    totalFiles += new DirectoryInfo(origFolders[i]).GetFiles("*", SearchOption.AllDirectories).Length;
                 }
 
 
@@ -188,7 +188,6 @@ namespace wyUpdate
             return ((stepOn * 100) / TotalUpdateSteps) + (stepProgress / (TotalUpdateSteps));
         }
 
-        //Methods
         void UpdateFiles(string tempDir, string progDir, string backupFolder, List<FileFolder> rollbackList, ref int totalDone, ref int totalFiles)
         {
             DirectoryInfo tempDirInf = new DirectoryInfo(tempDir);
@@ -531,17 +530,6 @@ namespace wyUpdate
                 shellShortcut.Save();
             }
         }
-
-
-        //count files in the directory and subdirectories
-        static int CountFiles(string directory)
-        {
-            return new DirectoryInfo(directory).GetFiles("*", SearchOption.AllDirectories).Length;
-        }
-
-
-
-
 
         public void RunDeleteTemporary()
         {
