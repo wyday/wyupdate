@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
 using wyUpdate.Common;
 using wyUpdate.Compression.Vcdiff;
 
@@ -59,20 +61,55 @@ namespace wyUpdate
                 //find self in Path.Combine(OutputDirectory, "base")
                 UpdateFile updateFile = FindNewClient();
 
-                FileAttributes atr = File.GetAttributes(OldSelfLoc);
-                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
+                int retriedTimes = 0;
 
-                // remove the ReadOnly & Hidden atributes temporarily
-                if (resetAttributes)
-                    File.SetAttributes(OldSelfLoc, FileAttributes.Normal);
+                while (true)
+                {
+                    try
+                    {
+                        FileAttributes atr = File.GetAttributes(OldSelfLoc);
+                        bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
 
-                //transfer new client to the directory (Note: this assumes a standalone wyUpdate - i.e. no dependencies)
-                File.Copy(NewSelfLoc, OldSelfLoc, true);
+                        // remove the ReadOnly & Hidden atributes temporarily
+                        if (resetAttributes)
+                            File.SetAttributes(OldSelfLoc, FileAttributes.Normal);
 
-                if (resetAttributes)
-                    File.SetAttributes(OldSelfLoc, atr);
+                        //transfer new client to the directory (Note: this assumes a standalone wyUpdate - i.e. no dependencies)
+                        File.Copy(NewSelfLoc, OldSelfLoc, true);
 
-                //Optimize client if necessary
+                        if (resetAttributes)
+                            File.SetAttributes(OldSelfLoc, atr);
+                    }
+                    catch (IOException IOEx)
+                    {
+                        int HResult = Marshal.GetHRForException(IOEx);
+
+                        // if sharing violation
+                        if ((HResult & 0xFFFF) == 32)
+                        {
+                            // sleep for 1 second
+                            Thread.Sleep(1000);
+
+                            // stop waiting if cancelled
+                            if (IsCancelled())
+                                break;
+
+                            // wait a maximum of 30 seconds
+                            if (retriedTimes == 30)
+                                throw;
+
+                            // otherwise, retry file copy
+                            ++retriedTimes;
+                            continue;
+                        }
+
+                        throw;
+                    }
+
+                    break;
+                }
+
+                // Optimize client if necessary
                 if (updateFile != null)
                     NGenInstall(OldSelfLoc, updateFile);
 
@@ -239,20 +276,53 @@ namespace wyUpdate
                 //find and forcibly close oldClientLocation
                 KillProcess(OldSelfLoc);
 
+                int retriedTimes = 0;
 
-                FileAttributes atr = File.GetAttributes(OldSelfLoc);
-                bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
+                while (true)
+                {
+                    try
+                    {
+                        FileAttributes atr = File.GetAttributes(OldSelfLoc);
+                        bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
 
-                // remove the ReadOnly & Hidden atributes temporarily
-                if (resetAttributes)
-                    File.SetAttributes(OldSelfLoc, FileAttributes.Normal);
+                        // remove the ReadOnly & Hidden atributes temporarily
+                        if (resetAttributes)
+                            File.SetAttributes(OldSelfLoc, FileAttributes.Normal);
 
-                //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
-                File.Copy(NewSelfLoc, OldSelfLoc, true);
+                        //transfer new client to the directory (Note: this assumes a standalone client - i.e. no dependencies)
+                        File.Copy(NewSelfLoc, OldSelfLoc, true);
 
-                if (resetAttributes)
-                    File.SetAttributes(OldSelfLoc, atr);
+                        if (resetAttributes)
+                            File.SetAttributes(OldSelfLoc, atr);
+                    }
+                    catch (IOException IOEx)
+                    {
+                        int HResult = Marshal.GetHRForException(IOEx);
 
+                        // if sharing violation
+                        if ((HResult & 0xFFFF) == 32)
+                        {
+                            // sleep for 1 second
+                            Thread.Sleep(1000);
+
+                            // stop waiting if cancelled
+                            if (IsCancelled())
+                                break;
+
+                            // wait a maximum of 30 seconds
+                            if (retriedTimes == 30)
+                                throw;
+
+                            // otherwise, retry file copy
+                            ++retriedTimes;
+                            continue;
+                        }
+
+                        throw;
+                    }
+
+                    break;
+                }
 
                 //Optimize client if necessary
                 if (updateFile != null)
