@@ -284,7 +284,7 @@ namespace wyUpdate
                     if (frameOn != Frame.Checking)
                     {
                         // report UpdateAvailable, with changes
-                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChangesRTF(), true);
+                        updateHelper.SendSuccess(ServerFile.NewVersion, panelDisplaying.GetChanges(true), true);
 
                         return true;
                     }
@@ -466,7 +466,7 @@ namespace wyUpdate
         }
 
         /// <summary>
-        /// gets / creates the cache folder for a GUID
+        /// Gets or creates the cache folder for a GUID.
         /// </summary>
         /// <param name="guid">The GUID.</param>
         /// <returns>The directory to the cache folder</returns>
@@ -487,6 +487,42 @@ namespace wyUpdate
                 File.SetAttributes(temp, FileAttributes.System | FileAttributes.Hidden);
             }
 
+            string fullGuidFolder = Path.Combine(temp, guid);
+
+            // Workaround for the "pyramid of death" bug.
+            // Note: This still doesn't address the root cause of the "pyramid of death"
+            //       namely, why aren't the folders being cleaned up on the failure of wyUpdate?
+            // Perhaps it's a crashing bug. Further investigation is needed. We need to look into
+            // possible causes for cached files being left around. This problem was first spotted
+            // when a user's app crashed when they were debugging. It was crashing over and over again
+            if (Directory.Exists(fullGuidFolder))
+            {
+                string guidFile = Path.Combine(fullGuidFolder, guid);
+
+                // if the GUID file doesn't already exist then the cache is busted.
+                if (!File.Exists(guidFile))
+                {
+                    // delete every file and folder in the directory because it's an invalid cache
+                    string[] obs = Directory.GetDirectories(fullGuidFolder);
+
+                    // remove all directories
+                    foreach (var dir in obs)
+                        Directory.Delete(dir, true);
+
+                    obs = Directory.GetFiles(fullGuidFolder);
+
+                    // remove all the files
+                    foreach (var file in obs)
+                        File.Delete(file);
+
+                    // create the blank GUID file
+                    using (File.Create(guidFile)) ;
+                }
+
+                return fullGuidFolder;
+            }
+
+            // try to create the smallest possible folder name (using the GUID)
             string closestMatch = null;
 
             string[] dirs = Directory.GetDirectories(temp);
@@ -496,14 +532,14 @@ namespace wyUpdate
             {
                 string name = Path.GetFileName(dirs[i]);
 
-                if (!string.IsNullOrEmpty(name) && guid.IndexOf(name) == 0)
-                {
-                    // see if the partial-matching folder contains an empty GUID file
-                    if (File.Exists(Path.Combine(dirs[i], guid)))
-                        return dirs[i];
+                if (string.IsNullOrEmpty(name) || guid.IndexOf(name) != 0)
+                    continue;
 
-                    closestMatch = name;
-                }
+                // see if the partial-matching folder contains an empty GUID file
+                if (File.Exists(Path.Combine(dirs[i], guid)))
+                    return dirs[i];
+
+                closestMatch = name;
             }
 
             // the folder doesn't exist, so we'll create it
