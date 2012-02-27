@@ -567,8 +567,14 @@ namespace wyUpdate
         protected override void OnClosing(CancelEventArgs e)
         {
             // only warn if after the welcome page and not self updating/elevating
-            if (needElevation || SelfUpdateState == SelfUpdateState.WillUpdate || SelfUpdateState == SelfUpdateState.FullUpdate || isSilent || isAutoUpdateMode ||
-                isCancelled || panelDisplaying.TypeofFrame == FrameType.WelcomeFinish || panelDisplaying.TypeofFrame == FrameType.TextInfo)
+            if (needElevation
+                || SelfUpdateState == SelfUpdateState.WillUpdate
+                || SelfUpdateState == SelfUpdateState.FullUpdate
+                || isSilent
+                || isAutoUpdateMode
+                || isCancelled
+                || panelDisplaying.TypeofFrame == FrameType.WelcomeFinish
+                || panelDisplaying.TypeofFrame == FrameType.TextInfo)
             {
                 //close the form
                 e.Cancel = false;
