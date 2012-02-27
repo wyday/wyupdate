@@ -356,17 +356,16 @@ namespace wyUpdate
                 return;
 
             Process proc = new Process
-            {
-                StartInfo =
-                {
-                    FileName = Path.Combine(dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : dirs.Length - 1], "ngen.exe"),
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    Arguments = " install \"" + filename + "\"" + " /nologo"
-                }
-            };
+                               {
+                                   StartInfo =
+                                       {
+                                           FileName = Path.Combine(dirs[updateFile.CPUVersion == CPUVersion.x86 ? 0 : dirs.Length - 1], "ngen.exe"),
+                                           WindowStyle = ProcessWindowStyle.Hidden,
+                                           Arguments = " install \"" + filename + "\"" + " /nologo"
+                                       }
+                               };
 
             proc.Start();
-
             proc.WaitForExit();
         }
 
