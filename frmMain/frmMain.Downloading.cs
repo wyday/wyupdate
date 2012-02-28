@@ -67,7 +67,7 @@ namespace wyUpdate
                 downloader.ProgressChanged -= SelfUpdateProgress;
             }
 
-            string suFolder = Path.Combine(tempDirectory, "su");
+            string suFolder = Path.Combine(tempDirectory, "selfupdate");
 
             if (!Directory.Exists(suFolder))
                 Directory.CreateDirectory(suFolder);
