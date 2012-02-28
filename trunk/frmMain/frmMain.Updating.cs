@@ -251,7 +251,13 @@ namespace wyUpdate
 
                             // If we're starting a process on error, then start it
                             if (StartOnErr != null)
-                                LimitedProcess.Start(StartOnErr, StartOnErrArgs);
+                            {
+                                try
+                                {
+                                    LimitedProcess.Start(StartOnErr, StartOnErrArgs);
+                                }
+                                catch { }
+                            }
                         }
 
                         WindowState = FormWindowState.Minimized;
