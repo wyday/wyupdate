@@ -150,6 +150,7 @@ namespace wyUpdate
                     foreach (string dir in dirs)
                     {
                         // delete everything but the self-update folder (AutoUpdate specific)
+                        //Note: this code might be causing the "pyramid of death". TODO: Check.
                         if (Path.GetFileName(dir) == "selfupdate")
                             continue;
 
