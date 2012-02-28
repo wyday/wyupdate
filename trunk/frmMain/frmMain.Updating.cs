@@ -354,7 +354,18 @@ namespace wyUpdate
 
                     // If we're starting a process on error, then start it
                     if (StartOnErr != null && frameNum == Frame.Error)
-                        LimitedProcess.Start(StartOnErr, StartOnErrArgs);
+                    {
+                        // if the "failure" process fails to start then show
+                        // the error screen.
+                        try
+                        {
+                            LimitedProcess.Start(StartOnErr, StartOnErrArgs);
+                        }
+                        catch
+                        {
+                            return;
+                        }
+                    }
 
                     Close();
                     return;
