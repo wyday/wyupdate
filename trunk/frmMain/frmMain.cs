@@ -383,17 +383,7 @@ namespace wyUpdate
 
                     // selfupdate & post-selfupdate installation
                     if (beginAutoUpdateInstallation)
-                    {
-                        if (needElevation && NeedElevationToUpdate())
-                        {
-                            //the user "elevated" as a non-admin user
-                            //warn the user of their idiocy
-                            error = clientLang.AdminError;
-                            ShowFrame(Frame.Error);
-                        }
-                        else
-                            UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
-                    }
+                        UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
                 }
                 catch (Exception ex)
                 {

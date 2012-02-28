@@ -681,7 +681,6 @@ namespace wyUpdate
                     else if (SelfUpdateState == SelfUpdateState.Extracted)
                     {
                         WriteFiles.WriteString(fs, 0x09, newSelfLocation);
-
                         WriteFiles.WriteString(fs, 0x0A, oldSelfLocation);
                     }
                 }
