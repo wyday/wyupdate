@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using Microsoft.Win32;
 using wyUpdate.Common;
 
 namespace wyUpdate
@@ -40,7 +41,45 @@ namespace wyUpdate
                 psi.FileName = VersionTools.SelfLocation;
 
             if (needElevation)
-                psi.Verb = "runas"; //elevate to administrator
+            {
+                // elevate to administrator
+                psi.Verb = "runas";
+
+                // check if UAC is enabled on the computer, if not throw an error
+                bool canUAC = false;
+
+                try
+                {
+                    if (VistaTools.AtLeastVista())
+                    {
+                        using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"))
+                        {
+                            // see if UAC is enabled
+                            if (key != null)
+                                canUAC = (int)key.GetValue("EnableLUA", null) != 0;
+                        }
+                    }
+                    else
+                    {
+                        // Assume XP / 2000 limited user can use the RunAs box
+                        // this may or may not be true.
+
+                        //TODO: make this more robust
+                        // see: http://www.windowsnetworking.com/kbase/WindowsTips/Windows2003/AdminTips/Admin/DisablingtheRunAsCommand.html
+                        canUAC = true;
+                    }
+                }
+                catch { }
+
+                if (!canUAC)
+                {
+                    //TODO: use a more specific error to tell the user
+                    // to re-enable UAC on their computer.
+                    error = clientLang.AdminError;
+                    ShowFrame(Frame.Error);
+                    return;
+                }
+            }
 
             try
             {
