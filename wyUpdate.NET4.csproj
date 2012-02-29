@@ -221,7 +221,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="client.ico" />
-    <Content Include="loading-blue.png" />
+    <EmbeddedResource Include="loading-blue.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
