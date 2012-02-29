@@ -63,10 +63,6 @@ namespace wyUpdate
                 {
                     // is in automatic update mode
                     fs.WriteByte(0x80);
-
-                    // will be starting wyUpdate as new self
-                    if (IsNewSelf)
-                        fs.WriteByte(0x81);
                 }
 
                 // we're updating from a service (i.e. skip ui mode)
@@ -177,9 +173,6 @@ namespace wyUpdate
 
                             // the actual pipe will be created when OnHandleCreated is called
                             isAutoUpdateMode = true;
-                            break;
-                        case 0x81:
-                            IsNewSelf = true;
                             break;
                         case 0x82:
                             UpdatingFromService = true;

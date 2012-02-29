@@ -11,7 +11,7 @@ namespace wyUpdate
         {
             if (!string.IsNullOrEmpty(serverOverwrite))
             {
-                // overrite server file
+                // overwrite server file
                 BeginDownload(new List<string> { serverOverwrite }, 0, null, false, false);
             }
             else

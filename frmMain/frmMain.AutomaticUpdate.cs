@@ -33,10 +33,7 @@ namespace wyUpdate
             updateHelper.StartPipeServer(this);
         }
 
-        /// <summary>
-        /// This starts the PipeServer and waits for at least one "client"
-        /// before delivering the error.
-        /// </summary>
+        /// <summary>This starts the PipeServer and waits for at least one "client" before delivering the error.</summary>
         void StartQuickAndDirtyAutoUpdateMode()
         {
             updateHelper.StartPipeServer(this);
@@ -123,14 +120,14 @@ namespace wyUpdate
             // tell all the clients that there's a new wyUpdate
             updateHelper.SendNewWyUpdate(UpdateHelperData.PipenameFromFilename(newSelfLocation), clientProcess.Id);
 
-            CancelUpdate(true, false);
+            CancelUpdate(true);
         }
 
         void UpdateHelper_RequestReceived(object sender, UpdateAction a, UpdateStep s)
         {
             if (a == UpdateAction.Cancel)
             {
-                CancelUpdate(true, false);
+                CancelUpdate(true);
                 return;
             }
 
@@ -227,13 +224,11 @@ namespace wyUpdate
                     UpdateHelper_RequestReceived(null, UpdateAction.UpdateStep, UpdateStep.Install);
                 }
                 else
-                    CancelUpdate(true, false);
+                    CancelUpdate(true);
             }
         }
 
-        /// <summary>
-        /// Filters bad request by responding with the required info.
-        /// </summary>
+        /// <summary>Filters bad request by responding with the required info.</summary>
         /// <param name="s">The requested step.</param>
         /// <returns>True if a bad request has been filtered, false otherwise</returns>
         bool FilterBadRequest(UpdateStep s)
@@ -298,6 +293,8 @@ namespace wyUpdate
                         // waiting to be told to check for updates...
                         if (downloader == null)
                         {
+                            autoUpdateStepProcessing = UpdateStep.CheckForUpdate;
+
                             // report 0% and begin checking
                             updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
                             CheckForUpdate();
@@ -337,6 +334,8 @@ namespace wyUpdate
                         // waiting to be told to check for updates...
                         if (downloader == null)
                         {
+                            autoUpdateStepProcessing = UpdateStep.CheckForUpdate;
+
                             // report 0% and begin checking
                             updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
                             CheckForUpdate();
@@ -355,9 +354,13 @@ namespace wyUpdate
                     {
                         ShowFrame(Frame.InstallUpdates);
 
+                        autoUpdateStepProcessing = UpdateStep.DownloadUpdate;
+
                         // report 0% progress & download
                         updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
                         DownloadUpdate();
+
+                        return true;
                     }
 
                     if (frameOn == Frame.InstallUpdates)
@@ -397,6 +400,8 @@ namespace wyUpdate
                         // waiting to be told to check for updates...
                         if (downloader == null)
                         {
+                            autoUpdateStepProcessing = UpdateStep.CheckForUpdate;
+
                             // report 0% and begin checking
                             updateHelper.SendProgress(0, UpdateStep.CheckForUpdate);
                             CheckForUpdate();
@@ -415,9 +420,13 @@ namespace wyUpdate
                     {
                         ShowFrame(Frame.InstallUpdates);
 
+                        autoUpdateStepProcessing = UpdateStep.DownloadUpdate;
+
                         // report 0% progress & download
                         updateHelper.SendProgress(0, UpdateStep.DownloadUpdate);
                         DownloadUpdate();
+
+                        return true;
                     }
 
                     if (frameOn == Frame.InstallUpdates)
@@ -445,9 +454,7 @@ namespace wyUpdate
             return false;
         }
         
-        /// <summary>
-        /// For filtering bad requests. Self updating is still in the "download" state.
-        /// </summary>
+        /// <summary>For filtering bad requests. Self updating is still in the "download" state.</summary>
         /// <returns>True if downloading, or downloading/extracting self update</returns>
         bool IsInDownloadState()
         {
@@ -465,9 +472,7 @@ namespace wyUpdate
             return Directory.Exists(oldAUTempFolder) ? oldAUTempFolder : GetCacheFolder(update.GUID);
         }
 
-        /// <summary>
-        /// Gets or creates the cache folder for a GUID.
-        /// </summary>
+        /// <summary>Gets or creates the cache folder for a GUID.</summary>
         /// <param name="guid">The GUID.</param>
         /// <returns>The directory to the cache folder</returns>
         static string GetCacheFolder(string guid)

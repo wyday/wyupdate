@@ -51,6 +51,9 @@ namespace wyUpdate
 
                 psi.Arguments = "-supdf:\"" + selfUpdatePath + "\"";
 
+                if (IsNewSelf)
+                    psi.Arguments += " /ns";
+
                 Process.Start(psi);
                 Close();
             }
