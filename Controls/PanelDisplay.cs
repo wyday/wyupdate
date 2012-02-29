@@ -346,12 +346,13 @@ namespace wyUpdate
             // the single centered animation
             aniWorking = new AnimationControl
                              {
-                                 BaseImage = UpdateItem.ProgressImage,
                                  Columns = 18,
                                  Rows = 1,
                                  AnimationInterval = 46,
                                  Visible = false,
-                                 Location = new Point((Width/2) - 25, (Height/2))
+                                 Location = new Point((Width/2) - 25, (Height/2)),
+                                 StaticImage = false,
+                                 BaseImage = UpdateItem.ProgressImage
                              };
 
             Controls.Add(aniWorking);
