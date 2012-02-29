@@ -422,6 +422,10 @@ namespace wyUpdate
             {
                 //the client is in self update mode
                 selfUpdateFileLoc = commands["supdf"];
+
+                // check if this instance is the "new self"
+                if (commands["ns"] != null)
+                    IsNewSelf = true;
             }
             else
             {
