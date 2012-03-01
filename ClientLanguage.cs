@@ -190,7 +190,7 @@ namespace wyUpdate
         }
 
 
-                // Update Screens
+        // Update Screens
 
         ScreenDialog m_Checking = new ScreenDialog("Searching for updates",
                                                    "wyUpdate is searching for updates.",
@@ -282,7 +282,7 @@ namespace wyUpdate
             set { m_FinishBottom = value; }
         }
 
-                // Status
+        // Status
 
         string m_Download = "Downloading update";
         public string Download
@@ -648,27 +648,22 @@ namespace wyUpdate
 
 #endif
 
-        #region Reading XML language file
-
-
 #if CLIENT
         public void Open(MemoryStream ms)
         {
-            XmlTextReader reader = null;
-
             ms.Position = 0;
 
             try
             {
-                reader = new XmlTextReader(ms);
-
-                ReadLanguageFile(reader);
+                using (XmlTextReader reader = new XmlTextReader(ms))
+                {
+                    ReadLanguageFile(reader);
+                }
             }
-            catch (Exception)
-            {
-                if (reader != null)
-                    reader.Close();
-            }
+            catch { }
+            //TODO: perhaps warn when a language file fails to load.
+            // it's not a critical error -- the language just falls back to
+            // English.
         }
 #else
         public void Open(string filename)
@@ -753,6 +748,24 @@ namespace wyUpdate
 
                 if (reader.NodeType == XmlNodeType.Element && !reader.IsEmptyElement)
                 {
+#if CLIENT
+                    if (reader.LocalName.Equals("Checking"))
+                        ReadScreenDialog(reader, m_Checking);
+                    else if (reader.LocalName.Equals("UpdateInfo"))
+                        ReadScreenDialog(reader, m_UpdateInfo);
+                    else if (reader.LocalName.Equals("DownInstall"))
+                        ReadScreenDialog(reader, m_DownInstall);
+                    else if (reader.LocalName.Equals("Uninstall"))
+                        ReadScreenDialog(reader, m_Uninstall);
+                    else if (reader.LocalName.Equals("SuccessUpdate"))
+                        ReadScreenDialog(reader, m_SuccessUpdate);
+                    else if (reader.LocalName.Equals("AlreadyLatest"))
+                        ReadScreenDialog(reader, m_AlreadyLatest);
+                    else if (reader.LocalName.Equals("NoUpdateToLatest"))
+                        ReadScreenDialog(reader, m_NoUpdateToLatest);
+                    else if (reader.LocalName.Equals("UpdateError"))
+                        ReadScreenDialog(reader, m_UpdateError);
+#else
                     if (reader.LocalName.Equals("Checking"))
                         ReadScreenDialog(reader, Checking);
                     else if (reader.LocalName.Equals("UpdateInfo"))
@@ -769,6 +782,7 @@ namespace wyUpdate
                         ReadScreenDialog(reader, NoUpdateToLatest);
                     else if (reader.LocalName.Equals("UpdateError"))
                         ReadScreenDialog(reader, UpdateError);
+#endif
                 }
             }
         }
@@ -783,12 +797,21 @@ namespace wyUpdate
 
                 if (reader.NodeType == XmlNodeType.Element)
                 {
+#if CLIENT
+                    if (reader.LocalName.Equals("Cancel"))
+                        ReadScreenDialog(reader, m_CancelDialog);
+                    else if (reader.LocalName.Equals("Processes"))
+                        ReadScreenDialog(reader, m_ProcessDialog);
+                    else if (reader.LocalName.Equals("FilesInUse"))
+                        ReadScreenDialog(reader, m_FilesInUseDialog);
+#else
                     if (reader.LocalName.Equals("Cancel"))
                         ReadScreenDialog(reader, CancelDialog);
                     else if (reader.LocalName.Equals("Processes"))
                         ReadScreenDialog(reader, ProcessDialog);
                     else if (reader.LocalName.Equals("FilesInUse"))
                         ReadScreenDialog(reader, FilesInUseDialog);
+#endif
                 }
             }
         }
@@ -900,10 +923,6 @@ namespace wyUpdate
                 }
             }
         }
-
-        #endregion Reading XML language file
-
-        #region Saving XML language file
 
 #if !CLIENT
         public void Save(string filename)
@@ -1032,8 +1051,6 @@ namespace wyUpdate
             }
         }
 #endif
-
-        #endregion Saving XML language file
     }
 
 #endif
