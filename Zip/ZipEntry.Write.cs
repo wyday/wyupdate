@@ -1937,53 +1937,6 @@ namespace Ionic.Zip
         {
             if (_CompressionMethod == 0x08 && CompressionLevel != Ionic.Zlib.CompressionLevel.None)
             {
-#if !NETCF
-                // ParallelDeflateThreshold == 0    means ALWAYS use parallel deflate
-                // ParallelDeflateThreshold == -1L  means NEVER use parallel deflate
-                // Other values specify the actual threshold.
-                if (_container.ParallelDeflateThreshold == 0L ||
-                    (streamLength > _container.ParallelDeflateThreshold &&
-                     _container.ParallelDeflateThreshold > 0L))
-                {
-                    // This is sort of hacky.
-                    //
-                    // It's expensive to create a ParallelDeflateOutputStream, because
-                    // of the large memory buffers.  But the class is unlike most Stream
-                    // classes in that it can be re-used, so the caller can compress
-                    // multiple files with it, one file at a time.  The key is to call
-                    // Reset() on it, in between uses.
-                    //
-                    // The ParallelDeflateOutputStream is attached to the container
-                    // itself - there is just one for the entire ZipFile or
-                    // ZipOutputStream. So it gets created once, per save, and then
-                    // re-used many times.
-                    //
-                    // This approach will break when we go to a "parallel save"
-                    // approach, where multiple entries within the zip file are being
-                    // compressed and saved at the same time.  But for now it's ok.
-                    //
-
-                    // instantiate the ParallelDeflateOutputStream
-                    if (_container.ParallelDeflater == null)
-                    {
-                        _container.ParallelDeflater =
-                            new Ionic.Zlib.ParallelDeflateOutputStream(s,
-                                                                       CompressionLevel,
-                                                                       _container.Strategy,
-                                                                       true);
-                        // can set the codec buffer size only before the first call to Write().
-                        if (_container.CodecBufferSize > 0)
-                            _container.ParallelDeflater.BufferSize = _container.CodecBufferSize;
-                        if (_container.ParallelDeflateMaxBufferPairs > 0)
-                            _container.ParallelDeflater.MaxBufferPairs =
-                                _container.ParallelDeflateMaxBufferPairs;
-                    }
-                    // reset it with the new stream
-                    Ionic.Zlib.ParallelDeflateOutputStream o1 = _container.ParallelDeflater;
-                    o1.Reset(s);
-                    return o1;
-                }
-#endif
                 var o = new Ionic.Zlib.DeflateStream(s, Ionic.Zlib.CompressionMode.Compress,
                                                      CompressionLevel,
                                                      true);
@@ -2046,8 +1999,6 @@ namespace Ionic.Zip
             if (_container.ZipFile != null)
                 _ioOperationCanceled = _container.ZipFile.OnZipErrorSaving(this, e);
         }
-
-
 
         internal void Write(Stream s)
         {
