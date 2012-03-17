@@ -1514,10 +1514,6 @@ namespace Ionic.Zip
 #endif
 #endif
 
-#if !NETCF
-            else if ((compressor as Ionic.Zlib.ParallelDeflateOutputStream) != null)
-                compressor.Close();
-#endif
 
             encryptor.Flush();
             encryptor.Close();
