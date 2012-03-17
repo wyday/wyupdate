@@ -353,9 +353,6 @@ namespace Ionic.Zip
             _leaveUnderlyingStreamOpen = leaveOpen;
             Strategy = Ionic.Zlib.CompressionStrategy.Default;
             _name = name ?? "(stream)";
-#if !NETCF
-            ParallelDeflateThreshold = -1L;
-#endif
         }
 
 
@@ -1026,174 +1023,6 @@ namespace Ionic.Zip
         }
 
 
-#if !NETCF
-        /// <summary>
-        ///   The size threshold for an entry, above which a parallel deflate is used.
-        /// </summary>
-        ///
-        /// <remarks>
-        ///
-        ///   <para>
-        ///     DotNetZip will use multiple threads to compress any ZipEntry, when
-        ///     the <c>CompressionMethod</c> is Deflate, and if the entry is
-        ///     larger than the given size.  Zero means "always use parallel
-        ///     deflate", while -1 means "never use parallel deflate".
-        ///   </para>
-        ///
-        ///   <para>
-        ///     If the entry size cannot be known before compression, as with any entry
-        ///     added via a ZipOutputStream, then Parallel deflate will never be
-        ///     performed, unless the value of this property is zero.
-        ///   </para>
-        ///
-        ///   <para>
-        ///     A parallel deflate operations will speed up the compression of
-        ///     large files, on computers with multiple CPUs or multiple CPU
-        ///     cores.  For files above 1mb, on a dual core or dual-cpu (2p)
-        ///     machine, the time required to compress the file can be 70% of the
-        ///     single-threaded deflate.  For very large files on 4p machines the
-        ///     compression can be done in 30% of the normal time.  The downside
-        ///     is that parallel deflate consumes extra memory during the deflate,
-        ///     and the deflation is slightly less effective.
-        ///   </para>
-        ///
-        ///   <para>
-        ///     Parallel deflate tends to not be as effective as single-threaded deflate
-        ///     because the original data stream is split into multiple independent
-        ///     buffers, each of which is compressed in parallel.  But because they are
-        ///     treated independently, there is no opportunity to share compression
-        ///     dictionaries, and additional framing bytes must be added to the output
-        ///     stream.  For that reason, a deflated stream may be slightly larger when
-        ///     compressed using parallel deflate, as compared to a traditional
-        ///     single-threaded deflate. For files of about 512k, the increase over the
-        ///     normal deflate is as much as 5% of the total compressed size. For larger
-        ///     files, the difference can be as small as 0.1%.
-        ///   </para>
-        ///
-        ///   <para>
-        ///     Multi-threaded compression does not give as much an advantage when using
-        ///     Encryption. This is primarily because encryption tends to slow down
-        ///     the entire pipeline. Also, multi-threaded compression gives less of an
-        ///     advantage when using lower compression levels, for example <see
-        ///     cref="Ionic.Zlib.CompressionLevel.BestSpeed"/>.  You may have to perform
-        ///     some tests to determine the best approach for your situation.
-        ///   </para>
-        ///
-        ///   <para>
-        ///     The default value for this property is -1, which means parallel
-        ///     compression will not be performed unless you set it to zero.
-        ///   </para>
-        ///
-        /// </remarks>
-        public long ParallelDeflateThreshold
-        {
-            set
-            {
-                if ((value != 0) && (value != -1) && (value < 64 * 1024))
-                    throw new ArgumentOutOfRangeException("value must be greater than 64k, or 0, or -1");
-                _ParallelDeflateThreshold = value;
-            }
-            get
-            {
-                return _ParallelDeflateThreshold;
-            }
-        }
-
-
-        /// <summary>
-        ///   The maximum number of buffer pairs to use when performing
-        ///   parallel compression.
-        /// </summary>
-        ///
-        /// <remarks>
-        /// <para>
-        ///   This property sets an upper limit on the number of memory
-        ///   buffer pairs to create when performing parallel
-        ///   compression.  The implementation of the parallel
-        ///   compression stream allocates multiple buffers to
-        ///   facilitate parallel compression.  As each buffer fills up,
-        ///   the stream uses <see
-        ///   cref="System.Threading.ThreadPool.QueueUserWorkItem(WaitCallback)">
-        ///   ThreadPool.QueueUserWorkItem()</see> to compress those
-        ///   buffers in a background threadpool thread. After a buffer
-        ///   is compressed, it is re-ordered and written to the output
-        ///   stream.
-        /// </para>
-        ///
-        /// <para>
-        ///   A higher number of buffer pairs enables a higher degree of
-        ///   parallelism, which tends to increase the speed of compression on
-        ///   multi-cpu computers.  On the other hand, a higher number of buffer
-        ///   pairs also implies a larger memory consumption, more active worker
-        ///   threads, and a higher cpu utilization for any compression. This
-        ///   property enables the application to limit its memory consumption and
-        ///   CPU utilization behavior depending on requirements.
-        /// </para>
-        ///
-        /// <para>
-        ///   For each compression "task" that occurs in parallel, there are 2
-        ///   buffers allocated: one for input and one for output.  This property
-        ///   sets a limit for the number of pairs.  The total amount of storage
-        ///   space allocated for buffering will then be (N*S*2), where N is the
-        ///   number of buffer pairs, S is the size of each buffer (<see
-        ///   cref="CodecBufferSize"/>).  By default, DotNetZip allocates 4 buffer
-        ///   pairs per CPU core, so if your machine has 4 cores, and you retain
-        ///   the default buffer size of 128k, then the
-        ///   ParallelDeflateOutputStream will use 4 * 4 * 2 * 128kb of buffer
-        ///   memory in total, or 4mb, in blocks of 128kb.  If you then set this
-        ///   property to 8, then the number will be 8 * 2 * 128kb of buffer
-        ///   memory, or 2mb.
-        /// </para>
-        ///
-        /// <para>
-        ///   CPU utilization will also go up with additional buffers, because a
-        ///   larger number of buffer pairs allows a larger number of background
-        ///   threads to compress in parallel. If you find that parallel
-        ///   compression is consuming too much memory or CPU, you can adjust this
-        ///   value downward.
-        /// </para>
-        ///
-        /// <para>
-        ///   The default value is 16. Different values may deliver better or
-        ///   worse results, depending on your priorities and the dynamic
-        ///   performance characteristics of your storage and compute resources.
-        /// </para>
-        ///
-        /// <para>
-        ///   This property is not the number of buffer pairs to use; it is an
-        ///   upper limit. An illustration: Suppose you have an application that
-        ///   uses the default value of this property (which is 16), and it runs
-        ///   on a machine with 2 CPU cores. In that case, DotNetZip will allocate
-        ///   4 buffer pairs per CPU core, for a total of 8 pairs.  The upper
-        ///   limit specified by this property has no effect.
-        /// </para>
-        ///
-        /// <para>
-        ///   The application can set this value at any time, but it is
-        ///   effective only if set before calling
-        ///   <c>ZipOutputStream.Write()</c> for the first time.
-        /// </para>
-        /// </remarks>
-        ///
-        /// <seealso cref="ParallelDeflateThreshold"/>
-        ///
-        public int ParallelDeflateMaxBufferPairs
-        {
-            get
-            {
-                return _maxBufferPairs;
-            }
-            set
-            {
-                if (value < 4)
-                    throw new ArgumentOutOfRangeException("ParallelDeflateMaxBufferPairs",
-                                                "Value must be 4 or greater.");
-                _maxBufferPairs = value;
-            }
-        }
-#endif
-
-
         private void InsureUniqueEntry(ZipEntry ze1)
         {
             if (_entriesWritten.ContainsKey(ze1.FileName))
@@ -1628,11 +1457,7 @@ namespace Ionic.Zip
         private bool _needToWriteEntryHeader;
         private string _name;
         private bool _DontIgnoreCase;
-#if !NETCF
-        internal Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater;
-        private long _ParallelDeflateThreshold;
-        private int _maxBufferPairs = 16;
-#endif
+
 
         // **Note regarding exceptions:
 
@@ -1713,40 +1538,6 @@ namespace Ionic.Zip
                 return 0;
             }
         }
-
-#if !NETCF
-        public Ionic.Zlib.ParallelDeflateOutputStream ParallelDeflater
-        {
-            get
-            {
-                if (_zf != null) return _zf.ParallelDeflater;
-                if (_zis != null) return null;
-                return _zos.ParallelDeflater;
-            }
-            set
-            {
-                if (_zf != null) _zf.ParallelDeflater = value;
-                else if (_zos != null) _zos.ParallelDeflater = value;
-            }
-        }
-
-        public long ParallelDeflateThreshold
-        {
-            get
-            {
-                if (_zf != null) return _zf.ParallelDeflateThreshold;
-                return _zos.ParallelDeflateThreshold;
-            }
-        }
-        public int ParallelDeflateMaxBufferPairs
-        {
-            get
-            {
-                if (_zf != null) return _zf.ParallelDeflateMaxBufferPairs;
-                return _zos.ParallelDeflateMaxBufferPairs;
-            }
-        }
-#endif
 
         public int CodecBufferSize
         {

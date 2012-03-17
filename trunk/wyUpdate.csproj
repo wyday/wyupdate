@@ -215,7 +215,6 @@
     <Compile Include="Zip\Inflate.cs" />
     <Compile Include="Zip\InfTree.cs" />
     <Compile Include="Zip\OffsetStream.cs" />
-    <Compile Include="Zip\ParallelDeflateOutputStream.cs" />
     <Compile Include="Zip\Shared.cs" />
     <Compile Include="Zip\Tree.cs" />
     <Compile Include="Zip\WinZipAes.cs" />
