@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Microsoft.Win32;
 using wyUpdate.Common;
 
@@ -123,6 +125,47 @@ namespace wyUpdate
             return true;
         }
 
+
+        static bool HaveFolderPermissions(string folder)
+        {
+            try
+            {
+                FileSystemSecurity security = Directory.GetAccessControl(folder);
+
+                var rules = security.GetAccessRules(true, true, typeof(NTAccount));
+
+                var currentuser = new WindowsPrincipal(WindowsIdentity.GetCurrent());
+                bool result = false;
+                foreach (FileSystemAccessRule rule in rules)
+                {
+                    if (0 == (rule.FileSystemRights & FileSystemRights.FullControl))
+                        continue;
+
+                    if (rule.IdentityReference.Value.StartsWith("S-1-"))
+                    {
+                        var sid = new SecurityIdentifier(rule.IdentityReference.Value);
+                        if (!currentuser.IsInRole(sid))
+                            continue;
+                    }
+                    else
+                    {
+                        if (!currentuser.IsInRole(rule.IdentityReference.Value))
+                            continue;
+                    }
+
+                    if (rule.AccessControlType == AccessControlType.Deny)
+                        return false;
+                    if (rule.AccessControlType == AccessControlType.Allow)
+                        result = true;
+                }
+                return result;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         //TODO: perhaps use some more flexible method for detecting limited users
         //      given permission to access certain folders they don't normally have access
         //      to. See: http://stackoverflow.com/questions/1410127/c-sharp-test-if-user-has-write-access-to-a-folder
@@ -137,25 +180,32 @@ namespace wyUpdate
             // then return false
             // Also note how we're excluding the "BaseDir".
             // This is because the base directory may or may not be in the userprofile
-            // directory, thus it needs a separate check.
+            // directory (or otherwise writable by the user), thus it needs a separate check.
+            // Ditto for the "client.wyc" file.
             if (((updateFrom.InstallingTo | InstallingTo.BaseDir) ^ InstallingTo.BaseDir) != 0)
                 return false;
 
             string userProfileFolder = Environment.GetEnvironmentVariable("userprofile");
 
             // if the basedir isn't in the userprofile folder (C:\Users\UserName)
-            if ((updateFrom.InstallingTo & InstallingTo.BaseDir) != 0 && !SystemFolders.IsDirInDir(userProfileFolder, baseDirectory))
+            // OR
+            // if the folder isn't in the full control of the current user
+            // THEN
+            // we're not "only updating the local user
+            if ((updateFrom.InstallingTo & InstallingTo.BaseDir) != 0 && !(SystemFolders.IsDirInDir(userProfileFolder, baseDirectory) || HaveFolderPermissions(baseDirectory)))
                 return false;
 
-            // if the client data file isn't in the userprofile folder
-            if (!SystemFolders.IsFileInDirectory(userProfileFolder, clientFileLoc))
+            // if the client data file isn't in the userprofile folder (or otherwise writable)
+            // then bail out.
+            if (!(SystemFolders.IsFileInDirectory(userProfileFolder, clientFileLoc) || HaveFolderPermissions(Path.GetDirectoryName(clientFileLoc))))
                 return false;
 
             // when self-updating, if this client isn't in the userprofile folder
             if ((SelfUpdateState == SelfUpdateState.WillUpdate
                 || SelfUpdateState == SelfUpdateState.FullUpdate
                 || SelfUpdateState == SelfUpdateState.Extracted)
-                && !SystemFolders.IsFileInDirectory(userProfileFolder, VersionTools.SelfLocation))
+                && !(SystemFolders.IsFileInDirectory(userProfileFolder, VersionTools.SelfLocation)
+                     || HaveFolderPermissions(Path.GetDirectoryName(VersionTools.SelfLocation))))
             {
                 return false;
             }
