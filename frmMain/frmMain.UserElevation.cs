@@ -138,7 +138,8 @@ namespace wyUpdate
                 bool result = false;
                 foreach (FileSystemAccessRule rule in rules)
                 {
-                    if (0 == (rule.FileSystemRights & FileSystemRights.FullControl))
+                    // does the rule have full control?, if not skip to the next rule
+                    if (((rule.FileSystemRights ^ FileSystemRights.FullControl) & FileSystemRights.FullControl) != 0)
                         continue;
 
                     if (rule.IdentityReference.Value.StartsWith("S-1-"))
