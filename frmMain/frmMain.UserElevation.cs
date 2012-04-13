@@ -125,7 +125,9 @@ namespace wyUpdate
             return true;
         }
 
-
+        /// <summary>Checks if the current process has "full permission" to a folder. This allows "custom" elevation of limited users -- allowing them control over normally restricted folders.</summary>
+        /// <param name="folder">The full path to the folder to check.</param>
+        /// <returns>True if the user has permission, false if not.</returns>
         static bool HaveFolderPermissions(string folder)
         {
             try
