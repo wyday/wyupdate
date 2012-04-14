@@ -140,7 +140,16 @@ namespace wyUpdate
                 bool result = false;
                 foreach (FileSystemAccessRule rule in rules)
                 {
-                    // does the rule have full control?, if not skip to the next rule
+                    // Check if the rule has full control over the folder. If not skip to the next rule.
+
+                    //Note: We're "XOR"ing with FileSystemRights to eliminate permissions that
+                    //      "rule.FileSystemRights" and "FileSystemRights.FullControl" have in common.
+                    //      Then we're "AND"ing that result with FileSystemRights.FullControl to
+                    //      to get permissions in "FullControl" that are missing from "FileSystemRights".
+                    //      The result should be 0 if the user has FullControl over the folder (even
+                    //      if "rule.FileSystemRights" has flags that aren't present in the
+                    //      "FileSystemRights.FullControl" -- which can happen because
+                    //      "FileSystemRights.FullControl" isn't *every* possible flag).
                     if (((rule.FileSystemRights ^ FileSystemRights.FullControl) & FileSystemRights.FullControl) != 0)
                         continue;
 
@@ -169,10 +178,9 @@ namespace wyUpdate
             }
         }
 
-        //TODO: perhaps use some more flexible method for detecting limited users
-        //      given permission to access certain folders they don't normally have access
-        //      to. See: http://stackoverflow.com/questions/1410127/c-sharp-test-if-user-has-write-access-to-a-folder
-        //      The same concept can be applied to the registry.
+        //TODO: Expand this function to allow for artificially elevated limited users.
+        //      For example, a limited user given the permission to write to HKLM
+        //      (something that is normally forbidden).
         bool OnlyUpdatingLocalUser()
         {
             // if installing
