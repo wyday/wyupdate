@@ -132,6 +132,12 @@ namespace wyUpdate
         {
             try
             {
+                const FileSystemRights RightsNeeded = FileSystemRights.Traverse |
+                                                      FileSystemRights.DeleteSubdirectoriesAndFiles | FileSystemRights.Delete |
+                                                      FileSystemRights.ListDirectory | FileSystemRights.CreateFiles |
+                                                      FileSystemRights.CreateDirectories | FileSystemRights.Modify |
+                                                      FileSystemRights.Write;
+
                 FileSystemSecurity security = Directory.GetAccessControl(folder);
 
                 var rules = security.GetAccessRules(true, true, typeof(NTAccount));
@@ -142,15 +148,15 @@ namespace wyUpdate
                 {
                     // Check if the rule has full control over the folder. If not skip to the next rule.
 
-                    //Note: We're "XOR"ing with FileSystemRights to eliminate permissions that
-                    //      "rule.FileSystemRights" and "FileSystemRights.FullControl" have in common.
-                    //      Then we're "AND"ing that result with FileSystemRights.FullControl to
-                    //      to get permissions in "FullControl" that are missing from "FileSystemRights".
-                    //      The result should be 0 if the user has FullControl over the folder (even
+                    //Note: We're "XOR"ing with RightsNeeded to eliminate permissions that
+                    //      "rule.FileSystemRights" and "RightsNeeded" have in common.
+                    //      Then we're "AND"ing that result with RightsNeeded to
+                    //      to get permissions in "RightsNeeded" that are missing from "FileSystemRights".
+                    //      The result should be 0 if the user has RightsNeeded over the folder (even
                     //      if "rule.FileSystemRights" has flags that aren't present in the
-                    //      "FileSystemRights.FullControl" -- which can happen because
-                    //      "FileSystemRights.FullControl" isn't *every* possible flag).
-                    if (((rule.FileSystemRights ^ FileSystemRights.FullControl) & FileSystemRights.FullControl) != 0)
+                    //      "RightsNeeded" -- which can happen because
+                    //      "RightsNeeded" isn't *every* possible flag).
+                    if (((rule.FileSystemRights ^ RightsNeeded) & RightsNeeded) != 0)
                         continue;
 
                     if (rule.IdentityReference.Value.StartsWith("S-1-"))
