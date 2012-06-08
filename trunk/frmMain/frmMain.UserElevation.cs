@@ -125,7 +125,7 @@ namespace wyUpdate
             return true;
         }
 
-        /// <summary>Checks if the current process has "full permission" to a folder. This allows "custom" elevation of limited users -- allowing them control over normally restricted folders.</summary>
+        /// <summary>Checks if the current process has the necessary permissions to a folder. This allows "custom" elevation of limited users -- allowing them control over normally restricted folders.</summary>
         /// <param name="folder">The full path to the folder to check.</param>
         /// <returns>True if the user has permission, false if not.</returns>
         static bool HaveFolderPermissions(string folder)
@@ -133,10 +133,10 @@ namespace wyUpdate
             try
             {
                 const FileSystemRights RightsNeeded = FileSystemRights.Traverse |
-                                                      FileSystemRights.DeleteSubdirectoriesAndFiles | FileSystemRights.Delete |
+                                                      FileSystemRights.DeleteSubdirectoriesAndFiles |
                                                       FileSystemRights.ListDirectory | FileSystemRights.CreateFiles |
-                                                      FileSystemRights.CreateDirectories | FileSystemRights.Modify |
-                                                      FileSystemRights.Write;
+                                                      FileSystemRights.CreateDirectories |
+                                                      FileSystemRights.Modify; //Read, ExecuteFile, Write, Delete
 
                 FileSystemSecurity security = Directory.GetAccessControl(folder);
 
@@ -202,7 +202,7 @@ namespace wyUpdate
             if (((updateFrom.InstallingTo | InstallingTo.BaseDir) ^ InstallingTo.BaseDir) != 0)
                 return false;
 
-            string userProfileFolder = Environment.GetEnvironmentVariable("userprofile");
+            string userProfileFolder = SystemFolders.GetUserProfile();
 
             // if the basedir isn't in the userprofile folder (C:\Users\UserName)
             // OR
