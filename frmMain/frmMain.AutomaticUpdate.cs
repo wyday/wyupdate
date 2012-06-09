@@ -479,6 +479,10 @@ namespace wyUpdate
         {
             string userprofile = SystemFolders.GetUserProfile();
 
+            // if getting the userprofile folder fails, then try the app data folder
+            if (string.IsNullOrEmpty(userprofile))
+                userprofile = SystemFolders.GetCurrentUserAppData();
+
             if (string.IsNullOrEmpty(userprofile))
                 throw new Exception("Failed to retrieve the user profile folder.");
 
