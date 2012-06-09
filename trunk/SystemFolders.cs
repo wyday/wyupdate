@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using Microsoft.Win32;
 
 namespace wyUpdate.Common
 {
@@ -24,6 +23,8 @@ namespace wyUpdate.Common
         static string m_System32x86;
         static string m_System32x64;
         static string m_RootDrive;
+
+        //static string m_FontsFolder;
 
         static string m_CommonProgramFilesx86;
         static string m_CommonProgramFilesx64;
@@ -74,6 +75,7 @@ namespace wyUpdate.Common
 
         public static string GetCurrentUserDesktop()
         {
+            // Current user's desktop: CSIDL_DESKTOPDIRECTORY, 0x0010
             return m_CurrentDesktop ??
                    (m_CurrentDesktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
         }
@@ -110,9 +112,26 @@ namespace wyUpdate.Common
 
         public static string GetCurrentUserProgramsStartMenu()
         {
+            // Current user's start menu: CSIDL_STARTMENU, 0xB
             return m_CurrentProgramsStartMenu ??
                    (m_CurrentProgramsStartMenu = Environment.GetFolderPath(Environment.SpecialFolder.Programs));
         }
+
+        /*
+        public static string GetFontsFolder()
+        {
+            if (m_FontsFolder == null)
+            {
+                StringBuilder path = new StringBuilder(256);
+
+                //CSIDL_FONTS = 0x14
+                SHGetFolderPath(IntPtr.Zero, 0x14, IntPtr.Zero, 0, path);
+
+                m_FontsFolder = path.ToString();
+            }
+
+            return m_FontsFolder;
+        }*/
 
         public static string GetCommonProgramFilesx86()
         {
@@ -171,12 +190,8 @@ namespace wyUpdate.Common
 
         public static string GetRootDrive()
         {
-            if (m_RootDrive == null)
-            {
-                m_RootDrive = Environment.GetFolderPath(Environment.SpecialFolder.System).Substring(0, 3);
-            }
-
-            return m_RootDrive;
+            return m_RootDrive ??
+                   (m_RootDrive = Environment.GetFolderPath(Environment.SpecialFolder.System).Substring(0, 3));
         }
 
         public static string GetUserProfile()
@@ -190,6 +205,13 @@ namespace wyUpdate.Common
                 SHGetFolderPath(IntPtr.Zero, 0x28, IntPtr.Zero, 0, path);
 
                 m_UserProfile = path.ToString();
+
+                // fucking Windows XP screws this up when CSIDL_PROFILE
+                // is used in Windows Services. Hell if I know why. For some
+                // reason the "userprofile" environment variable is populated.
+                // See: http://wyday.com/forum/viewtopic.php?f=1&t=3524
+                if (string.IsNullOrEmpty(m_UserProfile))
+                    m_UserProfile = Environment.GetEnvironmentVariable("userprofile");
             }
 
             return m_UserProfile;
@@ -269,11 +291,11 @@ namespace wyUpdate.Common
             return is32on64.Value;
         }
 
+        public const int FILE_ATTRIBUTE_DIRECTORY = 0x10;
+        public const int FILE_ATTRIBUTE_FILE = 0;
+        public const int MAX_PATH = 260;
 
-        public enum PathAttribute { File = 0, Directory = 0x10 }
-        public const Int32 MAX_PATH = 260;
-
-        [DllImport("shlwapi.dll", CharSet = CharSet.Auto)]
+        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
         public static extern bool PathRelativePathTo(
              [Out] StringBuilder pszPath,
              [In] string pszFrom,
@@ -288,21 +310,12 @@ namespace wyUpdate.Common
 
             bool bRet = PathRelativePathTo(
                 strBuild,
-                dir, (uint)PathAttribute.Directory,
-                file, (uint)PathAttribute.File
+                dir, FILE_ATTRIBUTE_DIRECTORY,
+                file, FILE_ATTRIBUTE_FILE
             );
 
-            if (bRet && strBuild.Length >= 2)
-            {
-                //get the first two characters
-                if (strBuild.ToString().Substring(0, 2) == @".\")
-                {
-                    //if file is in the directory (or a subfolder)
-                    return true;
-                }
-            }
-
-            return false;
+            // return if file is in the directory (or a subfolder)
+            return bRet && strBuild.Length >= 2 && strBuild.ToString().Substring(0, 2) == @".\";
         }
 
         public static bool IsDirInDir(string dir, string checkDir)
@@ -311,25 +324,12 @@ namespace wyUpdate.Common
 
             bool bRet = PathRelativePathTo(
                 strBuild,
-                dir, (uint)PathAttribute.Directory,
-                checkDir, (uint)PathAttribute.Directory
+                dir, FILE_ATTRIBUTE_DIRECTORY,
+                checkDir, FILE_ATTRIBUTE_DIRECTORY
             );
 
-            if (bRet)
-            {
-                if (strBuild.Length == 1) //result is "."
-                    return true;
-
-                if (strBuild.Length >= 2
-                    //get the first two characters
-                    && strBuild.ToString().Substring(0, 2) == @".\")
-                {
-                    //if checkDir is the directory (or a subfolder)
-                    return true;
-                }
-            }
-
-            return false;
+            // if strBuild.Length == 1, result is "."
+            return bRet && (strBuild.Length == 1 || (strBuild.Length >= 2 && strBuild.ToString().Substring(0, 2) == @".\"));
         }
     }
 }
