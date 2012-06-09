@@ -147,7 +147,9 @@ namespace wyUpdate
                                          Path.Combine(backupFolder, "comdesktop"),
                                          Path.Combine(backupFolder, "comstartmenu"),
                                          Path.Combine(backupFolder, "cp86"),
-                                         Path.Combine(backupFolder, "cp64")
+                                         Path.Combine(backupFolder, "cp64"),
+                                         Path.Combine(backupFolder, "curdesk"),
+                                         Path.Combine(backupFolder, "curstart")
                                      };
             string[] destFolders = {
                                        m_ProgramDirectory,
@@ -160,7 +162,9 @@ namespace wyUpdate
                                        SystemFolders.GetCommonDesktop(),
                                        SystemFolders.GetCommonProgramsStartMenu(),
                                        SystemFolders.GetCommonProgramFilesx86(),
-                                       SystemFolders.GetCommonProgramFilesx64()
+                                       SystemFolders.GetCommonProgramFilesx64(),
+                                       SystemFolders.GetCurrentUserDesktop(),
+                                       SystemFolders.GetCurrentUserProgramsStartMenu()
                                    };
 
             for (int i = 0; i < backupFolders.Length; i++)

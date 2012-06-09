@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.ServiceProcess;
@@ -64,8 +63,8 @@ namespace wyUpdate
         {
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
-            string[] backupFolders = new string[11];
-            string[] origFolders = { "base", "system", "64system", "root", "appdata", "lappdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64" };
+            string[] backupFolders = new string[13];
+            string[] origFolders = { "base", "system", "64system", "root", "appdata", "lappdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64", "curdesk", "curstart" };
             string[] destFolders = { ProgramDirectory, 
                 SystemFolders.GetSystem32x86(),
                 SystemFolders.GetSystem32x64(),
@@ -76,7 +75,9 @@ namespace wyUpdate
                 SystemFolders.GetCommonDesktop(), 
                 SystemFolders.GetCommonProgramsStartMenu(),
                 SystemFolders.GetCommonProgramFilesx86(),
-                SystemFolders.GetCommonProgramFilesx64()
+                SystemFolders.GetCommonProgramFilesx64(),
+                SystemFolders.GetCurrentUserDesktop(),
+                SystemFolders.GetCurrentUserProgramsStartMenu()
             };
 
             List<FileFolder> rollbackList = new List<FileFolder>();
@@ -102,8 +103,10 @@ namespace wyUpdate
 
                     // set ACL on the folders so they'll have proper user access properties
                     // there's no need to set ACL for local updates
-                    if (IsAdmin)
-                        SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
+                    
+                    //TODO: re-enable after some debugging -- this is causing problems on some machines (and Windows 8)
+                    //if (IsAdmin)
+                    //    SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
 
                     // delete "newer" client, if it will overwrite this client
                     DeleteClientInPath(destFolders[i], origFolders[i]);
@@ -236,8 +239,10 @@ namespace wyUpdate
                         {
                             int HResult = Marshal.GetHRForException(IOEx);
 
-                            // if sharing violation
-                            if ((HResult & 0xFFFF) == 32)
+                            int hr = (HResult & 0xFFFF);
+
+                            // if sharing violation, or "The requested operation cannot be performed on a file with a user-mapped section open."
+                            if (hr == 32 || hr == 1224)
                             {
                                 if (!SkipUIReporting)
                                 {
@@ -818,7 +823,10 @@ namespace wyUpdate
             }
         }
 
-        //TODO: make this function faster (it gets called N times (N files). Store folders in a hash table
+
+        /// <summary>Convert the relative path name to the absolute path name on disk.</summary>
+        /// <param name="relPath">The relative path to the file (using wyBuild lingo).</param>
+        /// <returns>The absolute path name.</returns>
         string FixUpdateDetailsPaths(string relPath)
         {
             if (relPath.Length < 4)
@@ -850,6 +858,10 @@ namespace wyUpdate
                     return Path.Combine(SystemFolders.GetCommonProgramFilesx86(), relPath.Substring(5));
                 case "cp64": //cp64 == common program files (x64)
                     return Path.Combine(SystemFolders.GetCommonProgramFilesx64(), relPath.Substring(5));
+                case "curd": // curdesk = current user's desktop
+                    return Path.Combine(SystemFolders.GetCurrentUserDesktop(), relPath.Substring(8));
+                case "curs": // curstart = current user's start menu
+                    return Path.Combine(SystemFolders.GetCurrentUserProgramsStartMenu(), relPath.Substring(9));
             }
 
             return null;
@@ -889,9 +901,6 @@ namespace wyUpdate
             return bw.CancellationPending;
         }
 
-        #region RelativePaths
-
-
 
         static void DeleteClientInPath(string destPath, string origPath)
         {
@@ -901,8 +910,7 @@ namespace wyUpdate
                 File.Delete(tempClientLoc);
         }
 
-        //returns a non-null string filename of the Client in the tempbase
-        //if the Running Client will be overwritten by the Temp Client
+        /// <summary>Returns a non-null string filename of the Client in the tempbase if the Running Client will be overwritten by the Temp Client</summary>
         static string ClientInTempBase(string actualBase, string tempBase)
         {
             //relative path from origFolder to client location
@@ -912,8 +920,8 @@ namespace wyUpdate
             //find the relativity of the actualBase and this running client
             bool bRet = SystemFolders.PathRelativePathTo(
                 strBuild,
-                actualBase, (uint)SystemFolders.PathAttribute.Directory,
-                tempStr, (uint)SystemFolders.PathAttribute.File
+                actualBase, SystemFolders.FILE_ATTRIBUTE_DIRECTORY,
+                tempStr, SystemFolders.FILE_ATTRIBUTE_FILE
             );
 
             if (bRet && strBuild.Length >= 2)
@@ -933,7 +941,6 @@ namespace wyUpdate
             return null;
         }
 
-        #endregion Relativepaths
 
         #region Parse variables
 
@@ -1031,6 +1038,10 @@ namespace wyUpdate
                     if (returnValue[returnValue.Length - 1] != '\\')
                         returnValue += '\\';
 
+                    break;
+                case "wu-temp":
+                    // get the temp directory (with trailing slash)
+                    returnValue = Path.Combine(TempDirectory, "temp") + "\\";
                     break;
                 default:
                     excludeVariables.RemoveAt(excludeVariables.Count - 1);
