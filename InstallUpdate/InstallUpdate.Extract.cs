@@ -68,8 +68,8 @@ namespace wyUpdate
                             {
                                 try
                                 {
-                                    using (FileStream original = File.OpenRead(FixUpdateDetailsPaths(file.RelativePath)))
-                                    using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, file.DeltaPatchRelativePath)))
+                                    using (FileStream original = File.Open(FixUpdateDetailsPaths(file.RelativePath), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                    using (FileStream patch = File.Open(Path.Combine(TempDirectory, file.DeltaPatchRelativePath), FileMode.Open, FileAccess.Read, FileShare.Read))
                                     using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                                     {
                                         VcdiffDecoder.Decode(original, patch, target, file.NewFileAdler32);

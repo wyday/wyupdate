@@ -387,8 +387,8 @@ namespace wyUpdate
 
                     try
                     {
-                        using (FileStream original = File.OpenRead(OldSelfLoc))
-                        using (FileStream patch = File.OpenRead(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath)))
+                        using (FileStream original = File.Open(OldSelfLoc, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (FileStream patch = File.Open(Path.Combine(TempDirectory, UpdtDetails.UpdateFiles[0].DeltaPatchRelativePath), FileMode.Open, FileAccess.Read, FileShare.Read))
                         using (FileStream target = File.Open(tempFilename, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                         {
                             VcdiffDecoder.Decode(original, patch, target, UpdtDetails.UpdateFiles[0].NewFileAdler32);
