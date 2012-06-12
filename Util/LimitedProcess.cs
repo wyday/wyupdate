@@ -179,12 +179,26 @@ public static class LimitedProcess
 
                             si.cb = Marshal.SizeOf(si);
 
-                            // build the arguments string
-                            // filenames must be quoted or else the commandline args get blown
-                            if (string.IsNullOrEmpty(arguments))
-                                arguments = "\"" + filename + "\"";
-                            else
-                                arguments = "\"" + filename + "\" " + arguments;
+                            if (filename.EndsWith(".exe"))
+                            {
+                                // build the arguments string
+                                // filenames must be quoted or else the commandline args get blown
+                                if (string.IsNullOrEmpty(arguments))
+                                    arguments = "\"" + filename + "\"";
+                                else
+                                    arguments = "\"" + filename + "\" " + arguments;
+                            }
+                            else // *.bat and *.cmd files
+                            {
+                                string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+
+                                if (string.IsNullOrEmpty(arguments))
+                                    arguments = "\"" + system32 + "\\cmd.exe\" /c \"" + filename + "\"";
+                                else
+                                    arguments = "\"" + system32 + "\\cmd.exe\" /c \"\"" + filename + "\" " + arguments + "\"";
+
+                                filename = system32 + "\\cmd.exe";
+                            }
 
                             processCreated = CreateProcessWithTokenW(hPrimaryToken, 0, filename, arguments, 0, IntPtr.Zero, Path.GetDirectoryName(filename), ref si, out pi);
 
