@@ -101,8 +101,8 @@ namespace wyUpdate.Common
             {
                 StringBuilder path = new StringBuilder(256);
 
-                //CSIDL_COMMON_STARTMENU = 0x0016
-                SHGetFolderPath(IntPtr.Zero, 0x16, IntPtr.Zero, 0, path);
+                //CSIDL_COMMON_PROGRAMS = 0x0017
+                SHGetFolderPath(IntPtr.Zero, 0x17, IntPtr.Zero, 0, path);
 
                 m_CommonProgramsStartMenu = path.ToString();
             }
