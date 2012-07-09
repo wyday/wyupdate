@@ -143,22 +143,13 @@ namespace wyUpdate
                 var rules = security.GetAccessRules(true, true, typeof(NTAccount));
 
                 var currentuser = new WindowsPrincipal(WindowsIdentity.GetCurrent());
-                bool result = false;
+
+                FileSystemRights RightsHave = 0;
+                FileSystemRights RightsDontHave = 0;
+
                 foreach (FileSystemAccessRule rule in rules)
                 {
-                    // Check if the rule has full control over the folder. If not skip to the next rule.
-
-                    //Note: We're "XOR"ing with RightsNeeded to eliminate permissions that
-                    //      "rule.FileSystemRights" and "RightsNeeded" have in common.
-                    //      Then we're "AND"ing that result with RightsNeeded to
-                    //      to get permissions in "RightsNeeded" that are missing from "FileSystemRights".
-                    //      The result should be 0 if the user has RightsNeeded over the folder (even
-                    //      if "rule.FileSystemRights" has flags that aren't present in the
-                    //      "RightsNeeded" -- which can happen because
-                    //      "RightsNeeded" isn't *every* possible flag).
-                    if (((rule.FileSystemRights ^ RightsNeeded) & RightsNeeded) != 0)
-                        continue;
-
+                    // First check to see if the current user is even in the role, if not, skip
                     if (rule.IdentityReference.Value.StartsWith("S-1-"))
                     {
                         var sid = new SecurityIdentifier(rule.IdentityReference.Value);
@@ -172,11 +163,25 @@ namespace wyUpdate
                     }
 
                     if (rule.AccessControlType == AccessControlType.Deny)
-                        return false;
-                    if (rule.AccessControlType == AccessControlType.Allow)
-                        result = true;
+                        RightsDontHave |= rule.FileSystemRights;
+                    else
+                        RightsHave |= rule.FileSystemRights;
                 }
-                return result;
+
+                // exclude "RightsDontHave"
+                RightsHave &= ~RightsDontHave;
+
+                //Note: We're "XOR"ing with RightsNeeded to eliminate permissions that
+                //      "rule.FileSystemRights" and "RightsNeeded" have in common.
+                //      Then we're "AND"ing that result with RightsNeeded to
+                //      to get permissions in "RightsNeeded" that are missing from "FileSystemRights".
+                //      The result should be 0 if the user has RightsNeeded over the folder (even
+                //      if "rule.FileSystemRights" has flags that aren't present in the
+                //      "RightsNeeded" -- which can happen because
+                //      "RightsNeeded" isn't *every* possible flag).
+
+                // Check if the user has full control over the folder.
+                return ((RightsHave ^ RightsNeeded) & RightsNeeded) == 0;
             }
             catch
             {
