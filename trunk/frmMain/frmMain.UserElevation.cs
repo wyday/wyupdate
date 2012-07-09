@@ -172,13 +172,13 @@ namespace wyUpdate
                 RightsHave &= ~RightsDontHave;
 
                 //Note: We're "XOR"ing with RightsNeeded to eliminate permissions that
-                //      "rule.FileSystemRights" and "RightsNeeded" have in common.
-                //      Then we're "AND"ing that result with RightsNeeded to
-                //      to get permissions in "RightsNeeded" that are missing from "FileSystemRights".
-                //      The result should be 0 if the user has RightsNeeded over the folder (even
-                //      if "rule.FileSystemRights" has flags that aren't present in the
-                //      "RightsNeeded" -- which can happen because
-                //      "RightsNeeded" isn't *every* possible flag).
+                //      "RightsHave" and "RightsNeeded" have in common. Then we're
+                //      ANDing that result with RightsNeeded to get permissions in
+                //      "RightsNeeded" that are missing from "RightsHave". The result
+                //      should be 0 if the user has RightsNeeded over the folder (even
+                //      if "RightsHave" has flags that aren't present in the 
+                //      "RightsNeeded" -- which can happen because "RightsNeeded" isn't
+                //      *every* possible flag).
 
                 // Check if the user has full control over the folder.
                 return ((RightsHave ^ RightsNeeded) & RightsNeeded) == 0;
