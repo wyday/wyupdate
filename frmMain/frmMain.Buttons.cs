@@ -45,6 +45,16 @@ namespace wyUpdate
 
                 if (dResult == DialogResult.Yes)
                 {
+                    // if the frame has changed between clicking "Cancel" and clicking "Yes" on the dialog box
+                    // handle the new frame gracefully. That is, if the user checks for updates, clicks cancel
+                    // then the update info screen shows, close wyUpdate (instead of just disabling the cancel button.
+                    if (frameOn != Frame.Checking && frameOn != Frame.InstallUpdates)
+                    {
+                        isCancelled = true;
+                        Close();
+                        return;
+                    }
+
                     //cancel the update
                     isCancelled = true;
 
