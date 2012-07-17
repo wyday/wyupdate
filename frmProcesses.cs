@@ -214,7 +214,7 @@ namespace wyUpdate
             }
         }
 
-        static bool SameProcs(List<Process> procs1, List<Process> procs2)
+        public static bool SameProcs(List<Process> procs1, List<Process> procs2)
         {
             if (procs1.Count != procs2.Count)
                 return false;

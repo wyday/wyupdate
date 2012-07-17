@@ -73,11 +73,16 @@ namespace wyUpdate
                                     ref uint lpdwRebootReasons);
 
 
-        private const int SidePadding = 12;
+        const int SidePadding = 12;
         readonly ClientLanguage clientLang;
         public bool CancelUpdate;
 
-        bool showingProcesses;
+        readonly bool showingProcesses;
+        readonly BackgroundWorker bw;
+        Timer chkProc;
+
+        List<Process> runningProcesses;
+        public string FilenameInUse;
 
         public frmFilesInUse(ClientLanguage cLang, string filename)
         {
@@ -89,35 +94,45 @@ namespace wyUpdate
             Text = clientLang.FilesInUseDialog.Title;
             btnCancel.Text = clientLang.CancelUpdate;
 
+            FilenameInUse = filename;
             txtFile.Text = filename;
 
             if (VistaTools.AtLeastVista())
             {
                 // get the list of processes using the file
-                List<Process> processes = null;
+                
                 try
                 {
-                    processes = GetProcessesUsingFiles(new[] {filename});
+                    runningProcesses = GetProcessesUsingFiles(new[] {filename});
                 }
                 catch { }
 
-                if (processes != null && processes.Count > 0)
+                if (runningProcesses != null && runningProcesses.Count > 0)
                 {
-                    listProc.Items.Clear();
+                    UpdateList();
 
-                    foreach (Process proc in processes)
-                    {
-                        listProc.Items.Add(proc.MainWindowTitle + " (" + proc.ProcessName + ".exe)");
-                    }
-
-                    // translate the lblProc
+                    // translate the items
                     lblProc.Text = clientLang.FilesInUseDialog.SubTitle;
+                    btnCloseProc.Text = clientLang.ClosePrc;
+                    btnCloseAll.Text = clientLang.CloseAllPrc;
 
                     // show the list box of the running processes
                     lblProc.Visible = true;
                     listProc.Visible = true;
+                    btnCloseAll.Visible = true;
+                    btnCloseProc.Visible = true;
 
                     showingProcesses = true;
+
+                    chkProc = new Timer {Enabled = true, Interval = 2000};
+                    chkProc.Tick += chkProc_Tick;
+
+                    bw = new BackgroundWorker {WorkerSupportsCancellation = true};
+                    bw.DoWork += bw_DoWork;
+                    bw.RunWorkerCompleted += bw_RunWorkerCompleted;
+
+                    //begin checking the for the filenames
+                    bw.RunWorkerAsync();
                 }
             }
 
@@ -205,8 +220,33 @@ namespace wyUpdate
             return processes;
         }
 
+        void bw_DoWork(object sender, DoWorkEventArgs e)
+        {
+            List<Process> rProcs = GetProcessesUsingFiles(new[] { FilenameInUse });
+            e.Result = rProcs != null && rProcs.Count > 0 ? rProcs : null;
+        }
+
+        void bw_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Result == null)
+                return;
+
+            List<Process> rProcs = (List<Process>)e.Result;
+
+            //check if list of process is sames as the semi-global one (runningProcesses)
+            //if diff, update listbox.
+            if (!frmProcesses.SameProcs(rProcs, runningProcesses))
+            {
+                //update the running processes array
+                runningProcesses = rProcs;
+                UpdateList();
+            }
+        }
+
         void btnCancel_Click(object sender, EventArgs e)
         {
+            chkProc.Enabled = false;
+
             CancelUpdate = DialogResult.Yes ==
                                MessageBox.Show(clientLang.CancelDialog.Content, clientLang.CancelDialog.Title,
                                                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation,
@@ -214,7 +254,10 @@ namespace wyUpdate
 
             // prevent closing this window if the user isn't canceling
             if (!CancelUpdate)
+            {
                 DialogResult = DialogResult.None;
+                chkProc.Enabled = true;
+            }
         }
 
         Rectangle m_DescripRect;
@@ -261,6 +304,73 @@ namespace wyUpdate
                                   TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
 
             base.OnPaint(e);
+        }
+
+        void btnCloseProc_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // if there's no window handle, just kill the process
+                if (runningProcesses[listProc.SelectedIndex].MainWindowHandle == IntPtr.Zero)
+                    runningProcesses[listProc.SelectedIndex].Kill();
+                else
+                    runningProcesses[listProc.SelectedIndex].CloseMainWindow();
+
+                string procDets = (string)listProc.Items[listProc.SelectedIndex];
+
+                if (!procDets.StartsWith("[closing]"))
+                    procDets = "[closing] " + procDets;
+
+                listProc.Items[listProc.SelectedIndex] = procDets;
+            }
+            catch { }
+
+            if (!bw.IsBusy)
+                bw.RunWorkerAsync();
+        }
+
+        void btnCloseAll_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < runningProcesses.Count; i++)
+            {
+                try
+                {
+                    // if there's no window handle, just kill the process
+                    if (runningProcesses[i].MainWindowHandle == IntPtr.Zero)
+                        runningProcesses[i].Kill();
+                    else
+                        runningProcesses[i].CloseMainWindow();
+
+                    string procDets = (string)listProc.Items[i];
+
+                    if (!procDets.StartsWith("[closing]"))
+                        procDets = "[closing] " + procDets;
+
+                    listProc.Items[i] = procDets;
+                }
+                catch { }
+            }
+
+            if (!bw.IsBusy)
+                bw.RunWorkerAsync();
+        }
+
+        void chkProc_Tick(object sender, EventArgs e)
+        {
+            if (!bw.IsBusy)
+                bw.RunWorkerAsync();
+        }
+
+        void UpdateList()
+        {
+            listProc.Items.Clear();
+
+            foreach (Process proc in runningProcesses)
+            {
+                listProc.Items.Add(proc.MainWindowTitle + " (" + proc.ProcessName + ".exe)");
+            }
+
+            listProc.SelectedIndex = 0;
         }
     }
 }

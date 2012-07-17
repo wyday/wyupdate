@@ -32,6 +32,8 @@
             this.txtFile = new System.Windows.Forms.TextBox();
             this.listProc = new System.Windows.Forms.ListBox();
             this.lblProc = new System.Windows.Forms.Label();
+            this.btnCloseProc = new System.Windows.Forms.Button();
+            this.btnCloseAll = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnCancel
@@ -76,12 +78,38 @@
             this.lblProc.TabIndex = 6;
             this.lblProc.Visible = false;
             // 
+            // btnCloseProc
+            // 
+            this.btnCloseProc.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnCloseProc.AutoSize = true;
+            this.btnCloseProc.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.btnCloseProc.Location = new System.Drawing.Point(12, 302);
+            this.btnCloseProc.Name = "btnCloseProc";
+            this.btnCloseProc.Size = new System.Drawing.Size(88, 22);
+            this.btnCloseProc.TabIndex = 7;
+            this.btnCloseProc.Visible = false;
+            this.btnCloseProc.Click += new System.EventHandler(this.btnCloseProc_Click);
+            // 
+            // btnCloseAll
+            // 
+            this.btnCloseAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnCloseAll.AutoSize = true;
+            this.btnCloseAll.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.btnCloseAll.Location = new System.Drawing.Point(106, 302);
+            this.btnCloseAll.Name = "btnCloseAll";
+            this.btnCloseAll.Size = new System.Drawing.Size(113, 22);
+            this.btnCloseAll.TabIndex = 8;
+            this.btnCloseAll.Visible = false;
+            this.btnCloseAll.Click += new System.EventHandler(this.btnCloseAll_Click);
+            // 
             // frmFilesInUse
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(383, 336);
             this.ControlBox = false;
+            this.Controls.Add(this.btnCloseProc);
+            this.Controls.Add(this.btnCloseAll);
             this.Controls.Add(this.lblProc);
             this.Controls.Add(this.listProc);
             this.Controls.Add(this.txtFile);
@@ -105,6 +133,8 @@
         private System.Windows.Forms.TextBox txtFile;
         private System.Windows.Forms.ListBox listProc;
         private System.Windows.Forms.Label lblProc;
+        private System.Windows.Forms.Button btnCloseProc;
+        private System.Windows.Forms.Button btnCloseAll;
 
     }
 }
