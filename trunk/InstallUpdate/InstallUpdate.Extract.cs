@@ -11,6 +11,8 @@ namespace wyUpdate
 {
     partial class InstallUpdate
     {
+        public string ExtractPassword;
+
         // unzip the update to the temp folder
         public void RunUnzipProcess()
         {
@@ -120,6 +122,10 @@ namespace wyUpdate
                     catch { }
                 }
             }
+            catch (BadPasswordException ex)
+            {
+                except = new BadPasswordException("Could not install the encrypted update because the password did not match.");
+            }
             catch (Exception ex)
             {
                 except = ex;
@@ -204,7 +210,11 @@ namespace wyUpdate
                         filesDone++;
                     }
 
-                    e.Extract(OutputDirectory, ExtractExistingFileAction.OverwriteSilently);
+                    // if a password is provided use it to extract the updates
+                    if (!string.IsNullOrEmpty(ExtractPassword))
+                        e.ExtractWithPassword(OutputDirectory, ExtractExistingFileAction.OverwriteSilently, ExtractPassword);
+                    else
+                        e.Extract(OutputDirectory, ExtractExistingFileAction.OverwriteSilently);
                 }
             }
         }
