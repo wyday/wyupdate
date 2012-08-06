@@ -87,6 +87,9 @@ namespace wyUpdate
                 if (!string.IsNullOrEmpty(StartOnErrArgs))
                     WriteFiles.WriteString(fs, 0x14, StartOnErrArgs);
 
+                if (!string.IsNullOrEmpty(PasswordUpdateCmd))
+                    WriteFiles.WriteString(fs, 0x15, PasswordUpdateCmd);
+
                 fs.WriteByte(0xFF);
             }
         }
@@ -194,6 +197,9 @@ namespace wyUpdate
                             break;
                         case 0x14:
                             StartOnErrArgs = ReadFiles.ReadString(fs);
+                            break;
+                        case 0x15:
+                            PasswordUpdateCmd = ReadFiles.ReadString(fs);
                             break;
                         default:
                             ReadFiles.SkipField(fs, bType);

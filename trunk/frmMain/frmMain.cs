@@ -17,6 +17,7 @@ namespace wyUpdate
         public bool IsAdmin;
 
         public readonly ClientFile update = new ClientFile();
+        string PasswordUpdateCmd;
         ServerFile ServerFile;
         VersionChoice updateFrom;
 
@@ -429,6 +430,7 @@ namespace wyUpdate
             }
             else
             {
+                PasswordUpdateCmd = commands["password"];
                 forcedLanguageCulture = commands["forcelang"];
 
                 // automatic update mode

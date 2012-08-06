@@ -452,7 +452,11 @@ namespace wyUpdate
                                             Filename = Path.Combine(tempDirectory, updateFilename),
                                             OutputDirectory = tempDirectory,
                                             TempDirectory = tempDirectory,
-                                            ProgramDirectory = baseDirectory
+                                            ProgramDirectory = baseDirectory,
+
+                                            // use the password passed in by commandline (take precedence)
+                                            // or use the password embedded in the client.wyc file.
+                                            ExtractPassword = PasswordUpdateCmd ?? update.UpdatePassword
                                         };
 
                     installUpdate.ProgressChanged += ShowProgress;
