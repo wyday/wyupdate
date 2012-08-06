@@ -31,18 +31,16 @@ namespace wyUpdate.Common
         public Hashtable Languages = new Hashtable();
 #endif
 
-        string m_GUID;
-
-        #region Properties
+        public string InstalledVersion;
 
         public UpdateOn CurrentlyUpdating = UpdateOn.DownloadingUpdate;
 
         public List<string> ServerFileSites = new List<string>(1);
-
+        public List<string> ClientServerSites = new List<string>(1);
         public string CompanyName;
-
         public string ProductName;
 
+        string m_GUID;
         public string GUID
         {
             get
@@ -82,26 +80,15 @@ namespace wyUpdate.Common
             }
         }
 
-        public string InstalledVersion;
-
         public ImageAlign HeaderImageAlign = ImageAlign.Left;
-
         public string HeaderTextColorName;
-
         public int HeaderTextIndent = -1;
-
         public bool HideHeaderDivider;
-
         public Image TopImage;
-
         public Image SideImage;
 
-
         public string TopImageFilename;
-
         public string SideImageFilename;
-
-        public List<string> ClientServerSites = new List<string>(1);
 
         public bool CloseOnSuccess;
 
@@ -109,7 +96,7 @@ namespace wyUpdate.Common
 
         public string PublicSignKey;
 
-        #endregion Properties
+        public string UpdatePassword;
 
 #if CLIENT
 
@@ -302,6 +289,9 @@ namespace wyUpdate.Common
                         break;
                     case 0x1B:
                         PublicSignKey = ReadFiles.ReadString(ms);
+                        break;
+                    case 0x1C:
+                        UpdatePassword = ReadFiles.ReadString(ms);
                         break;
                     default:
                         ReadFiles.SkipField(ms, bType);
@@ -575,6 +565,9 @@ namespace wyUpdate.Common
 
                 if (!string.IsNullOrEmpty(PublicSignKey))
                     WriteFiles.WriteString(ms, 0x1B, PublicSignKey);
+
+                if (!string.IsNullOrEmpty(UpdatePassword))
+                    WriteFiles.WriteString(ms, 0x1C, UpdatePassword);
 
                 ms.WriteByte(0xFF);
 
