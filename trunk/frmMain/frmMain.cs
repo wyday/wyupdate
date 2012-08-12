@@ -383,7 +383,7 @@ namespace wyUpdate
                     PrepareStepOn(startStep);
 
                     // selfupdate & post-selfupdate installation
-                    if (beginAutoUpdateInstallation)
+                    if (beginAutoUpdateInstallation && !IsNewSelf)
                         UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
                 }
                 catch (Exception ex)
