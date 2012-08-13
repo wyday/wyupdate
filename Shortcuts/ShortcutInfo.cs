@@ -13,21 +13,13 @@ namespace wyUpdate.Common
     public class ShortcutInfo : ICloneable
     {
         public string Path;
-
         public string WorkingDirectory;
-
         public string Arguments;
-
         public string Description;
-
         public string IconPath;
-
         public int IconIndex;
-
         public WindowStyle WindowStyle = WindowStyle.ShowNormal;
-
         public string RelativeOuputPath;
-
 
         public void SaveToStream(Stream fs, bool saveRelativePath)
         {

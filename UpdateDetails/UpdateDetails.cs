@@ -10,8 +10,10 @@ namespace wyUpdate.Common
         public List<RegChange> RegistryModifications = new List<RegChange>();
         public List<UpdateFile> UpdateFiles = new List<UpdateFile>();
         public List<ShortcutInfo> ShortcutInfos = new List<ShortcutInfo>();
-        public List<string> PreviousDesktopShortcuts = new List<string>();
-        public List<string> PreviousSMenuShortcuts = new List<string>();
+        public List<string> PreviousCommonDesktopShortcuts = new List<string>();
+        public List<string> PreviousCommonSMenuShortcuts = new List<string>();
+        public List<string> PreviousCUserDesktopShortcuts = new List<string>();
+        public List<string> PreviousCUserSMenuShortcuts = new List<string>();
         public List<string> FoldersToDelete = new List<string>();
         public List<string> ServicesToStop = new List<string>();
         public List<StartService> ServicesToStart = new List<StartService>();
@@ -54,10 +56,16 @@ namespace wyUpdate.Common
                                 updtDetails.RegistryModifications.Add(RegChange.ReadFromStream(fs));
                                 break;
                             case 0x30:
-                                updtDetails.PreviousDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                                updtDetails.PreviousCommonDesktopShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
                                 break;
                             case 0x31:
-                                updtDetails.PreviousSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                                updtDetails.PreviousCommonSMenuShortcuts.Add(ReadFiles.ReadDeprecatedString(fs));
+                                break;
+                            case 0x36:
+                                updtDetails.PreviousCUserDesktopShortcuts.Add(ReadFiles.ReadString(fs));
+                                break;
+                            case 0x37:
+                                updtDetails.PreviousCUserSMenuShortcuts.Add(ReadFiles.ReadString(fs));
                                 break;
                             case 0x32: //service to stop
                                 updtDetails.ServicesToStop.Add(ReadFiles.ReadString(fs));
@@ -189,11 +197,17 @@ namespace wyUpdate.Common
 
 
                 //Previous shortcuts that needs to be installed in order to install new shortcuts
-                foreach (string shortcut in PreviousDesktopShortcuts)
+                foreach (string shortcut in PreviousCommonDesktopShortcuts)
                     WriteFiles.WriteDeprecatedString(ms, 0x30, shortcut);
 
-                foreach (string shortcut in PreviousSMenuShortcuts)
+                foreach (string shortcut in PreviousCommonSMenuShortcuts)
                     WriteFiles.WriteDeprecatedString(ms, 0x31, shortcut);
+
+                foreach (string shortcut in PreviousCUserDesktopShortcuts)
+                    WriteFiles.WriteString(ms, 0x36, shortcut);
+
+                foreach (string shortcut in PreviousCUserSMenuShortcuts)
+                    WriteFiles.WriteString(ms, 0x37, shortcut);
 
                 //number of file infos
                 WriteFiles.WriteInt(ms, 0x21, CountFileInfos());

@@ -20,7 +20,7 @@ namespace wyUpdate
 
         IShellLinkW m_Link;
 
-        string m_sPath;
+        readonly string m_sPath;
 
         ///
         /// <param name='linkPath'>
@@ -35,8 +35,9 @@ namespace wyUpdate
 
             if (File.Exists(linkPath))
             {
-                pf = (IPersistFile)m_Link;
-                pf.Load(linkPath, 0);
+                File.Delete(linkPath);
+                /*IPersistFile pf = (IPersistFile)m_Link;
+                pf.Load(linkPath, 0);*/
             }
         }
 

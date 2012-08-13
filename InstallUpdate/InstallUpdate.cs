@@ -64,6 +64,8 @@ namespace wyUpdate
             //check if folders exist, and count files to be moved
             string backupFolder = Path.Combine(TempDirectory, "backup");
             string[] backupFolders = new string[13];
+
+            //Note: InstallShortcuts() requires the position in array to remain constant
             string[] origFolders = { "base", "system", "64system", "root", "appdata", "lappdata", "comappdata", "comdesktop", "comstartmenu", "cp86", "cp64", "curdesk", "curstart" };
             string[] destFolders = { ProgramDirectory, 
                 SystemFolders.GetSystem32x86(),
@@ -448,30 +450,57 @@ namespace wyUpdate
 
         void InstallShortcuts(string[] destFolders, string backupFolder, List<FileFolder> rollbackList)
         {
-            bool installDesktopShortcut = true, installStartMenuShortcut = true;
+            bool installCommonDesktopShortcut = true;
+            bool installCommonStartMenuShortcut = true;
+            bool installCurrentUserDesktopShortcut = true;
+            bool installCurrentUserStartMenuShortcut = true;
 
             // see if at least one previous shortcut on the desktop exists
-            foreach (string shortcut in UpdtDetails.PreviousDesktopShortcuts)
+            foreach (string shortcut in UpdtDetails.PreviousCommonDesktopShortcuts)
             {
-                if (File.Exists(Path.Combine(destFolders[6], shortcut.Substring(11))))
+                if (File.Exists(Path.Combine(destFolders[7], shortcut.Substring(11))))
                 {
-                    installDesktopShortcut = true;
+                    installCommonDesktopShortcut = true;
                     break;
                 }
 
-                installDesktopShortcut = false;
+                installCommonDesktopShortcut = false;
             }
 
             //see if at least one previous shortcut in the start menu folder exists
-            foreach (string shortcut in UpdtDetails.PreviousSMenuShortcuts)
+            foreach (string shortcut in UpdtDetails.PreviousCommonSMenuShortcuts)
             {
-                if (File.Exists(Path.Combine(destFolders[7], shortcut.Substring(13))))
+                if (File.Exists(Path.Combine(destFolders[8], shortcut.Substring(13))))
                 {
-                    installStartMenuShortcut = true;
+                    installCommonStartMenuShortcut = true;
                     break;
                 }
 
-                installStartMenuShortcut = false;
+                installCommonStartMenuShortcut = false;
+            }
+
+            // see if at least one previous shortcut on the desktop exists
+            foreach (string shortcut in UpdtDetails.PreviousCUserDesktopShortcuts)
+            {
+                if (File.Exists(Path.Combine(destFolders[11], shortcut.Substring(8))))
+                {
+                    installCurrentUserDesktopShortcut = true;
+                    break;
+                }
+
+                installCurrentUserDesktopShortcut = false;
+            }
+
+            //see if at least one previous shortcut in the start menu folder exists
+            foreach (string shortcut in UpdtDetails.PreviousCUserSMenuShortcuts)
+            {
+                if (File.Exists(Path.Combine(destFolders[12], shortcut.Substring(9))))
+                {
+                    installCurrentUserStartMenuShortcut = true;
+                    break;
+                }
+
+                installCurrentUserStartMenuShortcut = false;
             }
 
             // create the shortcuts
@@ -481,8 +510,10 @@ namespace wyUpdate
                 string tempFile = UpdtDetails.ShortcutInfos[i].RelativeOuputPath.Substring(0, 4);
 
                 //if we can't install to that folder then continue to the next shortcut
-                if (tempFile == "comd" && !installDesktopShortcut
-                    || tempFile == "coms" && !installStartMenuShortcut)
+                if (tempFile == "comd" && !installCommonDesktopShortcut
+                    || tempFile == "coms" && !installCommonStartMenuShortcut
+                    || tempFile == "curd" && !installCurrentUserDesktopShortcut
+                    || tempFile == "curs" && !installCurrentUserStartMenuShortcut)
                 {
                     continue;
                 }
