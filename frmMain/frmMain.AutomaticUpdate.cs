@@ -453,7 +453,7 @@ namespace wyUpdate
             // no bad request found - continue processing as usual
             return false;
         }
-        
+
         /// <summary>For filtering bad requests. Self updating is still in the "download" state.</summary>
         /// <returns>True if downloading, or downloading/extracting self update</returns>
         bool IsInDownloadState()

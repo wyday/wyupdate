@@ -405,7 +405,8 @@ namespace wyUpdate
                                             //location of old "self" to replace
                                             OldSelfLoc = oldSelfLocation,
                                             Filename = Path.Combine(tempDirectory, updateFilename),
-                                            OutputDirectory = tempDirectory
+                                            OutputDirectory = tempDirectory,
+                                            FromAutoUpdate = isAutoUpdateMode
                                         };
 
                     installUpdate.ProgressChanged += SelfUpdateProgress;
@@ -434,7 +435,8 @@ namespace wyUpdate
                                             OldSelfLoc = oldSelfLocation,
                                             NewSelfLoc = newSelfLocation,
                                             Filename = Path.Combine(tempDirectory, updateFilename),
-                                            OutputDirectory = Path.Combine(tempDirectory, "selfupdate")
+                                            OutputDirectory = Path.Combine(tempDirectory, "selfupdate"),
+                                            FromAutoUpdate = isAutoUpdateMode
                                         };
 
                     installUpdate.ProgressChanged += SelfUpdateProgress;

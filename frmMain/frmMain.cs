@@ -389,7 +389,7 @@ namespace wyUpdate
                              also the new instance of wyUpdate to wait for the app to close).
                      */
                     // selfupdate & post-selfupdate installation
-                    if (beginAutoUpdateInstallation && !IsNewSelf)
+                    if (beginAutoUpdateInstallation)
                         UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
                 }
                 catch (Exception ex)
