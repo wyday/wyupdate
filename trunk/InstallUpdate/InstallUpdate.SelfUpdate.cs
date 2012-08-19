@@ -14,6 +14,7 @@ namespace wyUpdate
         //for self update
         public string NewSelfLoc;
         public string OldSelfLoc;
+        public bool FromAutoUpdate;
 
         public void RunSelfUpdate()
         {
@@ -41,7 +42,7 @@ namespace wyUpdate
                 catch { }
 
                 //find and forcibly close oldClientLocation
-                KillProcess(OldSelfLoc);
+                KillProcess(OldSelfLoc, FromAutoUpdate);
 
                 string updtDetailsFilename = Path.Combine(OutputDirectory, "updtdetails.udt");
 
@@ -274,7 +275,7 @@ namespace wyUpdate
                 UpdateFile updateFile = FindNewClient();
 
                 //find and forcibly close oldClientLocation
-                KillProcess(OldSelfLoc);
+                KillProcess(OldSelfLoc, FromAutoUpdate);
 
                 int retriedTimes = 0;
 
@@ -444,7 +445,7 @@ namespace wyUpdate
             return null;
         }
 
-        static void KillProcess(string filename)
+        static void KillProcess(string filename, bool wait5Secs)
         {
             Process[] aProcess = Process.GetProcesses();
 
@@ -457,6 +458,10 @@ namespace wyUpdate
                 {
                     if (string.Equals(proc.MainModule.FileName, filename, StringComparison.OrdinalIgnoreCase))
                     {
+                        //TODO: make this more efficent. Test with old versions of AutomaticUpdater
+                        if (wait5Secs)
+                            proc.WaitForExit(5000);
+
                         proc.Kill();
                     }
                 }
