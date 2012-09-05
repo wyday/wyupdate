@@ -382,12 +382,6 @@ namespace wyUpdate
                 {
                     PrepareStepOn(startStep);
 
-                    /* Note: We added the !IsNewSelf check to prevent the bug where
-                             the new instance of wyUpdate would immediately being installing
-                             the new wyUpdate self-update, thus killing the old wyUpdate process
-                             thus causing the app running AutomaticUpdater to show an error. (And
-                             also the new instance of wyUpdate to wait for the app to close).
-                     */
                     // selfupdate & post-selfupdate installation
                     if (beginAutoUpdateInstallation)
                         UpdateHelper_RequestReceived(this, UpdateAction.UpdateStep, UpdateStep.Install);
