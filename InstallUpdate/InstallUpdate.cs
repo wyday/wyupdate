@@ -103,13 +103,6 @@ namespace wyUpdate
                     origFolders[i] = Path.Combine(TempDirectory, origFolders[i]);
                     Directory.CreateDirectory(backupFolders[i]);
 
-                    // set ACL on the folders so they'll have proper user access properties
-                    // there's no need to set ACL for local updates
-                    
-                    //TODO: re-enable after some debugging -- this is causing problems on some machines (and Windows 8)
-                    //if (IsAdmin)
-                    //    SetACLOnFolders(destFolders[i], origFolders[i], backupFolders[i]);
-
                     // delete "newer" client, if it will overwrite this client
                     DeleteClientInPath(destFolders[i], origFolders[i]);
 
@@ -277,8 +270,8 @@ namespace wyUpdate
                 }
                 else
                 {
-                    //move file
-                    File.Move(tempFiles[i].FullName, Path.Combine(progDir, tempFiles[i].Name));
+                    //copy the file (don't "File.Move" because that doesn't properly inherit ACL settings)
+                    File.Copy(tempFiles[i].FullName, Path.Combine(progDir, tempFiles[i].Name), true);
 
                     //add filename to "rollback" list
                     rollbackList.Add(new FileFolder(Path.Combine(progDir, tempFiles[i].Name)));
@@ -316,71 +309,6 @@ namespace wyUpdate
 
                 //backup all of the files in that directory
                 UpdateFiles(tempDirs[i].FullName, newProgDir, Path.Combine(backupFolder, tempDirs[i].Name), rollbackList, ref totalDone, ref totalFiles);
-            }
-        }
-
-        static void SetACLOnFolders(string basis, string extracted, string backup)
-        {
-            try
-            {
-                // This codes does 3 things:
-                // 1. Get the ACL for the current extracted & backup folder
-                // 2. Get the ACL for the target folder
-                // 3. Generates a new DirectorySecurity object for both the extracted & backup folders
-                //    (this solves the "ACL not in canonical form" problem http://social.msdn.microsoft.com/Forums/en/sqlgetstarted/thread/e4725808-bd1b-476a-87a4-5fd9dc24a3b7)
-                // 4. Set the gathered ACLs to the new DirectorySecurity objects (repeat process for Audit Rules)
-
-                // get the acl of basis
-                AuthorizationRuleCollection acl = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                AuthorizationRuleCollection auditCL = new DirectoryInfo(basis).GetAccessControl(AccessControlSections.All).GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
-
-                DirectoryInfo infoEx = new DirectoryInfo(extracted);
-                DirectorySecurity dsEx = infoEx.GetAccessControl(AccessControlSections.All);
-                AuthorizationRuleCollection cold = dsEx.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                AuthorizationRuleCollection coldAudit = dsEx.GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
-                DirectorySecurity dsExNew = new DirectorySecurity();
-
-                // add existing ACL rules to the new DirSec obj
-                foreach (FileSystemAccessRule access in cold)
-                    dsExNew.AddAccessRule(access);
-
-                foreach (FileSystemAuditRule audit in coldAudit)
-                    dsExNew.AddAuditRule(audit);
-
-                DirectoryInfo infoBack = new DirectoryInfo(backup);
-                DirectorySecurity dsBack = infoBack.GetAccessControl(AccessControlSections.All);
-                cold = dsBack.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                coldAudit = dsBack.GetAuditRules(true, true, typeof(System.Security.Principal.NTAccount));
-                DirectorySecurity dsBackNew = new DirectorySecurity();
-
-                // add existing ACL rules to the new DirSec obj
-                foreach (FileSystemAccessRule access in cold)
-                    dsBackNew.AddAccessRule(access);
-
-                foreach (FileSystemAuditRule audit in coldAudit)
-                    dsBackNew.AddAuditRule(audit);
-
-                // add proper ACL rules to extracted & backup
-                foreach (FileSystemAccessRule access in acl)
-                {
-                    dsExNew.AddAccessRule(access);
-                    dsBackNew.AddAccessRule(access);
-                }
-
-                foreach (FileSystemAuditRule audit in auditCL)
-                {
-                    dsExNew.AddAuditRule(audit);
-                    dsBackNew.AddAuditRule(audit);
-                }
-
-                // apply the new ACL lists to the folders
-                infoEx.SetAccessControl(dsExNew);
-                infoBack.SetAccessControl(dsBackNew);
-            }
-            catch (Exception ex)
-            {
-                // Tell the user explicitly what is wrong (e.g. don't frankenstein limited users into faux-admin users).
-                throw new Exception("Failed to set the ACL (access control list) on the files and folders. Make sure this user has the ability to read and write ACL properties of files and folders. Full error: " + ex.Message);
             }
         }
 
