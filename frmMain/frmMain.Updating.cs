@@ -510,7 +510,6 @@ namespace wyUpdate
                                             UpdtDetails = updtDetails,
                                             TempDirectory = tempDirectory,
                                             ProgramDirectory = baseDirectory,
-                                            IsAdmin = IsAdmin,
 
                                             // skip ui reporting when updating from a service
                                             SkipUIReporting = UpdatingFromService || updateHelper.IsAService
