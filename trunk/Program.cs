@@ -46,8 +46,18 @@ namespace wyUpdate
             else
             {
                 FocusOtherProcess();
+                return 4;
             }
 
+            /*
+             Possible return codes:
+
+             0 = Success / no updates found
+             1 = General error
+             2 = Updates found
+             3 = Update process cancelled
+             4 = wyUpdate exited immediately to focus another wyUpdate instance
+            */
             return mainForm.ReturnCode;
         }
 
