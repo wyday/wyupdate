@@ -330,7 +330,7 @@ namespace wyUpdate.Common
             {
                 return selfLocation ??
                        (selfLocation =
-                        System.Windows.Forms.Application.ExecutablePath);
+                        System.Windows.Forms.Application.ExecutablePath.Replace('/', '\\'));
             }
         }
     }
