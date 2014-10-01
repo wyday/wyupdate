@@ -239,7 +239,11 @@ namespace wyUpdate
             {
                 //update the running processes array
                 runningProcesses = rProcs;
-                UpdateList();
+
+                // the worker might be completed as a result of the form window being closed.
+                // so, check if the form is disposed before updating the list.
+                if (!IsDisposed)
+                    UpdateList();
             }
         }
 
