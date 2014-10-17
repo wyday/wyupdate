@@ -715,6 +715,12 @@ namespace wyUpdate.Downloader
                 // Thus we're forced to mimic IE 9 User agent
                 ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 6.1; en-US; wyUpdate)";
             }
+            else if (request is FtpWebRequest)
+            {
+                // set to binary mode (should fix crummy servers that need this spelled out to them)
+                // namely ProFTPd that chokes if you request the file size without first setting "TYPE I" (binary mode)
+                (request as FtpWebRequest).UseBinary = true;
+            }
 
             return request;
         }
