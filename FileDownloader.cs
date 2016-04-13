@@ -265,6 +265,8 @@ namespace wyUpdate.Downloader
                 // update how many bytes have already been read
                 sentSinceLastCalc = data.StartPoint; //for BPS calculation
 
+                // Only increment once for each %
+                int LastProgress = 0; 
                 while ((readCount = data.DownloadStream.Read(buffer, 0, BufferSize)) > 0)
                 {
                     // break on cancel
@@ -289,7 +291,7 @@ namespace wyUpdate.Downloader
                     calculateBps(data.StartPoint, data.TotalDownloadSize);
 
                     // send progress info
-                    if (!bw.CancellationPending)
+                    if (!bw.CancellationPending && data.PercentDone > LastProgress)
                     {
                         bw.ReportProgress(0, new object[] {
                             //use the realtive progress or the raw progress
@@ -300,6 +302,8 @@ namespace wyUpdate.Downloader
                             // unweighted percent
                             data.PercentDone,
                             downloadSpeed, ProgressStatus.None, null });
+
+                        LastProgress = data.PercentDone;
                     }
 
                     // break on cancel
