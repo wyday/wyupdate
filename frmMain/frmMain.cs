@@ -118,7 +118,7 @@ namespace wyUpdate
             InitializeComponent();
 
             //enable Lazy SSL for all downloads
-            FileDownloader.EnableLazySSL();
+            FileDownloader.SetupSaneDownloadOptions();
 
             //resize the client so its client region = 500x360
             if (ClientRectangle.Width != 500)

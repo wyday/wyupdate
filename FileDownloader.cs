@@ -4,9 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Net.Security;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using wyUpdate.Common;
 
@@ -178,23 +176,9 @@ namespace wyUpdate.Downloader
             bw.RunWorkerCompleted -= bw_RunWorkerCompleted;
         }
 
-        public static void EnableLazySSL()
+        public static void SetupSaneDownloadOptions()
         {
             ServicePointManager.Expect100Continue = false;
-
-            //Add a delegate that accepts all SSL's. Corrupt or not.
-            ServicePointManager.ServerCertificateValidationCallback += OnCheckSSLCert;
-        }
-
-        static bool OnCheckSSLCert(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            //allow all downloads regardless of SSL security errors
-            /* This will 'fix' the self-signed SSL certificate problem
-               that's typical on most corporate intranets */
-
-            // Updates are signed anyway - so it doesn't really matter if
-            // the SSL certs are invalid, broken, or self-signed
-            return true;
         }
 
         public void Cancel()
