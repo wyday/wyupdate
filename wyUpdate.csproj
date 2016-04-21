@@ -140,9 +140,7 @@
     <Compile Include="frmMain\frmMain.Designer.cs">
       <DependentUpon>frmMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\PanelDisplay.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Controls\PanelDisplay.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.ClientDataFile.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.Extract.cs" />
     <Compile Include="InstallUpdate\InstallUpdate.OptimizeExecute.cs" />
