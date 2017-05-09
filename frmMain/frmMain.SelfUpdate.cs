@@ -12,8 +12,6 @@ namespace wyUpdate
         string oldSelfLocation;
         string newSelfLocation;
 
-        bool selfUpdateFromRC1;
-
         ServerFile SelfServerFile;
 
         void SaveSelfUpdateData(string fileName)
@@ -105,13 +103,6 @@ namespace wyUpdate
                 string fileID = System.Text.Encoding.UTF8.GetString(fileIDBytes);
                 if (fileID != "IUSUFV2")
                 {
-                    //handle self update from RC1 client
-                    if (fileID == "IUSUFV1")
-                    {
-                        LoadSelfUpdateRC1Data(fs);
-                        return;
-                    }
-
                     //free up the file so it can be deleted
                     fs.Close();
                     throw new Exception("Self update fileID is wrong: " + fileID);
@@ -209,56 +200,6 @@ namespace wyUpdate
                     bType = (byte)fs.ReadByte();
                 }
             }
-        }
-
-        //Backwards compatability with 1.0 RC1
-        void LoadSelfUpdateRC1Data(Stream fs)
-        {
-            selfUpdateFromRC1 = true;
-
-            //RC1 means it's guaranteed to be old-style client data file
-            clientFileType = ClientFileType.PreRC2;
-
-            byte bType = (byte)fs.ReadByte();
-
-            while (!ReadFiles.ReachedEndByte(fs, bType, 0xFF))
-            {
-                switch (bType)
-                {
-                    case 0x01://Read Client data file location
-                        clientFileLoc = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x02: //Read Server data file location
-                        serverFileLoc = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x03://Read Base Directory
-                        baseDirectory = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x04://Read Temporary directory
-                        tempDirectory = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x05://Read Old client file location
-                        oldSelfLocation = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x06://Read New client file location
-                        newSelfLocation = ReadFiles.ReadDeprecatedString(fs);
-                        break;
-                    case 0x07:
-                        if (ReadFiles.ReadBool(fs))
-                            SelfUpdateState = SelfUpdateState.FullUpdate;
-                        break;
-                    case 0x08:
-                        needElevation = ReadFiles.ReadBool(fs);
-                        break;
-                    default:
-                        ReadFiles.SkipField(fs, bType);
-                        break;
-                }
-
-                bType = (byte)fs.ReadByte();
-            }
-
-            fs.Close();
         }
     }
 }
