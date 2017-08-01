@@ -117,7 +117,7 @@ namespace wyUpdate
 
             InitializeComponent();
 
-            //enable Lazy SSL for all downloads
+            // setup sane downloading options.
             FileDownloader.SetupSaneDownloadOptions();
 
             //resize the client so its client region = 500x360
@@ -143,46 +143,6 @@ namespace wyUpdate
                     //Note: always load the selfupdate data before the automatic update data
                     LoadSelfUpdateData(selfUpdateFileLoc);
                     ConfigureProxySettings();
-
-                    //TODO: wyUp 3.0: excise this hack
-                    //if the loaded file is from RC1, then update self and bail out
-                    if (selfUpdateFromRC1)
-                    {
-                        //install the new client, and relaunch it to continue the update
-                        if (needElevation && NeedElevationToUpdate())
-                        {
-                            //the user "elevated" as a non-admin user
-                            //warn the user of their idiocy
-                            error = clientLang.AdminError;
-
-                            //set to false so new client won't be launched in frmMain_Load()
-                            selfUpdateFromRC1 = false;
-
-                            ShowFrame(Frame.Error);
-                        }
-                        else
-                        {
-                            needElevation = false;
-
-                            FileAttributes atr = File.GetAttributes(oldSelfLocation);
-                            bool resetAttributes = (atr & FileAttributes.Hidden) != 0 || (atr & FileAttributes.ReadOnly) != 0 || (atr & FileAttributes.System) != 0;
-
-                            // remove the ReadOnly & Hidden atributes temporarily
-                            if (resetAttributes)
-                                File.SetAttributes(oldSelfLocation, FileAttributes.Normal);
-
-                            //Install the new client
-                            File.Copy(newSelfLocation, oldSelfLocation, true);
-
-                            if (resetAttributes)
-                                File.SetAttributes(oldSelfLocation, atr);
-
-                            //Relaunch self in OnLoad()
-                        }
-
-                        //bail out
-                        return;
-                    }
                 }
                 else // not self-updating
                 {
@@ -367,13 +327,6 @@ namespace wyUpdate
             if (uninstalling)
             {
                 ShowFrame(Frame.Uninstall);
-            }
-            else if (selfUpdateFromRC1)
-            {
-                //if the loaded file is from RC1, then update self and bail out
-
-                //Relaunch self
-                StartSelfElevated();
             }
             else if (startStep != UpdateStepOn.Nothing)
             {
