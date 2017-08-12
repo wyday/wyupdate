@@ -526,6 +526,7 @@ namespace wyUpdate.Downloader
                 }
                 else
                 {
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Ssl3 | (SecurityProtocolType) 3072;
                     downloadData.response = req.GetResponse();
                     downloadData.GetFileSize();
                 }
