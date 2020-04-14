@@ -179,6 +179,19 @@ namespace wyUpdate.Downloader
         public static void SetupSaneDownloadOptions()
         {
             ServicePointManager.Expect100Continue = false;
+
+            // Just support TLS 1.1, TLS 1.2, and 1.3
+            // https://docs.microsoft.com/en-us/dotnet/api/system.net.securityprotocoltype?view=netframework-4.8#System_Net_SecurityProtocolType_SystemDefault
+            ServicePointManager.SecurityProtocol =
+
+                // TLS 1.1
+                (SecurityProtocolType)768
+
+                // TLS 1.2
+                | (SecurityProtocolType)3072
+
+                // TLS 1.3
+                | (SecurityProtocolType)12288;
         }
 
         public void Cancel()
@@ -223,7 +236,7 @@ namespace wyUpdate.Downloader
 
                 //reset the adler
                 downloadedAdler32.Reset();
-                
+
                 DownloadingTo = data.Filename;
 
                 if (!File.Exists(DownloadingTo))
@@ -250,7 +263,7 @@ namespace wyUpdate.Downloader
                 sentSinceLastCalc = data.StartPoint; //for BPS calculation
 
                 // Only increment once for each %
-                int LastProgress = 0; 
+                int LastProgress = 0;
                 while ((readCount = data.DownloadStream.Read(buffer, 0, BufferSize)) > 0)
                 {
                     // break on cancel
@@ -697,11 +710,9 @@ namespace wyUpdate.Downloader
             {
                 request.Credentials = hasCredentials ? new NetworkCredential(uri.UserName, uri.Password) : CredentialCache.DefaultCredentials;
 
-                // Some servers explode if the user agent is missing.
-                // Some servers explode if the user agent is "non-standard" (e.g. "wyUpdate / " + VersionTools.FromExecutingAssembly())
-
-                // Thus we're forced to mimic IE 9 User agent
-                ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 6.1; en-US; wyUpdate)";
+                // Just fake being Internet Explorer 11 on Windows 10. Poorly configured proxies
+                // have forced us into this situation. https://msdn.microsoft.com/en-us/library/hh869301(v=vs.85).aspx
+                ((HttpWebRequest)request).UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko";
             }
             else if (request is FtpWebRequest)
             {
