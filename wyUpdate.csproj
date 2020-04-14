@@ -11,7 +11,7 @@
     <RootNamespace>wyUpdate</RootNamespace>
     <AssemblyName>wyUpdate</AssemblyName>
     <StartupObject>wyUpdate.Program</StartupObject>
-    <ApplicationIcon>client.ico</ApplicationIcon>
+    <ApplicationIcon>wyupdate.ico</ApplicationIcon>
     <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
     <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
     <NoStdLib>False</NoStdLib>
@@ -245,7 +245,7 @@
     <EmbeddedResource Include="tick.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="client.ico" />
+    <Content Include="wyupdate.ico" />
     <EmbeddedResource Include="loading-blue.png" />
   </ItemGroup>
   <ItemGroup>
